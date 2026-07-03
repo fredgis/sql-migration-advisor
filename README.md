@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Knowledge base v1.1" src="https://img.shields.io/badge/knowledge%20base-v1.1%20(Jul%202026)-2b8a3e">
+  <img alt="Knowledge base v1.2" src="https://img.shields.io/badge/knowledge%20base-v1.2%20(Jul%202026)-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
 </p>
 
@@ -110,7 +110,7 @@ Mermaid decision diagrams. The `SKILL.md` mirrors its **AI Migration Agent I/O c
 
 The same knowledge base ships as a polished, branded PDF —
 [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (~18 pages,
-v1.1, July 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
+v1.2, July 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
 

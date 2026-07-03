@@ -6,7 +6,7 @@
 >
 > **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of July 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
 >
-> **Version.** v1.1 — July 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
+> **Version.** v1.2 — July 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**
@@ -195,7 +195,7 @@ Standardized columns (Microsoft Learn style): **Method · Min source · Target/m
 | [Log Replay Service (LRS)](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate) | SQL 2012 (all editions) | Offline (planned) | Full/diff/log → Azure Blob; public endpoint; 30-day max window; FULL recovery + NORECOVERY (no reads); the only managed path that applies differentials to MI; GP & BC supported, but for large Business Critical migrations prefer MI Link (true online). |
 | [Native backup & restore (.bak)](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/restore-sample-database-quickstart) | SQL 2008 | Offline | Simplest; migrate TDE certificate *before* restore or it fails late; master/msdb restore not supported (script instance objects). |
 | [Transactional replication](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/replication-transactional-overview) | SQL 2012 | Online | Replicate all/part; article-type limits. |
-| [bcp / Smart Bulk Copy](https://learn.microsoft.com/en-us/samples/azure-samples/smartbulkcopy/smart-bulk-copy/) | any | Offline | High-speed data-only / partial (parallel copy). |
+| [bcp / Smart Bulk Copy](https://github.com/Azure-Samples/smartbulkcopy) | any | Offline | High-speed data-only / partial (parallel copy). |
 | [BACPAC / SqlPackage](https://learn.microsoft.com/en-us/azure/azure-sql/database/database-import) | any | Offline | Smaller DBs / simple. |
 | [Azure Data Factory — Copy](https://learn.microsoft.com/en-us/azure/data-factory/connector-azure-sql-managed-instance) | any | Offline / batch | When migration = integration / transformation. |
 
@@ -225,7 +225,7 @@ Standardized columns (Microsoft Learn style): **Method · Min source · Target/m
 
 | Target | Method | Downtime | Notes |
 | --- | --- | --- | --- |
-| Arc-enabled SQL MI (AKS/ARO/…) | [Native backup/restore](https://learn.microsoft.com/en-us/azure/azure-arc/data/migrate-to-arc-enabled-sql-managed-instance), point-in-time restore | Offline | Requires Arc data controller; exposes a SQL MI endpoint → logical vehicles of [§5.2](#52-to-azure-sql-managed-instance-managed-lift-and-shift) apply. |
+| Arc-enabled SQL MI (AKS/ARO/…) | [Native backup/restore](https://learn.microsoft.com/en-us/azure/azure-arc/data/migrate-to-managed-instance), point-in-time restore | Offline | Requires Arc data controller; exposes a SQL MI endpoint → logical vehicles of [§5.2](#52-to-azure-sql-managed-instance-managed-lift-and-shift) apply. |
 | SQL Server container (mcr image) | [Backup/Restore via mounted volume](https://learn.microsoft.com/en-us/sql/relational-databases/backup-restore/back-up-and-restore-of-sql-server-databases), detach/attach, BACPAC, bcp, ADF | Offline / Online (repl.) | Persist on Azure Disk (AKS/ARO) / Azure Files (ACI/ACA); HA via scheduler. |
 
 > [!WARNING]
@@ -507,7 +507,7 @@ flowchart LR
 - Transactional replication (SQL DB) — <https://learn.microsoft.com/en-us/azure/azure-sql/database/replication-to-sql-database>
 - Import/Export · BACPAC — <https://learn.microsoft.com/en-us/azure/azure-sql/database/database-import>
 - bcp utility — <https://learn.microsoft.com/en-us/sql/tools/bcp-utility>
-- Smart Bulk Copy — <https://learn.microsoft.com/en-us/samples/azure-samples/smartbulkcopy/smart-bulk-copy/>
+- Smart Bulk Copy — <https://github.com/Azure-Samples/smartbulkcopy>
 - Backup to URL — <https://learn.microsoft.com/en-us/sql/relational-databases/backup-restore/sql-server-backup-to-url>
 - Availability group → Azure VM — <https://learn.microsoft.com/en-us/data-migration/sql-server/virtual-machines/availability-group-migrate>
 - Log shipping — <https://learn.microsoft.com/en-us/sql/database-engine/log-shipping/about-log-shipping-sql-server>
@@ -515,7 +515,7 @@ flowchart LR
 
 **Targets — containers, Fabric, AVS, Arc**
 - Create Arc-enabled SQL Managed Instance — <https://learn.microsoft.com/en-us/azure/azure-arc/data/create-sql-managed-instance>
-- Migrate to Arc-enabled SQL MI — <https://learn.microsoft.com/en-us/azure/azure-arc/data/migrate-to-arc-enabled-sql-managed-instance>
+- Migrate to Arc-enabled SQL MI — <https://learn.microsoft.com/en-us/azure/azure-arc/data/migrate-to-managed-instance>
 - SQL Server on Kubernetes / AKS — <https://learn.microsoft.com/en-us/sql/linux/quickstart-sql-server-containers-kubernetes>
 - SQL Server in a Docker container — <https://learn.microsoft.com/en-us/sql/linux/quickstart-install-connect-docker>
 - Fabric Migration Assistant for SQL database (Preview) — <https://learn.microsoft.com/en-us/fabric/database/sql/migration-assistant>
@@ -557,13 +557,14 @@ flowchart LR
 
 ## 17. Document version & changelog
 
-Current version: **v1.1** (2026-07-03).
+Current version: **v1.2** (2026-07-03).
 
 <details>
-<summary><b>Version history</b> (current: v1.1)</summary>
+<summary><b>Version history</b> (current: v1.2)</summary>
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v1.2 | 2026-07-03 | Corrected two moved Microsoft Learn links: Smart Bulk Copy (now the Azure-Samples GitHub repo) and Migrate to Arc-enabled SQL MI (renamed to azure-arc/data/migrate-to-managed-instance). Added the weekly link + news freshness automation (GitHub Action). |
 | v1.1 | 2026-07-03 | Azure SQL MI **Next-gen General Purpose** re-classified **preview → GA** (GA since Nov 2025). Dates refreshed to July 2026 (verification note, lifecycle status column, sources footer). All ~45 Microsoft Learn links re-verified. Re-confirmed still-current: Fabric Migration Assistant remains Preview (DACPAC ≤ 20 MB, on-prem gateway only, no Private Link); SSMS 22 Azure SQL assessment still roadmap ~Q3 CY2026; SQL Server 2016 ESU free on Azure from 14 Jul 2026; MI Link GA with SQL Server 2025 support + reverse failback to 2022/2025. |
 | v1.0 | 2026-06 | Initial published knowledge base: 8 target families (SQL VM, AVS, SQL MI, SQL DB, Fabric SQL DB, containers AKS/ARO/ACI/ACA, Arc-enabled SQL MI, Arc in-place); targets/control-planes/methods taxonomy; per-target method tables (min source · downtime · constraints); 2025–2026 tooling reset (DMA, ADS, DMS classic, SQL Data Sync retirements); tooling-by-source matrix (incl. STRIIM online to Azure SQL DB); downtime strategy; summary & decision matrices; ancillary components; cross-cloud & reverse migration; third-party alternatives; field insights; commercial & funding levers (AHB / ESU / PAYG · Savings plan for databases · Azure Accelerate); FY27 SQL Motion context & AI Migration Agent I/O contract. |
 
