@@ -1,0 +1,165 @@
+name: Weekly KB freshness check
+
+# Every Monday: verify all links in the knowledge base, scan official Azure / SQL
+# Server news, and — only if something is actually stale — open a Pull Request that
+# bumps the version, adds a changelog row, and regenerates the PDF + preview.
+#
+# Requirements:
+#   - Settings → Actions → General → "Allow GitHub Actions to create and approve
+#     pull requests" must be enabled (for the automated PR).
+#   - GitHub Models is used via the built-in GITHUB_TOKEN (permissions: models: read).
+
+on:
+  schedule:
+    - cron: '0 7 * * 1'      # Mondays, 07:00 UTC
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'News look-back window (days)'
+        default: '7'
+      force_pr:
+        description: 'Open a PR even if nothing changed (for testing)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  models: read
+
+concurrency:
+  group: weekly-kb-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 1) Check every link in the knowledge base
+      - name: Check links (lychee)
+        id: lychee
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --no-progress --max-concurrency 8 --timeout 30 --max-retries 2
+            --accept 200,206,301,302,307,308,403,429
+            docs/sql-server-to-azure-migration.md
+          format: markdown
+          output: ./lychee-report.md
+          fail: false
+          failIfEmpty: false
+          jobSummary: true
+
+      # 2) Gather fresh SQL -> Azure migration news (deterministic, RSS-based)
+      - name: Gather news
+        id: news
+        run: |
+          COUNT=$(node tools/weekly-check/gather-news.mjs --days "${{ github.event.inputs.days || '7' }}" --out news)
+          echo "count=${COUNT}" >> "$GITHUB_OUTPUT"
+
+      # 3) Ask GitHub Models whether the doc needs updating (best-effort)
+      - name: Build review prompt
+        run: node tools/weekly-check/build-prompt.mjs > prompt.txt
+
+      - name: AI review (GitHub Models)
+        id: ai
+        continue-on-error: true
+        uses: actions/ai-inference@v2
+        with:
+          model: openai/gpt-4o
+          system-prompt: >-
+            You are a meticulous technical editor maintaining a SQL Server to Azure
+            migration knowledge base. You only recommend changes that are accurate and
+            directly relevant. You always answer with a single JSON object and nothing else.
+          prompt-file: prompt.txt
+          max-completion-tokens: '900'
+
+      - name: Save AI response
+        if: always()
+        env:
+          RESP: ${{ steps.ai.outputs.response }}
+        run: printf '%s' "$RESP" > response.txt
+
+      # 4) Decide + prepare PR inputs
+      - name: Decide
+        id: decide
+        env:
+          LYCHEE_EXIT: ${{ steps.lychee.outputs.exit_code }}
+          NEWS_COUNT: ${{ steps.news.outputs.count }}
+        run: node tools/weekly-check/decide.mjs
+
+      - name: Write job summary
+        if: always()
+        run: |
+          {
+            echo "## 🔄 Weekly KB check"
+            echo "- Link check exit code: \`${{ steps.lychee.outputs.exit_code }}\`"
+            echo "- News items: \`${{ steps.news.outputs.count }}\`"
+            echo "- Change warranted: \`${{ steps.decide.outputs.changed }}\`"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat news.md >> "$GITHUB_STEP_SUMMARY" || true
+
+      # 5) If needed: apply the deterministic doc update
+      - name: Apply version bump + changelog
+        if: steps.decide.outputs.changed == 'true' || github.event.inputs.force_pr == 'true'
+        run: node tools/weekly-check/apply-update.mjs --bump "${{ steps.decide.outputs.bump }}" --changelog "$(cat changelog.txt)"
+
+      # 6) Best-effort PDF + preview regeneration
+      - name: Install PDF toolchain
+        if: steps.decide.outputs.changed == 'true' || github.event.inputs.force_pr == 'true'
+        continue-on-error: true
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pandoc texlive-xetex texlive-fonts-recommended texlive-latex-extra \
+            fonts-dejavu poppler-utils
+
+      - name: Setup Chrome
+        id: chrome
+        if: steps.decide.outputs.changed == 'true' || github.event.inputs.force_pr == 'true'
+        continue-on-error: true
+        uses: browser-actions/setup-chrome@v1
+        with:
+          install-dependencies: true
+
+      - name: Regenerate PDF + preview
+        if: steps.decide.outputs.changed == 'true' || github.event.inputs.force_pr == 'true'
+        continue-on-error: true
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+          PUPPETEER_EXECUTABLE_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: |
+          npm install --prefix tools/pdf --no-audit --no-fund
+          node tools/pdf/build.mjs
+          node tools/pdf/patchwork.mjs
+
+      # 7) Open the PR
+      - name: Create Pull Request
+        if: steps.decide.outputs.changed == 'true' || github.event.inputs.force_pr == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: weekly-kb-update
+          delete-branch: true
+          title: 'Weekly KB freshness update'
+          body-path: pr-body.md
+          commit-message: |
+            Weekly KB freshness update
+
+            Automated by .github/workflows/weekly-kb-check.yml
+            Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+          labels: |
+            automated
+            knowledge-base
+          add-paths: |
+            docs/sql-server-to-azure-migration.md
+            docs/sql-server-to-azure-migration.pdf
+            docs/preview/sql-migration-advisor-pdf-preview.png

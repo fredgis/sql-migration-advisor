@@ -1,0 +1,61 @@
+% Code block styling with line breaks
+\usepackage{fvextra}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{
+  breaklines,
+  breakanywhere,
+  commandchars=\\\{\}
+}
+
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usepackage{float}
+\floatplacement{figure}{H}
+
+% center standalone images (tables/diagrams rendered as PNG)
+\makeatletter
+\g@addto@macro\@floatboxreset\centering
+\makeatother
+
+% Subtitle handling — store separately for professional title page
+\makeatletter
+\newcommand{\@docsubtitle}{}
+\def\subtitle#1{\renewcommand{\@docsubtitle}{#1}}
+
+% Professional title page
+\renewcommand{\maketitle}{%
+  \begin{titlepage}
+    \begin{tikzpicture}[remember picture, overlay]
+      \fill[blue!70!black] (current page.north west) rectangle ([yshift=-5cm]current page.north east);
+      \fill[blue!40!white] ([yshift=-5cm]current page.north west) rectangle ([yshift=-5.15cm]current page.north east);
+      \fill[blue!70!black] (current page.south west) rectangle ([yshift=1.5cm]current page.south east);
+    \end{tikzpicture}
+    \vspace*{5cm}
+    \begin{center}
+      {\fontsize{28}{36}\selectfont\bfseries\color{blue!70!black} \@title \par}
+      \vspace{1cm}
+      {\Large\color{gray!60!black} \@docsubtitle \par}
+      \vspace{2cm}
+      {\large\color{gray!50!black} \@date \par}
+    \end{center}
+    \vfill
+  \end{titlepage}
+}
+\makeatother
+
+% Page header/footer
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\leftmark}
+\fancyhead[R]{\small\thepage}
+\makeatletter
+\fancyfoot[C]{\small \@title}
+\makeatother
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.2pt}
+
+% Section styling
+\usepackage{titlesec}
+\titleformat{\section}{\Large\bfseries\color{blue!70!black}}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries\color{blue!50!black}}{\thesubsection}{1em}{}

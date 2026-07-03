@@ -1,0 +1,16 @@
+# PDF build pipeline (regenerated locally / in CI)
+tools/pdf/node_modules/
+tools/pdf/.build/
+tools/pdf/package-lock.json
+
+# Weekly-check working files (written at the repo root during CI runs)
+/news.md
+/news.json
+/prompt.txt
+/response.txt
+/lychee-report.md
+/pr-body.md
+/changelog.txt
+
+# Node
+node_modules/

@@ -10,6 +10,7 @@
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
   <img alt="Knowledge base v1.1" src="https://img.shields.io/badge/knowledge%20base-v1.1%20(Jul%202026)-2b8a3e">
+  <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
 </p>
 
 ---
@@ -108,7 +109,7 @@ Mermaid decision diagrams. The `SKILL.md` mirrors its **AI Migration Agent I/O c
 ## The knowledge base as a PDF
 
 The same knowledge base ships as a polished, branded PDF —
-[`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (19 pages,
+[`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (~18 pages,
 v1.1, July 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
@@ -121,8 +122,36 @@ red = N/A · grey = indirect) with content-sized columns, per-target method tabl
 2025–2026 tooling reset, downtime strategy, field pitfalls, third-party options, the commercial
 & funding levers, and a closing appendix showing how to drive this skill.
 
-Regenerate it with the [md2pdf](https://github.com/fredgis/fabric-foundry-kb) toolchain
-(pandoc + xelatex + mermaid-cli) from `docs/sql-server-to-azure-migration.md`.
+Regenerate it locally with the committed pipeline — `node tools/pdf/build.mjs` then
+`node tools/pdf/patchwork.mjs` (pandoc + xelatex + mermaid-cli, in the
+[fabric-foundry-kb](https://github.com/fredgis/fabric-foundry-kb) house style).
+
+---
+
+## 🔄 Weekly freshness check
+
+A scheduled GitHub Action —
+[`.github/workflows/weekly-kb-check.yml`](.github/workflows/weekly-kb-check.yml) — keeps the
+knowledge base current **every Monday** (07:00 UTC), so the advisor never drifts:
+
+1. **Link check.** Every URL in `docs/sql-server-to-azure-migration.md` is verified with
+   [lychee](https://github.com/lycheeverse/lychee-action) — broken or moved links are surfaced.
+2. **News scan.** Official Azure / SQL Server feeds (Azure Updates, the Azure SQL & SQL Server
+   blogs) are scanned over the past 7 days and filtered to SQL-Server-to-Azure migration topics
+   (new GA / preview / retirement, ESU & pricing changes, new targets / methods / tools).
+3. **AI review.** [GitHub Models](https://docs.github.com/github-models) — via the built-in
+   token, no external secrets — judges whether anything found actually warrants a change.
+4. **Update, if needed.** When a change is warranted, the workflow **opens a Pull Request** that
+   bumps the document version, adds a dated changelog row, and regenerates the **PDF** and its
+   preview — with the news and link findings in the PR body. Nothing lands on `main` without a
+   PR, because this document grounds the skill.
+
+Every run also writes a links + news summary to the Actions run, and you can trigger it on
+demand from the **Actions** tab (*Run workflow*). The document carries a visible version and a
+collapsible changelog (§17) so every automated update is traceable.
+
+> Enable *Settings → Actions → General → "Allow GitHub Actions to create and approve pull
+> requests"* so the weekly job can open its PR.
 
 ---
 
