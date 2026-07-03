@@ -1,0 +1,6 @@
+# Keep LF line endings on checkout so SKILL.md loads correctly as a
+# Copilot CLI skill (CRLF frontmatter delimiters prevent the skill from loading).
+* text=auto eol=lf
+
+*.png binary
+*.pdf binary
