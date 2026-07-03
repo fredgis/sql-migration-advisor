@@ -51,12 +51,27 @@ const rowsRe = /(\|\s*Version\s*\|\s*Date\s*\|\s*Changes\s*\|\r?\n\|[-\s|]+\|\r?
 if (!rowsRe.test(md)) { console.error('Could not find the changelog table header.'); process.exit(1); }
 md = md.replace(rowsRe, `$1| ${newVer} | ${ISO} | ${cell} |\n`);
 
+// ---- keep README.md in sync (badge, PDF-section version, collapsible changelog) ----
+const README = path.resolve(HERE, '..', '..', 'README.md');
+let readmeSynced = false;
+try {
+  let rd = fs.readFileSync(README, 'utf8');
+  rd = rd.replace(/(alt="Knowledge base )v\d+\.\d+(")/g, `$1${newVer}$2`);
+  rd = rd.replace(/(knowledge%20base-)v\d+\.\d+(-)/g, `$1${newVer}$2`);
+  rd = rd.replace(/v\d+\.\d+, [A-Za-z]+ \d{4}/g, `${newVer}, ${MONTH_YEAR}`);
+  rd = rd.replace(/(current:\s*<b>)v\d+\.\d+(<\/b>\s*\()[A-Za-z]+ \d{4}(\))/, `$1${newVer}$2${MONTH_YEAR}$3`);
+  const clRe = /(<!-- CHANGELOG:START -->[\s\S]*?\|\s*Version\s*\|\s*Date\s*\|\s*Summary\s*\|\r?\n\|[-\s|]+\|\r?\n)/;
+  if (clRe.test(rd)) { rd = rd.replace(clRe, `$1| ${newVer} | ${ISO} | ${cell} |\n`); readmeSynced = true; }
+  if (!DRY) fs.writeFileSync(README, rd);
+} catch (e) { console.error('README sync skipped:', e.message); }
+
 if (DRY) {
   console.log(`[dry] ${oldVer} -> ${newVer} (${MONTH_YEAR}, ${ISO})`);
   console.log(`[dry] changelog: ${changelog}`);
+  console.log(`[dry] README changelog row insert: ${readmeSynced}`);
 } else {
   fs.writeFileSync(DOC, md);
-  console.log(`${oldVer} -> ${newVer} (${MONTH_YEAR}); changelog row added (${ISO}).`);
+  console.log(`${oldVer} -> ${newVer} (${MONTH_YEAR}); changelog row added (${ISO}); README synced=${readmeSynced}.`);
 }
 // expose the new version for the workflow (GITHUB_OUTPUT)
 if (process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, `new_version=${newVer}\n`);

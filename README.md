@@ -9,19 +9,24 @@
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Knowledge base v1.2" src="https://img.shields.io/badge/knowledge%20base-v1.2%20(Jul%202026)-2b8a3e">
+  <img alt="Knowledge base v1.2" src="https://img.shields.io/badge/knowledge%20base-v1.2-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
 </p>
 
 ---
 
 Ask Copilot *"migrate a SQL Server environment to Azure"* (or *"migrer SQL Server vers Azure"*).
-The skill runs a short, structured interview — then returns a grounded, deterministic
-recommendation: **target** (SQL VM / AVS / SQL MI / SQL DB / Fabric SQL DB / Arc SQL MI /
-container / Arc in-place) · **method** (MI Link / LRS / backup-restore / DAG / DMS /
-replication / BACPAC / Fabric Migration Assistant) · **downtime class** · **blockers +
-remediations** · **cost levers** (AHB / ESU) · and the right **Microsoft program**
-(Cloud Accelerate Factory / SQL in a Day). It never recommends retired tooling.
+The skill runs a short, structured interview, then returns a grounded, deterministic
+recommendation:
+
+- **Target** — SQL VM · AVS · SQL MI · SQL DB · Fabric SQL DB · Arc SQL MI · container · Arc in-place
+- **Method** — MI Link · LRS · backup-restore · DAG · DMS · replication · BACPAC · Fabric Migration Assistant
+- **Downtime class** — near-zero · minimal · offline
+- **Blockers + remediations** — what stands in the way, and how to clear it
+- **Cost levers** — Azure Hybrid Benefit · ESU
+- **Microsoft program** — Cloud Accelerate Factory · SQL in a Day
+
+It never recommends retired tooling (DMA, the Azure Data Studio extension, DMS *classic*).
 
 ![sql-migration-advisor recommendation card](docs/preview/sql-migration-advisor-skill.png)
 
@@ -160,6 +165,21 @@ collapsible changelog (§17) so every automated update is traceable.
 The decision rules track Microsoft tooling changes (retirements, version gates, previews). When
 the knowledge base is updated, re-sync [`reference/decision-rules.md`](reference/decision-rules.md)
 so the advisor stays accurate. Last verified: July 2026.
+
+<!-- CHANGELOG:START -->
+<details>
+<summary><b>📓 Changelog</b> — current: <b>v1.2</b> (July 2026)</summary>
+
+| Version | Date | Summary |
+| --- | --- | --- |
+| v1.2 | 2026-07-03 | Fixed 2 moved Microsoft Learn links (Smart Bulk Copy, Migrate to Arc-enabled SQL MI); added the weekly link + news freshness automation. |
+| v1.1 | 2026-07-03 | Azure SQL MI Next-gen General Purpose reclassified preview → GA; dates refreshed to July 2026; all ~45 Microsoft Learn links re-verified. |
+| v1.0 | 2026-06 | Initial knowledge base: 8 target families, methods per target, the 2025–2026 tooling reset, decision matrices, commercial & funding levers, and the AI Migration Agent I/O contract. |
+
+Full detail in [`docs/sql-server-to-azure-migration.md` §17](docs/sql-server-to-azure-migration.md#17-document-version--changelog). The weekly workflow keeps this table in sync.
+
+</details>
+<!-- CHANGELOG:END -->
 
 This skill was extracted from the [FY27 SQL Motion](https://github.com/fredgis/FY27SQLMotion)
 ("SQL in a Day") into this dedicated repository.
