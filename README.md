@@ -137,7 +137,7 @@ Regenerate it locally with the committed pipeline — `node tools/pdf/build.mjs`
 
 A scheduled GitHub Action —
 [`.github/workflows/weekly-kb-check.yml`](.github/workflows/weekly-kb-check.yml) — keeps the
-knowledge base current **every Monday** (07:00 UTC), so the advisor never drifts:
+knowledge base current **every Monday** (~07:00 Europe/Paris — 05:00 UTC), so the advisor never drifts:
 
 1. **Link check.** Every URL in `docs/sql-server-to-azure-migration.md` is verified with
    [lychee](https://github.com/lycheeverse/lychee-action) — broken or moved links are surfaced.

@@ -11,7 +11,7 @@ name: Weekly KB freshness check
 
 on:
   schedule:
-    - cron: '0 7 * * 1'      # Mondays, 07:00 UTC
+    - cron: '0 5 * * 1'      # Mondays 05:00 UTC = 07:00 Europe/Paris (CEST); 06:00 in winter (CET)
   workflow_dispatch:
     inputs:
       days:
