@@ -95,6 +95,21 @@ See [`examples/sample-recommendation.md`](examples/sample-recommendation.md) for
 
 ---
 
+## The decision tree at a glance
+
+The target decision (Step A of [`reference/decision-rules.md`](reference/decision-rules.md)) as
+a single picture — the questions the advisor asks, and the Azure destination each answer leads
+to, with the official Azure service icons:
+
+![SQL Server to Azure — target decision tree](docs/decision-tree.png)
+
+Regenerate it with `node tools/diagram/build.mjs` (downloads the official
+[Azure](https://learn.microsoft.com/en-us/azure/architecture/icons/) /
+[Fabric](https://learn.microsoft.com/en-us/fabric/fundamentals/icons) icon packs, then renders
+[`tools/diagram/decision-tree.html`](tools/diagram/decision-tree.html) with headless Chrome).
+
+---
+
 ## The knowledge base
 
 [`docs/sql-server-to-azure-migration.md`](docs/sql-server-to-azure-migration.md) is a verified,
