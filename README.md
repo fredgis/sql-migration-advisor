@@ -17,6 +17,12 @@
   <img alt="One SQL Server, eight ways to Azure — the sql-migration-advisor skill" src="images/sql-migration-advisor-hero.png" width="100%">
 </p>
 
+### 🎬 See it in action
+
+A short screen recording of the skill at work: you ask in plain language, answer the guided interview, and it returns a grounded recommendation (target, method, downtime, blockers, cost) sourced live from the knowledge base.
+
+https://github.com/user-attachments/assets/5594fc75-4fb7-40a9-b9a1-0cc761c8aebe
+
 ---
 
 Ask Copilot *"migrate a SQL Server environment to Azure"* (or *"migrer SQL Server vers Azure"*).
