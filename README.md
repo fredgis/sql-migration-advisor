@@ -21,7 +21,7 @@
 
 A short screen recording of the skill at work: you ask in plain language, answer the guided interview, and it returns a grounded recommendation (target, method, downtime, blockers, cost) sourced live from the knowledge base.
 
-<video src="https://github.com/user-attachments/assets/5594fc75-4fb7-40a9-b9a1-0cc761c8aebe#t=2" controls muted></video>
+<video src="https://github.com/user-attachments/assets/5594fc75-4fb7-40a9-b9a1-0cc761c8aebe" poster="images/sql-migration-advisor-demo-poster.jpg" controls muted></video>
 
 ---
 
