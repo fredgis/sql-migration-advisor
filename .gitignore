@@ -3,7 +3,7 @@ tools/pdf/node_modules/
 tools/pdf/.build/
 tools/pdf/package-lock.json
 
-# Decision-tree diagram build (icons downloaded at build time, not redistributed)
+# Diagram build (icons downloaded at build time, not redistributed)
 tools/diagram/icons/
 
 # Weekly-check working files (written at the repo root during CI runs)

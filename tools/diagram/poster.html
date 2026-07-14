@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>SQL Server → Azure migration — full advisor logic</title>
+<style>
+  :root{
+    --blue:#0078D4; --blue-d:#005A9E; --blue-dd:#0B3B6F;
+    --ink:#1B1A19; --sub:#605E5C; --line:#E1DFDD;
+    --card:#FFFFFF; --tint:#F3F9FD; --tint2:#E9F3FC;
+    --green:#107C10; --green-t:#EAF6EA;
+    --red:#C42B1C; --red-t:#FBEAE8;
+    --amber:#8A6D00; --amber-t:#FBF3D6;
+    --diamond:#2B88D8; --bg:#F5F8FB;
+    --shadow:0 1px 3px rgba(0,0,0,.08),0 6px 18px rgba(0,60,120,.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:"Segoe UI","Segoe UI Web",system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;}
+  .page{width:1600px;margin:0 auto;padding:34px 40px 40px;}
+  .svc{width:44px;height:44px;flex:none;object-fit:contain;}
+  .svc-sm{width:22px;height:22px;vertical-align:-5px;}
+  /* ---------- header ---------- */
+  header{display:flex;align-items:flex-start;justify-content:space-between;
+    background:linear-gradient(120deg,#0B3B6F 0%,#0060B5 55%,#0078D4 100%);
+    color:#fff;border-radius:16px;padding:26px 32px;box-shadow:var(--shadow);}
+  header h1{font-size:34px;line-height:1.12;margin:0 0 6px;font-weight:700;letter-spacing:.2px;}
+  header .sub{font-size:16px;opacity:.92;font-weight:400;margin:0;}
+  header .src{font-size:12.5px;opacity:.72;margin-top:10px;}
+  .brand{display:flex;align-items:center;gap:10px;white-space:nowrap;padding-top:4px;}
+  .sq{display:grid;grid-template-columns:11px 11px;grid-template-rows:11px 11px;gap:2px;}
+  .sq i{display:block;width:11px;height:11px;}
+  .sq .a{background:#F25022;} .sq .b{background:#7FBA00;}
+  .sq .c{background:#00A4EF;} .sq .d{background:#FFB900;}
+  .brand span{font-size:16px;font-weight:600;color:#fff;}
+  .layers{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
+  .layer{font-size:11.5px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);
+    border-radius:999px;padding:5px 11px;color:#fff;}
+  .layer b{color:#fff;}
+  /* ---------- section scaffolding ---------- */
+  section{margin-top:26px;}
+  .shead{display:flex;align-items:center;gap:12px;margin:0 2px 14px;}
+  .badge{display:inline-flex;align-items:center;justify-content:center;
+    min-width:30px;height:30px;padding:0 10px;border-radius:8px;background:var(--blue);
+    color:#fff;font-weight:700;font-size:14px;letter-spacing:.4px;}
+  .shead h2{font-size:21px;margin:0;font-weight:700;}
+  .shead .note{font-size:13px;color:var(--sub);margin-left:6px;}
+  /* ---------- agentic band ---------- */
+  .agentic{margin-top:22px;background:linear-gradient(120deg,#0E3A46 0%,#0F6E7A 55%,#12B886 100%);
+    color:#fff;border-radius:16px;padding:22px 26px;box-shadow:var(--shadow);}
+  .agentic .ah{display:flex;align-items:center;gap:12px;}
+  .agentic .ah .badge{background:rgba(255,255,255,.20);}
+  .agentic .ah h2{font-size:21px;margin:0;font-weight:700;}
+  .agentic .ah .k{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;background:rgba(255,255,255,.16);
+    border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:4px 12px 4px 8px;font-weight:600;}
+  .agentic .asub{font-size:13px;opacity:.92;margin:6px 0 16px 42px;}
+  .acards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .acard{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22);border-radius:12px;padding:13px 15px;}
+  .acard .t{font-size:14.5px;font-weight:700;margin:0 0 5px;display:flex;align-items:center;gap:9px;}
+  .acard .t .ic{font-size:17px;line-height:1;}
+  .acard .d{font-size:12.5px;line-height:1.46;opacity:.96;}
+  .acard .d b{color:#E6FBF3;font-weight:600;}
+  .acard .tool{display:inline-block;margin-top:7px;font-size:10.5px;font-weight:700;letter-spacing:.2px;
+    background:rgba(0,0,0,.22);border-radius:6px;padding:2px 7px;color:#CFF3E6;}
+  /* ---------- interview chips ---------- */
+  .chips{display:flex;flex-wrap:wrap;gap:10px;}
+  .chip{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
+    border-radius:999px;padding:8px 14px;font-size:13.5px;box-shadow:var(--shadow);}
+  .chip b{font-weight:600;} .chip .n{color:var(--blue);font-weight:700;font-size:12px;}
+  .chip.opt{border-style:dashed;color:var(--sub);background:var(--tint);}
+  /* ---------- Step A flowchart ---------- */
+  .flow{position:relative;width:1520px;height:1066px;margin:0 auto;}
+  .flow svg.wires{position:absolute;inset:0;width:1520px;height:1066px;z-index:1;pointer-events:none;}
+  .fstart{position:absolute;left:0;top:0;width:300px;height:54px;z-index:3;
+    background:linear-gradient(120deg,#0B3B6F,#0078D4);color:#fff;border-radius:12px;
+    display:flex;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:15px;box-shadow:var(--shadow);}
+  .dia{position:absolute;width:34px;height:34px;background:var(--diamond);border:2px solid #fff;
+    border-radius:6px;transform:translate(-50%,-50%) rotate(45deg);box-shadow:var(--shadow);z-index:4;}
+  .dia b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    transform:rotate(-45deg);color:#fff;font-size:15px;font-weight:700;}
+  .subdia{position:absolute;width:30px;height:30px;background:#fff;border:2px solid var(--diamond);
+    border-radius:5px;transform:translate(-50%,-50%) rotate(45deg);box-shadow:var(--shadow);z-index:4;}
+  .subdia small{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    transform:rotate(-45deg);color:var(--diamond);font-size:14px;font-weight:800;}
+  .fcond{position:absolute;z-index:3;}
+  .fcond .q{font-weight:700;font-size:15.5px;line-height:1.18;}
+  .fcond .ex{font-size:12px;color:var(--sub);margin-top:3px;line-height:1.4;}
+  .fcard{position:absolute;z-index:3;background:#fff;border:1px solid var(--line);border-left:5px solid var(--blue);
+    border-radius:12px;box-shadow:var(--shadow);padding:9px 15px;display:flex;gap:13px;align-items:center;}
+  .fcard .tx .t{font-weight:700;font-size:15px;line-height:1.15;}
+  .fcard .tx .t small{font-weight:400;color:var(--sub);font-size:12px;}
+  .fcard .tx .d{font-size:12px;color:var(--sub);line-height:1.36;margin-top:2px;}
+  .fcard .tx .tag{display:inline-block;margin-top:5px;font-size:10.5px;font-weight:600;color:var(--blue);
+    background:var(--tint2);border-radius:6px;padding:2px 7px;}
+  .fcard.arc{border-left-color:#8661C5;} .fcard.avs{border-left-color:#00A4EF;}
+  .fcard.vm{border-left-color:#0078D4;} .fcard.k8s{border-left-color:#107C10;}
+  .fcard.mi{border-left-color:#005A9E;} .fcard.fab{border-left-color:#12B886;}
+  .kicker{position:absolute;z-index:3;font-size:10.5px;font-weight:700;letter-spacing:.3px;color:#107C10;text-transform:uppercase;}
+  .kicker.dib{color:var(--diamond);}
+  .lbl{position:absolute;z-index:4;font-size:11px;font-weight:800;letter-spacing:.3px;}
+  .lbl.yes{color:var(--green);} .lbl.no{color:#8A94A0;background:var(--bg);padding:0 4px;}
+  .ffall{position:absolute;left:0;top:902px;width:1520px;z-index:3;
+    background:linear-gradient(120deg,#EAF3FC,#F3F9FD);border:1px solid #CFE4F7;border-radius:14px;
+    padding:14px 18px;box-shadow:var(--shadow);}
+  .ffall .fh{display:flex;align-items:center;gap:13px;margin-bottom:11px;}
+  .ffall .fh .t{font-size:17px;font-weight:700;} .ffall .fh .s{font-size:12.5px;color:var(--sub);}
+  .models{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  .model{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;gap:10px;align-items:center;}
+  .model img{width:30px;height:30px;flex:none;}
+  .model .m{font-weight:700;font-size:13.5px;margin-bottom:2px;} .model .x{font-size:11.5px;color:var(--sub);line-height:1.35;}
+  /* ---------- generic grids ---------- */
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);}
+  .panel h3{margin:0 0 9px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:9px;}
+  .panel h3 img{width:24px;height:24px;} .panel h3 .dot{width:10px;height:10px;border-radius:3px;background:var(--blue);display:inline-block;}
+  .rows{display:flex;flex-direction:column;gap:7px;}
+  .r{font-size:12.7px;line-height:1.4;} .r b{font-weight:600;}
+  .r .g{color:var(--sub);}
+  .pill{display:inline-block;font-size:10.5px;font-weight:700;border-radius:5px;padding:1px 6px;margin-right:6px;vertical-align:1px;}
+  .p-nz{background:var(--green-t);color:var(--green);}
+  .p-min{background:var(--amber-t);color:var(--amber);}
+  .p-off{background:var(--tint2);color:var(--blue-d);}
+  .p-no{background:var(--red-t);color:var(--red);}
+  .note-full{margin-top:14px;background:var(--tint);border:1px dashed #BBD7EF;border-radius:10px;
+    padding:11px 14px;font-size:12.7px;color:#274b6d;display:flex;gap:12px;align-items:center;}
+  .note-full img{width:34px;height:34px;flex:none;} .note-full b{color:var(--blue-d);}
+  .dbar{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px;}
+  .dseg{border-radius:10px;padding:11px 14px;font-size:12.5px;}
+  .dseg .h{font-weight:700;font-size:13.5px;margin-bottom:3px;}
+  .dseg.nz{background:var(--green-t);border:1px solid #BBE3BB;}
+  .dseg.min{background:var(--amber-t);border:1px solid #EAD68A;}
+  .dseg.off{background:var(--tint2);border:1px solid #BBD7EF;}
+  .blk{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  .bcard{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;box-shadow:var(--shadow);}
+  .bcard .b1{font-size:13px;font-weight:700;color:var(--red);}
+  .bcard .b2{font-size:12.3px;color:var(--sub);line-height:1.42;margin-top:2px;}
+  .bcard .b2 b{color:var(--ink);}
+  .retired{background:var(--red-t);border:1px solid #E6BEB8;border-radius:12px;padding:14px 16px;}
+  .retired h2{color:var(--red);}
+  .rgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:4px;}
+  .rc{background:#fff;border:1px solid #E6C7C2;border-radius:10px;padding:10px 12px;}
+  .rc .o{font-weight:700;font-size:13px;text-decoration:line-through;color:var(--red);}
+  .rc .dt{font-size:11px;color:var(--sub);margin:1px 0 5px;}
+  .rc .u{font-size:12.2px;} .rc .u b{color:var(--green);}
+  .foot{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;margin-top:26px;}
+  .tbtable{width:100%;border-collapse:collapse;font-size:12.3px;}
+  .tbtable td{padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:top;}
+  .tbtable td:first-child{color:var(--sub);white-space:nowrap;width:44%;}
+  .tbtable td:last-child{font-weight:600;}
+  .src-final{margin-top:16px;text-align:center;font-size:12px;color:var(--sub);}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div>
+      <h1>SQL Server&nbsp;→&nbsp;Azure migration — the complete advisor logic</h1>
+      <p class="sub">Interview&nbsp;→&nbsp;<b>Target&nbsp;(A)</b>&nbsp;→&nbsp;<b>Method&nbsp;(B)</b>&nbsp;→&nbsp;<b>Cutover&nbsp;&amp;&nbsp;blockers&nbsp;(C)</b>&nbsp;→&nbsp;<b>Cost&nbsp;&amp;&nbsp;program&nbsp;(D)</b>&nbsp;·&nbsp;deterministic, first&nbsp;match&nbsp;wins</p>
+      <div class="layers">
+        <span class="layer"><b>Target</b> = where the DB ends up (runtime)</span>
+        <span class="layer"><b>Control plane</b> = how you assess / orchestrate</span>
+        <span class="layer"><b>Method</b> = the data-movement vehicle</span>
+        <span class="layer">Never recommend retired tooling</span>
+      </div>
+      <div class="src">Sourced from the <b>sql-migration-advisor</b> knowledge base — docs/sql-server-to-azure-migration.md (v1.2, July 2026). Whole engine, not just target selection. Official Azure &amp; Microsoft Fabric service icons.</div>
+    </div>
+    <div class="brand">
+      <img class="svc" src="icons/fabric.svg" alt="Microsoft Fabric" style="width:30px;height:30px;" />
+      <div class="sq"><i class="a"></i><i class="b"></i><i class="c"></i><i class="d"></i></div>
+      <span>Microsoft&nbsp;Azure</span>
+    </div>
+  </header>
+
+  <!-- AGENTIC INTELLIGENCE -->
+  <section class="agentic">
+    <div class="ah"><span class="badge">✦</span><h2>Agentic intelligence — how the advisor actually reasons</h2>
+      <span class="k"><img src="icons/copilot.svg" style="width:18px;height:18px" alt="Copilot"/>a GitHub Copilot CLI skill · not a static flowchart</span></div>
+    <p class="asub">The diagram is one frozen output. The skill is an <b>agent</b>: it grounds itself in a live source, interviews you adaptively, reasons deterministically, guards itself, and then acts.</p>
+    <div class="acards">
+      <div class="acard"><div class="t"><span class="ic">🌐</span>Grounded in live truth</div>
+        <div class="d">Fetches the live knowledge-base doc <b>every session</b> and treats it as ground truth. Offline? falls back to bundled rules — and says so. On conflict, <b>the live doc wins</b>. Never invents paths, tools or version gates.</div>
+        <span class="tool">web_fetch / curl · source-of-truth</span></div>
+      <div class="acard"><div class="t"><span class="ic">💬</span>Adaptive interview</div>
+        <div class="d">Asks <b>one question at a time</b>, multiple-choice, <b>in your language</b>. Pre-fills what you already volunteered, skips irrelevant branches, and <b>stops the moment it can decide</b>.</div>
+        <span class="tool">ask_user · interview-first</span></div>
+      <div class="acard"><div class="t"><span class="ic">⚙️</span>Deterministic reasoning</div>
+        <div class="d">Applies Steps <b>A→D</b> as explicit rules — the same answers always produce the same recommendation. <b>Auditable</b>, not vibes, and separates target · control-plane · method.</div>
+        <span class="tool">decision-rules · reproducible</span></div>
+      <div class="acard"><div class="t"><span class="ic">🛡️</span>Built-in guardrails</div>
+        <div class="d">Refuses to recommend <b>retired tooling</b> (DMA · ADS ext. · DMS-classic). Honest about <b>size caps &amp; limits</b> (DACPAC ≤ 20 MB, on-prem gateway). Flags contradictory requirements instead of guessing.</div>
+        <span class="tool">anti-hallucination</span></div>
+      <div class="acard"><div class="t"><span class="ic">🗂️</span>Estate-aware</div>
+        <div class="d"><b>One recommendation per profile.</b> For a large estate it leads with an Azure Migrate discovery pass + Az.DataMigration, then scores the dominant profile — and can emit a per-DB table.</div>
+        <span class="tool">scale-out reasoning</span></div>
+      <div class="acard"><div class="t"><span class="ic">🎞️</span>Acts &amp; hands off</div>
+        <div class="d">Renders a grounded recommendation card, then offers a <b>runbook outline</b> or a <b>one-slide summary by handing off to the pptxmotions skill</b> — chaining skills to finish the job.</div>
+        <span class="tool">skill hand-off → pptxmotions</span></div>
+    </div>
+  </section>
+
+  <!-- STEP 0 : interview -->
+  <section>
+    <div class="shead"><span class="badge">0</span><h2>Interview first — ask one at a time, then decide</h2>
+      <span class="note">~10 multiple-choice questions in the user's language · pre-fill anything already volunteered</span></div>
+    <div class="chips">
+      <div class="chip"><span class="n">1</span><b>Scope</b> — single · a few (2–10) · estate (10+)</div>
+      <div class="chip"><span class="n">2</span><b>Source location</b> — on-prem · AWS EC2/RDS · GCP CE/Cloud SQL</div>
+      <div class="chip"><span class="n">3</span><b>Source version</b> — 2008 → 2025 (version gates)</div>
+      <div class="chip"><span class="n">4</span><b>Primary driver</b> — EOS/ESU · cost · modernization · DC-exit · analytics · sovereignty</div>
+      <div class="chip"><span class="n">5</span><b>Management model</b> — PaaS · OS/engine control · Kubernetes</div>
+      <div class="chip"><span class="n">6</span><b>Feature deps</b> — FILESTREAM · PolyBase · DTC · CLR · linked servers · Agent · Broker</div>
+      <div class="chip"><span class="n">7</span><b>Largest DB</b> — &lt;150 GB · 150 GB–4 TB · &gt;4 TB</div>
+      <div class="chip"><span class="n">8</span><b>Downtime</b> — near-zero · minimal · offline</div>
+      <div class="chip"><span class="n">9</span><b>Network &amp; ports</b> — ExpressRoute · limited WAN · 5022/1433/443</div>
+      <div class="chip"><span class="n">10</span><b>Compliance</b> — commercial · EU boundary · sovereign · edge</div>
+      <div class="chip"><span class="n">11</span><b>Ancillary</b> — SSIS · SSRS · SSAS · TDE · Agent jobs</div>
+      <div class="chip opt"><span class="n">+</span><b>Workload profile</b> — ERP · SaaS · microservice · BI · OLTP (tie-breaker)</div>
+    </div>
+  </section>
+
+  <!-- STEP A : target flowchart -->
+  <section>
+    <div class="shead"><span class="badge">A</span><h2>Pick the target — decision tree, first match wins</h2>
+      <span class="note">large estate (10+)? run Azure Migrate discovery first, then apply this tree to each dominant profile (Az.DataMigration at scale)</span></div>
+
+    <div class="flow">
+      <svg class="wires" viewBox="0 0 1520 1066">
+        <defs>
+          <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 z" fill="#8A94A0"/></marker>
+          <marker id="ahg" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 z" fill="#107C10"/></marker>
+          <marker id="ahb" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 z" fill="#2B88D8"/></marker>
+        </defs>
+        <!-- spine -->
+        <path d="M40,54 V902" stroke="#8A94A0" stroke-width="2.5" fill="none" marker-end="url(#ah)"/>
+        <!-- Yes arrows (green) to single cards -->
+        <path d="M580,121 H696" stroke="#107C10" stroke-width="2.5" fill="none" marker-end="url(#ahg)"/>
+        <path d="M580,673 H696" stroke="#107C10" stroke-width="2.5" fill="none" marker-end="url(#ahg)"/>
+        <path d="M580,813 H696" stroke="#107C10" stroke-width="2.5" fill="none" marker-end="url(#ahg)"/>
+        <!-- D2 : Yes to sub-diamond, then VMware yes/no forks -->
+        <path d="M580,290 H614" stroke="#107C10" stroke-width="2.5" fill="none" marker-end="url(#ahg)"/>
+        <path d="M638,273 L696,254" stroke="#2B88D8" stroke-width="2.5" fill="none" marker-end="url(#ahb)"/>
+        <path d="M638,307 L696,326" stroke="#2B88D8" stroke-width="2.5" fill="none" marker-end="url(#ahb)"/>
+        <!-- D3 : Yes then managed / DIY fork -->
+        <path d="M580,500 H654" stroke="#107C10" stroke-width="2.5" fill="none" marker-end="url(#ahg)"/>
+        <path d="M654,500 V464 H696" stroke="#2B88D8" stroke-width="2.5" fill="none" marker-end="url(#ahb)"/>
+        <path d="M654,500 V536 H696" stroke="#2B88D8" stroke-width="2.5" fill="none" marker-end="url(#ahb)"/>
+      </svg>
+
+      <!-- start -->
+      <div class="fstart"><img src="icons/sql-server.svg" style="width:30px;height:30px" alt="SQL Server"/>SQL Server workload to migrate</div>
+
+      <!-- diamonds on spine -->
+      <div class="dia" style="left:40px;top:121px"><b>1</b></div>
+      <div class="dia" style="left:40px;top:290px"><b>2</b></div>
+      <div class="dia" style="left:40px;top:500px"><b>3</b></div>
+      <div class="dia" style="left:40px;top:673px"><b>4</b></div>
+      <div class="dia" style="left:40px;top:813px"><b>5</b></div>
+      <!-- sub decision diamond (VMware) -->
+      <div class="subdia" style="left:638px;top:290px"><small>?</small></div>
+
+      <!-- No labels -->
+      <div class="lbl no" style="left:31px;top:198px">NO ▼</div>
+      <div class="lbl no" style="left:31px;top:388px">NO ▼</div>
+      <div class="lbl no" style="left:31px;top:580px">NO ▼</div>
+      <div class="lbl no" style="left:31px;top:737px">NO ▼</div>
+      <div class="lbl no" style="left:20px;top:860px">NO — fall through ▼</div>
+      <!-- Yes labels -->
+      <div class="lbl yes" style="left:610px;top:104px">YES</div>
+      <div class="lbl yes" style="left:586px;top:272px">YES</div>
+      <div class="lbl yes" style="left:610px;top:483px">YES</div>
+      <div class="lbl yes" style="left:610px;top:656px">YES</div>
+      <div class="lbl yes" style="left:610px;top:796px">YES</div>
+      <div class="kicker dib" style="left:590px;top:214px">VMware DC-exit?</div>
+      <div class="lbl yes" style="left:660px;top:242px">yes</div>
+      <div class="lbl no" style="left:662px;top:330px;background:none">no</div>
+      <div class="kicker dib" style="left:575px;top:452px">managed</div>
+      <div class="kicker dib" style="left:585px;top:524px">DIY</div>
+
+      <!-- conditions -->
+      <div class="fcond" style="left:92px;top:92px;width:476px">
+        <div class="q">Modernize in place — not ready to move?</div>
+        <div class="ex">assessment-only · ESU pressure · migrate later</div></div>
+      <div class="fcond" style="left:92px;top:258px;width:476px">
+        <div class="q">VM-only features, or OS / engine control?</div>
+        <div class="ex">FILESTREAM / FileTable · PolyBase · cross-instance DTC · agents on the box · exact version pinning</div></div>
+      <div class="fcond" style="left:92px;top:468px;width:476px">
+        <div class="q">Kubernetes on-prem / edge / sovereign multicloud?</div>
+        <div class="ex">run on your own K8s — AKS · ARO · EKS · GKE</div></div>
+      <div class="fcond" style="left:92px;top:644px;width:476px">
+        <div class="q">Instance-level features — but PaaS is OK?</div>
+        <div class="ex">SQL Agent · cross-DB · linked servers · SQL CLR · Service Broker — and none of the VM-only features above</div></div>
+      <div class="fcond" style="left:92px;top:784px;width:476px">
+        <div class="q">Analytics-first / Fabric-native — small, simple schema?</div>
+        <div class="ex">driver = analytics / Fabric unification · DACPAC ≤ 20 MB · no Private Link need</div></div>
+
+      <!-- target cards -->
+      <div class="fcard arc" style="left:700px;top:88px;width:808px;height:66px">
+        <img class="svc" src="icons/arc-sql-server.svg" alt="Azure Arc"/>
+        <div class="tx"><div class="t">SQL Server enabled by Azure Arc</div>
+          <div class="d">Inventory &amp; best-practices assessment · ESU without moving · Copilot-assisted portal migration when ready. <b>Control plane — not a runtime target</b>.</div></div></div>
+
+      <div class="fcard avs" style="left:700px;top:224px;width:808px;height:60px">
+        <img class="svc" src="icons/avs.svg" alt="AVS"/>
+        <div class="tx"><div class="t">Azure VMware Solution (AVS)</div>
+          <div class="d">Zero-refactor — keeps FCI + Always On AG as-is · migrate with VMware HCX / vMotion.</div></div></div>
+      <div class="fcard vm" style="left:700px;top:296px;width:808px;height:60px">
+        <img class="svc" src="icons/sql-vm.svg" alt="SQL on Azure VM"/>
+        <div class="tx"><div class="t">SQL Server on Azure VM</div>
+          <div class="d">IaaS rehost · full OS control · <b>free ESU</b> for end-of-support · near-zero cutover via Distributed AG.</div></div></div>
+
+      <div class="fcard k8s" style="left:700px;top:434px;width:808px;height:60px">
+        <img class="svc" src="icons/arc-sql-mi.svg" alt="Arc SQL MI"/>
+        <div class="tx"><div class="t">Arc-enabled SQL Managed Instance</div>
+          <div class="d">Auto patch · backup · HA via the Arc data controller — any K8s (AKS/ARO/EKS/GKE).</div></div></div>
+      <div class="fcard k8s" style="left:700px;top:506px;width:808px;height:60px">
+        <img class="svc" src="icons/containers.svg" alt="Containers"/>
+        <div class="tx"><div class="t">SQL Server in containers</div>
+          <div class="d">AKS / ARO / ACI / ACA · dev / test / edge — you own HA, patching, backup.</div></div></div>
+
+      <div class="fcard mi" style="left:700px;top:640px;width:808px;height:66px">
+        <img class="svc" src="icons/sql-mi.svg" alt="Azure SQL MI"/>
+        <div class="tx"><div class="t">Azure SQL Managed Instance</div>
+          <div class="d">The default <b>managed lift-and-shift</b> · General Purpose / Business Critical · near-zero cutover via MI Link (source 2016+). Reverse failback to SQL Server 2022/2025 keeps an exit path.</div></div></div>
+
+      <div class="fcard fab" style="left:700px;top:780px;width:808px;height:66px">
+        <span style="display:flex;gap:7px;align-items:center;flex:none">
+          <img src="icons/fabric.svg" alt="Microsoft Fabric" style="width:44px;height:44px"/>
+          <img src="icons/fabric-sql-db.svg" alt="SQL database in Fabric" style="width:38px;height:38px"/></span>
+        <div class="tx"><div class="t">SQL database in Fabric <small style="color:#107C10;font-weight:700">· in Microsoft Fabric · GA</small></div>
+          <div class="d">Fabric Migration Assistant + Fabric Mirroring for the analytical copy · schema via DACPAC ≤ 20 MB · on-prem gateway. <span class="tag">tested as a gate BEFORE SQL DB so first-match-wins can reach it</span></div></div></div>
+
+      <!-- fall-through -->
+      <div class="ffall">
+        <div class="fh"><img class="svc" src="icons/sql-database.svg" alt="Azure SQL Database" style="width:40px;height:40px"/>
+          <span class="t">Azure SQL Database — cloud-native, fully managed</span>
+          <span class="s">management = fully managed · feature deps = none · choose the deployment model</span></div>
+        <div class="models">
+          <div class="model"><img src="icons/sql-database.svg" alt=""/><div><div class="m">Hyperscale</div><div class="x">&gt; 4 TB · heavy write I/O · HTAP</div></div></div>
+          <div class="model"><img src="icons/sql-database.svg" alt=""/><div><div class="m">Serverless</div><div class="x">intermittent · dev/test · microservices (auto-pause)</div></div></div>
+          <div class="model"><img src="icons/sql-elastic-pools.svg" alt=""/><div><div class="m">Elastic Pool</div><div class="x">multi-tenant SaaS consolidation</div></div></div>
+          <div class="model"><img src="icons/sql-database.svg" alt=""/><div><div class="m">General Purpose / Business Critical</div><div class="x">default single DB · BC = 99.995% SLA (zone-redundant)</div></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP B : method -->
+  <section>
+    <div class="shead"><span class="badge">B</span><h2>Pick the method — per target, with the gates that make or break it</h2>
+      <span class="note">chosen by downtime × source version × size × network</span></div>
+    <div class="grid3">
+      <div class="panel"><h3><img src="icons/sql-mi.svg" alt=""/>→ Azure SQL Managed Instance</h3>
+        <div class="rows">
+          <div class="r"><span class="pill p-nz">near-zero</span><b>MI Link</b> — <span class="g">source 2016+ · port 5022 both ways · ≤10 DBs</span></div>
+          <div class="r"><span class="pill p-off">offline</span><b>Log Replay Service (LRS)</b> — <span class="g">source 2012+ · public endpoint</span></div>
+          <div class="r"><span class="pill p-off">offline</span><b>Native backup/restore (.bak)</b> — <span class="g">2008+ · migrate TDE cert FIRST</span></div>
+          <div class="r"><span class="pill p-min">online subset</span><b>Transactional replication</b> — <span class="g">2012+</span></div>
+        </div></div>
+      <div class="panel"><h3><img src="icons/sql-database.svg" alt=""/>→ Azure SQL Database</h3>
+        <div class="rows">
+          <div class="r"><span class="pill p-off">offline</span><b>Modern DMS (offline)</b> — <span class="g">online N/A to SQL DB · 2008+</span></div>
+          <div class="r"><span class="pill p-off">offline</span><b>BACPAC / SqlPackage</b> — <span class="g">SqlPackage for scale</span></div>
+          <div class="r"><span class="pill p-min">online subset</span><b>Transactional replication</b> — <span class="g">2016–2019 only · article limits</span></div>
+          <div class="r"><span class="pill p-no">not supported</span><span class="g">native .bak restore · detach/attach · MI Link</span></div>
+        </div></div>
+      <div class="panel"><h3><img src="icons/sql-vm.svg" alt=""/>→ SQL Server on Azure VM</h3>
+        <div class="rows">
+          <div class="r"><span class="pill p-nz">near-zero</span><b>Distributed / Always On AG</b> — <span class="g">2016+ · needs AD DS · ports</span></div>
+          <div class="r"><span class="pill p-min">minimal</span><b>Log shipping</b> — <span class="g">Windows source</span></div>
+          <div class="r"><span class="pill p-off">offline</span><b>Native backup/restore</b> — <span class="g">Backup-to-URL ≤ 12.8 TB (2016+)</span></div>
+          <div class="r"><span class="pill p-off">whole VM</span><b>Azure Migrate</b> — <span class="g">incl. FCI/AG · source 2008 SP4</span></div>
+        </div></div>
+      <div class="panel"><h3><img src="icons/avs.svg" alt=""/>→ Azure VMware Solution</h3>
+        <div class="rows">
+          <div class="r"><span class="pill p-nz">near-zero</span><b>VMware HCX / vMotion</b> — <span class="g">zero-refactor · keeps FCI/AG</span></div>
+          <div class="r g">No DMS / MI Link on this path.</div>
+        </div></div>
+      <div class="panel"><h3><img src="icons/arc-sql-mi.svg" alt=""/>→ Arc SQL MI / Container</h3>
+        <div class="rows">
+          <div class="r"><b>Arc SQL MI</b> exposes a SQL MI endpoint → <span class="g">SQL MI methods apply (backup/restore)</span></div>
+          <div class="r"><b>Container</b> — <span class="g">volume restore · detach/attach · BACPAC · bcp · ADF</span></div>
+        </div></div>
+      <div class="panel"><h3><img src="icons/fabric.svg" alt=""/>→ SQL database in Fabric</h3>
+        <div class="rows">
+          <div class="r"><span class="pill p-off">offline</span><b>Fabric Migration Assistant</b></div>
+          <div class="r g">schema via DACPAC ≤ 20 MB · data via Fabric Data Factory copy + on-prem gateway (no VNet / Private Link)</div>
+        </div></div>
+    </div>
+    <div class="note-full"><img src="icons/data-box.svg" alt="Data Box"/>
+      <div><b>Multi-TB / limited WAN (any target) — seed-then-sync:</b> ship the initial full backup via <b>Data Box</b> (or AzCopy over ExpressRoute), then catch up the delta with LRS / MI Link / transactional replication / log shipping before cutover. Don't size the cutover as <i>size ÷ bandwidth</i> — test AzCopy + one full backup first, and plan a rollback window.</div></div>
+  </section>
+
+  <!-- STEP C : cutover -->
+  <section>
+    <div class="shead"><span class="badge">C</span><h2>Cutover — downtime class, blockers &amp; remediations</h2>
+      <span class="note">~60% of migrations stumble on undocumented linked servers / SQL Agent jobs — map dependencies first</span></div>
+    <div class="dbar">
+      <div class="dseg nz"><div class="h">Near-zero (minutes)</div>MI Link · Distributed / Always On AG · Striim</div>
+      <div class="dseg min"><div class="h">Minimal (tens of min)</div>transactional replication · log shipping · native restore + diff/log</div>
+      <div class="dseg off"><div class="h">Offline (planned window)</div>native backup/restore · LRS · BACPAC · bcp · detach/attach · ADF · Data Box</div>
+    </div>
+    <div class="blk">
+      <div class="bcard"><div class="b1">TDE-encrypted DB</div><div class="b2">Migrate the <b>server-level certificate FIRST</b>, before any native restore to MI — else the restore fails ~80% in, no clear error.</div></div>
+      <div class="bcard"><div class="b1">Windows logins</div><div class="b2">DMS skips them by default — enable the option, grant MI read to Entra ID, script + recreate logins/users.</div></div>
+      <div class="bcard"><div class="b1">MI Link ports</div><div class="b2">Open <b>5022</b> both directions (often blocked in banking / industrial nets).</div></div>
+      <div class="bcard"><div class="b1">Other methods' network</div><div class="b2">Outbound <b>443</b> to Blob, <b>1433</b> (+ <b>1434/UDP</b> for named instances).</div></div>
+      <div class="bcard"><div class="b1">Distributed AG</div><div class="b2">Requires <b>AD Domain Services</b> (or workgroup AG + certs).</div></div>
+      <div class="bcard"><div class="b1">Txn replication → SQL DB</div><div class="b2">Source <b>2016–2019 only</b>; article-type limits (no hierarchyid, sql_variant…).</div></div>
+      <div class="bcard"><div class="b1">SQL Agent jobs</div><div class="b2">MI: native · SQL DB: <b>Elastic Jobs</b>.</div></div>
+      <div class="bcard"><div class="b1">Linked servers / cross-DB</div><div class="b2">OK on VM / MI · <b>not on SQL DB</b> — refactor.</div></div>
+      <div class="bcard"><div class="b1">SSIS · SSRS · SSAS</div><div class="b2">Azure-SSIS IR · Power BI paginated (RDL) · AAS / Power BI (XMLA).</div></div>
+    </div>
+    <div class="note-full" style="border-style:solid"><b>Pre-cutover validation:</b>&nbsp; run <b>DEA</b> (Database Experimentation Assistant) capture + replay for performance-sensitive workloads.</div>
+  </section>
+
+  <!-- STEP D : cost / program -->
+  <section>
+    <div class="shead"><span class="badge">D</span><h2>Cost levers, Microsoft program &amp; the assessment tool to run next</h2></div>
+    <div class="grid3">
+      <div class="panel"><h3><span class="dot"></span>Cost levers</h3>
+        <div class="rows">
+          <div class="r"><b>Azure Hybrid Benefit</b> — SQL DB (vCore) · SQL MI · SQL VM &nbsp;<span class="pill p-no">not Fabric SQL DB</span></div>
+          <div class="r"><b>ESU</b> — free on Azure VM (3 yrs) · on-prem only via Azure Arc (paid) — changes the stay-vs-migrate math</div>
+          <div class="r"><b>Sizing</b> — never average CPU: Perfmon baseline ≥ 7 days + ~20% headroom</div>
+          <div class="r g">AHB + reservations + ESU → up to ~85% savings</div>
+        </div></div>
+      <div class="panel"><h3><img src="icons/azure-migrate.svg" alt=""/>Assess / orchestrate (control plane)</h3>
+        <div class="rows">
+          <div class="r"><b>SSMS 22 Migration Component</b> — DBA-first, Windows</div>
+          <div class="r"><b>SQL migration in Azure Arc</b> — Copilot recommends MI Link vs LRS</div>
+          <div class="r"><b>Azure Migrate</b> — estate discovery / business case</div>
+          <div class="r"><b>modern DMS + Az.DataMigration</b> — scale / CI-CD (beyond ~50 DBs)</div>
+          <div class="r"><b>SSMA</b> — heterogeneous sources only (Oracle/Sybase/DB2…)</div>
+        </div></div>
+      <div class="panel"><h3><span class="dot" style="background:#107C10"></span>Program fit &amp; SLA</h3>
+        <div class="rows">
+          <div class="r"><b>Cloud Accelerate Factory</b> — zero-cost delivery</div>
+          <div class="r"><b>SQL in a Day</b> — EMEA EPS Data Motion</div>
+          <div class="r"><b>Azure Accelerate / FastTrack</b></div>
+          <div class="r g">SLA: MI BC 99.99% · SQL DB BC 99.995% (ZR) · Hyperscale 99.99% · SQL VM depends on the AG</div>
+        </div></div>
+    </div>
+  </section>
+
+  <!-- guardrail : retired -->
+  <section class="retired">
+    <div class="shead"><span class="badge" style="background:var(--red)">✕</span><h2>Retired — never recommend (use the replacement)</h2></div>
+    <div class="rgrid">
+      <div class="rc"><div class="o">Data Migration Assistant (DMA)</div><div class="dt">retired 16 Jul 2025</div><div class="u">→ <b>SSMS 22 / Arc / Azure Migrate</b></div></div>
+      <div class="rc"><div class="o">Azure Data Studio + SQL Migration ext.</div><div class="dt">retired 28 Feb 2026</div><div class="u">→ <b>VS Code MSSQL · SSMS 22 · DMS</b></div></div>
+      <div class="rc"><div class="o">Azure DMS classic — SQL scenarios</div><div class="dt">retired 15 Mar 2026</div><div class="u">→ <b>modern DMS</b> (portal / PS / CLI)</div></div>
+      <div class="rc"><div class="o">SQL Data Sync</div><div class="dt">retires 30 Sep 2027</div><div class="u">→ <b>ADF · txn replication · AG</b></div></div>
+    </div>
+  </section>
+
+  <!-- footer : tie-breakers + cross-cloud -->
+  <div class="foot">
+    <div class="panel"><h3><span class="dot"></span>Tie-breakers by workload profile</h3>
+      <table class="tbtable">
+        <tr><td>Banking / regulated / strong on-prem</td><td>SQL VM + ESU via Arc, or AVS</td></tr>
+        <tr><td>Heavy legacy ERP (SAP, on-prem Dynamics)</td><td>SQL MI or SQL VM</td></tr>
+        <tr><td>Multi-tenant SaaS ISV</td><td>SQL DB Hyperscale / Elastic Pool</td></tr>
+        <tr><td>Modern microservice</td><td>SQL DB Serverless</td></tr>
+        <tr><td>Fabric-native / analytics-first</td><td>SQL DB in Fabric + Mirroring</td></tr>
+        <tr><td>Edge / sovereign / multi-cloud</td><td>Arc-enabled SQL MI on local AKS</td></tr>
+        <tr><td>Short-term data-center exit</td><td>AVS + VMware HCX</td></tr>
+        <tr><td>Off end-of-support, minimal change</td><td>SQL VM "as-is" + free ESU</td></tr>
+      </table></div>
+    <div class="panel"><h3><span class="dot" style="background:#8661C5"></span>Cross-cloud sources &amp; reverse path</h3>
+      <div class="rows">
+        <div class="r"><b>Supported sources</b> for DMS / LRS / MI Link / native restore:</div>
+        <div class="r g">AWS EC2 · AWS RDS for SQL Server · GCP Compute Engine · GCP Cloud SQL for SQL Server</div>
+        <div class="r" style="margin-top:6px"><b>Reverse / exit</b></div>
+        <div class="r g">MI → SQL Server 2022/2025 via MI Link failback (trivial) · SQL DB → SQL Server via BACPAC + scripts (heavy)</div>
+      </div></div>
+  </div>
+
+  <div class="src-final">Official Microsoft Azure architecture icons &amp; Microsoft Fabric icons, used per their diagram-usage terms. Step A is a real first-match-wins decision tree (diamonds + Yes/No arrows) with the Fabric gate placed before the SQL DB fall-through; Steps B–D, the retirements guardrail, tie-breakers and cross-cloud paths complete the engine. · github.com/fredgis/FY27SQLMotion</div>
+
+</div>
+</body>
+</html>

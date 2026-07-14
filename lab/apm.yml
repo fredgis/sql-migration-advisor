@@ -1,0 +1,16 @@
+name: HVE-SQL
+version: 1.0.0
+description: APM project for HVE-SQL
+author: Developer
+# Which agent platforms to deploy to.
+# Resolution order: --target flag > this field > auto-detect from filesystem.
+# Accepted values: vscode, agents, copilot, claude, cursor, opencode, codex,
+# gemini, antigravity, windsurf, kiro, agent-skills, all
+targets:
+  - copilot
+dependencies:
+  apm:
+    - Peter-N91/hve-squad#v0.8.23
+  mcp: []
+includes: auto
+scripts: {}

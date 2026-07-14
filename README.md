@@ -13,6 +13,10 @@
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
 </p>
 
+<p align="center">
+  <img alt="One SQL Server, eight ways to Azure — the sql-migration-advisor skill" src="images/sql-migration-advisor-hero.png" width="100%">
+</p>
+
 ---
 
 Ask Copilot *"migrate a SQL Server environment to Azure"* (or *"migrer SQL Server vers Azure"*).
@@ -45,6 +49,7 @@ skill fetches live so version gates, retirements and previews are always current
 | [`examples/sample-recommendation.md`](examples/sample-recommendation.md) | A worked end-to-end example (SQL 2014 → Azure SQL MI via LRS). |
 | [`docs/sql-server-to-azure-migration.md`](docs/sql-server-to-azure-migration.md) | The knowledge base — every target family, method, tool, and commercial lever, with Microsoft Learn links. |
 | [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) | The same knowledge base as a branded, partner-ready PDF. |
+| [`lab/`](lab/) | A self-contained, hands-on lab: take a legacy SQL Server 2016 workload to a SQL Server on Azure VM, driven by the advisor and the HVE Squad (VM-to-VM migration). |
 
 The skill is prompt-driven markdown — no build step, no dependencies.
 
@@ -95,18 +100,28 @@ See [`examples/sample-recommendation.md`](examples/sample-recommendation.md) for
 
 ---
 
-## The decision tree at a glance
+## Poster Skill AI
 
-The target decision (Step A of [`reference/decision-rules.md`](reference/decision-rules.md)) as
-a single picture — the questions the advisor asks, and the Azure destination each answer leads
-to, with the official Azure service icons:
+The whole engine on one page — not just the target choice, but everything the skill reasons
+through: the **agentic loop** (grounds itself in the live knowledge base, interviews, reasons
+deterministically, guards itself, then acts), the **~10-question interview**, **Step A** target
+decision tree, **Step B** method per target with the gates that make or break it, **Step C**
+cutover downtime classes + blockers & remediations, and **Step D** cost levers, Microsoft
+program and the assessment tool to run next — with the official Azure &amp; Microsoft Fabric
+service icons.
 
-![SQL Server to Azure — target decision tree](docs/decision-tree.png)
+[![sql-migration-advisor — the complete AI decision logic](docs/sql-migration-advisor-poster.png)](docs/sql-migration-advisor-poster.png)
 
-Regenerate it with `node tools/diagram/build.mjs` (downloads the official
+The hero banner above is the 15-second version — one SQL Server hub, eight Azure destinations,
+each spoke labelled with its migration method.
+
+Both are reproducible: `node tools/diagram/build.mjs` downloads the official
 [Azure](https://learn.microsoft.com/en-us/azure/architecture/icons/) /
-[Fabric](https://learn.microsoft.com/en-us/fabric/fundamentals/icons) icon packs, then renders
-[`tools/diagram/decision-tree.html`](tools/diagram/decision-tree.html) with headless Chrome).
+[Fabric](https://learn.microsoft.com/en-us/fabric/fundamentals/icons) icon packs (used per
+their diagram terms, not redistributed), then renders
+[`tools/diagram/poster.html`](tools/diagram/poster.html),
+[`tools/diagram/radial.html`](tools/diagram/radial.html) and
+[`tools/diagram/hero.html`](tools/diagram/hero.html) with headless Chrome.
 
 ---
 

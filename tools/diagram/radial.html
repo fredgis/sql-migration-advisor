@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>SQL Server → Azure — radial</title>
+<style>
+  :root{
+    --blue:#0078D4; --dark:#0B4A8B; --purple:#8661C5; --fabric:#12B886;
+    --ink:#1B1A19; --sub:#5A5A5A; --line:#E1DFDD; --bg:#F5F8FB;
+    --shadow:0 1px 3px rgba(0,0,0,.08),0 8px 22px rgba(0,60,120,.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:"Segoe UI","Segoe UI Web",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;}
+  .page{width:1600px;margin:0 auto;padding:30px 40px 26px;}
+  .rtitle{text-align:center;margin-bottom:6px;}
+  .rtitle h1{font-size:36px;font-weight:800;margin:0 0 6px;letter-spacing:.2px;
+    background:linear-gradient(90deg,#0B3B6F,#0078D4);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .rtitle p{font-size:15px;color:var(--sub);margin:0;}
+  .rtitle p b{color:var(--ink);}
+  .brandbar{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:10px;}
+  .brandbar .b{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--sub);}
+  .brandbar img{width:20px;height:20px;}
+  .sq{display:inline-grid;grid-template-columns:9px 9px;grid-template-rows:9px 9px;gap:2px;vertical-align:-2px;}
+  .sq i{display:block;width:9px;height:9px;} .sq .a{background:#F25022;} .sq .b{background:#7FBA00;} .sq .c{background:#00A4EF;} .sq .d{background:#FFB900;}
+
+  .radial{position:relative;width:1520px;height:1080px;margin:2px auto 0;}
+  .radial svg.spokes{position:absolute;inset:0;width:1520px;height:1080px;z-index:1;}
+
+  .hub{position:absolute;left:635px;top:475px;width:250px;height:250px;border-radius:50%;z-index:4;
+    background:radial-gradient(circle at 40% 32%,#2b93ea,#0B3B6F 78%);color:#fff;border:7px solid #fff;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    box-shadow:0 12px 34px rgba(11,59,111,.38);}
+  .hub img{width:76px;height:76px;filter:drop-shadow(0 2px 5px rgba(0,0,0,.35));}
+  .hub .hn{font-size:27px;font-weight:800;line-height:1;margin-top:4px;}
+  .hub .hs{font-size:12.5px;opacity:.92;}
+  .hub .ht{font-size:11px;opacity:.8;background:rgba(255,255,255,.16);border-radius:999px;padding:2px 9px;margin-top:3px;}
+
+  .node{position:absolute;width:246px;height:90px;background:#fff;border:1px solid var(--line);
+    border-radius:14px;box-shadow:var(--shadow);display:flex;gap:12px;align-items:center;padding:10px 14px;z-index:3;
+    border-top:4px solid var(--ac);}
+  .node img{width:44px;height:44px;flex:none;object-fit:contain;}
+  .node .nm{font-weight:700;font-size:15.5px;line-height:1.12;}
+  .node .wh{font-size:12px;color:var(--sub);margin-top:3px;}
+  .node .cat{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+    color:var(--ac);margin-top:4px;}
+
+  .mp{position:absolute;transform:translate(-50%,-50%);z-index:3;background:#fff;border:1.5px solid var(--ac);
+    color:#2b2b2b;border-radius:999px;padding:3px 11px;font-size:11.5px;font-weight:600;white-space:nowrap;box-shadow:var(--shadow);}
+
+  .legend{display:flex;justify-content:center;gap:26px;margin-top:6px;}
+  .lg{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);}
+  .lg .sw{width:22px;height:8px;border-radius:4px;}
+  .footer{text-align:center;font-size:12px;color:var(--sub);margin-top:12px;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="rtitle">
+    <h1>One SQL Server — eight ways to Azure</h1>
+    <p>Choose the destination by <b>feature dependencies · management model · downtime · analytics need</b> — the label on each spoke is the migration method. First match wins.</p>
+    <div class="brandbar">
+      <span class="b"><span class="sq"><i class="a"></i><i class="b"></i><i class="c"></i><i class="d"></i></span> Microsoft Azure</span>
+      <span class="b"><img src="icons/fabric.svg" alt=""/> Microsoft Fabric</span>
+      <span class="b">Sources: on-prem · AWS EC2/RDS · GCP CE/Cloud SQL</span>
+    </div>
+  </div>
+
+  <div class="radial">
+    <svg class="spokes" viewBox="0 0 1520 1080">
+      <defs>
+        <marker id="mB" markerWidth="10" markerHeight="10" refX="7.5" refY="4.5" orient="auto"><path d="M0,0 L10,4.5 L0,9 z" fill="#0078D4"/></marker>
+        <marker id="mD" markerWidth="10" markerHeight="10" refX="7.5" refY="4.5" orient="auto"><path d="M0,0 L10,4.5 L0,9 z" fill="#0B4A8B"/></marker>
+        <marker id="mP" markerWidth="10" markerHeight="10" refX="7.5" refY="4.5" orient="auto"><path d="M0,0 L10,4.5 L0,9 z" fill="#8661C5"/></marker>
+      </defs>
+      <!-- orbit -->
+      <circle cx="760" cy="600" r="380" fill="none" stroke="#D3E0EC" stroke-width="2" stroke-dasharray="2 9"/>
+      <!-- spokes : center(760,600) outwards, arrow to node -->
+      <path d="M760,468 L760,350"   stroke="#0078D4" stroke-width="3" marker-end="url(#mB)"/>
+      <path d="M853,507 L937,423"   stroke="#0078D4" stroke-width="3" marker-end="url(#mB)"/>
+      <path d="M892,600 L1010,600"  stroke="#0078D4" stroke-width="3" marker-end="url(#mB)"/>
+      <path d="M853,693 L937,777"   stroke="#8661C5" stroke-width="3" marker-end="url(#mP)"/>
+      <path d="M760,732 L760,850"   stroke="#8661C5" stroke-width="3" marker-end="url(#mP)"/>
+      <path d="M667,693 L583,777"   stroke="#8661C5" stroke-width="3" marker-end="url(#mP)"/>
+      <path d="M628,600 L510,600"   stroke="#0B4A8B" stroke-width="3" marker-end="url(#mD)"/>
+      <path d="M667,507 L583,423"   stroke="#0B4A8B" stroke-width="3" marker-end="url(#mD)"/>
+    </svg>
+
+    <!-- hub -->
+    <div class="hub">
+      <img src="icons/sql-server.svg" alt="SQL Server"/>
+      <div class="hn">SQL Server</div>
+      <div class="hs">2008 → 2025</div>
+      <div class="ht">on-prem · AWS · GCP</div>
+    </div>
+
+    <!-- method pills -->
+    <div class="mp" style="left:760px;top:410px;--ac:#0078D4">MI Link · LRS · .bak</div>
+    <div class="mp" style="left:894px;top:466px;--ac:#0078D4">DMS · BACPAC</div>
+    <div class="mp" style="left:950px;top:600px;--ac:#0078D4">Migration Assistant</div>
+    <div class="mp" style="left:894px;top:734px;--ac:#8661C5">Arc onboard · restore</div>
+    <div class="mp" style="left:760px;top:790px;--ac:#8661C5">image · restore</div>
+    <div class="mp" style="left:626px;top:734px;--ac:#8661C5">Arc agent — stay</div>
+    <div class="mp" style="left:570px;top:600px;--ac:#0B4A8B">HCX / vMotion</div>
+    <div class="mp" style="left:626px;top:466px;--ac:#0B4A8B">Distributed AG</div>
+
+    <!-- nodes -->
+    <div class="node" style="left:638px;top:176px;--ac:#0078D4">
+      <img src="icons/sql-mi.svg" alt=""/>
+      <div><div class="nm">Azure SQL Managed Instance</div><div class="wh">Managed lift-and-shift</div><span class="cat">PaaS</span></div></div>
+
+    <div class="node" style="left:907px;top:287px;--ac:#0078D4">
+      <img src="icons/sql-database.svg" alt=""/>
+      <div><div class="nm">Azure SQL Database</div><div class="wh">Cloud-native apps · Hyperscale</div><span class="cat">PaaS</span></div></div>
+
+    <div class="node" style="left:1018px;top:556px;--ac:#12B886">
+      <img src="icons/fabric.svg" alt=""/>
+      <div><div class="nm">SQL database in Fabric</div><div class="wh">Analytics-native · GA</div><span class="cat" style="--ac:#12B886">Microsoft Fabric</span></div></div>
+
+    <div class="node" style="left:907px;top:825px;--ac:#8661C5">
+      <img src="icons/arc-sql-mi.svg" alt=""/>
+      <div><div class="nm">Arc-enabled SQL MI</div><div class="wh">Managed on your Kubernetes</div><span class="cat">Hybrid / edge</span></div></div>
+
+    <div class="node" style="left:638px;top:936px;--ac:#8661C5">
+      <img src="icons/containers.svg" alt=""/>
+      <div><div class="nm">SQL Server in containers</div><div class="wh">Dev / test / edge · full DIY</div><span class="cat">Hybrid / edge</span></div></div>
+
+    <div class="node" style="left:369px;top:825px;--ac:#8661C5">
+      <img src="icons/arc-sql-server.svg" alt=""/>
+      <div><div class="nm">SQL Server + Azure Arc</div><div class="wh">Stay put · govern · ESU</div><span class="cat">Hybrid / in-place</span></div></div>
+
+    <div class="node" style="left:258px;top:556px;--ac:#0B4A8B">
+      <img src="icons/avs.svg" alt=""/>
+      <div><div class="nm">Azure VMware Solution</div><div class="wh">VMware data-center exit</div><span class="cat">IaaS</span></div></div>
+
+    <div class="node" style="left:369px;top:287px;--ac:#0B4A8B">
+      <img src="icons/sql-vm.svg" alt=""/>
+      <div><div class="nm">SQL Server on Azure VM</div><div class="wh">Full OS / engine control</div><span class="cat">IaaS</span></div></div>
+  </div>
+
+  <div class="legend">
+    <div class="lg"><span class="sw" style="background:#0078D4"></span>PaaS — fully managed (Microsoft runs it)</div>
+    <div class="lg"><span class="sw" style="background:#0B4A8B"></span>IaaS — you keep the VM / host</div>
+    <div class="lg"><span class="sw" style="background:#8661C5"></span>Hybrid / edge — Arc &amp; containers</div>
+    <div class="lg"><span class="sw" style="background:#12B886"></span>Analytics-native — Microsoft Fabric</div>
+  </div>
+  <div class="footer">Official Microsoft Azure &amp; Microsoft Fabric service icons · sql-migration-advisor knowledge base (v1.2, July 2026) · the spoke label is the primary migration method — see the full decision tree for gates, blockers &amp; cost levers.</div>
+
+</div>
+</body>
+</html>
