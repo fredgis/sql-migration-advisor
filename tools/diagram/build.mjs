@@ -89,6 +89,7 @@ const pages = [
   { html: 'poster.html', out: join(repo, 'docs', 'sql-migration-advisor-poster.png'), w: 1600, h: 3677 },
   { html: 'radial.html', out: join(repo, 'images', 'sql-migration-advisor-radial.png'), w: 1600, h: 1297 },
   { html: 'hero.html', out: join(repo, 'images', 'sql-migration-advisor-hero.png'), w: 1440, h: 810 },
+  { html: 'social.html', out: join(repo, 'images', 'sql-migration-advisor-linkedin.png'), w: 1200, h: 627 },
 ];
 for (const p of pages) {
   mkdirSync(dirname(p.out), { recursive: true });
