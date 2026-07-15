@@ -143,7 +143,7 @@ BACPAC, bcp, detach/attach, ADF, Data Box}.
 
 **Assessment / control plane to run next (pick by audience):**
 - DBA-first, Windows → **SSMS 22 Migration Component** (assess + launch path).
-- Any Arc-enabled source → **SQL Server migration in Azure Arc** (portal, **Copilot** recommends MI Link vs LRS).
+- Any Arc-enabled source → **SQL Server migration in Azure Arc** (portal, **Copilot**-assisted). Targets **Azure SQL MI** (MI Link / LRS) and — **GA since July 2026** — **SQL Server on Azure VM** (native backup/restore lift-and-shift), a phased on-ramp to MI / SQL DB later.
 - Estate scale / business case → **Azure Migrate** (appliance / import / Arc-based discovery).
 - Orchestrate at scale / CI-CD → **modern Azure DMS** + **`Az.DataMigration`** (only viable path beyond ~50 DBs).
 - **Heterogeneous source** (Oracle/Sybase/DB2/MySQL/Access) → **SSMA** (not for homogeneous SQL→SQL).

@@ -6,13 +6,13 @@
 >
 > **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of July 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
 >
-> **Version.** v1.2 — July 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
+> **Version.** v1.3 — July 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**
 > - **Data Migration Assistant (DMA)** is RETIRED (16 July 2025).
 > - **Azure Data Studio (ADS)** and its Azure SQL Migration extension are RETIRED (28 February 2026).
-> - The new entry point is the **SSMS 22 Migration Component** (assess + migrate from SSMS), complemented by SQL Server migration in Azure Arc (portal, with Copilot) and Azure Database Migration Service (DMS).
+> - The new entry point is the **SSMS 22 Migration Component** (assess + migrate from SSMS), complemented by SQL Server migration in Azure Arc (portal, with Copilot — now **GA to both Azure SQL MI and SQL Server on Azure VM**) and Azure Database Migration Service (DMS).
 > - Modern **DMS** supports offline-only migration to Azure SQL Database (online / minimal-downtime is available for Managed Instance and SQL VM targets, per the [DMS supported-scenarios](https://learn.microsoft.com/en-us/azure/dms/resource-scenario-status) matrix).
 > - **Azure DMS *classic*** SQL Server scenarios are RETIRED (15 March 2026) — use the modern DMS (an Azure resource, via portal / PowerShell / CLI).
 
@@ -133,7 +133,7 @@ flowchart TD
 | 5 | SQL database in Fabric *(Preview for migration)* | PaaS | Fabric-native OLTP unified with OneLake. Migrate via Fabric Migration Assistant (DACPAC schema ≤ 20 MB, on-prem data gateway only, no Private Link). Not an enterprise OLTP target yet. | Subset; preview | [Migration Assistant](https://learn.microsoft.com/en-us/fabric/database/sql/migration-assistant) |
 | 6 | SQL Server in containers — AKS / ARO / ACI / ACA | Container | Full control of the engine in a container (dev/test, edge, custom). Pod + PersistentVolume; HA via the Kubernetes scheduler. | High — SQL on Linux (no FILESTREAM/FileTable, SSRS/SSAS/SSIS, ML Services; SQL Agent off by default) | [SQL on Kubernetes](https://learn.microsoft.com/en-us/sql/linux/quickstart-sql-server-containers-kubernetes) |
 | 7 | Azure Arc-enabled SQL Managed Instance | Container (PaaS) | Managed SQL MI engine on any Kubernetes (AKS, ARO, EKS, GKE, OpenShift) via `kubectl`+CRD. Sovereignty / edge / multi-cloud. | ~Same as SQL MI | [create Arc SQL MI](https://learn.microsoft.com/en-us/azure/azure-arc/data/create-sql-managed-instance) |
-| 8 | SQL Server enabled by Azure Arc | Hybrid (control plane) | Not a runtime target — the bootstrap pillar: connect on-prem SQL *without touching it* → weekly continuous assessment, blocker detection, ESU, PAYG (OpEx) licensing, governance, and a portal Copilot-assisted Database migration to MI/VM (MI Link / LRS). Sources SQL 2012+. | n/a | [Arc migration](https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migration-overview) |
+| 8 | SQL Server enabled by Azure Arc | Hybrid (control plane) | Not a runtime target — the bootstrap pillar: connect on-prem SQL *without touching it* → weekly continuous assessment, blocker detection, ESU, PAYG (OpEx) licensing, governance, and a portal Copilot-assisted Database migration — to **Azure SQL MI** (MI Link / LRS) and, **GA since July 2026**, to **SQL Server on Azure VM** (native backup/restore). Sources SQL 2012+. | n/a | [Arc migration](https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migration-overview) |
 
 > **Lift & shift is not VM-only.** Both SQL Server on Azure VM (IaaS) and Azure SQL Managed Instance (managed PaaS) are valid lift-and-shift targets. Since 2024, MI compatibility (SQL Agent, cross-DB queries, linked servers…) makes it the default *managed* lift-and-shift.
 
@@ -144,7 +144,7 @@ flowchart TD
 | Tool / experience | Role | Status (2026) | Notes |
 | --- | --- | --- | --- |
 | [Azure Migrate](https://learn.microsoft.com/en-us/azure/migrate/how-to-create-azure-sql-assessment) | Discovery / assessment / sizing / business case at scale | GA (+ Arc-based agentless discovery, Preview) | Appliance (VMware/Hyper-V/Physical) or import-based or Arc-based. Right-sizes SQL DB / MI / VM. |
-| [SQL Server migration in Azure Arc](https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migration-overview) | Portal-driven assess + migrate for any Arc-enabled SQL Server | GA; MI target GA, VM target Preview | Copilot recommends method (MI Link vs LRS); continuous assessment; supports sources from SQL Server 2012+. |
+| [SQL Server migration in Azure Arc](https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migration-overview) | Portal-driven assess + migrate for any Arc-enabled SQL Server | GA; **MI and VM targets both GA** | Copilot-assisted; targets **Azure SQL MI** (MI Link / LRS) and — **GA July 2026** — **SQL Server on Azure VM** ([lift-and-shift, native backup/restore](https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migrate-to-sql-server-on-azure-vms)); continuous assessment; sources SQL Server 2012+. |
 | [SSMS 22 Migration Component](https://learn.microsoft.com/en-us/sql/ssms/sql-server-management-studio-ssms) | DBA-first entry point: assess + launch the right path from SSMS | GA (Windows-only) | Replaces DMA / ADS extension. Backup/restore, MI Link, DMS. Azure SQL assessment capability expected ~Q3 CY2026 *(public roadmap, subject to change)*. |
 | [Azure DMS (modern)](https://learn.microsoft.com/en-us/azure/dms/dms-overview) | Managed migration orchestration (Azure resource · portal / PowerShell / CLI) | GA | Use the modern DMS — DMS *classic* SQL scenarios retired 15 Mar 2026. Offline-only to Azure SQL DB; online/minimal-downtime to MI / SQL VM (MI Link preferred for MI). |
 | [PowerShell `Az.DataMigration` / Azure CLI](https://learn.microsoft.com/en-us/powershell/module/az.datamigration/) | Automate DMS at scale (CI/CD) | GA | Often the only viable path beyond ~50 databases. |
@@ -161,6 +161,7 @@ The Microsoft-recommended tool per source/target combination (homogeneous and he
 | Source | Target | Assess | Data migration | Schema |
 | --- | --- | --- | --- | --- |
 | SQL Server (Arc-enabled) | Azure SQL MI | SQL migration in Azure Arc | SQL migration in Azure Arc | Not needed |
+| SQL Server (Arc-enabled) | SQL Server on Azure VM | SQL migration in Azure Arc | SQL migration in Azure Arc (native backup/restore) | Not needed |
 | SQL Server (not Arc) | Azure SQL VM / MI | Azure Migrate | DMS | Not needed |
 | SQL Server | Azure SQL DB | Azure Migrate | STRIIM (online) · DMS (offline) | DMS |
 | Sybase | Azure SQL | Azure Migrate | STRIIM | SSMA for Sybase |
@@ -179,6 +180,7 @@ Standardized columns (Microsoft Learn style): **Method · Min source · Target/m
 | Method | Min source | Downtime | Key constraints / notes |
 | --- | --- | --- | --- |
 | [Azure Migrate (lift & shift)](https://learn.microsoft.com/en-us/azure/migrate/migrate-services-overview) | SQL 2008 SP4 | Online (replication) | Whole VM/instance, incl. FCI and AG; up to ~35,000 VMs. |
+| [SQL migration in Azure Arc → SQL VM](https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migrate-to-sql-server-on-azure-vms) | SQL 2012 (Arc-enabled) | Offline (backup/restore) | **GA (July 2026):** portal-driven, Copilot-assisted lift-and-shift for Arc-enabled sources — provisions the target Azure VM and runs native backup/restore. A phased on-ramp: rehost now, modernize to SQL MI / SQL DB later. |
 | [Distributed availability group (DAG)](https://learn.microsoft.com/en-us/data-migration/sql-server/virtual-machines/availability-group-migrate) | SQL 2016 | Near-zero | Reuse on-prem AG; needs AD Domain Services (or workgroup AG + certs) and ports open. |
 | [Backup to a file (.bak) + copy](https://learn.microsoft.com/en-us/data-migration/sql-server/virtual-machines/guide) | SQL 2008 SP4 | Offline | Simple, supports > 1 TB; use compression / multi-file split for WAN. |
 | [Backup to URL (Azure Blob)](https://learn.microsoft.com/en-us/sql/relational-databases/backup-restore/sql-server-backup-to-url) | SQL 2014 | Offline | 12.8 TB (SQL 2016+) / 1 TB otherwise; for > 1 TB use local backup + AzCopy. |
@@ -492,6 +494,8 @@ flowchart LR
 **Control planes / tools**
 - Azure Migrate (SQL assessment) — <https://learn.microsoft.com/en-us/azure/migrate/how-to-create-azure-sql-assessment>
 - SQL Server migration in Azure Arc — <https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migration-overview>
+- SQL migration to SQL Server on Azure VMs in Azure Arc (GA how-to) — <https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migrate-to-sql-server-on-azure-vms?view=sql-server-ver17>
+- GA announcement — SQL migration to SQL Server on Azure Virtual Machines in Azure Arc — <https://techcommunity.microsoft.com/blog/microsoftdatamigration/generally-available-sql-migration-to-sql-server-on-azure-virtual-machines-in-azu/4536940>
 - SSMS (download/overview) — <https://learn.microsoft.com/en-us/sql/ssms/sql-server-management-studio-ssms>
 - Azure Database Migration Service — <https://learn.microsoft.com/en-us/azure/dms/dms-overview>
 - DMS supported scenarios (offline/online per target) — <https://learn.microsoft.com/en-us/azure/dms/resource-scenario-status>
@@ -557,13 +561,14 @@ flowchart LR
 
 ## 17. Document version & changelog
 
-Current version: **v1.2** (2026-07-03).
+Current version: **v1.3** (2026-07-15).
 
 <details>
-<summary><b>Version history</b> (current: v1.2)</summary>
+<summary><b>Version history</b> (current: v1.3)</summary>
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v1.3 | 2026-07-15 | **SQL migration to SQL Server on Azure VMs in Azure Arc is now GA** (public preview since April 2026). Updated the Arc control-plane row (Azure SQL MI + SQL VM targets both GA), the 2025–2026 tooling-reset note, the source→target matrix (added Arc-enabled → SQL VM), and §5.1 (Arc guided VM lift-and-shift). Added the GA announcement and the Learn how-to links (§16). |
 | v1.2 | 2026-07-03 | Corrected two moved Microsoft Learn links: Smart Bulk Copy (now the Azure-Samples GitHub repo) and Migrate to Arc-enabled SQL MI (renamed to azure-arc/data/migrate-to-managed-instance). Added the weekly link + news freshness automation (GitHub Action). |
 | v1.1 | 2026-07-03 | Azure SQL MI **Next-gen General Purpose** re-classified **preview → GA** (GA since Nov 2025). Dates refreshed to July 2026 (verification note, lifecycle status column, sources footer). All ~45 Microsoft Learn links re-verified. Re-confirmed still-current: Fabric Migration Assistant remains Preview (DACPAC ≤ 20 MB, on-prem gateway only, no Private Link); SSMS 22 Azure SQL assessment still roadmap ~Q3 CY2026; SQL Server 2016 ESU free on Azure from 14 Jul 2026; MI Link GA with SQL Server 2025 support + reverse failback to 2022/2025. |
 | v1.0 | 2026-06 | Initial published knowledge base: 8 target families (SQL VM, AVS, SQL MI, SQL DB, Fabric SQL DB, containers AKS/ARO/ACI/ACA, Arc-enabled SQL MI, Arc in-place); targets/control-planes/methods taxonomy; per-target method tables (min source · downtime · constraints); 2025–2026 tooling reset (DMA, ADS, DMS classic, SQL Data Sync retirements); tooling-by-source matrix (incl. STRIIM online to Azure SQL DB); downtime strategy; summary & decision matrices; ancillary components; cross-cloud & reverse migration; third-party alternatives; field insights; commercial & funding levers (AHB / ESU / PAYG · Savings plan for databases · Azure Accelerate); FY27 SQL Motion context & AI Migration Agent I/O contract. |
