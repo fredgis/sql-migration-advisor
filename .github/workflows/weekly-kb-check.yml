@@ -8,6 +8,8 @@ name: Weekly KB freshness check
 #   - Settings → Actions → General → "Allow GitHub Actions to create and approve
 #     pull requests" must be enabled (for the automated PR).
 #   - GitHub Models is used via the built-in GITHUB_TOKEN (permissions: models: read).
+#   - The freshness review runs on GPT-5 (GitHub Models) over the FULL knowledge base
+#     AND the full decision tree, so it can also catch drift between the two.
 
 on:
   schedule:
@@ -70,18 +72,21 @@ jobs:
       - name: Build review prompt
         run: node tools/weekly-check/build-prompt.mjs > prompt.txt
 
-      - name: AI review (GitHub Models)
+      - name: AI review (GitHub Models · GPT-5)
         id: ai
         continue-on-error: true
         uses: actions/ai-inference@v2
         with:
-          model: openai/gpt-4o
+          model: openai/gpt-5
           system-prompt: >-
-            You are a meticulous technical editor maintaining a SQL Server to Azure
-            migration knowledge base. You only recommend changes that are accurate and
-            directly relevant. You always answer with a single JSON object and nothing else.
+            You are a meticulous technical editor who maintains a SQL Server to Azure
+            migration knowledge base AND its distilled decision tree (an offline mirror
+            that must stay consistent with the knowledge base). Review BOTH documents in
+            full. You only recommend changes that are accurate and directly relevant, and
+            you flag any drift between the two. You always answer with a single JSON object
+            and nothing else.
           prompt-file: prompt.txt
-          max-completion-tokens: '900'
+          max-completion-tokens: '8000'
 
       - name: Save AI response
         if: always()
