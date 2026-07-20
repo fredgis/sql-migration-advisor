@@ -6,7 +6,7 @@
 >
 > **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of July 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
 >
-> **Version.** v1.3 — July 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
+> **Version.** v1.4 — July 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**
@@ -561,13 +561,14 @@ flowchart LR
 
 ## 17. Document version & changelog
 
-Current version: **v1.3** (2026-07-15).
+Current version: **v1.4** (2026-07-20).
 
 <details>
-<summary><b>Version history</b> (current: v1.3)</summary>
+<summary><b>Version history</b> (current: v1.4)</summary>
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v1.4 | 2026-07-20 | Added GA announcement of SQL Migration to SQL Server on Azure VMs in Azure Arc. |
 | v1.3 | 2026-07-15 | **SQL migration to SQL Server on Azure VMs in Azure Arc is now GA** (public preview since April 2026). Updated the Arc control-plane row (Azure SQL MI + SQL VM targets both GA), the 2025–2026 tooling-reset note, the source→target matrix (added Arc-enabled → SQL VM), and §5.1 (Arc guided VM lift-and-shift). Added the GA announcement and the Learn how-to links (§16). |
 | v1.2 | 2026-07-03 | Corrected two moved Microsoft Learn links: Smart Bulk Copy (now the Azure-Samples GitHub repo) and Migrate to Arc-enabled SQL MI (renamed to azure-arc/data/migrate-to-managed-instance). Added the weekly link + news freshness automation (GitHub Action). |
 | v1.1 | 2026-07-03 | Azure SQL MI **Next-gen General Purpose** re-classified **preview → GA** (GA since Nov 2025). Dates refreshed to July 2026 (verification note, lifecycle status column, sources footer). All ~45 Microsoft Learn links re-verified. Re-confirmed still-current: Fabric Migration Assistant remains Preview (DACPAC ≤ 20 MB, on-prem gateway only, no Private Link); SSMS 22 Azure SQL assessment still roadmap ~Q3 CY2026; SQL Server 2016 ESU free on Azure from 14 Jul 2026; MI Link GA with SQL Server 2025 support + reverse failback to 2022/2025. |

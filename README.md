@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Knowledge base v1.3" src="https://img.shields.io/badge/knowledge%20base-v1.3-2b8a3e">
+  <img alt="Knowledge base v1.4" src="https://img.shields.io/badge/knowledge%20base-v1.4-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
 </p>
 
@@ -151,7 +151,7 @@ Mermaid decision diagrams. The `SKILL.md` mirrors its **AI Migration Agent I/O c
 
 The same knowledge base ships as a polished, branded PDF —
 [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (~18 pages,
-v1.3, July 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
+v1.4, July 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
 
@@ -204,10 +204,11 @@ so the advisor stays accurate. Last verified: July 2026.
 
 <!-- CHANGELOG:START -->
 <details>
-<summary><b>📓 Changelog</b> — current: <b>v1.3</b> (July 2026)</summary>
+<summary><b>📓 Changelog</b> — current: <b>v1.4</b> (July 2026)</summary>
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| v1.4 | 2026-07-20 | Added GA announcement of SQL Migration to SQL Server on Azure VMs in Azure Arc. |
 | v1.3 | 2026-07-15 | **SQL migration to SQL Server on Azure VMs in Azure Arc is now GA** (was public preview since April 2026). Refreshed the Arc control-plane entry (Azure SQL MI + SQL VM targets both GA), the source→target matrix, and §5.1; added the GA announcement + Learn how-to links. |
 | v1.2 | 2026-07-03 | Fixed 2 moved Microsoft Learn links (Smart Bulk Copy, Migrate to Arc-enabled SQL MI); added the weekly link + news freshness automation. |
 | v1.1 | 2026-07-03 | Azure SQL MI Next-gen General Purpose reclassified preview → GA; dates refreshed to July 2026; all ~45 Microsoft Learn links re-verified. |
