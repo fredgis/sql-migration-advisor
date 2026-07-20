@@ -65,13 +65,31 @@ try {
   if (!DRY) fs.writeFileSync(README, rd);
 } catch (e) { console.error('README sync skipped:', e.message); }
 
+// ---- keep the offline decision-tree mirror's freshness stamp in sync ----
+// reference/decision-rules.md is the skill's offline fallback (a distillation of this
+// doc). We only sync its version + "verified <Month Year>" stamp here; substantive
+// content drift is surfaced as a PR suggestion for a human to reconcile.
+const RULES = path.resolve(HERE, '..', '..', 'reference', 'decision-rules.md');
+let rulesSynced = false;
+try {
+  let rl = fs.readFileSync(RULES, 'utf8');
+  const before = rl;
+  // "(sql-migration-advisor), **vX.Y**, verified <Month Year>"
+  rl = rl.replace(/(\(sql-migration-advisor\),\s*\*\*)v\d+\.\d+(\*\*,\s*verified\s*)[A-Za-z]+ \d{4}/, `$1${newVer}$2${MONTH_YEAR}`);
+  // fallback: a bare "verified <Month Year>" if the version stamp isn't present
+  if (rl === before) rl = rl.replace(/verified\s+[A-Za-z]+ \d{4}/, `verified ${MONTH_YEAR}`);
+  rulesSynced = rl !== before;
+  if (rulesSynced && !DRY) fs.writeFileSync(RULES, rl);
+} catch (e) { console.error('decision-rules sync skipped:', e.message); }
+
 if (DRY) {
   console.log(`[dry] ${oldVer} -> ${newVer} (${MONTH_YEAR}, ${ISO})`);
   console.log(`[dry] changelog: ${changelog}`);
   console.log(`[dry] README changelog row insert: ${readmeSynced}`);
+  console.log(`[dry] decision-rules stamp synced: ${rulesSynced}`);
 } else {
   fs.writeFileSync(DOC, md);
-  console.log(`${oldVer} -> ${newVer} (${MONTH_YEAR}); changelog row added (${ISO}); README synced=${readmeSynced}.`);
+  console.log(`${oldVer} -> ${newVer} (${MONTH_YEAR}); changelog row added (${ISO}); README synced=${readmeSynced}; decision-rules synced=${rulesSynced}.`);
 }
 // expose the new version for the workflow (GITHUB_OUTPUT)
 if (process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, `new_version=${newVer}\n`);

@@ -42,6 +42,7 @@ ${triggers}
 
 ### Applied automatically
 - Version bumped and a changelog row added in \`docs/sql-server-to-azure-migration.md\`.
+- Freshness stamp synced in \`reference/decision-rules.md\` (the skill's offline mirror) — **check it for substantive drift**, content isn't auto-propagated.
 - PDF and preview regenerated (best-effort — verify the diff).
 
 ### Suggested substantive edits (review before merge)

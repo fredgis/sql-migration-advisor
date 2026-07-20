@@ -164,4 +164,5 @@ jobs:
             docs/sql-server-to-azure-migration.md
             docs/sql-server-to-azure-migration.pdf
             docs/preview/sql-migration-advisor-pdf-preview.png
+            reference/decision-rules.md
             README.md

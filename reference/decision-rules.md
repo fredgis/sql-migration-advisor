@@ -1,7 +1,7 @@
 # Decision rules — SQL Server → Azure (distilled from the knowledge base)
 
 Apply Steps **A → D** in order. Deterministic: same answers ⇒ same recommendation.
-Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), verified June 2026.
+Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v1.3**, verified July 2026.
 
 Three layers, never mixed:
 - **Target** = where the DB ends up (runtime).
@@ -14,7 +14,9 @@ Three layers, never mixed:
 
 1. **In-place / not ready to move** (driver = "modernize but stay", or assessment-only) →
    **SQL Server enabled by Azure Arc** (control plane): inventory, best-practices assessment,
-   **ESU**, Copilot-assisted portal migration later. *Not a runtime target.*
+   **ESU**, and a **Copilot-assisted portal migration** — **GA (July 2026)** to both
+   **Azure SQL MI** (MI Link / LRS) and **SQL Server on Azure VM** (native backup/restore).
+   *Not a runtime target itself.*
 
 2. **VM-only feature OR OS control** — any of FILESTREAM/FileTable, PolyBase, cross-instance
    DTC, third-party agents, exact-version pinning, or management model = "Need OS/engine control":
@@ -66,6 +68,10 @@ Three layers, never mixed:
 | Offline | **Native backup/restore** — Backup-to-URL (≤12.8 TB on 2016+) or `.bak`+AzCopy; detach/attach for very large | — |
 | Whole VM/instance | **Azure Migrate** (replication, incl. FCI/AG) | source 2008 SP4 |
 | Multi-TB / limited WAN | **Data Box** seed → sync delta | — |
+
+> **Arc-enabled source?** The **SQL migration in Azure Arc** portal (Copilot-assisted) now
+> orchestrates the offline **native backup/restore** lift-and-shift to SQL VM — **GA July 2026**
+> (provisions the target VM, then restores). A phased on-ramp: rehost now, modernize to MI / SQL DB later.
 
 ### → AVS
 - **VMware HCX / vMotion** (zero-refactor, keeps FCI/AG). No DMS/MI Link.
