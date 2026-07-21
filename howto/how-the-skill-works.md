@@ -103,25 +103,12 @@ Why wrap this in a skill instead of just asking a model to "plan a SQL migration
 
 The repo separates the **prompt logic**, the **knowledge**, and the **freshness automation**:
 
-```mermaid
-flowchart LR
-    Agent["GitHub Copilot agent"] -->|loads| SK
-    subgraph Repo["sql-migration-advisor (open-source repo)"]
-        SK["SKILL.md<br/>trigger · principles · interview · card template"]
-        DR["reference/decision-rules.md<br/>deterministic engine A to D · offline fallback"]
-        KB["docs/…migration.md + .pdf<br/>knowledge base · source of truth"]
-        EX["examples/sample-recommendation.md"]
-        LAB["lab/ · hands-on lab"]
-        subgraph CI["Freshness automation"]
-            WF[".github/workflows/weekly-kb-check.yml<br/>+ tools/weekly-check/*.mjs"]
-        end
-    end
-    SK -->|grounds every answer in| KB
-    SK -. "offline fallback" .-> DR
-    EX -. "calibrates tone" .-> SK
-    WF -->|re-verifies + version-bumps| KB
-    WF -->|syncs freshness stamp| DR
-```
+<p align="center">
+  <img src="./skill-architecture.svg" alt="Architecture of the sql-migration-advisor skill: a Copilot agent loads SKILL.md, which grounds every answer in the knowledge base and falls back to the deterministic decision rules offline, while a weekly GitHub Action re-verifies the knowledge base." width="960">
+</p>
+
+<sub>Diagram source: [`skill-architecture.architecture.json`](./skill-architecture.architecture.json) · interactive dark/light version with export menu: [`skill-architecture.html`](./skill-architecture.html) (open in a browser).</sub>
+
 
 | Path | Purpose |
 | --- | --- |

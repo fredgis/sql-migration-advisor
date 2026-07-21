@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "sql-migration-advisor",
+    "subtitle": "How the Copilot skill grounds answers and stays fresh",
+    "output": "skill-architecture.html"
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "Practitioner", "sublabel": "SQL Server estate", "pos": [40, 250], "size": [140, 60] },
+    { "id": "agent", "type": "frontend", "label": "Copilot agent", "sublabel": "CLI / IDE", "pos": [230, 250], "size": [150, 60] },
+    { "id": "skill", "type": "backend", "label": "SKILL.md", "sublabel": "skill contract", "pos": [440, 250], "size": [150, 60], "tag": "interview + scoring" },
+    { "id": "kb", "type": "database", "label": "Knowledge base", "sublabel": "docs/*.md (+ PDF)", "pos": [670, 250], "size": [160, 60], "tag": "source of truth" },
+    { "id": "rules", "type": "backend", "label": "decision-rules.md", "sublabel": "deterministic A -> D", "pos": [440, 415], "size": [150, 64], "tag": "offline fallback" },
+    { "id": "action", "type": "cloud", "label": "weekly-kb-check", "sublabel": "GitHub Action", "pos": [900, 250], "size": [160, 60], "tag": "weekly" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "sql-migration-advisor repository", "wraps": ["skill", "kb", "rules", "action"] }
+  ],
+  "connections": [
+    { "from": "user", "to": "agent", "label": "migration ask", "variant": "emphasis", "labelDy": -24 },
+    { "from": "agent", "to": "skill" },
+    { "from": "skill", "to": "kb", "label": "grounds answers", "variant": "emphasis", "labelDy": -24 },
+    { "from": "skill", "to": "rules", "label": "offline fallback", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelDy": 62 },
+    { "from": "action", "to": "kb", "label": "re-verifies weekly", "variant": "emphasis", "fromSide": "left", "toSide": "right", "labelDy": -24 }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Guided interview", "items": ["Steps A to D: target, method, downtime", "Blockers plus remediations", "Cost levers (AHB, ESU) and program fit"] },
+    { "dot": "emerald", "title": "Grounded output", "items": ["A recommendation card, not a guess", "Every claim traces back to the KB", "Deterministic tree stays reproducible"] },
+    { "dot": "amber", "title": "Freshness automation", "items": ["Link check plus Microsoft RSS scan", "GPT-5 reviews full KB and decision tree", "Version bump via human-reviewed PR"] }
+  ]
+}
