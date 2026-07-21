@@ -248,8 +248,11 @@ your repo as files, persist across sessions, and coordinate work while a human s
 Squad-style team is a natural way to orchestrate the advisor → assessment → migration hand-off end to end.
 Squad is alpha and it is *one* option among others — but it is a good worked example of the pattern.
 
-> **Squad in action** — <!-- SQUAD_VIDEO_URL: paste the Squad demo video URL here to embed/link it -->
-> watch the walkthrough on the [Squad repository](https://github.com/bradygaster/squad).
+**See it in action** — the video below is the shipped advisor today. The roadmap extends this same
+grounded, human-in-the-loop pattern to assessment and migration, orchestrated (for example) by a
+Squad-style team.
+
+<video src="https://github.com/user-attachments/assets/5594fc75-4fb7-40a9-b9a1-0cc761c8aebe" poster="https://github.com/fredgis/sql-migration-advisor/raw/main/images/sql-migration-advisor-demo-poster.jpg" controls muted></video>
 
 ### Roadmap steps
 
