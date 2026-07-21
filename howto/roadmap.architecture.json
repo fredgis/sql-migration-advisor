@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Roadmap — an advisor today, a migration platform tomorrow",
+    "subtitle": "Three grounded skills / agents, converging on HVE Core",
+    "output": "roadmap.html"
+  },
+  "components": [
+    { "id": "hve", "type": "backend", "label": "HVE Core", "sublabel": "hypervelocity engineering", "pos": [400, 110], "size": [240, 72], "tag": "partially integrated" },
+    { "id": "advisor", "type": "backend", "label": "Advisor", "sublabel": "sql-migration-advisor", "pos": [120, 360], "size": [200, 72], "tag": "shipped" },
+    { "id": "assessment", "type": "cloud", "label": "Assessment", "sublabel": "skill / agent", "pos": [420, 360], "size": [200, 72], "tag": "planned" },
+    { "id": "migration", "type": "cloud", "label": "Migration", "sublabel": "skill / agent", "pos": [720, 360], "size": [200, 72], "tag": "planned" }
+  ],
+  "connections": [
+    { "from": "advisor", "to": "hve", "label": "integrating", "variant": "emphasis", "fromSide": "top", "toSide": "left" },
+    { "from": "assessment", "to": "hve", "label": "planned", "variant": "dashed", "fromSide": "top", "toSide": "bottom", "labelDy": -70 },
+    { "from": "migration", "to": "hve", "label": "planned", "variant": "dashed", "fromSide": "top", "toSide": "right" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Shipped (green)", "items": ["Advisor: recommends the target, method and program", "Grounded, deterministic, self-refreshing"] },
+    { "dot": "amber", "title": "Planned (amber)", "items": ["Assessment: read the estate, size the effort", "Migration: execute and validate the move"] },
+    { "dot": "violet", "title": "Integration vehicle", "items": ["HVE Core: Microsoft's Copilot workflow system", "Squad is one example (human-led agent teams)"] }
+  ]
+}

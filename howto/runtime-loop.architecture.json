@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Runtime loop",
+    "subtitle": "How the skill turns a migration ask into a grounded recommendation",
+    "output": "runtime-loop.html"
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "User", "sublabel": "migration ask", "pos": [40, 300], "size": [150, 60] },
+    { "id": "rules", "type": "backend", "label": "decision-rules.md", "sublabel": "offline fallback", "pos": [250, 140], "size": [160, 60] },
+    { "id": "skill", "type": "backend", "label": "SKILL.md", "sublabel": "trigger + interview", "pos": [250, 300], "size": [160, 60] },
+    { "id": "interview", "type": "backend", "label": "Guided interview", "sublabel": "~8-11 questions", "pos": [480, 300], "size": [160, 60] },
+    { "id": "kb", "type": "database", "label": "Knowledge base", "sublabel": "source of truth", "pos": [710, 140], "size": [160, 60], "tag": "fetched live" },
+    { "id": "score", "type": "backend", "label": "Score A -> D", "sublabel": "deterministic", "pos": [710, 300], "size": [150, 60] },
+    { "id": "card", "type": "frontend", "label": "Recommendation", "sublabel": "target / method / cost", "pos": [930, 300], "size": [175, 60] },
+    { "id": "followups", "type": "external", "label": "Follow-ups", "sublabel": "runbook, slide", "pos": [930, 460], "size": [175, 60] }
+  ],
+  "connections": [
+    { "from": "user", "to": "skill", "label": "activates", "variant": "emphasis", "labelDy": -24 },
+    { "from": "skill", "to": "interview", "label": "runs", "labelDy": -24 },
+    { "from": "interview", "to": "score", "label": "answers", "labelDy": -24 },
+    { "from": "score", "to": "card", "label": "recommends", "variant": "emphasis", "labelDy": -24 },
+    { "from": "rules", "to": "skill", "label": "offline fallback", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
+    { "from": "kb", "to": "score", "label": "grounds", "variant": "emphasis", "fromSide": "bottom", "toSide": "top" },
+    { "from": "card", "to": "followups", "label": "optional", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelDy": 24 }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "1-2 · Trigger + load", "items": ["Matches the SKILL.md description", "Fetches the KB live; rules if offline"] },
+    { "dot": "emerald", "title": "3-4 · Interview + score", "items": ["~8-11 questions, one at a time", "Steps A to D, same answers same result"] },
+    { "dot": "amber", "title": "5 · Output", "items": ["A readable recommendation card", "Optional runbook, per-DB table, slide"] }
+  ]
+}

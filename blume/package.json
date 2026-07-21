@@ -1,0 +1,14 @@
+{
+  "name": "sql-migration-advisor-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "blume dev",
+    "build": "blume build",
+    "preview": "blume preview",
+    "doctor": "blume doctor"
+  },
+  "dependencies": {
+    "blume": "^1.0.3"
+  }
+}

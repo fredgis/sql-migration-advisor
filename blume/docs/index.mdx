@@ -1,0 +1,117 @@
+---
+title: SQL Migration Advisor
+description: A GitHub Copilot skill that turns any agent into a SQL Server to Azure migration advisor, grounded in a verified, weekly-refreshed knowledge base.
+---
+
+A GitHub Copilot **skill** that turns any Copilot agent into a SQL Server → Azure migration advisor.
+It runs a short guided interview, applies a deterministic decision engine, and returns a grounded
+recommendation — target platform, migration method, downtime class, blockers, cost levers, and the right
+Microsoft program — all backed by a verified knowledge base that refreshes itself every week.
+
+<div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", margin: "1.5rem 0" }}>
+  <a href="https://github.com/fredgis/sql-migration-advisor/blob/main/howto/how-the-skill-works.md">📘 Read the full guide</a>
+  <a href="https://github.com/fredgis/sql-migration-advisor">⭐ View the repository</a>
+  <a href="https://github.com/fredgis/sql-migration-advisor/blob/main/SKILL.md">🧩 Get the skill</a>
+</div>
+
+---
+
+## What it is
+
+The advisor is a self-contained skill (`SKILL.md` + a knowledge base + a deterministic rules file). Drop it
+into a Copilot-enabled environment and any agent can act as a SQL migration advisor — no fine-tuning, no
+external service. It is:
+
+- **Grounded** — every recommendation is traceable to a verified knowledge base, not model memory.
+- **Deterministic where it can be** — a decision-rules engine turns interview answers into a defensible target and method.
+- **Self-refreshing** — a weekly GitHub Action re-reviews the knowledge base and the decision tree against Microsoft's latest guidance and opens a PR when something drifts.
+- **Honest about limits** — it flags blockers, downtime, and cost trade-offs instead of hiding them.
+
+---
+
+## Architecture
+
+<img src={`${import.meta.env.BASE_URL}/skill-architecture.svg`} alt="Repository architecture of the SQL Migration Advisor skill" />
+
+The skill is just files in a repo: a contract (`SKILL.md`), a knowledge base, a deterministic decision-rules
+engine, worked examples, and a weekly freshness Action. The agent reads them at runtime.
+
+---
+
+## How the agent uses it
+
+<img src={`${import.meta.env.BASE_URL}/runtime-loop.svg`} alt="Runtime loop: user request to skill, guided interview, deterministic scoring against the knowledge base, and a grounded recommendation card" />
+
+When a user asks for a migration recommendation, the agent loads the skill, runs the interview, scores the
+answers against the deterministic rules and the knowledge base, and produces a grounded recommendation. The
+agent still reasons on top — it can build a complex, context-aware plan — but every factual claim is anchored
+to the knowledge base rather than invented.
+
+---
+
+## Weekly knowledge-base automation
+
+<img src={`${import.meta.env.BASE_URL}/weekly-update.svg`} alt="Weekly automation: a scheduled Action runs an AI review of the knowledge base and decision rules, then opens a pull request when an update is needed" />
+
+A scheduled GitHub Action rebuilds a review prompt from the full knowledge base plus the decision rules, asks
+a powerful model to check it against current Microsoft guidance, and — only when something needs to change —
+opens a pull request for a human to review and merge. Freshness becomes a routine, reviewable event.
+
+---
+
+## Roadmap — from an advisor to a migration platform
+
+This is deliberately ambitious. `sql-migration-advisor` is the first of three grounded, Copilot-native
+building blocks. The advisor tells you *where* to land and *how*; the next two are meant to help you *measure*
+and then *execute* the move — so a practitioner can go from "I have a SQL Server estate" to "it's running on
+Azure" without ever leaving Copilot.
+
+<img src={`${import.meta.env.BASE_URL}/roadmap.svg`} alt="Roadmap: three skills/agents — Advisor (shipped, green), Assessment (planned, amber) and Migration (planned, amber) — each connecting up to a partially integrated HVE Core" />
+
+Colour code: green = shipped, amber = planned. HVE Core is green but only partially wired in today.
+
+### The three building blocks
+
+- **Advisor — shipped.** This repo. It interviews the user, scores the answers, and returns a grounded, self-refreshing recommendation.
+- **Assessment — planned.** A skill/agent that reads the actual estate (versions, sizes, feature dependencies, blockers) and turns the advisor's recommendation into a sized, evidence-backed plan.
+- **Migration — planned.** A skill/agent that executes and validates the move (orchestration, cutover, post-migration checks), keeping a human in control at every gate.
+
+### Integrating into HVE Core
+
+The intent is to contribute these building blocks to
+[HVE Core](https://github.com/microsoft/hve-core) — Microsoft's Hypervelocity Engineering library of Copilot
+agents, prompts, coding instructions, and validated skills. HVE Core ships as a VS Code extension and a
+Copilot CLI plugin, so a skill packaged its way becomes installable by any team in a single step. Integration
+is partial today — the advisor is furthest along; wiring all three in is the work ahead.
+
+One concrete integration vehicle is [Squad](https://github.com/bradygaster/squad) — Brady Gaster's
+"human-led AI agent teams" for GitHub Copilot — a natural way to orchestrate the advisor → assessment →
+migration hand-off with a human accountable throughout. It is alpha, and one option among others.
+
+{/* SQUAD_VIDEO_URL: replace the link below with the Squad demo video URL to embed it here (e.g. a YouTube <iframe> or an MP4 <video> tag). */}
+> **Squad in action** — watch the walkthrough on the
+> [Squad repository](https://github.com/bradygaster/squad).
+
+### Roadmap steps
+
+- **Ship + document the advisor (done).** This repo, its knowledge base, the weekly freshness Action, and the implementer guide.
+- **Package the advisor for HVE Core.** A collection entry that follows HVE Core conventions and installs as a Copilot CLI plugin / VS Code extension.
+- **Design the Assessment skill.** Define its knowledge base, interview, and evidence outputs; reuse the deterministic-rules + freshness pattern.
+- **Build the Assessment skill/agent.** Take the advisor's recommendation and produce a sized, blocker-aware plan grounded in the scanned estate.
+- **Design the Migration skill.** Orchestration steps, cutover gates, and validation checks — with explicit human approval at every gate.
+- **Build the Migration skill/agent.** Execute against the assessment output and validate the result.
+- **Orchestrate the three together.** Wire advisor → assessment → migration into one flow (for example via a Squad-style team) and contribute the set to HVE Core.
+- **Close the loop.** Shared knowledge base and weekly freshness across all three blocks, plus telemetry to keep the recommendations sharp.
+
+Yes, it's ambitious — three grounded skills, a shared freshness discipline, and a clean integration into a
+Microsoft-owned platform. But each piece is small, reviewable, and useful on its own, and the advisor already
+proves the pattern works end to end.
+
+---
+
+## Learn more
+
+- [How the skill works](https://github.com/fredgis/sql-migration-advisor/blob/main/howto/how-the-skill-works.md) — the full implementer guide.
+- [`SKILL.md`](https://github.com/fredgis/sql-migration-advisor/blob/main/SKILL.md) — the skill contract and questionnaire.
+- [Decision rules](https://github.com/fredgis/sql-migration-advisor/blob/main/reference/decision-rules.md) — the deterministic engine.
+- [Knowledge base](https://github.com/fredgis/sql-migration-advisor/blob/main/docs/sql-server-to-azure-migration.md) — the verified source of truth.

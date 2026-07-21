@@ -8,7 +8,8 @@ This document explains three things:
 2. **How an agent gets value from it** — why a prompt-driven skill beats asking a raw model.
 3. **How it stays current** — the weekly GitHub Action that keeps the knowledge base fresh.
 
-It closes with implementation notes for porting the pattern to a Microsoft-owned open-source repo.
+It closes with implementation notes for porting the pattern to a Microsoft-owned open-source repo, and a
+**roadmap** for growing the advisor into a full migration platform.
 
 ---
 
@@ -30,18 +31,9 @@ something is stale.
 When a user asks something like *"migrate a SQL Server environment to Azure"* (or *"migrer SQL Server
 vers Azure"*), the agent loads the skill and runs this loop:
 
-```mermaid
-flowchart TD
-    U["User: migrate a SQL Server environment to Azure"] --> T{"Trigger matches<br/>SKILL.md description?"}
-    T -- yes --> L["Load the source of truth"]
-    L --> KB["docs/sql-server-to-azure-migration.md<br/>fetched live"]
-    L -. "offline fallback" .-> DR["reference/decision-rules.md"]
-    KB --> I["Guided interview<br/>~8-11 questions, one at a time, via ask_user"]
-    DR --> I
-    I --> S["Score with Steps A to D<br/>deterministic decision engine"]
-    S --> O["Recommendation card<br/>target · method · downtime · blockers · cost · program"]
-    O --> F["Optional follow-ups<br/>runbook · per-DB table · one-slide hand-off"]
-```
+<p align="center">
+  <img src="./runtime-loop.svg" alt="Runtime loop: the user's migration ask activates SKILL.md, which runs a guided interview grounded in the live knowledge base (decision-rules.md is the offline fallback), scores the answers deterministically with Steps A to D, and produces a recommendation card plus optional follow-ups." width="960">
+</p>
 
 Step by step:
 
@@ -131,31 +123,9 @@ A migration knowledge base rots quickly — tools retire, previews go GA, dates 
 itself honest with a scheduled workflow, [`weekly-kb-check.yml`](../.github/workflows/weekly-kb-check.yml),
 that runs every **Monday 05:00 UTC** (and on manual `workflow_dispatch`).
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Cron as Schedule / manual dispatch
-    participant GA as GitHub Action
-    participant Lychee as Link check (lychee)
-    participant News as gather-news.mjs (RSS)
-    participant AI as GPT-5 review (GitHub Models)
-    participant Dec as decide.mjs
-    participant App as apply-update.mjs
-    participant PR as Pull Request
-    Cron->>GA: trigger
-    GA->>Lychee: verify every link in the KB
-    GA->>News: fetch Azure / SQL news (7-day window, keyword-filtered)
-    GA->>AI: full KB + full decision tree + link report + news
-    AI-->>GA: JSON verdict — needsUpdate, bump, changelog, suggestions
-    GA->>Dec: broken links? OR needsUpdate?
-    alt something is stale
-        Dec->>App: bump version + prepend changelog + sync decision-rules stamp
-        App->>GA: regenerate PDF + preview (best-effort)
-        GA->>PR: open "Weekly KB freshness update" for human review
-    else nothing changed
-        Dec-->>GA: no-op (writes a job summary only)
-    end
-```
+<p align="center">
+  <img src="./weekly-update.svg" alt="Weekly freshness automation: a Monday schedule triggers a link and news scan (lychee + RSS), a GPT-5 review on GitHub Models returns a JSON verdict, decide.mjs judges staleness, apply-update.mjs bumps the version and changelog, and a pull request is opened for a human to merge into the knowledge base." width="1040">
+</p>
 
 What each stage does:
 
@@ -231,6 +201,79 @@ A checklist to reuse the pattern for another domain (or to adopt this one):
 6. **Mind file hygiene** — `SKILL.md` should be UTF-8 with **LF** line endings (a CRLF front-matter
    delimiter can stop the skill from loading).
 7. **Localize** — the interview should follow the user's language.
+
+---
+
+## 8. Roadmap — from an advisor to a migration platform
+
+This is deliberately ambitious. `sql-migration-advisor` is the **first** of three grounded, Copilot-native
+building blocks. The advisor tells you *where* to land and *how*; the next two are meant to help you
+*measure* and then *execute* the move — so a practitioner can go from "I have a SQL Server estate" to
+"it's running on Azure" without ever leaving Copilot.
+
+<p align="center">
+  <img src="./roadmap.svg" alt="Roadmap: three skills/agents — Advisor (shipped, green), Assessment (planned, amber) and Migration (planned, amber) — each connecting up to HVE Core, which is green and only partially integrated. The Advisor link is solid (integrating); the Assessment and Migration links are dashed (planned)." width="960">
+</p>
+
+<sub>Colour code: green = shipped, amber = planned. HVE Core is green but only partially wired in today. Diagram source: [`roadmap.architecture.json`](./roadmap.architecture.json) · interactive version: [`roadmap.html`](./roadmap.html).</sub>
+
+### The three building blocks
+
+- **Advisor — shipped (green).** This repo. It interviews the user, scores Steps A→D, and returns a
+  grounded, self-refreshing recommendation (target, method, downtime, blockers, cost levers, program fit).
+- **Assessment — planned (amber).** A skill/agent that reads the *actual* estate (versions, sizes,
+  instance-level feature dependencies, blockers) and turns the advisor's recommendation into a sized,
+  evidence-backed plan.
+- **Migration — planned (amber).** A skill/agent that *executes and validates* the move (orchestration,
+  cutover, post-migration checks), keeping a human in control at every gate.
+
+Each new block inherits the same principles as the advisor: grounded in a verified knowledge base,
+deterministic where it can be, honest about limits, and human-in-the-loop.
+
+### Integrating into HVE Core
+
+The intent is to contribute these building blocks to
+[HVE Core](https://github.com/microsoft/hve-core) — Microsoft's **Hypervelocity Engineering** library of
+Copilot agents, prompts, coding instructions, and validated skills. HVE Core already ships as a VS Code
+extension and a Copilot CLI plugin, so an advisor / assessment / migration skill packaged its way becomes
+installable by any team in a single step, with standards applied automatically.
+
+Integration is **partial today** — that is what the diagram's *partially integrated* HVE Core box and the
+dotted links convey. The advisor is the furthest along and can already be consumed as a standalone Copilot
+skill; wiring all three into HVE Core's collections and conventions is the work ahead.
+
+One concrete integration vehicle is [Squad](https://github.com/bradygaster/squad) — Brady Gaster's
+"human-led AI agent teams" for GitHub Copilot, where specialists (lead, frontend, backend, tester) live in
+your repo as files, persist across sessions, and coordinate work while a human stays accountable. A
+Squad-style team is a natural way to orchestrate the advisor → assessment → migration hand-off end to end.
+Squad is alpha and it is *one* option among others — but it is a good worked example of the pattern.
+
+> **Squad in action** — <!-- SQUAD_VIDEO_URL: paste the Squad demo video URL here to embed/link it -->
+> watch the walkthrough on the [Squad repository](https://github.com/bradygaster/squad).
+
+### Roadmap steps
+
+- **Ship + document the advisor (done).** This repo, its knowledge base, the weekly freshness Action, and
+  this guide.
+- **Package the advisor for HVE Core.** A collection entry that follows HVE Core conventions and installs
+  as a Copilot CLI plugin / VS Code extension — the first real integration.
+- **Design the Assessment skill.** Define its knowledge base, its interview, and its evidence outputs;
+  reuse the same deterministic-rules + freshness-automation pattern.
+- **Build the Assessment skill/agent.** Take the advisor's recommendation as input and produce a sized,
+  blocker-aware migration plan grounded in the scanned estate.
+- **Design the Migration skill.** Orchestration steps, cutover gates, and validation checks — with an
+  explicit human approval at every gate.
+- **Build the Migration skill/agent.** Execute against the assessment output and validate the result.
+- **Orchestrate the three together.** Wire advisor → assessment → migration into one flow (for example via
+  a Squad-style team) and contribute the set to HVE Core.
+- **Close the loop.** Shared knowledge base and weekly freshness across all three blocks, plus telemetry to
+  keep the recommendations sharp.
+
+Yes, it's ambitious — three grounded skills, a shared freshness discipline, and a clean integration into a
+Microsoft-owned platform. But each piece is small, reviewable, and useful on its own, and the advisor
+already proves the pattern works end to end.
+
+---
 
 ### Related reading
 

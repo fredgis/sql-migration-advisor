@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Weekly freshness automation",
+    "subtitle": "weekly-kb-check keeps the knowledge base honest",
+    "output": "weekly-update.html"
+  },
+  "components": [
+    { "id": "cron", "type": "external", "label": "Schedule", "sublabel": "Mon 05:00 UTC", "pos": [40, 300], "size": [150, 60] },
+    { "id": "scan", "type": "backend", "label": "Link + news scan", "sublabel": "lychee + RSS", "pos": [240, 300], "size": [170, 60] },
+    { "id": "ai", "type": "cloud", "label": "GPT-5 review", "sublabel": "GitHub Models", "pos": [460, 300], "size": [160, 60], "tag": "verdict JSON" },
+    { "id": "decide", "type": "backend", "label": "decide.mjs", "sublabel": "stale?", "pos": [680, 300], "size": [150, 60] },
+    { "id": "apply", "type": "backend", "label": "apply-update.mjs", "sublabel": "bump + changelog", "pos": [890, 300], "size": [185, 60] },
+    { "id": "kb", "type": "database", "label": "Knowledge base", "sublabel": "source of truth", "pos": [1135, 140], "size": [160, 60] },
+    { "id": "pr", "type": "external", "label": "Pull request", "sublabel": "human merges", "pos": [1135, 300], "size": [160, 60], "tag": "kb-update" }
+  ],
+  "connections": [
+    { "from": "cron", "to": "scan", "label": "trigger", "labelDy": -24 },
+    { "from": "scan", "to": "ai", "label": "report + news", "labelDy": -24 },
+    { "from": "ai", "to": "decide", "label": "verdict", "labelDy": -24 },
+    { "from": "decide", "to": "apply", "label": "stale", "variant": "emphasis", "labelDy": -24 },
+    { "from": "apply", "to": "pr", "label": "opens PR", "variant": "emphasis", "labelDy": -24 },
+    { "from": "pr", "to": "kb", "label": "on merge", "variant": "dashed", "fromSide": "top", "toSide": "bottom" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Gather", "items": ["lychee verifies every KB link", "RSS news, 7-day, keyword-filtered"] },
+    { "dot": "emerald", "title": "Review + decide", "items": ["GPT-5 reviews the full KB + decision tree", "PR if broken links OR needsUpdate"] },
+    { "dot": "amber", "title": "Human in the loop", "items": ["apply-update bumps version + changelog", "A human reviews and merges the PR"] }
+  ]
+}
