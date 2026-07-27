@@ -1,12 +1,13 @@
 ---
 title: SQL Migration Advisor
-description: A GitHub Copilot skill that turns any agent into a SQL Server to Azure migration advisor, grounded in a verified, weekly-refreshed knowledge base.
+description: A GitHub Copilot skill that turns any agent into a SQL Server to Azure migration pre-selection assistant, grounded in a verified, version-gated knowledge base.
 ---
 
-A GitHub Copilot **skill** that turns any Copilot agent into a SQL Server → Azure migration advisor.
-It runs a short guided interview, applies a deterministic decision engine, and returns a grounded
-recommendation — target platform, migration method, downtime class, blockers, cost levers, and the right
-Microsoft program — all backed by a verified knowledge base that refreshes itself every week.
+A GitHub Copilot **skill** that turns any Copilot agent into a SQL Server → Azure migration pre-selection
+assistant. It runs a guided interview, applies a deterministic two-phase decision engine, and returns a
+preliminary recommendation for assessment — primary path, best alternative, exclusions, confidence, evidence
+required, downtime, blockers, cost levers, and the right Microsoft program. It is backed by a verified
+knowledge base and version-gated freshness automation.
 
 <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", margin: "1.5rem 0" }}>
   <a href="https://github.com/fredgis/sql-migration-advisor/blob/main/howto/how-the-skill-works.md">📘 Read the full guide</a>
@@ -19,13 +20,15 @@ Microsoft program — all backed by a verified knowledge base that refreshes its
 ## What it is
 
 The advisor is a self-contained skill (`SKILL.md` + a knowledge base + a deterministic rules file). Drop it
-into a Copilot-enabled environment and any agent can act as a SQL migration advisor — no fine-tuning, no
-external service. It is:
+into a Copilot-enabled environment and any agent can act as a SQL migration pre-selection assistant — no
+fine-tuning, no external service. It is:
 
 - **Grounded** — every recommendation is traceable to a verified knowledge base, not model memory.
-- **Deterministic where it can be** — a decision-rules engine turns interview answers into a defensible target and method.
-- **Self-refreshing** — a weekly GitHub Action re-reviews the knowledge base and the decision tree against Microsoft's latest guidance and opens a PR when something drifts.
-- **Honest about limits** — it flags blockers, downtime, and cost trade-offs instead of hiding them.
+- **Deterministic where it can be** — Phase A filters hard eligibility, then Phase B ranks viable paths and tiers.
+- **Explicit about uncertainty** — outputs carry confidence, provisional or validated status, assumptions, unknowns, blockers and evidence required.
+- **Freshness-gated** — consistency checks, link classification and a claims registry prevent unearned version bumps.
+- **Regression-tested** — golden scenarios in CI guard determinism and corrected facts.
+- **Honest about limits** — it is a discovery and pre-selection assistant; assessment tooling and architect validation remain mandatory.
 
 ---
 
@@ -34,7 +37,7 @@ external service. It is:
 <img src={`${import.meta.env.BASE_URL}/skill-architecture.svg`} alt="Repository architecture of the SQL Migration Advisor skill" />
 
 The skill is just files in a repo: a contract (`SKILL.md`), a knowledge base, a deterministic decision-rules
-engine, worked examples, and a weekly freshness Action. The agent reads them at runtime.
+engine, worked examples, a claims registry, golden tests, and a weekly freshness Action. The agent reads them at runtime.
 
 ---
 
@@ -42,10 +45,11 @@ engine, worked examples, and a weekly freshness Action. The agent reads them at 
 
 <img src={`${import.meta.env.BASE_URL}/runtime-loop.svg`} alt="Runtime loop: user request to skill, guided interview, deterministic scoring against the knowledge base, and a grounded recommendation card" />
 
-When a user asks for a migration recommendation, the agent loads the skill, runs the interview, scores the
-answers against the deterministic rules and the knowledge base, and produces a grounded recommendation. The
-agent still reasons on top — it can build a complex, context-aware plan — but every factual claim is anchored
-to the knowledge base rather than invented.
+When a user asks for a migration recommendation, the agent loads the skill, runs Tier 1 triage and Tier 2
+confirmation questions, applies Phase A eligibility and Phase B ranking, and produces a grounded preliminary
+recommendation. The card includes the primary path, best alternative, exclusions, confidence, assumptions,
+unknowns and evidence required. The agent can still build a context-aware plan, but every factual claim is
+anchored to the knowledge base rather than invented.
 
 ---
 
@@ -53,9 +57,20 @@ to the knowledge base rather than invented.
 
 <img src={`${import.meta.env.BASE_URL}/weekly-update.svg`} alt="Weekly automation: a scheduled Action runs an AI review of the knowledge base and decision rules, then opens a pull request when an update is needed" />
 
-A scheduled GitHub Action rebuilds a review prompt from the full knowledge base plus the decision rules, asks
-a powerful model to check it against current Microsoft guidance, and — only when something needs to change —
-opens a pull request for a human to review and merge. Freshness becomes a routine, reviewable event.
+A scheduled GitHub Action first checks version consistency, classifies links as ok, unreachable or
+unverified-bot-blocked, scans Microsoft news, and verifies high-risk claims against a claims registry. An AI
+review summarizes potential drift, but a version bump is allowed only when substantive content changes were
+actually applied; otherwise the run is housekeeping or report-only. Freshness becomes a routine, reviewable
+event.
+
+---
+
+## Why the overhaul matters
+
+An external audit found accuracy, determinism, traceability and freshness gaps. The response was concrete:
+knowledge base v1.5 corrected the hard facts, the decision engine now separates eligibility from ranking,
+recommendations expose uncertainty, and CI now runs consistency plus golden-scenario checks. That scrutiny
+makes the advisor stronger, not weaker.
 
 ---
 
@@ -72,7 +87,7 @@ Colour code: green = shipped, amber = planned. HVE Core is green but only partia
 
 ### The three building blocks
 
-- **Advisor — shipped.** This repo. It interviews the user, scores the answers, and returns a grounded, self-refreshing recommendation.
+- **Advisor — shipped.** This repo. It interviews the user, filters eligibility, ranks viable paths, and returns a grounded preliminary recommendation.
 - **Assessment — planned.** A skill/agent that reads the actual estate (versions, sizes, feature dependencies, blockers) and turns the advisor's recommendation into a sized, evidence-backed plan.
 - **Migration — planned.** A skill/agent that executes and validates the move (orchestration, cutover, post-migration checks), keeping a human in control at every gate.
 

@@ -10,8 +10,10 @@
 // reference into tools/diagram/icons/, then screenshots each page with headless
 // Chrome (or Edge) at 2x device scale.
 //
-// Usage: node tools/diagram/build.mjs
-// Needs: curl, unzip, and a Chromium browser (set CHROME=/path/to/chrome to override).
+// Usage: node tools/diagram/build.mjs [page ...]   (default: all pages)
+//   e.g. node tools/diagram/build.mjs poster radial
+// Needs: curl, a Chromium browser (set CHROME=/path/to/chrome to override), and
+// unzip on Unix (Windows uses the built-in bsdtar).
 
 import { execSync } from 'node:child_process';
 import { mkdirSync, copyFileSync, existsSync, rmSync, readdirSync } from 'node:fs';
@@ -29,12 +31,19 @@ const FABRIC_ZIP = 'https://github.com/microsoft/fabric-samples/raw/main/docs-sa
 
 const sh = (cmd) => execSync(cmd, { stdio: 'inherit' });
 
+// Windows has no unzip, but ships bsdtar (tar.exe), which reads zip archives.
+const unzipTo = (zip, dest) => {
+  mkdirSync(dest, { recursive: true });
+  if (process.platform === 'win32') sh(`tar -xf "${zip}" -C "${dest}"`);
+  else sh(`unzip -q -o "${zip}" -d "${dest}"`);
+};
+
 // 1. Fetch + extract the official icon packs (cached in $TMPDIR between runs).
 mkdirSync(work, { recursive: true });
 if (!existsSync(join(work, 'azure.zip'))) sh(`curl -sL -o "${join(work, 'azure.zip')}" "${AZURE_ZIP}"`);
 if (!existsSync(join(work, 'fabric.zip'))) sh(`curl -sL -o "${join(work, 'fabric.zip')}" "${FABRIC_ZIP}"`);
-sh(`unzip -q -o "${join(work, 'azure.zip')}" -d "${join(work, 'azure')}"`);
-sh(`unzip -q -o "${join(work, 'fabric.zip')}" -d "${join(work, 'fabric')}"`);
+unzipTo(join(work, 'azure.zip'), join(work, 'azure'));
+unzipTo(join(work, 'fabric.zip'), join(work, 'fabric'));
 
 // 2. Copy just the icons the diagrams reference, under the names the HTML expects.
 //    Icon-pack folder layouts change between releases, so resolve each source
@@ -91,7 +100,12 @@ const pages = [
   { html: 'hero.html', out: join(repo, 'images', 'sql-migration-advisor-hero.png'), w: 1440, h: 810 },
   { html: 'social.html', out: join(repo, 'images', 'sql-migration-advisor-linkedin.png'), w: 1200, h: 627 },
 ];
-for (const p of pages) {
+const only = process.argv.slice(2).map((a) => a.replace(/\.html$/, ''));
+const selected = only.length ? pages.filter((p) => only.includes(p.html.replace(/\.html$/, ''))) : pages;
+if (only.length && selected.length !== only.length) {
+  throw new Error(`unknown page(s): ${only.filter((o) => !pages.some((p) => p.html.replace(/\.html$/, '') === o)).join(', ')}`);
+}
+for (const p of selected) {
   mkdirSync(dirname(p.out), { recursive: true });
   sh(
     `"${chrome}" --headless=new --disable-gpu --no-sandbox --allow-file-access-from-files ` +

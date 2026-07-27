@@ -1,0 +1,147 @@
+[
+  {
+    "claim_id": "mi-link-min-source-prereqs",
+    "claim": "What minimum SQL Server source version and prerequisites (permissions, AG/DAG, endpoint, port 5022) apply to Managed Instance link migrations?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-preparation",
+    "source_section": "Prerequisites",
+    "last_verified": "2026-07-27",
+    "verification_hash": "076d9af432b360568a55c93b2d2ee11d6f5c86c0689b4b136092a47fd08de937",
+    "affected_rules": [
+      "mi-link-minimum-source-version",
+      "mi-link-prerequisites",
+      "network-port-5022"
+    ]
+  },
+  {
+    "claim_id": "lrs-supported-source-versions",
+    "claim": "Which SQL Server source versions and prerequisites are supported by Log Replay Service migrations to Azure SQL Managed Instance?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate",
+    "source_section": "Prerequisites",
+    "last_verified": "2026-07-27",
+    "verification_hash": "6998fabdc477982b7a8807d9f7f5ddd447366eb41d12f10f71e59bf61ac850a1",
+    "affected_rules": [
+      "lrs-minimum-source-version",
+      "mi-offline-migration"
+    ]
+  },
+  {
+    "claim_id": "native-restore-mi-min-source",
+    "claim": "What minimum SQL Server source version and limits apply to native backup and restore to Azure SQL Managed Instance?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/restore-sample-database-quickstart",
+    "source_section": "Prerequisites",
+    "last_verified": "2026-07-27",
+    "verification_hash": "af2146a76be6a3281c224b28fe5f4a17862fc16135a446651946a0d51a9ff6af",
+    "affected_rules": [
+      "native-restore-to-mi-minimum",
+      "tde-certificate-order"
+    ]
+  },
+  {
+    "claim_id": "sql-db-transactional-replication-publishers",
+    "claim": "Which SQL Server publisher versions and constraints are supported for transactional replication to Azure SQL Database?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/replication-to-sql-database",
+    "source_section": "Supported configurations",
+    "last_verified": "2026-07-27",
+    "verification_hash": "766c9b63893a5538d583e8f27c882d7239d18b63720eb0e5d0ce745c7625492b",
+    "affected_rules": [
+      "transactional-replication-to-sql-db-publisher-versions",
+      "sql-db-online-subset"
+    ]
+  },
+  {
+    "claim_id": "mi-data-virtualization-polybase-equivalence",
+    "claim": "Does Azure SQL Managed Instance support SQL Server PolyBase or data virtualization equivalently?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/transact-sql-tsql-differences-sql-server",
+    "source_section": "PolyBase",
+    "last_verified": "2026-07-27",
+    "verification_hash": "937a45fd99dd61abdc1f0f20e561544c40760755c1997844a477cf9c2d4fd4a3",
+    "affected_rules": [
+      "feature-fit-polybase",
+      "mi-vs-vm-feature-matrix"
+    ]
+  },
+  {
+    "claim_id": "mi-distributed-transactions-dtc",
+    "claim": "What distributed transactions (DTC) support and limits apply to Azure SQL Managed Instance?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/distributed-transaction-coordinator-dtc",
+    "source_section": "Limitations",
+    "last_verified": "2026-07-27",
+    "verification_hash": "026abda755986e12d5c49bb461e63d469751def1c7a79997490058a126e56ccc",
+    "affected_rules": [
+      "feature-fit-dtc",
+      "mi-distributed-transactions"
+    ]
+  },
+  {
+    "claim_id": "mi-filestream-filetable",
+    "claim": "Are FILESTREAM and FileTable supported on Azure SQL Managed Instance?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/transact-sql-tsql-differences-sql-server",
+    "source_section": "FileStream and FileTable",
+    "last_verified": "2026-07-27",
+    "verification_hash": "4d1f2f06321d4076918123b033d02187fdf62fb62876fa853d4f615a82822de2",
+    "affected_rules": [
+      "feature-fit-filestream-filetable",
+      "mi-vs-vm-feature-matrix"
+    ]
+  },
+  {
+    "claim_id": "fabric-sql-db-migration-preview-limits",
+    "claim": "What preview limits apply to Fabric SQL database migration, including DACPAC size, gateway, and Private Link?",
+    "source_url": "https://learn.microsoft.com/en-us/fabric/database/sql/migration-assistant",
+    "source_section": "Limitations",
+    "last_verified": "2026-07-27",
+    "verification_hash": "cd123551d6ab669cf636f6e9a4da4f2ed34c38cf618498d94ad55aa32af814de",
+    "affected_rules": [
+      "fabric-sql-db-preview-limits",
+      "fabric-migration-assistant"
+    ]
+  },
+  {
+    "claim_id": "retirement-dates-migration-tools",
+    "claim": "What retirement dates apply to DMA, Azure Data Studio migration extension, DMS classic, SQL Data Sync, and DEA?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/dms/dms-overview",
+    "source_section": "Migration tools and service retirement notes",
+    "last_verified": "2026-07-27",
+    "verification_hash": "51d9b0bcfd777680714173e44c60dab01a002fddf42028016dd64bdd7d6025f3",
+    "affected_rules": [
+      "retired-tools",
+      "tool-selection"
+    ]
+  },
+  {
+    "claim_id": "esu-azure-vm-vs-arc",
+    "claim": "How do Extended Security Updates apply on SQL Server on Azure VM versus on-premises SQL Server enabled by Azure Arc?",
+    "source_url": "https://learn.microsoft.com/en-us/sql/sql-server/end-of-support/sql-server-extended-security-updates",
+    "source_section": "Azure",
+    "last_verified": "2026-07-27",
+    "verification_hash": "05076d1d86aa7ccb216ab08558e5615c9f0e411872a0e0345dabf39ab90a8f6a",
+    "affected_rules": [
+      "esu-path",
+      "azure-vm-vs-arc-esu"
+    ]
+  },
+  {
+    "claim_id": "azure-hybrid-benefit-applicability",
+    "claim": "Which SQL Server migration targets are eligible for Azure Hybrid Benefit?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/azure-hybrid-benefit",
+    "source_section": "How Azure Hybrid Benefit applies to Azure SQL",
+    "last_verified": "2026-07-27",
+    "verification_hash": "1b540c6b05eeeafd0607989e9be81f413f2db0f48b48b83caa1d9ecd9a2f160c",
+    "affected_rules": [
+      "ahb-applicability",
+      "cost-licensing"
+    ]
+  },
+  {
+    "claim_id": "cross-cloud-source-support",
+    "claim": "Which migration methods explicitly support SQL Server sources from AWS EC2, AWS RDS, GCP Compute Engine, and GCP Cloud SQL?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/dms/resource-scenario-status",
+    "source_section": "SQL Server migration scenarios",
+    "last_verified": "2026-07-27",
+    "verification_hash": "b4d25a8f732461c254848f718854613f309db3782ab89b90263075f55b08def8",
+    "affected_rules": [
+      "cross-cloud-source-support",
+      "method-source-matrix"
+    ]
+  }
+]

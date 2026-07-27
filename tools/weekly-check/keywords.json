@@ -3,7 +3,14 @@
   "feeds": [
     { "name": "Azure Updates", "url": "https://www.microsoft.com/releasecommunications/api/v2/azure/rss" },
     { "name": "Azure SQL Blog", "url": "https://techcommunity.microsoft.com/t5/s/gxcuf89792/rss/board?board.id=AzureSQLBlog" },
-    { "name": "SQL Server Blog", "url": "https://techcommunity.microsoft.com/t5/s/gxcuf89792/rss/board?board.id=SQLServer" }
+    { "name": "SQL Server Blog", "url": "https://techcommunity.microsoft.com/t5/s/gxcuf89792/rss/board?board.id=SQLServer" },
+    { "name": "Microsoft Learn search — Azure SQL whats new", "url": "https://learn.microsoft.com/api/search/rss?search=Azure%20SQL%20what%27s%20new&locale=en-us" },
+    { "name": "Microsoft Learn search — SQL Server release notes", "url": "https://learn.microsoft.com/api/search/rss?search=SQL%20Server%20release%20notes%20migration%20Azure&locale=en-us" },
+    { "name": "Microsoft Learn search — Azure Migrate SQL", "url": "https://learn.microsoft.com/api/search/rss?search=Azure%20Migrate%20SQL%20Server%20migration&locale=en-us" },
+    { "name": "Microsoft Learn search — Azure Arc data services SQL", "url": "https://learn.microsoft.com/api/search/rss?search=Azure%20Arc%20SQL%20Server%20migration%20data%20services&locale=en-us" },
+    { "name": "Microsoft Learn search — lifecycle end of support SQL", "url": "https://learn.microsoft.com/api/search/rss?search=SQL%20Server%20lifecycle%20end%20of%20support%20retirement&locale=en-us" },
+    { "name": "Microsoft Learn search — Azure pricing SQL programs", "url": "https://learn.microsoft.com/api/search/rss?search=Azure%20SQL%20pricing%20Azure%20Hybrid%20Benefit%20ESU&locale=en-us" },
+    { "name": "Azure Blog — SQL", "url": "https://azure.microsoft.com/en-us/blog/feed/?category=databases" }
   ],
   "include": [
     "sql server", "azure sql", "managed instance", "sql managed instance",
@@ -11,7 +18,11 @@
     "database migration service", "\\bdms\\b", "arc-enabled sql", "arc data",
     "sql server on azure", "sql on azure vm", "fabric sql", "fabric mirroring",
     "sql server 2022", "sql server 2025", "\\besu\\b", "extended security updates",
-    "azure hybrid benefit", "link for managed instance", "mi link", "azure migrate"
+    "azure hybrid benefit", "link for managed instance", "mi link", "azure migrate",
+    "what's new", "whats new", "release notes", "retirement", "retire", "deprecated",
+    "end of support", "lifecycle", "pricing", "program", "private link", "regional availability",
+    "compatibility", "prerequisite", "limit", "data sync", "data migration assistant",
+    "azure data studio", "distributed transaction", "dtc", "polybase", "filestream"
   ],
   "exclude": [
     "mysql", "postgresql", "postgres", "mariadb", "cosmos"

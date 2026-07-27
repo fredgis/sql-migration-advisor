@@ -2,14 +2,14 @@
 
 <p align="center">
   A <a href="https://docs.github.com/copilot/how-tos/use-copilot-agents/use-copilot-cli">GitHub Copilot CLI</a>
-  skill that recommends the <b>best path to migrate a SQL Server environment to Azure</b> —
+  skill that produces a preliminary, evidence-backed SQL Server → Azure migration recommendation —
   and the verified knowledge base behind it.
 </p>
 
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Knowledge base v1.4" src="https://img.shields.io/badge/knowledge%20base-v1.4-2b8a3e">
+  <img alt="Knowledge base v1.5" src="https://img.shields.io/badge/knowledge%20base-v1.5-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
 </p>
 
@@ -23,7 +23,7 @@
 
 ### 🎬 See it in action
 
-A short screen recording of the skill at work: you ask in plain language, answer the guided interview, and it returns a grounded recommendation (target, method, downtime, blockers, cost) sourced live from the knowledge base.
+A short screen recording of the skill at work: you ask in plain language, answer the guided interview, and it returns a preliminary assessment path (target, method, downtime, blockers, confidence, and cost levers) sourced live from the knowledge base.
 
 <video src="https://github.com/user-attachments/assets/5594fc75-4fb7-40a9-b9a1-0cc761c8aebe" poster="https://github.com/fredgis/sql-migration-advisor/raw/main/images/sql-migration-advisor-demo-poster.jpg" controls muted></video>
 
@@ -31,13 +31,14 @@ A short screen recording of the skill at work: you ask in plain language, answer
 
 Ask Copilot *"migrate a SQL Server environment to Azure"* (or *"migrer SQL Server vers Azure"*).
 The skill runs a short, structured interview, then returns a grounded, deterministic
-recommendation:
+preliminary recommendation for assessment and validation:
 
-- **Target** — SQL VM · AVS · SQL MI · SQL DB · Fabric SQL DB · Arc SQL MI · container · Arc in-place
-- **Method** — MI Link · LRS · backup-restore · DAG · DMS · replication · BACPAC · Fabric Migration Assistant
+- **Primary path** — target and method to assess first: SQL VM · AVS · SQL MI · SQL DB · Fabric SQL DB · Arc SQL MI · container · Arc in-place
+- **Best alternative** — the strongest fallback path when trade-offs or unknowns remain
+- **Exclusions** — why other targets were ruled out, including hard blockers and remediation options
+- **Confidence** — provisional or validated status, assumptions, unknowns, and evidence required
 - **Downtime class** — near-zero · minimal · offline
-- **Blockers + remediations** — what stands in the way, and how to clear it
-- **Cost levers** — Azure Hybrid Benefit · ESU
+- **Cost levers** — Azure Hybrid Benefit · ESU; not a sizing or pricing estimate
 - **Microsoft program** — Cloud Accelerate Factory · SQL in a Day
 
 It never recommends retired tooling (DMA, the Azure Data Studio extension, DMS *classic*).
@@ -46,7 +47,29 @@ It never recommends retired tooling (DMA, the Azure Data Studio extension, DMS *
 
 Every recommendation is grounded in the knowledge base
 [`docs/sql-server-to-azure-migration.md`](docs/sql-server-to-azure-migration.md), which the
-skill fetches live so version gates, retirements and previews are always current.
+skill fetches live. The result is a preliminary disposition, not a final migration verdict:
+tool-based assessment and architect validation are mandatory before execution. Each output carries the
+knowledge-base version, commit SHA and fetch timestamp so the advice is traceable.
+
+## Why it is trustworthy
+
+- **Verified knowledge** — the v1.5 knowledge base is source-backed and corrected against Microsoft Learn.
+- **Deterministic engine** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers.
+- **Explicit uncertainty** — recommendations carry confidence, provisional/validated status, assumptions, unknowns, blockers and evidence required.
+- **Freshness gates** — version bumps require substantive diffs; link checks classify bot-blocked pages; high-risk claims are tracked in [`reference/claims-registry.json`](reference/claims-registry.json).
+- **Regression protection** — [`tests/`](tests/) contains golden scenarios and consistency checks wired into CI.
+
+## Audit response
+
+An external audit deliberately challenged the advisor before wider use. It found real P0 issues, and the project treated that as a strength: invite scrutiny, fix the facts, and make drift harder to miss.
+
+| Audit finding | What changed |
+| --- | --- |
+| Over-confident final-advice framing | Repositioned as a discovery and pre-selection assistant with mandatory assessment-tool and architect validation. |
+| Factual inaccuracies in hard gates | Knowledge base v1.5 corrects PolyBase, DTC, LRS, replication and cross-cloud method constraints. |
+| Hidden uncertainty | Outputs now include confidence, provisional/validated status, assumptions, unknowns, hard blockers and evidence required. |
+| Weak freshness governance | Version-gated automation, consistency checks and a claims registry prevent unearned version bumps and catch source drift. |
+| Limited regression coverage | Golden scenarios and deterministic anti-regression tests now run in CI. |
 
 ---
 
@@ -55,13 +78,15 @@ skill fetches live so version gates, retirements and previews are always current
 | Path | Purpose |
 | --- | --- |
 | [`SKILL.md`](SKILL.md) | The skill — trigger description, principles, the ~10-question interview, and the output-card template. |
-| [`reference/decision-rules.md`](reference/decision-rules.md) | The deterministic decision engine (target → method → blockers → cost/program), distilled from the knowledge base — used as the offline fallback. |
+| [`reference/decision-rules.md`](reference/decision-rules.md) | The deterministic decision engine: Phase A eligibility filter, then Phase B ranking and tier selection — used as the offline fallback. |
 | [`examples/sample-recommendation.md`](examples/sample-recommendation.md) | A worked end-to-end example (SQL 2014 → Azure SQL MI via LRS). |
 | [`docs/sql-server-to-azure-migration.md`](docs/sql-server-to-azure-migration.md) | The knowledge base — every target family, method, tool, and commercial lever, with Microsoft Learn links. |
+| [`reference/claims-registry.json`](reference/claims-registry.json) | Hashes and source pointers for high-risk claims, used by weekly drift detection. |
 | [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) | The same knowledge base as a branded, partner-ready PDF. |
 | [`lab/`](lab/) | A self-contained, hands-on lab: take a legacy SQL Server 2016 workload to a SQL Server on Azure VM, driven by the advisor and the HVE Squad (VM-to-VM migration). |
 | [`howto/how-the-skill-works.md`](howto/how-the-skill-works.md) | Implementer's guide: how the skill works, how an agent uses it, and how the weekly Action keeps the knowledge base fresh (with architecture diagrams). |
 | [`blume/`](blume/) | Source for the online docs page — [fredgis.github.io/sql-migration-advisor](https://fredgis.github.io/sql-migration-advisor/) — a friendly overview of how the skill works and stays up to date. |
+| [`tests/`](tests/) | Golden scenarios and anti-regression checks that keep the decision engine deterministic. |
 
 The skill is prompt-driven markdown — no build step, no dependencies.
 
@@ -98,15 +123,16 @@ Then:
 
 ## How it works
 
-1. **Interview** — Copilot asks ~10 focused questions, one at a time (scope, source location &
-   version, primary driver, management model, instance-level feature dependencies, largest DB
-   size, downtime tolerance, network & ports, compliance, ancillary services). It asks in your
-   language and skips what you've already stated.
-2. **Score** — it applies the deterministic rules in
-   [`reference/decision-rules.md`](reference/decision-rules.md).
-3. **Recommend** — it returns a per-database card with target, method, downtime class, the
-   assessment tool to run next, blockers + remediations, cost levers and program fit. It never
-   recommends retired tooling (DMA, the Azure Data Studio extension, DMS *classic*).
+1. **Interview** — Copilot asks Tier 1 triage questions, then Tier 2 confirmations only when
+   needed (source type, migration intent, feature dependencies, PolyBase/DTC subtype, size,
+   downtime, sovereignty and tier-selection inputs). It asks in your language and skips what
+   you've already stated.
+2. **Filter + rank** — it applies Phase A eligibility rules, then Phase B ranking and tier
+   selection in [`reference/decision-rules.md`](reference/decision-rules.md).
+3. **Recommend for assessment** — it returns a per-database card with primary path, best
+   alternative, exclusions, confidence, assumptions, unknowns, evidence required, downtime class,
+   blockers + remediations, cost levers and program fit. It never recommends retired tooling
+   (DMA, the Azure Data Studio extension, DMS *classic*).
 
 See [`examples/sample-recommendation.md`](examples/sample-recommendation.md) for a full example.
 
@@ -116,10 +142,9 @@ See [`examples/sample-recommendation.md`](examples/sample-recommendation.md) for
 
 The whole engine on one page — not just the target choice, but everything the skill reasons
 through: the **agentic loop** (grounds itself in the live knowledge base, interviews, reasons
-deterministically, guards itself, then acts), the **~10-question interview**, **Step A** target
-decision tree, **Step B** method per target with the gates that make or break it, **Step C**
-cutover downtime classes + blockers & remediations, and **Step D** cost levers, Microsoft
-program and the assessment tool to run next — with the official Azure &amp; Microsoft Fabric
+deterministically, guards itself, then acts), the Tier 1/Tier 2 interview, Phase A eligibility,
+Phase B ranking and tier selection, cutover downtime classes + blockers & remediations, confidence
+and evidence requirements, cost levers, Microsoft program and the assessment tool to run next — with the official Azure &amp; Microsoft Fabric
 service icons.
 
 [![sql-migration-advisor — the complete AI decision logic](docs/sql-migration-advisor-poster.png)](docs/sql-migration-advisor-poster.png)
@@ -149,7 +174,7 @@ source-backed inventory of *every* way to migrate SQL Server to Azure:
 - Commercial & funding levers — AHB / ESU / PAYG · Azure Accelerate · Cloud Accelerate Factory · SQL in a Day.
 
 Everything is cross-checked against Microsoft Learn (current as of July 2026) with colored
-Mermaid decision diagrams. The `SKILL.md` mirrors its **AI Migration Agent I/O contract** (§14).
+Mermaid decision diagrams. The `SKILL.md` mirrors its AI Migration Agent I/O contract (§14).
 
 ---
 
@@ -157,7 +182,7 @@ Mermaid decision diagrams. The `SKILL.md` mirrors its **AI Migration Agent I/O c
 
 The same knowledge base ships as a polished, branded PDF —
 [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (~18 pages,
-v1.4, July 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
+v1.5, July 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
 
@@ -181,21 +206,25 @@ A scheduled GitHub Action —
 [`.github/workflows/weekly-kb-check.yml`](.github/workflows/weekly-kb-check.yml) — keeps the
 knowledge base current **every Monday** (~07:00 Europe/Paris — 05:00 UTC), so the advisor never drifts:
 
-1. **Link check.** Every URL in `docs/sql-server-to-azure-migration.md` is verified with
-   [lychee](https://github.com/lycheeverse/lychee-action) — broken or moved links are surfaced.
-2. **News scan.** Official Azure / SQL Server feeds (Azure Updates, the Azure SQL & SQL Server
-   blogs) are scanned over the past 7 days and filtered to SQL-Server-to-Azure migration topics
-   (new GA / preview / retirement, ESU & pricing changes, new targets / methods / tools).
-3. **AI review.** [GitHub Models](https://docs.github.com/github-models) — via the built-in
-   token, no external secrets — judges whether anything found actually warrants a change.
-4. **Update, if needed.** When a change is warranted, the workflow **opens a Pull Request** that
-   bumps the document version, adds a dated changelog row, and regenerates the **PDF** and its
-   preview — with the news and link findings in the PR body. Nothing lands on `main` without a
-   PR, because this document grounds the skill.
+1. **Consistency gate.** `tools/weekly-check/check-consistency.mjs` blocks the run when the
+   knowledge base, decision rules and README badge disagree on the current version.
+2. **Link classification.** URLs are classified as `ok`, `unreachable` or
+   `unverified-bot-blocked` (for HTTP 403/429), so bot blocking is never mistaken for a healthy
+   source.
+3. **News + claims drift.** Official Azure / SQL Server feeds are scanned, and
+   [`reference/claims-registry.json`](reference/claims-registry.json) hashes the source sections
+   behind high-risk claims to catch silent Microsoft Learn edits.
+4. **AI review.** [GitHub Models](https://docs.github.com/github-models) — via the built-in
+   token, no external secrets — reviews the evidence and produces a report; broken links and AI
+   verdicts are report-only until a human applies the substantive fix.
+5. **Gated update.** A version bump requires `--substantive` plus a verified content diff versus
+   `HEAD`. Housekeeping can refresh stamps without a version bump or changelog row. When a real
+   change is applied, the workflow opens a Pull Request with the evidence and regenerated PDF
+   artifacts for review.
 
-Every run also writes a links + news summary to the Actions run, and you can trigger it on
-demand from the **Actions** tab (*Run workflow*). The document carries a visible version and a
-collapsible changelog (§17) so every automated update is traceable.
+Every run writes a consistency, link, news, claims and AI-review summary to the Actions run, and
+you can trigger it on demand from the **Actions** tab (*Run workflow*). The document carries a
+visible version and a collapsible changelog (§17) so every substantive update is traceable.
 
 > Enable *Settings → Actions → General → "Allow GitHub Actions to create and approve pull
 > requests"* so the weekly job can open its PR.
@@ -204,16 +233,17 @@ collapsible changelog (§17) so every automated update is traceable.
 
 ## Keep it up to date
 
-The decision rules track Microsoft tooling changes (retirements, version gates, previews). When
-the knowledge base is updated, re-sync [`reference/decision-rules.md`](reference/decision-rules.md)
-so the advisor stays accurate. Last verified: July 2026.
+The decision rules track Microsoft tooling changes (retirements, version gates, previews). The
+consistency gate keeps [`reference/decision-rules.md`](reference/decision-rules.md), the knowledge
+base and this README on the same version. Last verified: July 2026.
 
 <!-- CHANGELOG:START -->
 <details>
-<summary><b>📓 Changelog</b> — current: <b>v1.4</b> (July 2026)</summary>
+<summary><b>📓 Changelog</b> — current: <b>v1.5</b> (July 2026)</summary>
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| v1.5 | 2026-07-27 | Corrected SQL MI PolyBase/data-virtualization and DTC nuance; fixed transactional-replication, LRS and cross-cloud method gates; replaced retired validation guidance; removed unsourced statistics; added uncertainty, traceability, claims drift detection and golden decision tests. |
 | v1.4 | 2026-07-20 | Added GA announcement of SQL Migration to SQL Server on Azure VMs in Azure Arc. |
 | v1.3 | 2026-07-15 | **SQL migration to SQL Server on Azure VMs in Azure Arc is now GA** (was public preview since April 2026). Refreshed the Arc control-plane entry (Azure SQL MI + SQL VM targets both GA), the source→target matrix, and §5.1; added the GA announcement + Learn how-to links. |
 | v1.2 | 2026-07-03 | Fixed 2 moved Microsoft Learn links (Smart Bulk Copy, Migrate to Arc-enabled SQL MI); added the weekly link + news freshness automation. |

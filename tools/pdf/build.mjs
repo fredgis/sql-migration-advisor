@@ -72,7 +72,7 @@ function mmdcCli() {
 
 // ---------- read source + version ----------
 let raw = fs.readFileSync(SRC, 'utf8');
-const verMatch = raw.match(/\*\*Version\.\*\*\s*v([0-9.]+)\s*[—-]\s*([A-Za-z]+ \d{4})/);
+const verMatch = raw.match(/\*\*Version\.\*\*\s*v([0-9.]+)\s*[—-]\s*((?:\d{1,2}\s+)?[A-Za-z]+ \d{4})/);
 const VERSION = verMatch ? `v${verMatch[1]}` : 'v1.0';
 const COVER_DATE = verMatch ? verMatch[2] : new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' });
 console.log(`source version: ${VERSION} (${COVER_DATE}); browser: ${CHROME}`);

@@ -21,8 +21,9 @@ agent into a focused **SQL Server → Azure migration consultant**. The skill is
 **knowledge base** ([`docs/sql-server-to-azure-migration.md`](../docs/sql-server-to-azure-migration.md))
 that acts as the single source of truth, and by a distilled **decision engine**
 ([`reference/decision-rules.md`](../reference/decision-rules.md)) that makes the core recommendation
-deterministic. A weekly GitHub Action re-verifies the knowledge base and opens a pull request when
-something is stale.
+deterministic. It produces a preliminary disposition for assessment, not an unsupervised final verdict. A
+gated weekly GitHub Action re-verifies versions, links, news and high-risk claims, then opens a pull request
+only when a substantive change was actually applied.
 
 ---
 
@@ -41,16 +42,20 @@ Step by step:
    front matter (keywords like *migrate SQL Server*, *SQL to Azure*, *SQL in a Day*) and activates the skill.
 2. **Load the source of truth.** It fetches the live knowledge base. If the network is unavailable it
    falls back to the bundled `reference/decision-rules.md`, and *says so* (so the user knows it may lag).
-3. **Interview first, recommend second.** It asks ~8–11 short, mostly multiple-choice questions **one
-   at a time** (scope, source version, downtime tolerance, instance-level feature dependencies, size,
-   sovereignty, …). It never guesses the path before asking, and skips branches that don't apply.
-4. **Score deterministically.** It applies the decision engine's **Steps A→D**: pick the **Target**
-   → pick the **Method** → classify **downtime + blockers** → attach **cost levers + program + the next
-   assessment tool**. Same answers ⇒ same recommendation.
-5. **Output a recommendation card.** A readable Markdown card: target, method, downtime class, blockers
-   with remediations, cost levers (AHB / ESU), and the Microsoft program fit. See
-   [`examples/sample-recommendation.md`](../examples/sample-recommendation.md) for a worked run.
-6. **Offer follow-ups.** A per-database table for an estate, a cutover runbook, or a one-slide summary
+3. **Interview first, recommend second.** It asks Tier 1 triage questions and Tier 2 confirmation
+   questions **one at a time** (migration intent, source type, version, downtime tolerance, PolyBase/DTC
+   subtype, size, sovereignty, tier-selection inputs, …). It never guesses the path before asking, and skips
+   branches that don't apply.
+4. **Filter eligibility.** Phase A applies only hard constraints and returns `eligible`,
+   `eligible_with_remediation`, `unsupported`, or `unknown_requires_assessment` for each target/method.
+5. **Rank viable paths.** Phase B ranks candidates by refactoring effort, downtime, operational burden,
+   compatibility, resilience, cost, reversibility and sovereignty, then applies tier-selection rules.
+6. **Output the contract.** The agent emits machine-readable JSON, then renders it as Markdown: primary
+   recommendation, best alternative, why other targets were excluded, confidence, `recommendationStatus`
+   (`provisional` or `validated`), assumptions, unknowns, hard blockers, evidence required, downtime class,
+   cost levers and program fit. See [`examples/sample-recommendation.md`](../examples/sample-recommendation.md)
+   for a worked run.
+7. **Offer follow-ups.** A per-database table for an estate, a cutover runbook, or a one-slide summary
    (handed off to another skill).
 
 ### Deterministic core, adaptive agent
@@ -60,7 +65,7 @@ there are **two layers**, and only the inner one is rigid:
 
 | Layer | What it does | Behaviour |
 | --- | --- | --- |
-| **Deterministic core** (`decision-rules.md`, Steps A→D) | The *what*: which target + method for a given profile. | Rigid **by design** — reproducible, auditable, no invented paths or retired tools. |
+| **Deterministic core** (`decision-rules.md`, Phase A + Phase B) | The *what*: which paths are eligible, which candidate ranks highest, and which tier to assess. | Rigid **by design** — reproducible, auditable, no invented paths or retired tools. |
 | **Adaptive agent layer** (the LLM around the core) | The *how*: run the interview, handle an estate, sequence a plan, resolve contradictions. | Context-aware — pre-fills known answers, runs one recommendation **per profile**, surfaces trade-offs, builds runbooks. |
 
 So the determinism is a **guardrail, not a straitjacket**: it keeps every building block grounded, while
@@ -76,11 +81,13 @@ Why wrap this in a skill instead of just asking a model to "plan a SQL migration
 - **Grounded, on-demand expertise.** The skill injects verified knowledge and rules *only when relevant*,
   keeping the agent's context clean the rest of the time. Every recommendation cites Microsoft Learn, so
   it is traceable.
+- **Preliminary by design.** The output is a recommended assessment path that still requires tooling evidence
+  and architect validation before execution.
 - **Built-in guardrails reduce hallucination.** Hard rules — never recommend retired tooling (DMA, the
   Azure Data Studio extension, DMS *classic*); always separate **target / control plane / method**; be
-  honest about previews and size caps.
-- **Deterministic and auditable.** The same profile always yields the same core recommendation, so a
-  partner can reproduce and defend the advice.
+  honest about previews, source constraints and size caps.
+- **Deterministic and auditable.** The same profile always yields the same eligibility/ranking result, so a
+  partner can reproduce and defend the preliminary disposition.
 - **A structured interview, not a guess.** `ask_user`, one question at a time, multiple-choice — reliable
   input instead of the model assuming missing facts.
 - **Composable.** Its Markdown/JSON output feeds other steps or skills (e.g. generate a summary slide),
@@ -105,12 +112,14 @@ The repo separates the **prompt logic**, the **knowledge**, and the **freshness 
 | Path | Purpose |
 | --- | --- |
 | [`SKILL.md`](../SKILL.md) | The skill itself: trigger `description`, core principles, the ~10-question interview, the output-card template, and guardrails. |
-| [`reference/decision-rules.md`](../reference/decision-rules.md) | The deterministic engine (Steps A→D). Distilled from the knowledge base; used as the **offline fallback**. |
+| [`reference/decision-rules.md`](../reference/decision-rules.md) | The deterministic engine: Phase A eligibility, Phase B ranking, tier selection and uncertainty handling. Distilled from the knowledge base; used as the **offline fallback**. |
 | [`docs/sql-server-to-azure-migration.md`](../docs/sql-server-to-azure-migration.md) | The **knowledge base** — every target family, method, tool and commercial lever, with Microsoft Learn links. The single source of truth. |
 | [`docs/sql-server-to-azure-migration.pdf`](../docs/sql-server-to-azure-migration.pdf) | The same knowledge base as a branded, partner-ready PDF (regenerated by the pipeline in `tools/pdf/`). |
 | [`examples/sample-recommendation.md`](../examples/sample-recommendation.md) | A worked end-to-end example that calibrates tone and the card format. |
 | [`lab/`](../lab/) | A self-contained hands-on lab (legacy SQL Server 2016 → SQL Server on Azure VM). |
-| `.github/workflows/weekly-kb-check.yml` + `tools/weekly-check/` | The weekly freshness automation (see §5). |
+| `.github/workflows/weekly-kb-check.yml` + `tools/weekly-check/` | The weekly freshness automation and consistency gates (see §5). |
+| [`reference/claims-registry.json`](../reference/claims-registry.json) | High-risk claim hashes and source pointers for drift detection. |
+| [`tests/`](../tests/) | Golden scenarios and deterministic anti-regression checks. |
 
 **Source-of-truth precedence:** the live knowledge base wins. `decision-rules.md` is a faithful
 distillation for offline use; if the two ever disagree, the skill prefers the live doc and says so.
@@ -129,38 +138,64 @@ that runs every **Monday 05:00 UTC** (and on manual `workflow_dispatch`).
 
 What each stage does:
 
-1. **Link check (`lychee`).** Verifies every URL in the knowledge base; broken/moved links alone are
-   enough to warrant a PR.
-2. **Gather news (`gather-news.mjs`).** Pulls public Microsoft RSS feeds (Azure Updates, Azure SQL Blog,
+1. **Consistency check (`check-consistency.mjs`).** Blocks the run when the knowledge base, decision rules
+   and README badge/changelog disagree on the current version.
+2. **Link classification.** Classifies knowledge-base links as `ok`, `unreachable`, or
+   `unverified-bot-blocked` for HTTP 403/429. Bot blocking is reported as uncertainty, not treated as a
+   healthy source and not auto-described as fixed.
+3. **Gather news (`gather-news.mjs`).** Pulls public Microsoft RSS feeds (Azure Updates, Azure SQL Blog,
    SQL Server Blog), filters by an include/exclude keyword list ([`keywords.json`](../tools/weekly-check/keywords.json))
    over a rolling 7-day window. No dependencies — plain `fetch` + a small RSS parser.
-3. **AI review (`build-prompt.mjs` → GitHub Models).** Sends the **full** knowledge base **and** the
-   **full** decision tree, plus the link report and news, and asks the model to flag real changes
-   *and any drift between the two documents*. It replies with a single JSON verdict:
-   `{ needsUpdate, bump, changelog, suggestions }`.
-4. **Decide (`decide.mjs`).** A PR is warranted if there are broken links **or** the review returns
-   `needsUpdate: true`. It writes the changelog line and the PR body (substantive edits are *suggested*
-   for a human, never auto-written into the prose).
-5. **Apply (`apply-update.mjs`).** Deterministically bumps the version, prepends a changelog row, keeps
-   the README badge/changelog in sync, and syncs the decision-tree's freshness stamp. Then the PDF and
-   preview are regenerated (best-effort).
-6. **Open a PR.** `peter-evans/create-pull-request` opens *"Weekly KB freshness update"* on the
-   `weekly-kb-update` branch with labels `automated` + `knowledge-base`. **A human reviews and merges** —
-   the automation never pushes content edits straight to `main`.
+4. **Claims drift detection (`verify-claims.mjs`).** Re-fetches the source sections in
+   [`reference/claims-registry.json`](../reference/claims-registry.json), hashes the relevant text and
+   reports silent Microsoft Learn edits behind high-risk claims.
+5. **AI review (`build-prompt.mjs` → GitHub Models).** Sends the evidence, the knowledge base and the
+   decision tree to the model to flag real changes and any drift between documents. The verdict is an input
+   to review, not proof that content was fixed.
+6. **Decide (`decide.mjs`).** Separates substantive changes from housekeeping and report-only findings.
+   Broken links, bot-blocked links and AI suggestions can open an issue or PR body, but they do not justify a
+   version bump by themselves.
+7. **Apply (`apply-update.mjs`).** A version bump requires `--substantive` and a verified content diff
+   versus `HEAD`. `--housekeeping` can update freshness stamps without changing the version or adding a
+   changelog row. Changelog text is constrained to what actually changed.
+8. **Open a PR.** `peter-evans/create-pull-request` opens a reviewable PR with evidence and regenerated
+   artifacts when files changed. **A human reviews and merges** — the automation never pushes content edits
+   straight to `main`.
 
 ### The review model
 
 The review runs on **`openai/gpt-5`** via GitHub Models (`actions/ai-inference@v2`), using the built-in
 `GITHUB_TOKEN` with `permissions: models: read` — **no external secret required**. GPT-5 was chosen
 because it is the most capable model *available on GitHub Models*: it reasons, has broad up-to-date
-knowledge, and has a 200K-token context window and 100K-token output budget — enough to review the whole
-KB plus the decision tree in one pass (~16K tokens of input today).
+knowledge, and has a large enough context window to review the knowledge base, decision tree, link report,
+news digest and claims-drift summary in one pass. Its output is advisory: the gates require actual file diffs
+before versioning changes.
 
 > **Note for implementers:** GitHub Models does **not** host any Anthropic/Claude models — only OpenAI,
 > Meta, Microsoft, Mistral AI, DeepSeek and Cohere. To run Claude (or any non-hosted model) you must
 > replace the `actions/ai-inference` step with a provider call (Anthropic API, Amazon Bedrock, or
-> **Microsoft Foundry**) and add the corresponding secret. The AI step is `continue-on-error`, so even if
-> the review fails, the link check + version bump still run and the workflow never breaks.
+> **Microsoft Foundry**) and add the corresponding secret. The AI step is `continue-on-error`; if it fails,
+> the deterministic checks still report, but no AI-only version bump is allowed.
+
+### Golden test suite
+
+The repo now includes [`tests/`](../tests/) with golden migration scenarios, consistency checks and
+anti-regression cases. The suite guards the behaviours that were easiest to over-claim: unknowns on
+decision-driving dependencies remain provisional, formerly unreachable branches stay reachable, retired tools
+stay excluded, README/KB/rules versions remain aligned, and the same inputs produce the same output contract.
+
+### Audit response
+
+An external audit was run before broader positioning. It found real P0 issues, and the project responded by
+turning them into gates rather than notes.
+
+| Audit finding | What changed |
+| --- | --- |
+| Accuracy gaps in hard constraints | Knowledge base v1.5 corrected the PolyBase, DTC, LRS, replication and cross-cloud method rules. |
+| Overstated finality | The advisor is now framed as discovery and pre-selection pending assessment tooling and architect validation. |
+| Silent assumptions | Outputs carry confidence, status, assumptions, unknowns, blockers and evidence required. |
+| Unsafe freshness automation | Version bumps require substantive diffs; bot-blocked links and AI verdicts are report-only. |
+| Weak regression coverage | Golden scenarios and consistency gates run in CI. |
 
 ### Prerequisites for the automation
 
@@ -172,6 +207,7 @@ KB plus the decision tree in one pass (~16K tokens of input today).
 ## 6. Design principles & guardrails (worth preserving when you port it)
 
 - **Interview first, recommend second** — never guess the path; ask one question at a time.
+- **Frame the result as preliminary** — recommend the assessment path, then require tooling evidence and architect validation.
 - **Ground every answer in the source doc** — never invent targets, tools, or version gates.
 - **Separate the three layers** — *target* (where the DB lands), *control plane* (how you assess/orchestrate),
   *method* (the data vehicle). Mixing them is the #1 mistake.
@@ -197,7 +233,7 @@ A checklist to reuse the pattern for another domain (or to adopt this one):
 4. **Adopt the freshness automation** (`tools/weekly-check/` + the workflow). Re-point `keywords.json`
    feeds/keywords to your domain. Confirm the model choice against the live GitHub Models catalog, or wire
    an external provider + secret if you need a specific model.
-5. **Keep humans in the loop** — the Action opens a PR; it does not auto-merge content.
+5. **Keep humans in the loop** — the Action opens a PR; it does not auto-merge content or claim fixes it did not apply.
 6. **Mind file hygiene** — `SKILL.md` should be UTF-8 with **LF** line endings (a CRLF front-matter
    delimiter can stop the skill from loading).
 7. **Localize** — the interview should follow the user's language.
@@ -219,8 +255,9 @@ building blocks. The advisor tells you *where* to land and *how*; the next two a
 
 ### The three building blocks
 
-- **Advisor — shipped (green).** This repo. It interviews the user, scores Steps A→D, and returns a
-  grounded, self-refreshing recommendation (target, method, downtime, blockers, cost levers, program fit).
+- **Advisor — shipped (green).** This repo. It interviews the user, applies Phase A eligibility and Phase B
+  ranking, and returns a grounded, self-refreshing preliminary recommendation (target, method, downtime,
+  blockers, confidence, evidence required, cost levers, program fit).
 - **Assessment — planned (amber).** A skill/agent that reads the *actual* estate (versions, sizes,
   instance-level feature dependencies, blockers) and turns the advisor's recommendation into a sized,
   evidence-backed plan.

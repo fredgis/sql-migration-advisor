@@ -3,29 +3,36 @@
   "diagram_type": "architecture",
   "meta": {
     "title": "Weekly freshness automation",
-    "subtitle": "weekly-kb-check keeps the knowledge base honest",
+    "subtitle": "a version bump is earned, never assumed",
     "output": "weekly-update.html"
   },
   "components": [
     { "id": "cron", "type": "external", "label": "Schedule", "sublabel": "Mon 05:00 UTC", "pos": [40, 300], "size": [150, 60] },
-    { "id": "scan", "type": "backend", "label": "Link + news scan", "sublabel": "lychee + RSS", "pos": [240, 300], "size": [170, 60] },
-    { "id": "ai", "type": "cloud", "label": "GPT-5 review", "sublabel": "GitHub Models", "pos": [460, 300], "size": [160, 60], "tag": "verdict JSON" },
-    { "id": "decide", "type": "backend", "label": "decide.mjs", "sublabel": "stale?", "pos": [680, 300], "size": [150, 60] },
-    { "id": "apply", "type": "backend", "label": "apply-update.mjs", "sublabel": "bump + changelog", "pos": [890, 300], "size": [185, 60] },
-    { "id": "kb", "type": "database", "label": "Knowledge base", "sublabel": "source of truth", "pos": [1135, 140], "size": [160, 60] },
-    { "id": "pr", "type": "external", "label": "Pull request", "sublabel": "human merges", "pos": [1135, 300], "size": [160, 60], "tag": "kb-update" }
+    { "id": "gate", "type": "security", "label": "Consistency gate", "sublabel": "check-consistency.mjs", "pos": [230, 300], "size": [180, 60], "tag": "blocking" },
+    { "id": "scan", "type": "backend", "label": "Link + news scan", "sublabel": "lychee + RSS", "pos": [450, 300], "size": [165, 60] },
+    { "id": "ai", "type": "cloud", "label": "GPT-5 review", "sublabel": "GitHub Models", "pos": [655, 300], "size": [155, 60], "tag": "verdict JSON" },
+    { "id": "claims", "type": "backend", "label": "Claims drift", "sublabel": "verify-claims.mjs", "pos": [655, 460], "size": [155, 60] },
+    { "id": "decide", "type": "backend", "label": "decide.mjs", "sublabel": "substantive?", "pos": [850, 300], "size": [150, 60] },
+    { "id": "report", "type": "cloud", "label": "Report only", "sublabel": "no version bump", "pos": [850, 460], "size": [150, 60] },
+    { "id": "apply", "type": "backend", "label": "apply-update.mjs", "sublabel": "verified diff required", "pos": [1040, 300], "size": [185, 60] },
+    { "id": "kb", "type": "database", "label": "Knowledge base", "sublabel": "source of truth", "pos": [1275, 140], "size": [160, 60] },
+    { "id": "pr", "type": "external", "label": "Pull request", "sublabel": "human merges", "pos": [1275, 300], "size": [160, 60], "tag": "kb-update" }
   ],
   "connections": [
-    { "from": "cron", "to": "scan", "label": "trigger", "labelDy": -24 },
-    { "from": "scan", "to": "ai", "label": "report + news", "labelDy": -24 },
+    { "from": "cron", "to": "gate", "label": "trigger", "labelDy": -24 },
+    { "from": "gate", "to": "scan", "label": "versions agree", "labelDy": -24 },
+    { "from": "scan", "to": "ai", "label": "links + news", "labelDy": -24 },
     { "from": "ai", "to": "decide", "label": "verdict", "labelDy": -24 },
-    { "from": "decide", "to": "apply", "label": "stale", "variant": "emphasis", "labelDy": -24 },
+    { "from": "decide", "to": "apply", "label": "substantive", "variant": "emphasis", "labelDy": -24 },
     { "from": "apply", "to": "pr", "label": "opens PR", "variant": "emphasis", "labelDy": -24 },
+    { "from": "claims", "to": "ai", "label": "section drift", "fromSide": "top", "toSide": "bottom" },
+    { "from": "decide", "to": "report", "label": "housekeeping", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
     { "from": "pr", "to": "kb", "label": "on merge", "variant": "dashed", "fromSide": "top", "toSide": "bottom" }
   ],
   "cards": [
-    { "dot": "cyan", "title": "Gather", "items": ["lychee verifies every KB link", "RSS news, 7-day, keyword-filtered"] },
-    { "dot": "emerald", "title": "Review + decide", "items": ["GPT-5 reviews the full KB + decision tree", "PR if broken links OR needsUpdate"] },
-    { "dot": "amber", "title": "Human in the loop", "items": ["apply-update bumps version + changelog", "A human reviews and merges the PR"] }
+    { "dot": "rose", "title": "Gate first", "items": ["KB, decision rules and README versions must agree", "A mismatch fails the run before anything else"] },
+    { "dot": "cyan", "title": "Detect", "items": ["Links classified ok / unreachable / bot-blocked", "Claims registry hashes the sources behind 12 high-risk claims"] },
+    { "dot": "emerald", "title": "Earn the bump", "items": ["Version bumps require a verified substantive diff", "Otherwise: housekeeping stamp or a report-only issue"] },
+    { "dot": "amber", "title": "Human in the loop", "items": ["Broken links and AI verdicts are report-only", "A human reviews and merges every PR"] }
   ]
 }

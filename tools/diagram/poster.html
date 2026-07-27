@@ -165,7 +165,7 @@
         <span class="layer"><b>Method</b> = the data-movement vehicle</span>
         <span class="layer">Never recommend retired tooling</span>
       </div>
-      <div class="src">Sourced from the <b>sql-migration-advisor</b> knowledge base — docs/sql-server-to-azure-migration.md (v1.3, July 2026). Whole engine, not just target selection. Official Azure &amp; Microsoft Fabric service icons.</div>
+      <div class="src">Sourced from the <b>sql-migration-advisor</b> knowledge base — docs/sql-server-to-azure-migration.md (v1.5, July 2026). Whole engine, not just target selection. Official Azure &amp; Microsoft Fabric service icons.</div>
     </div>
     <div class="brand">
       <img class="svc" src="icons/fabric.svg" alt="Microsoft Fabric" style="width:30px;height:30px;" />
@@ -288,7 +288,7 @@
         <div class="ex">assessment-only · ESU pressure · migrate later</div></div>
       <div class="fcond" style="left:92px;top:258px;width:476px">
         <div class="q">VM-only features, or OS / engine control?</div>
-        <div class="ex">FILESTREAM / FileTable · PolyBase · cross-instance DTC · agents on the box · exact version pinning</div></div>
+        <div class="ex">FILESTREAM / FileTable · PolyBase → external RDBMS · heterogeneous DTC · agents on the box · exact version pinning</div></div>
       <div class="fcond" style="left:92px;top:468px;width:476px">
         <div class="q">Kubernetes on-prem / edge / sovereign multicloud?</div>
         <div class="ex">run on your own K8s — AKS · ARO · EKS · GKE</div></div>
@@ -357,8 +357,8 @@
     <div class="grid3">
       <div class="panel"><h3><img src="icons/sql-mi.svg" alt=""/>→ Azure SQL Managed Instance</h3>
         <div class="rows">
-          <div class="r"><span class="pill p-nz">near-zero</span><b>MI Link</b> — <span class="g">source 2016+ · port 5022 both ways · ≤10 DBs</span></div>
-          <div class="r"><span class="pill p-off">offline</span><b>Log Replay Service (LRS)</b> — <span class="g">source 2012+ · public endpoint</span></div>
+          <div class="r"><span class="pill p-nz">near-zero</span><b>MI Link</b> — <span class="g">source 2016+ · sysadmin + distributed AG · port 5022 both ways · ≤10 DBs</span></div>
+          <div class="r"><span class="pill p-off">offline</span><b>Log Replay Service (LRS)</b> — <span class="g">source 2008–2022 · public endpoint <i>(Arc portal path: 2012+)</i></span></div>
           <div class="r"><span class="pill p-off">offline</span><b>Native backup/restore (.bak)</b> — <span class="g">2008+ · migrate TDE cert FIRST</span></div>
           <div class="r"><span class="pill p-min">online subset</span><b>Transactional replication</b> — <span class="g">2012+</span></div>
         </div></div>
@@ -366,7 +366,7 @@
         <div class="rows">
           <div class="r"><span class="pill p-off">offline</span><b>Modern DMS (offline)</b> — <span class="g">online N/A to SQL DB · 2008+</span></div>
           <div class="r"><span class="pill p-off">offline</span><b>BACPAC / SqlPackage</b> — <span class="g">SqlPackage for scale</span></div>
-          <div class="r"><span class="pill p-min">online subset</span><b>Transactional replication</b> — <span class="g">2016–2019 only · article limits</span></div>
+          <div class="r"><span class="pill p-min">online subset</span><b>Transactional replication</b> — <span class="g">2016+ (incl. 2022 / 2025) · push subscriber · article limits</span></div>
           <div class="r"><span class="pill p-no">not supported</span><span class="g">native .bak restore · detach/attach · MI Link</span></div>
         </div></div>
       <div class="panel"><h3><img src="icons/sql-vm.svg" alt=""/>→ SQL Server on Azure VM</h3>
@@ -399,24 +399,24 @@
   <!-- STEP C : cutover -->
   <section>
     <div class="shead"><span class="badge">C</span><h2>Cutover — downtime class, blockers &amp; remediations</h2>
-      <span class="note">~60% of migrations stumble on undocumented linked servers / SQL Agent jobs — map dependencies first</span></div>
+      <span class="note">undocumented linked servers &amp; SQL Agent jobs are the most common late-discovered blockers — map dependencies first</span></div>
     <div class="dbar">
       <div class="dseg nz"><div class="h">Near-zero (minutes)</div>MI Link · Distributed / Always On AG · Striim</div>
       <div class="dseg min"><div class="h">Minimal (tens of min)</div>transactional replication · log shipping · native restore + diff/log</div>
       <div class="dseg off"><div class="h">Offline (planned window)</div>native backup/restore · LRS · BACPAC · bcp · detach/attach · ADF · Data Box</div>
     </div>
     <div class="blk">
-      <div class="bcard"><div class="b1">TDE-encrypted DB</div><div class="b2">Migrate the <b>server-level certificate FIRST</b>, before any native restore to MI — else the restore fails ~80% in, no clear error.</div></div>
+      <div class="bcard"><div class="b1">TDE-encrypted DB</div><div class="b2">Migrate the <b>server-level certificate FIRST</b> — the restore <b>fails</b> unless the certificate is installed in the destination <code>master</code> first.</div></div>
       <div class="bcard"><div class="b1">Windows logins</div><div class="b2">DMS skips them by default — enable the option, grant MI read to Entra ID, script + recreate logins/users.</div></div>
       <div class="bcard"><div class="b1">MI Link ports</div><div class="b2">Open <b>5022</b> both directions (often blocked in banking / industrial nets).</div></div>
       <div class="bcard"><div class="b1">Other methods' network</div><div class="b2">Outbound <b>443</b> to Blob, <b>1433</b> (+ <b>1434/UDP</b> for named instances).</div></div>
       <div class="bcard"><div class="b1">Distributed AG</div><div class="b2">Requires <b>AD Domain Services</b> (or workgroup AG + certs).</div></div>
-      <div class="bcard"><div class="b1">Txn replication → SQL DB</div><div class="b2">Source <b>2016–2019 only</b>; article-type limits (no hierarchyid, sql_variant…).</div></div>
+      <div class="bcard"><div class="b1">Txn replication → SQL DB</div><div class="b2">Source <b>2016+</b> (incl. 2022 / 2025); push subscriber only; article-type limits (no hierarchyid…).</div></div>
       <div class="bcard"><div class="b1">SQL Agent jobs</div><div class="b2">MI: native · SQL DB: <b>Elastic Jobs</b>.</div></div>
       <div class="bcard"><div class="b1">Linked servers / cross-DB</div><div class="b2">OK on VM / MI · <b>not on SQL DB</b> — refactor.</div></div>
       <div class="bcard"><div class="b1">SSIS · SSRS · SSAS</div><div class="b2">Azure-SSIS IR · Power BI paginated (RDL) · AAS / Power BI (XMLA).</div></div>
     </div>
-    <div class="note-full" style="border-style:solid"><b>Pre-cutover validation:</b>&nbsp; run <b>DEA</b> (Database Experimentation Assistant) capture + replay for performance-sensitive workloads.</div>
+    <div class="note-full" style="border-style:solid"><b>Pre-cutover validation:</b>&nbsp; capture with <b>Extended Events</b> → replay with <b>RML Utilities / OStress</b> → analyse with <b>Query Store</b>. <i>(DEA retired 15 Dec 2024 · Distributed Replay unavailable in SQL Server 2022+.)</i></div>
   </section>
 
   <!-- STEP D : cost / program -->
@@ -474,8 +474,9 @@
       </table></div>
     <div class="panel"><h3><span class="dot" style="background:#8661C5"></span>Cross-cloud sources &amp; reverse path</h3>
       <div class="rows">
-        <div class="r"><b>Supported sources</b> for DMS / LRS / MI Link / native restore:</div>
-        <div class="r g">AWS EC2 · AWS RDS for SQL Server · GCP Compute Engine · GCP Cloud SQL for SQL Server</div>
+        <div class="r"><b>IaaS sources</b> (AWS EC2 · GCP Compute Engine) — <span class="g">all methods, incl. MI Link if sysadmin + distributed AG + 5022</span></div>
+        <div class="r"><b>Managed PaaS sources</b> (AWS RDS · GCP Cloud SQL):</div>
+        <div class="r g">✅ LRS &amp; DMS via backup upload to Blob · ⚠️ native restore indirect only · <b>❌ MI Link and transactional replication</b> — no sysadmin, no AG endpoints</div>
         <div class="r" style="margin-top:6px"><b>Reverse / exit</b></div>
         <div class="r g">MI → SQL Server 2022/2025 via MI Link failback (trivial) · SQL DB → SQL Server via BACPAC + scripts (heavy)</div>
       </div></div>
