@@ -44,6 +44,8 @@ preliminary recommendation for assessment and validation:
 
 It never recommends retired tooling (DMA, the Azure Data Studio extension, DMS *classic*).
 
+<video src="https://github.com/user-attachments/assets/c6108b23-af0b-45d6-9dd8-feb5bad9d679" controls muted></video>
+
 ![sql-migration-advisor recommendation card](docs/preview/sql-migration-advisor-skill.png)
 
 Every recommendation is grounded in the knowledge base
