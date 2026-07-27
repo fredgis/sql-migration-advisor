@@ -144,6 +144,16 @@ that could still change it.
 | Software Assurance / AHB entitlement | SQL DB/MI/VM cost comparison | Cost-lever eligibility |
 | Maintenance and patching restrictions | VM/AVS/container vs managed PaaS | Operational burden, target ranking |
 
+**Structured inputs** — four values are captured as *typed* data, not prose, because rules read them
+directly and a wrong guess silently changes the recommendation:
+
+| Field | Asked when | Consumed by |
+| --- | --- | --- |
+| `database_count` *(integer)* | more than one database is in scope | MI Link capacity (100 GP/BC, 500 Next-gen GP) and the estate-discovery branch — never inferred from a free-text size answer |
+| `migration_batch_size` *(integer)* | the Azure Arc portal migration is used | the Arc wizard per-batch limit, which is a different limit from MI Link capacity |
+| `arc_extension_version` *(e.g. `1.1.3348.364`)* | the Azure Arc portal migration is used | gates the Arc wizard batch limit — **unknown is not treated as recent**, it requires assessment |
+| `evidence` *(4 booleans)* | the user wants a **validated** rather than provisional recommendation | `recommendationStatus` and `confidence` — all four must be `true`; free text never substitutes |
+
 The canonical list lives in [`SKILL.md`](../SKILL.md) under *Interview structure* — treat that as the
 source of truth if the two ever drift.
 

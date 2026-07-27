@@ -144,6 +144,18 @@ Asked only when it can still change the answer:
 - Software Assurance / AHB entitlement
 - Maintenance and patching restrictions
 
+### Structured inputs
+
+Four values are captured as *typed* data rather than prose, because the rules read them directly and a
+wrong guess silently changes the recommendation:
+
+| Field | Asked when | Consumed by |
+| --- | --- | --- |
+| `database_count` *(integer)* | more than one database is in scope | MI Link capacity (100 GP/BC, 500 Next-gen GP) and estate discovery — never inferred from a free-text size answer |
+| `migration_batch_size` *(integer)* | the Azure Arc portal migration is used | the Arc wizard per-batch limit — a different limit from MI Link capacity |
+| `arc_extension_version` | the Azure Arc portal migration is used | gates the Arc wizard batch limit; unknown is **not** treated as recent |
+| `evidence` *(4 booleans)* | the user wants a validated rather than provisional recommendation | status and confidence — all four must be true; free text never substitutes |
+
 The canonical list lives in [`SKILL.md`](https://github.com/fredgis/sql-migration-advisor/blob/main/SKILL.md)
 under *Interview structure*.
 
