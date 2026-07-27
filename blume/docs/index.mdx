@@ -53,6 +53,57 @@ anchored to the knowledge base rather than invented.
 
 ---
 
+## The interview
+
+Two tiers. Tier 1 always produces a provisional recommendation; Tier 2 is asked only when an answer can
+still change the outcome. Questions come one at a time, in your language. "Not sure" is allowed — but a
+decision-driving unknown is never silently defaulted: it forces a provisional status plus an explicit
+evidence gap.
+
+### Tier 1 — Triage
+
+| # | Question | Answer options | What it drives |
+| --- | --- | --- | --- |
+| 1 | Scope | Single DB · A few (2–10) · Large estate (10+) | Large estate ⇒ Azure Migrate discovery first |
+| 2 | Source location | On-prem · AWS EC2 · AWS RDS · GCP Compute Engine · GCP Cloud SQL | Managed sources ⇒ MI Link and replication are out |
+| 3 | Source version | 2008/R2 · 2012 · 2014 · 2016 · 2017/2019 · 2022 · 2025 | MI Link, LRS, native restore, replication, ESU |
+| 4 | Migration intent / readiness | Move now · Modernize in place (assess first) · Assessment only · Rehost first | Unlocks the Arc in-place path |
+| 5 | Primary driver | End-of-support/ESU · Cost · App modernization · Data-center exit · Analytics/Fabric · Sovereignty | Target bias and the Fabric branch |
+| 6 | Management model | Fully managed PaaS · OS/engine control · Kubernetes on-prem/edge | PaaS vs IaaS vs Kubernetes |
+| 6a | ↳ Kubernetes engine model *(if Q6 = Kubernetes)* | Managed engine (Arc data controller) · Full DIY container | Arc-enabled SQL MI vs container |
+| 7 | Feature dependencies *(multi-select)* | FILESTREAM/FileTable · PolyBase · DTC · Cross-DB · SQL CLR · Linked servers · SQL Agent · Service Broker · None · Not sure | Phase A eligibility |
+| 7a | ↳ PolyBase qualifier *(if PolyBase)* | Cloud files only (Blob/ADLS, Parquet/CSV) · External RDBMS connector · S3/Delta/pushdown · Not sure | Cloud files ⇒ SQL MI stays eligible |
+| 7b | ↳ DTC qualifier *(if DTC)* | SQL-to-SQL only · Heterogeneous / third-party RDBMS · Not sure | SQL-to-SQL ⇒ SQL MI stays eligible |
+| 8 | Largest database size | &lt; 150 GB · 150 GB – 4 TB · &gt; 4 TB · Not sure | Hyperscale gate, backup caps, seeding |
+| 9 | Downtime tolerance | Near-zero · Minimal · Offline window · Not sure | Method selection, downtime class |
+| 10 | Network path and ports | Good ExpressRoute · Limited WAN · Multi-TB · 5022 blocked · 1433/443 blocked · Not sure | MI Link viability, Data Box seeding |
+| 11 | Compliance / sovereignty | Standard · EU data boundary · Government/sovereign · Edge/air-gapped · Not sure | Biases SQL VM, AVS, Arc SQL MI |
+| 12 | Ancillary services and security *(multi-select)* | SSIS · SSRS · SSAS · TDE · Many SQL Agent jobs · Windows logins · None · Not sure | Blockers and remediations |
+| 13 | Tier-selection inputs *(when MI or SQL DB is still eligible)* | Low-latency writes · High IOPS/log throughput · Strict SLA · Read-scale replicas · Intermittent usage · Many tenants · None | GP vs Business Critical vs Hyperscale vs Serverless vs Elastic Pool |
+
+### Tier 2 — Confirmation
+
+Asked only when it can still change the answer:
+
+- Source edition and OS · compatibility level
+- Current HA/DR topology (FCI, AG, log shipping, none)
+- RPO and RTO, separately
+- Peak log generation and change rate
+- CPU, memory, IOPS and latency peaks
+- Authentication model (Windows / Entra ID / SQL)
+- SQL CLR permission set (`SAFE` / `EXTERNAL_ACCESS` / `UNSAFE`)
+- Network, DNS and Active Directory dependencies
+- Backup retention and restore requirements
+- Target region and real feature availability there
+- DR architecture and rollback plan
+- Software Assurance / AHB entitlement
+- Maintenance and patching restrictions
+
+The canonical list lives in [`SKILL.md`](https://github.com/fredgis/sql-migration-advisor/blob/main/SKILL.md)
+under *Interview structure*.
+
+---
+
 ## Weekly knowledge-base automation
 
 <img src={`${import.meta.env.BASE_URL}/weekly-update.svg`} alt="Weekly automation: a scheduled Action runs an AI review of the knowledge base and decision rules, then opens a pull request when an update is needed" />

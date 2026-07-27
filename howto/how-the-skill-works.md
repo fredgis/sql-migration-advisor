@@ -58,6 +58,57 @@ Step by step:
 7. **Offer follow-ups.** A per-database table for an estate, a cutover runbook, or a one-slide summary
    (handed off to another skill).
 
+### The interview in full
+
+The interview is deliberately two-tier: **Tier 1** is always enough to produce a *provisional*
+recommendation, and **Tier 2** is only asked when an answer can still change the outcome. Questions are
+asked one at a time, in the user's language, and "Not sure" is always allowed — but a *decision-driving*
+unknown is never silently defaulted: it forces `recommendationStatus: provisional` plus an explicit
+evidence gap.
+
+**Tier 1 — Triage** (13 questions, plus 3 conditional unlocks)
+
+| # | Question | Answer options | What it drives |
+| --- | --- | --- | --- |
+| 1 | **Scope** — how big is this migration? | Single DB · A few (2–10) · Large estate (10+) | Large estate ⇒ Azure Migrate discovery + `Az.DataMigration`, then profile representative groups |
+| 2 | **Source location** — where does SQL Server run today? | On-prem · AWS EC2 · AWS RDS · GCP Compute Engine · GCP Cloud SQL | Managed sources ⇒ MI Link and transactional replication are out |
+| 3 | **Source version** | 2008/R2 · 2012 · 2014 · 2016 · 2017/2019 · 2022 · 2025 | MI Link, LRS, native restore, replication, Arc portal, ESU |
+| 4 | **Migration intent / readiness** | Move now · Modernize in place (assess first) · Assessment only · Rehost first, modernize later | Unlocks the **Arc in-place** control-plane path |
+| 5 | **Primary driver** | End-of-support/ESU · Cost · App modernization · Data-center exit · Analytics/Fabric · Sovereignty/edge | Target bias and the Fabric branch |
+| 6 | **Management model** | Fully managed PaaS · OS/engine control · Kubernetes on-prem/edge | PaaS vs IaaS vs Kubernetes family |
+| 6a | ↳ **Kubernetes engine model** *(only if Q6 = Kubernetes)* | Managed engine (Arc data controller) · Full DIY container | **Arc-enabled SQL MI vs container** |
+| 7 | **Feature dependencies** *(multi-select)* | FILESTREAM/FileTable · PolyBase · DTC · Cross-DB queries · SQL CLR · Linked servers · SQL Agent · Service Broker · None · Not sure | Phase A eligibility |
+| 7a | ↳ **PolyBase qualifier** *(only if PolyBase)* | Cloud files only (Blob/ADLS, Parquet/CSV) · External RDBMS connector · S3/Delta/pushdown · Not sure | Cloud-files ⇒ **MI stays eligible**; external RDBMS ⇒ MI out |
+| 7b | ↳ **DTC qualifier** *(only if DTC)* | SQL-to-SQL only (MI↔MI, MI↔SQL Server) · Heterogeneous/third-party RDBMS · Not sure | SQL-to-SQL ⇒ **MI stays eligible**; heterogeneous ⇒ MI out |
+| 8 | **Largest database size** | < 150 GB · 150 GB – 4 TB · > 4 TB · Not sure | Hyperscale gate, backup caps, seed-then-sync |
+| 9 | **Downtime tolerance** | Near-zero · Minimal · Offline window · Not sure | Method selection and downtime class |
+| 10 | **Network path and ports** | Good ExpressRoute · Limited WAN · Multi-TB move · 5022 blocked · 1433/443 blocked · Not sure | MI Link viability, Data Box seeding |
+| 11 | **Compliance / sovereignty** | Standard commercial · EU data boundary · Government/sovereign · Edge/air-gapped · Not sure | Biases SQL VM, AVS, Arc-enabled SQL MI |
+| 12 | **Ancillary services and security** *(multi-select)* | SSIS · SSRS · SSAS · TDE-encrypted DBs · Many SQL Agent jobs · Windows logins · None · Not sure | Blockers and remediations |
+| 13 | **Tier-selection inputs** *(asked when MI or SQL DB is still eligible)* | Low-latency writes · High IOPS/log throughput · Strict SLA/zone redundancy · Read-scale replicas · Intermittent usage · Many tenants · None/unknown | GP vs Business Critical vs Hyperscale vs Serverless vs Elastic Pool |
+
+**Tier 2 — Confirmation** (asked only when it can still change the answer)
+
+| Confirmation input | Asked when | Consumed by |
+| --- | --- | --- |
+| Source edition and OS | VM/AVS/Arc/container or licensing in play | Compatibility, HA/DR support, AHB/ESU, patching |
+| Compatibility level | SQL DB, Fabric SQL DB or modernization candidate | Refactoring effort, compatibility scoring |
+| Current HA/DR topology (FCI, AG, log shipping, none) | Near-zero/minimal downtime, or VM/AVS/MI Link in play | Method feasibility, rollback, resilience |
+| RPO and RTO, separately | Any production migration | Method ranking and DR design |
+| Peak log generation / change rate | MI Link, LRS, replication, log shipping, Data Box seed | Catch-up feasibility, downtime risk |
+| CPU, memory, IOPS and latency peaks | Any PaaS target or tier choice | Sizing and tier-selection rules |
+| Authentication (Windows / Entra ID / SQL) | SQL DB/MI, or cross-domain source | Login remediation, AD/Entra dependencies |
+| SQL CLR permission set (`SAFE` / `EXTERNAL_ACCESS` / `UNSAFE`) | CLR present or unknown and PaaS still possible | Eligibility and remediation |
+| Network, DNS and Active Directory dependencies | MI Link, AG/DAG, linked servers, Windows auth, VM/AVS | Connectivity, identity, failover feasibility |
+| Backup retention and restore requirements | Native restore, LRS, SQL DB tiers | Operational burden and compliance |
+| Target region and real feature availability | Any Azure target | Regional eligibility and sovereignty |
+| DR architecture and rollback plan | Any production cutover | Reversibility and resilience scoring |
+| Software Assurance / AHB entitlement | SQL DB/MI/VM cost comparison | Cost-lever eligibility |
+| Maintenance and patching restrictions | VM/AVS/container vs managed PaaS | Operational burden, target ranking |
+
+The canonical list lives in [`SKILL.md`](../SKILL.md) under *Interview structure* — treat that as the
+source of truth if the two ever drift.
+
 ### Deterministic core, adaptive agent
 
 A common question: *"if it's deterministic, can the agent still adapt to a complex situation?"* Yes —
