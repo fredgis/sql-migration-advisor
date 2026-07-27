@@ -5,10 +5,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(HERE, '..', '..');
+const ROOT = path.resolve(process.env.WEEKLY_CHECK_ROOT || process.argv[2] || path.resolve(HERE, '..', '..'));
 const DOC = path.join(ROOT, 'docs', 'sql-server-to-azure-migration.md');
 const RULES = path.join(ROOT, 'reference', 'decision-rules.md');
 const README = path.join(ROOT, 'README.md');
+const SKILL = path.join(ROOT, 'SKILL.md');
 
 const errors = [];
 const warnings = [];
@@ -16,6 +17,7 @@ const read = file => fs.readFileSync(file, 'utf8');
 const kb = read(DOC);
 const rules = read(RULES);
 const readme = read(README);
+const skill = read(SKILL);
 
 function pushIf(label, values) {
   const unique = [...new Set(values.filter(Boolean))];
@@ -66,12 +68,15 @@ function normalizeGate(raw) {
 function normalizeMinVersion(raw) {
   const v = normalizeGate(raw).replace(/sql /g, '').replace(/\s*only$/g, ' only');
   if (/^\d{4}$/.test(v)) return `${v}+`;
-  return v.replace(/^(\d{4})\s+all editions$/, '$1+').replace(/^(\d{4})\s*\+$/, '$1+');
+  return v.replace(/^(\d{4})\s*\(12\.x\)\s*\+$/, '$1+').replace(/^(\d{4})\s+all editions$/, '$1+').replace(/^(\d{4})\s*\+$/, '$1+');
 }
 function extractWithPatterns(text, patterns) {
-  for (const p of patterns) {
-    const m = text.match(p);
-    if (m) return normalizeMinVersion(m[1] || m[0]);
+  const variants = [String(text || ''), String(text || '').replace(/[*_`]/g, '')];
+  for (const variant of variants) {
+    for (const p of patterns) {
+      const m = variant.match(p);
+      if (m) return normalizeMinVersion(m[1] || m[0]);
+    }
   }
   return null;
 }
@@ -83,6 +88,130 @@ function extractGate(text, terms, patterns) {
   }
   return extractWithPatterns(text, patterns);
 }
+
+const consistencyDocs = [
+  { name: 'KB', text: kb },
+  { name: 'decision-rules', text: rules },
+  { name: 'SKILL', text: skill }
+];
+
+function docLines(text, anyTerms = [], allTerms = []) {
+  return String(text || '').split(/\r?\n/).filter(line => {
+    const lower = line.toLowerCase();
+    return (!anyTerms.length || anyTerms.some(term => lower.includes(term.toLowerCase())))
+      && allTerms.every(term => lower.includes(term.toLowerCase()));
+  });
+}
+function normalizePortToken(raw) {
+  return raw.replace(/[–—]/g, '-').replace(/\s+/g, '').toLowerCase();
+}
+function extractPorts(text) {
+  const ports = new Set();
+  const lines = docLines(text, ['mi link', 'managed instance link'], []).filter(line => {
+    const lower = line.toLowerCase();
+    return /ports?|firewall|nsg|open|required/.test(lower) && /5022|11000\s*[–—-]\s*11999/.test(line);
+  });
+  for (const line of lines) {
+    const normalized = normalizePortToken(line);
+    if (/\b5022\b/.test(normalized)) ports.add('5022');
+    if (/\b11000-11999\b/.test(normalized)) ports.add('11000-11999');
+  }
+  return ports.size ? [...ports].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).join(', ') : null;
+}
+function extractMiLinkCapacity(text) {
+  const limits = new Set();
+  const lines = docLines(text, ['mi link', 'managed instance link'], [])
+    .filter(line => /\b(links?|capacity|general purpose|business critical|next-gen|gp\/bc|service tier)\b/i.test(line));
+  for (const line of lines) {
+    const plain = line.replace(/[*_`]/g, '').split(/Azure Arc portal|Arc portal|portal wizard|wizard|batch-selection|extension/i)[0];
+    for (const m of plain.matchAll(/(?:up to\s+)?(\d+)\s+links?\b/ig)) limits.add(m[1]);
+    for (const m of plain.matchAll(/(\d+)\s+on\s+(?:GP\/BC|GP|BC|Next-gen|General Purpose|Business Critical)/ig)) limits.add(m[1]);
+    for (const m of plain.matchAll(/maximum links?:[^\n|.]*(\d+)\s+on\s+(?:GP|General Purpose|Business Critical|BC|Next-gen)/ig)) limits.add(m[1]);
+    for (const m of plain.matchAll(/(?:GP|General Purpose|Business Critical|BC|Next-gen)[^\n|.;]*?\b(\d+)\s+links?\b/ig)) limits.add(m[1]);
+    for (const m of plain.matchAll(/up to\s+(\d+)\s+links?\s+on\s+(?:GP|General Purpose|Business Critical|BC|Next-gen)/ig)) limits.add(m[1]);
+  }
+  return limits.size ? [...limits].sort((a, b) => Number(a) - Number(b)).join(', ') : null;
+}
+function extractArcWizardBatchLimit(text) {
+  const limits = new Set();
+  const lines = docLines(text, ['arc portal', 'wizard', 'batch'], []).filter(line => /databases?|batch|select/i.test(line));
+  for (const line of lines) {
+    const plain = line.replace(/[*_`]/g, '');
+    for (const m of plain.matchAll(/(?:up to|select(?: up to)?)\s+(\d+)\s+databases?\s+per\s+batch/ig)) limits.add(m[1]);
+    for (const m of plain.matchAll(/(\d+)\s+databases?\s+per\s+batch/ig)) limits.add(m[1]);
+    for (const m of plain.matchAll(/batch[^\n|.;]*?\b(\d+)\s+databases?/ig)) limits.add(m[1]);
+  }
+  return limits.size ? [...limits].sort((a, b) => Number(a) - Number(b)).join(', ') : null;
+}
+function extractFromLines(text, lines, patterns) {
+  for (const line of lines) {
+    const found = extractWithPatterns(line, patterns);
+    if (found) return found;
+  }
+  return null;
+}
+function extractArcGate(text, gate) {
+  if (gate.id === 'arc-overall-minimum-source-version') {
+    return extractFromLines(text, docLines(text, ['arc'], ['overall']), [
+      /overall[^\n;|.]*?(?:SQL\s*Server\s*)?(\d{4}\s*(?:\+|and later|or later|\(12\.x\)\+)?)/i,
+      /Arc-enabled\s+SQL\s*Server\s*(\d{4}\s*(?:\+|and later|or later)?)\s+overall/i,
+      /SQL Server migration in Azure Arc starts with SQL Server\s*(\d{4}\s*(?:\(12\.x\))?\+?)/i
+    ]);
+  }
+  if (gate.id === 'arc-lrs-minimum-source-version') {
+    const lines = docLines(text, ['arc'], ['lrs']).filter(line => !/^\s*(?:[-|]\s*)?(?:\*\*)?Standalone LRS/i.test(line));
+    const annotated = lines.find(line => /conservative|apply|require Arc experience floor|overall Arc.*floor|inconsistency/i.test(line));
+    if (annotated) {
+      const conservative = extractWithPatterns(annotated, [
+        /conservative[^\n;|.]*?(\d{4}\s*(?:\+|and later|or later)?)/i,
+        /apply[^\n;|.]*?(\d{4}\s*(?:\+|and later|or later)?)/i,
+        /require Arc experience floor\s*(\d{4}\s*(?:\+|and later|or later)?)/i,
+        /overall Arc[^\n;|.]*?floor[^\n;|.]*?(\d{4}\s*(?:\+|and later|or later)?)/i,
+        /use the conservative\s*(\d{4}\s*(?:\+|and later|or later)?)/i
+      ]);
+      if (conservative) return conservative;
+    }
+    return extractFromLines(text, lines, [
+      /Arc\s*(?:→|->)\s*Azure SQL MI via LRS[^\n|.]*?(?:SQL\s*Server\s*)?(\d{4}\s*(?:\+|and later|or later)?)/i,
+      /LRS(?:\s+method)?\s*(?:requires|needs|:)\s*(?:SQL\s*Server\s*)?(\d{4}\s*(?:\+|and later|or later)?)/i
+    ]);
+  }
+  if (gate.id === 'arc-mi-link-minimum-source-version') {
+    return extractFromLines(text, docLines(text, ['arc'], ['mi link']), [
+      /Arc\s*(?:→|->)\s*Azure SQL MI via MI Link[^\n|.]*?(?:SQL\s*Server\s*)?(\d{4}\s*(?:\+|and later|or later)?)/i,
+      /MI Link(?:\s+method)?\s*(?:requires|needs|:)\s*(?:SQL\s*Server\s*)?(\d{4}\s*(?:\+|and later|or later)?)/i,
+      /MI Link[^\n;|.]*?requiring\s*(?:SQL\s*Server\s*)?(\d{4}\s*(?:\+|and later|or later)?)/i,
+      /MI Link[^\n;|.]*?(?:SQL\s*Server|SQL)\s*(\d{4}\s*(?:\+|and later|or later)?)/i
+    ]);
+  }
+  if (gate.id === 'arc-sql-vm-minimum-source-version') {
+    const lines = [
+      ...docLines(text, ['arc → sql server on azure vm', 'arc -> sql server on azure vm', 'arc → sql vm', 'arc -> sql vm', 'migrate-to-sql-server-on-azure-vms', 'sql migration in azure arc → sql vm'], []),
+      ...docLines(text, ['sql vm', 'azure vm'], ['arc-enabled']),
+      ...docLines(text, ['sql server on azure vm'], ['arc'])
+    ];
+    return extractFromLines(text, lines, [
+      /Arc\s*(?:→|->)\s*SQL Server on Azure VM[^\n|.]*?(?:SQL\s*Server\s*)?(\d{4}\s*(?:\+|and later|or later)?)/i,
+      /(?:SQL\s*Server|SQL)\s*(\d{4}\s*(?:\+|and later|or later)?)(?:\s*\(Arc-enabled\))?/i,
+      /Arc-enabled[^\n|.]*?(?:SQL\s*Server|SQL)\s*(\d{4}\s*(?:\+|and later|or later)?)/i
+    ]);
+  }
+  return null;
+}
+function compareAcrossDocs(label, values, { optional = false } = {}) {
+  const found = values.filter(v => v.value);
+  if (!found.length) {
+    if (!optional) warnings.push(`${label}: could not find gate in KB, decision-rules, or SKILL.`);
+    return;
+  }
+  const missing = values.filter(v => !v.value).map(v => v.name);
+  if (missing.length && (!optional || found.length)) warnings.push(`${label}: could not find ${missing.join(', ')} gate.`);
+  const unique = [...new Set(found.map(v => v.value))];
+  if (unique.length > 1) {
+    errors.push(`${label} disagree: ${values.map(v => `${v.name}="${v.value || 'not found'}"`).join('; ')}.`);
+  }
+}
+
 const gates = [
   {
     id: 'mi-link-minimum-source-version',
@@ -123,6 +252,21 @@ for (const gate of gates) {
   }
 }
 
+
+
+const arcGates = [
+  { id: 'arc-overall-minimum-source-version', label: 'Azure Arc migration overall minimum source version' },
+  { id: 'arc-lrs-minimum-source-version', label: 'Azure Arc to Azure SQL MI via LRS minimum source version' },
+  { id: 'arc-mi-link-minimum-source-version', label: 'Azure Arc to Azure SQL MI via MI Link minimum source version' },
+  { id: 'arc-sql-vm-minimum-source-version', label: 'Azure Arc to SQL Server on Azure VM minimum source version', optional: true }
+];
+for (const gate of arcGates) {
+  compareAcrossDocs(gate.label, consistencyDocs.map(doc => ({ name: doc.name, value: extractArcGate(doc.text, gate) })), { optional: gate.optional });
+}
+compareAcrossDocs('MI Link required network ports', consistencyDocs.map(doc => ({ name: doc.name, value: extractPorts(doc.text) })));
+compareAcrossDocs('MI Link maximum links/databases capacity', consistencyDocs.map(doc => ({ name: doc.name, value: extractMiLinkCapacity(doc.text) })));
+compareAcrossDocs('Azure Arc portal MI wizard database batch limit', consistencyDocs.map(doc => ({ name: doc.name, value: extractArcWizardBatchLimit(doc.text) })));
+
 for (const w of warnings) console.warn(`WARNING: ${w}`);
 if (errors.length) {
   console.error('KB consistency check failed:');
@@ -130,8 +274,6 @@ if (errors.length) {
   process.exit(1);
 }
 console.log(`KB consistency check passed: ${kbVersion}; freshness ${kbMonth}; ${warnings.length} warning(s).`);
-
-
 
 
 

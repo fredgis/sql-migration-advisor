@@ -357,8 +357,8 @@
     <div class="grid3">
       <div class="panel"><h3><img src="icons/sql-mi.svg" alt=""/>→ Azure SQL Managed Instance</h3>
         <div class="rows">
-          <div class="r"><span class="pill p-nz">near-zero</span><b>MI Link</b> — <span class="g">source 2016+ · sysadmin + distributed AG · port 5022 both ways · ≤10 DBs</span></div>
-          <div class="r"><span class="pill p-off">offline</span><b>Log Replay Service (LRS)</b> — <span class="g">source 2008–2022 · public endpoint <i>(Arc portal path: 2012+)</i></span></div>
+          <div class="r"><span class="pill p-nz">near-zero</span><b>MI Link</b> — <span class="g">source 2016+ · sysadmin + distributed AG · ports <b>5022 + 11000–11999</b> · up to 100 links (500 on Next-gen GP)</span></div>
+          <div class="r"><span class="pill p-min">online, cutover</span><b>Log Replay Service (LRS)</b> — <span class="g">source 2008–2022 standalone · target <i>unavailable</i> while restoring · cutover minutes (GP) → hours (BC)</span></div>
           <div class="r"><span class="pill p-off">offline</span><b>Native backup/restore (.bak)</b> — <span class="g">2008+ · migrate TDE cert FIRST</span></div>
           <div class="r"><span class="pill p-min">online subset</span><b>Transactional replication</b> — <span class="g">2012+</span></div>
         </div></div>
@@ -402,13 +402,13 @@
       <span class="note">undocumented linked servers &amp; SQL Agent jobs are the most common late-discovered blockers — map dependencies first</span></div>
     <div class="dbar">
       <div class="dseg nz"><div class="h">Near-zero (minutes)</div>MI Link · Distributed / Always On AG · Striim</div>
-      <div class="dseg min"><div class="h">Minimal (tens of min)</div>transactional replication · log shipping · native restore + diff/log</div>
-      <div class="dseg off"><div class="h">Offline (planned window)</div>native backup/restore · LRS · BACPAC · bcp · detach/attach · ADF · Data Box</div>
+      <div class="dseg min"><div class="h">Minimal (tens of min)</div>transactional replication · log shipping · native restore + diff/log · <b>LRS</b> (GP; hours on Business Critical)</div>
+      <div class="dseg off"><div class="h">Offline (planned window)</div>native backup/restore · BACPAC · bcp · detach/attach · ADF · Data Box</div>
     </div>
     <div class="blk">
       <div class="bcard"><div class="b1">TDE-encrypted DB</div><div class="b2">Migrate the <b>server-level certificate FIRST</b> — the restore <b>fails</b> unless the certificate is installed in the destination <code>master</code> first.</div></div>
       <div class="bcard"><div class="b1">Windows logins</div><div class="b2">DMS skips them by default — enable the option, grant MI read to Entra ID, script + recreate logins/users.</div></div>
-      <div class="bcard"><div class="b1">MI Link ports</div><div class="b2">Open <b>5022</b> both directions (often blocked in banking / industrial nets).</div></div>
+      <div class="bcard"><div class="b1">MI Link ports</div><div class="b2">Open <b>5022</b> both directions <b>and 11000–11999</b> (SQL Server outbound → MI subnet) — often blocked in banking / industrial nets.</div></div>
       <div class="bcard"><div class="b1">Other methods' network</div><div class="b2">Outbound <b>443</b> to Blob, <b>1433</b> (+ <b>1434/UDP</b> for named instances).</div></div>
       <div class="bcard"><div class="b1">Distributed AG</div><div class="b2">Requires <b>AD Domain Services</b> (or workgroup AG + certs).</div></div>
       <div class="bcard"><div class="b1">Txn replication → SQL DB</div><div class="b2">Source <b>2016+</b> (incl. 2022 / 2025); push subscriber only; article-type limits (no hierarchyid…).</div></div>

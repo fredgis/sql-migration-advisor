@@ -17,7 +17,7 @@ A worked example showing the two-tier interview, preliminary recommendation card
 | 7 | Feature dependencies | SQL Agent jobs, cross-DB queries, linked servers |
 | 8 | Largest DB size | 1.2 TB |
 | 9 | Downtime tolerance | Minimal: a couple of hours |
-| 10 | Network and ports | ExpressRoute available; 1433/443 open; 5022 not approved |
+| 10 | Network and ports | ExpressRoute available; 1433/443 open; MI Link ports 5022 and 11000–11999 not approved |
 | 11 | Compliance | Standard commercial |
 | 12 | Ancillary/security | SSIS packages, TDE-encrypted DBs, Windows logins |
 | 13 | Tier-selection inputs | Moderate latency sensitivity, no read-scale need, no strict zone-redundant SLA, steady usage, not multi-tenant |
@@ -29,7 +29,7 @@ A worked example showing the two-tier interview, preliminary recommendation card
 | Source edition + OS | Enterprise on Windows Server 2016 | Confirms AHB/ESU and restore/log shipping feasibility |
 | Compatibility level | 120 | Flags modernization testing but no immediate target block |
 | Current HA/DR | No AG/FCI; nightly full + log backups every 15 min | MI Link/DAG not already prepared; LRS/native restore feasible |
-| RPO / RTO | RPO 15 min; RTO 4 hours | Supports minimal-downtime restore with log catch-up |
+| RPO / RTO | RPO 15 min; RTO 4 hours | Supports LRS log catch-up with planned cutover downtime |
 | Peak log generation | 20 GB/hour close-of-month | Must test LRS catch-up rate before cutover |
 | CPU/memory/IOPS/latency | 16 cores, 128 GB RAM, moderate IOPS, no sub-ms latency requirement | Supports SQL MI General Purpose rather than Business Critical |
 | Authentication | Windows logins and SQL logins | Requires login discovery and migration |
@@ -62,9 +62,9 @@ SQL MI ranks first because it preserves instance-level compatibility with much l
 
 > **Preliminary recommendation — `Finance DB group (3 DBs)`**
 > **Azure SQL Managed Instance — General Purpose** via **Log Replay Service** · status **provisional** · confidence **medium**
-> KB **v1.5** · commit **abc1234** · fetched **2026-07-27T10:45:00Z**
+> KB **v1.6** · commit **abc1234** · fetched **2026-07-27T10:45:00Z**
 
-SQL MI is the recommended assessment path because the workload needs SQL Agent, cross-database queries, and linked servers, while the team wants managed PaaS; SQL Server 2014 and blocked 5022 make MI Link unavailable, so LRS is the practical minimal-downtime method.
+SQL MI is the recommended assessment path because the workload needs SQL Agent, cross-database queries, and linked servers, while the team wants managed PaaS; SQL Server 2014 and blocked MI Link ports 5022/11000–11999 make MI Link unavailable, so LRS is the practical online method with planned cutover downtime.
 
 **📋 Primary recommendation**
 
@@ -72,17 +72,18 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
 | --- | --- |
 | 🎯 **Target / tier** | Azure SQL Managed Instance — **General Purpose** |
 | 🔁 **Migration method** | Log Replay Service: full backup to Blob, then differential/log catch-up |
-| ⏱️ **Downtime class** | Minimal planned cutover |
+| 👁️ **Target availability during sync** | `unavailable` — SQL MI database remains RESTORING/NORECOVERY during sync |
+| ⏱️ **Business cutover downtime** | `minutes` expected for General Purpose with a small final backup; validate with a rehearsal |
 | 🧭 **Assess / orchestrate** | SSMS 22 Migration Component + dependency discovery; Arc for ESU during project |
 | 💰 **Cost view** | Cost levers only: AHB eligible, ESU via Arc while on-prem, reservations after sizing; no estimate until measured sizing/pricing |
 
-**Why General Purpose, not Business Critical** — measured inputs show moderate IOPS and latency sensitivity, no read-scale requirement, no strict zone-redundant SLA requirement, and steady non-tenant workload. Business Critical would win if assessment shows low-latency storage, high log throughput, readable secondary, or stricter HA/SLA needs.
+**Why General Purpose, not Business Critical** — interview inputs indicate moderate IOPS and latency sensitivity, no read-scale requirement, no strict zone-redundant SLA requirement, and steady non-tenant workload. Business Critical would win if assessment shows low-latency storage, high log throughput, readable secondary, or stricter HA/SLA needs.
 
 **🥈 Best alternative** — **SQL Server on Azure VM** with native backup/restore or log shipping; wins if dependency discovery finds file-system dependencies, unsupported linked-server providers, third-party agents, or performance requirements not suitable for SQL MI GP/BC.
 
 **🚫 Excluded or constrained targets (Phase A eligibility)**
 - **Azure SQL Database** — unsupported: SQL Agent, linked servers, and cross-DB dependencies require refactoring.
-- **SQL MI Link method** — unsupported: source is SQL Server 2014 and port 5022 is not approved.
+- **SQL MI Link method** — unsupported: source is SQL Server 2014 and required MI Link ports 5022 plus 11000–11999 are not approved in the required directions.
 - **Fabric SQL DB** — unsupported: preview path is not a fit for this OLTP instance-feature lift-and-shift.
 - **Arc in-place** — eligible as an interim control plane for ESU, assessment, and migration orchestration, not the final runtime target.
 
@@ -150,7 +151,8 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
     },
     "network": {
       "expressRoute": true,
-      "port5022": "blocked",
+      "miLinkPort5022": "blocked",
+      "miLinkPorts11000To11999": "blocked",
       "port1433": "open",
       "port443": "open",
       "adReachableFromAzure": true
@@ -167,7 +169,8 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
       "target": "Azure SQL Managed Instance",
       "tier": "General Purpose",
       "method": "Log Replay Service",
-      "downtimeClass": "minimal",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes on General Purpose with a small final backup; validate in rehearsal",
       "controlPlane": "SSMS 22 Migration Component"
     },
     "alternative": {
@@ -183,11 +186,11 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
     ],
     "unknowns": [
       "Tool-confirmed dependency inventory",
-      "Measured peak IOPS and log-write latency",
+      "Measured peak IOPS, log-write latency, and LRS cutover rehearsal",
       "Region capacity and final network throughput"
     ],
     "hardBlockers": [
-      "MI Link unavailable because source version is 2014 and port 5022 is blocked"
+      "MI Link unavailable because source version is 2014 and required ports 5022 plus 11000–11999 are blocked"
     ],
     "requiredAssessments": [
       "SSMS 22 Migration Component assessment",
@@ -197,11 +200,11 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
     ],
     "evidence": [
       "Tier 1 and Tier 2 interview answers",
-      "FY27 SQL knowledge base v1.5"
+      "FY27 SQL knowledge base v1.6"
     ]
   },
   "knowledgeBase": {
-    "version": "1.5",
+    "version": "1.6",
     "commit": "abc1234",
     "verifiedAt": "2026-07-27T10:45:00Z"
   }

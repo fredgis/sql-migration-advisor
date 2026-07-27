@@ -1,6 +1,7 @@
 // Decide whether governance automation should open a PR/issue and prepare body text.
 // A model "needsUpdate" verdict is report-only unless substantive edits already exist.
 import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
 
 const read = (p, f = '') => { try { return fs.readFileSync(p, 'utf8'); } catch { return f; } };
 const json = (p, f = {}) => { try { return JSON.parse(read(p, '')); } catch { return f; } };
@@ -22,9 +23,74 @@ const claimUnverified = (claims.unverified || []).length > 0;
 const hasUnreachable = (linkSummary.unreachable || []).length > 0;
 const hasBotBlocked = (linkSummary.unverifiedBotBlocked || []).length > 0;
 
-// This workflow does not apply AI-generated substantive patches. Therefore no version bump
-// is allowed here; it can only report needed human work or run housekeeping.
-const substantiveApplied = false;
+const substantiveFiles = [
+  'docs/sql-server-to-azure-migration.md',
+  'reference/decision-rules.md'
+];
+
+function git(args) {
+  try {
+    return execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch {
+    return null;
+  }
+}
+
+function gitFile(ref, file) {
+  try {
+    return execFileSync('git', ['show', `${ref}:${file}`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  } catch {
+    return null;
+  }
+}
+
+function baselineRef() {
+  if (git(['rev-parse', '--verify', 'origin/main'])) {
+    return git(['merge-base', 'HEAD', 'origin/main']) || 'origin/main';
+  }
+  return git(['rev-parse', '--verify', 'HEAD']) || null;
+}
+
+function normalizeForSubstantiveDiff(file, text) {
+  const out = [];
+  let inChangelog = false;
+  for (const raw of String(text || '').replace(/\r\n/g, '\n').split('\n')) {
+    const line = raw.trim();
+    if (/^#{1,6}\s+.*(?:change\s*log|changelog)/i.test(line)) {
+      inChangelog = true;
+      continue;
+    }
+    if (inChangelog) {
+      if (/^#{1,6}\s+/.test(line)) inChangelog = false;
+      else continue;
+    }
+    if (/^\|\s*v\d+\.\d+\s*\|\s*\d{4}-\d{2}-\d{2}\s*\|/i.test(line)) continue;
+    if (/\*\*Version\.\*\*\s*v\d+\.\d+/i.test(line)) continue;
+    if (/Current version:\s*\*\*v\d+\.\d+\*\*/i.test(line)) continue;
+    if (/current:\s*v\d+\.\d+/i.test(line)) continue;
+    if (/\(sql-migration-advisor\),\s*\*\*v\d+\.\d+\*\*/i.test(line)) continue;
+    if (/current as of\s+(?:\d{1,2}\s+)?[A-Za-z]+\s+\d{4}/i.test(line)) continue;
+    if (/verified\s+(?:\d{1,2}\s+)?[A-Za-z]+\s+\d{4}/i.test(line)) continue;
+    out.push(line.replace(/\s+/g, ' '));
+  }
+  return out.join('\n').trim();
+}
+
+function hasSubstantiveDiff() {
+  const base = baselineRef();
+  if (!base) return false;
+  for (const file of substantiveFiles) {
+    const before = gitFile(base, file);
+    const after = read(file, null);
+    if (before === null || after === null) continue;
+    if (normalizeForSubstantiveDiff(file, before) !== normalizeForSubstantiveDiff(file, after)) return true;
+  }
+  return false;
+}
+
+// The workflow still does not apply AI-generated substantive patches. A version bump is
+// reachable only when real substantive KB/rules edits already exist on the branch.
+const substantiveApplied = hasSubstantiveDiff();
 const changed = substantiveApplied;
 const reportOnly = needsUpdate || claimDrift || claimUnverified || hasUnreachable || hasBotBlocked;
 const housekeeping = !substantiveApplied && !reportOnly && NEWS_COUNT > 0;
@@ -98,7 +164,7 @@ ${read('lychee-report.md', '_No link report produced._')}
 </details>
 
 ---
-_Automated by `.github/workflows/weekly-kb-check.yml`. Human review is required for any reported substantive KB/rules change._
+_Automated by \`.github/workflows/weekly-kb-check.yml\`. Human review is required for any reported substantive KB/rules change._
 `;
 fs.writeFileSync('pr-body.md', body);
 fs.writeFileSync('issue-body.md', body);

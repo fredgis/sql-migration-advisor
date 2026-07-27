@@ -42,6 +42,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -58,6 +60,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -146,7 +150,7 @@ jobs:
         if: steps.decide.outputs.apply_mode == 'housekeeping' || github.event.inputs.force_pr == 'true'
         run: node tools/weekly-check/apply-update.mjs --housekeeping
 
-      - name: Apply version bump + changelog after substantive edits
+      - name: Apply version bump + changelog for pre-existing substantive edits
         if: steps.decide.outputs.apply_mode == 'substantive'
         run: node tools/weekly-check/apply-update.mjs --substantive --bump "${{ steps.decide.outputs.bump }}" --changelog "$(cat changelog.txt)"
 

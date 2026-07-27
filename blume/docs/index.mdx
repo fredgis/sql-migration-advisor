@@ -78,7 +78,7 @@ The middle column is the question **as the agent actually asks it**.
 | 7b | ↳ *"Are those distributed transactions only between SQL Servers, or do they span a non-SQL database?"* *(if DTC)* | SQL-to-SQL only · Heterogeneous / third-party RDBMS · Not sure | SQL-to-SQL ⇒ SQL MI stays eligible |
 | 8 | *"How large is the biggest database?"* | &lt; 150 GB · 150 GB – 4 TB · &gt; 4 TB · Not sure | Hyperscale gate, backup caps, seeding |
 | 9 | *"How much cutover downtime can the business accept?"* | Near-zero (minutes) · Minimal (tens of minutes to hours) · Offline window · Not sure | Method selection, downtime class |
-| 10 | *"What is the network path to Azure, and can the required ports be opened?"* | Good ExpressRoute · Limited WAN · Multi-TB · 5022 blocked · 1433/443 blocked · Not sure | MI Link viability, Data Box seeding |
+| 10 | *"What is the network path to Azure, and can MI Link ports 5022 and 11000–11999 be opened in the required directions?"* | Good ExpressRoute · Limited WAN · Multi-TB · 5022 or 11000–11999 blocked · 1433/443 blocked · Not sure | MI Link viability, Data Box seeding |
 | 11 | *"Any data residency, sovereign, or edge constraints?"* | Standard · EU data boundary · Government/sovereign · Edge/air-gapped · Not sure | Biases SQL VM, AVS, Arc SQL MI |
 | 12 | *"Anything around the database to bring along?"* *(multi-select)* | SSIS · SSRS · SSAS · TDE · Many SQL Agent jobs · Windows logins · None · Not sure | Blockers and remediations |
 | 13 | *"Any tier drivers?"* *(when SQL MI or SQL DB is still eligible)* | Low-latency writes · High IOPS/log throughput · Strict SLA · Read-scale replicas · Intermittent usage · Many tenants · None | GP vs Business Critical vs Hyperscale vs Serverless vs Elastic Pool |

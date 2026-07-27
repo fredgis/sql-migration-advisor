@@ -143,5 +143,55 @@
       "cross-cloud-source-support",
       "method-source-matrix"
     ]
+  },
+  {
+    "claim_id": "mi-link-network-ports-directions",
+    "claim": "Which network ports and traffic directions are required for Managed Instance link migrations?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-preparation",
+    "source_section": "Network connectivity",
+    "last_verified": "2026-07-27",
+    "verification_hash": null,
+    "affected_rules": [
+      "mi-link-prerequisites",
+      "mi-link-network-ports",
+      "network-port-5022"
+    ]
+  },
+  {
+    "claim_id": "mi-link-maximum-links-databases-by-tier",
+    "claim": "What is the maximum number of Managed Instance links or linked databases supported per Azure SQL Managed Instance service tier?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-feature-overview",
+    "source_section": "Limitations",
+    "last_verified": "2026-07-27",
+    "verification_hash": null,
+    "affected_rules": [
+      "mi-link-maximum-databases",
+      "mi-link-service-tier-limits"
+    ]
+  },
+  {
+    "claim_id": "arc-sql-migration-minimum-source-versions",
+    "claim": "What minimum SQL Server and Windows Server source versions apply to SQL Server migration in Azure Arc overall, the LRS method, and the MI Link method?",
+    "source_url": "https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migration-overview",
+    "source_section": "Prerequisites",
+    "last_verified": "2026-07-27",
+    "verification_hash": null,
+    "affected_rules": [
+      "arc-overall-minimum-source-version",
+      "arc-lrs-minimum-source-version",
+      "arc-mi-link-minimum-source-version"
+    ]
+  },
+  {
+    "claim_id": "lrs-downtime-target-availability-cutover",
+    "claim": "How does Log Replay Service affect target database availability during log replay versus business cutover downtime?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate",
+    "source_section": "How log replay works",
+    "last_verified": "2026-07-27",
+    "verification_hash": null,
+    "affected_rules": [
+      "lrs-downtime-characteristics",
+      "mi-offline-migration"
+    ]
   }
 ]

@@ -5,7 +5,7 @@ Apply Steps **A → D** in order. Steps map to the two engine phases:
 - **Phase B — Ranking and plan:** Steps B → D. Rank only surviving targets, then choose method, tier, blockers, cost, and assessment.
 
 Determinism contract: **same inputs + same KB version + same engine version ⇒ same result**. Every recommendation must carry the KB version, engine version, and, when available, the source commit SHA and fetch timestamp.
-Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v1.5**, verified July 2026.
+Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v1.6**, verified July 2026.
 
 Three layers, never mixed:
 - **Target** = where the DB ends up (runtime).
@@ -30,7 +30,7 @@ Normalize questionnaire/free-form answers into these fields before filtering:
 | `kubernetes_model` | managed engine via Arc data controller · full DIY container · unknown |
 | `feature_dependencies` | FILESTREAM/FileTable · PolyBase/cloud files · PolyBase/external RDBMS · PolyBase/unknown · homogeneous SQL↔SQL DTC · heterogeneous DTC · DTC/unknown · linked servers · SQL Agent · SQL CLR · Service Broker · cross-DB queries |
 | `fabric_constraints` | DACPAC size, Private Link need, on-prem gateway acceptable, preview acceptable |
-| `downtime`, `network_ports`, `size`, `tenant_count`, `performance`, `compliance` | used in Steps B→D |
+| `downtime`, `network_ports`, `size`, `tenant_count`, `performance`, `compliance` | used in Steps B→D; engine outputs include `targetAvailabilityDuringSync` and `businessCutoverDowntime` |
 
 If a selected feature lacks a subtype needed for a hard rule (for example `PolyBase` with no source type, or `DTC` with no participant type), mark the affected candidate `unknown_requires_assessment`; do **not** silently pick the safer target.
 
@@ -101,13 +101,13 @@ Use this order to produce the target shortlist; it prevents masked branches.
 
 | Source | MI Link | LRS | DMS | Native backup/restore | Txn replication | BACPAC/bcp/ADF |
 |---|---|---|---|---|---|---|
-| On-prem / Azure VM | ✅ 2016+ | ✅ 2008–2022 | ✅ | ✅ direct `BACKUP TO URL` | ✅ 2016+ | ✅ |
-| AWS EC2 | ✅ if sysadmin + AG + 5022 + networking | ✅ via Blob upload | ✅ | ✅ via Blob upload | ✅ if sysadmin | ✅ |
+| On-prem / Azure VM | ✅ 2016+ + 5022 + 11000–11999 + networking | ✅ 2008–2022 | ✅ | ✅ direct `BACKUP TO URL` | ✅ 2016+ | ✅ |
+| AWS EC2 | ✅ if sysadmin + AG + 5022 + 11000–11999 + networking | ✅ via Blob upload | ✅ | ✅ via Blob upload | ✅ if sysadmin | ✅ |
 | **AWS RDS for SQL Server** | ❌ no sysadmin / no AG endpoints | ✅ via S3→Blob upload | ✅ | ⚠️ indirect (S3→Blob→restore) | ❌ not practical — requires sysadmin/distributor rights the platform does not grant | ✅ |
-| GCP Compute Engine | ✅ if sysadmin + AG + 5022 + networking | ✅ via Blob upload | ✅ | ✅ via Blob upload | ✅ if sysadmin | ✅ |
+| GCP Compute Engine | ✅ if sysadmin + AG + 5022 + 11000–11999 + networking | ✅ via Blob upload | ✅ | ✅ via Blob upload | ✅ if sysadmin | ✅ |
 | **GCP Cloud SQL for SQL Server** | ❌ no sysadmin / no AG endpoints | ✅ via export→Blob | ✅ | ⚠️ indirect | ❌ not practical — requires sysadmin/distributor rights the platform does not grant | ✅ |
 
-MI Link prerequisites: SQL Server 2016+, sysadmin on source, distributed availability groups, ability to create AG endpoints, port 5022 both ways, and VNet connectivity. Therefore MI Link is impossible from AWS RDS for SQL Server and GCP Cloud SQL for SQL Server.
+MI Link prerequisites: SQL Server 2016+, sysadmin on source, distributed availability groups, ability to create AG endpoints, VNet connectivity, and documented MI Link ports. Required ports are: MI subnet NSG inbound **5022** and **11000–11999** from the SQL Server IP; MI subnet NSG outbound **5022** to the SQL Server IP (Microsoft's table states MI NSG allows 5022 + 11000–11999 both directions); SQL Server host OS/corporate firewall inbound **5022** from the MI subnet /24; SQL Server host OS/corporate firewall outbound **5022** and **11000–11999** to the MI subnet. Ports **11000–11999** carry the MI-side distributed-AG HADR data-replication channel; the MI-side HadrPort is dynamically assigned in that range and visible in `sys.dm_hadr_fabric_config_parameters`. MI-side ports cannot be customized; the SQL Server-side endpoint port can. If **5022** or **11000–11999** cannot be opened in the required directions, set MI Link `unsupported` and fall back to LRS. This gate is always required, independent of tier, update policy, VPN, ExpressRoute, or peering. Therefore MI Link is impossible from AWS RDS for SQL Server and GCP Cloud SQL for SQL Server.
 
 ---
 
@@ -120,7 +120,7 @@ Score/rank only candidates whose Phase A state is `eligible` or `eligible_with_r
 | Criterion | Prefer higher score when... |
 | --- | --- |
 | Refactoring effort | fewer app/schema/job/security changes are required |
-| Downtime fit | method meets requested near-zero/minimal/offline window |
+| Downtime fit | method output `businessCutoverDowntime` meets the requested window; `targetAvailabilityDuringSync` is acceptable |
 | Operational burden | managed service reduces patch/backup/HA work the customer does not want |
 | Compatibility | target preserves required features and version behavior |
 | Resilience | SLA, HA, zone redundancy, read-scale and DR needs are met |
@@ -175,15 +175,25 @@ Arc-enabled source: SQL migration in Azure Arc can orchestrate offline native ba
 
 | Downtime wanted | Method | Gate |
 | --- | --- | --- |
-| Near-zero / online | **MI Link** | SQL Server 2016+, sysadmin, distributed AG, AG endpoint creation, port 5022 both ways, VNet connectivity; not possible from AWS RDS/GCP Cloud SQL |
-| Offline / planned | **Log Replay Service (LRS)** standalone | SQL Server 2008–2022; sources include SQL on VMs, AWS EC2, AWS RDS, GCP Compute Engine, GCP Cloud SQL; public endpoint/storage access; target not readable during replay |
+| Near-zero / online | **MI Link** | SQL Server 2016+, sysadmin, distributed AG, AG endpoint creation, required 5022 + 11000–11999 ports, VNet connectivity; not possible from AWS RDS/GCP Cloud SQL |
+| Online migration / planned cutover | **Log Replay Service (LRS)** standalone | SQL Server 2008–2022; sources include SQL on VMs, AWS EC2, AWS RDS, GCP Compute Engine, GCP Cloud SQL; public endpoint/storage access; target is `unavailable` (RESTORING/NORECOVERY) during sync |
 | Offline / simplest | **Native backup/restore (.bak)** | SQL Server 2008+; install TDE cert in destination `master` first; master/msdb not restorable |
 | Online subset | **Transactional replication** | use when tables/articles fit and publisher rights exist |
 | Data-only / bulk | bcp / Smart Bulk Copy / BACPAC / ADF | data movement only; validate schema/features separately |
 
-LRS version paths:
+LRS and Arc version paths:
 - **Standalone LRS** (PowerShell/CLI/API): SQL Server **2008–2022**. SQL Server 2016+ can `BACKUP TO URL` directly to Blob; SQL Server 2008–2016 backs up locally, then uploads.
-- **Azure Arc portal migration:** Arc-enabled SQL Server 2014+ overall; its LRS method needs SQL Server 2012+/Windows Server 2012+; its MI Link method needs SQL Server 2016+/Windows Server 2016+.
+- **Arc-enabled SQL Server overall migration experience:** SQL Server **2014+**.
+- **Arc → Azure SQL MI via MI Link:** SQL Server **2016+** and Windows Server **2016+**.
+- **Arc → Azure SQL MI via LRS:** Microsoft documents a method-table floor of SQL Server **2012+** and Windows Server **2012+**, but this contradicts the same page's **2014+** overall Arc experience floor. Conservative engine rule: require Arc experience floor **2014+** for Arc-orchestrated LRS; standalone LRS outside Arc remains **2008–2022**.
+- **Arc → SQL Server on Azure VM:** SQL Server **2014+**.
+
+MI migration capacity gates:
+| Method/control plane | Capacity rule |
+| --- | --- |
+| **MI Link** | Up to **100 links** on MI General Purpose and Business Critical; up to **500 links** on Next-gen General Purpose. One link = one database. |
+| **Azure Arc portal migration wizard** | Batch-selection UI limit: up to **10 databases** per batch with Azure Extension for SQL Server **1.1.3348.364+**; earlier extension versions select one database at a time. This is not MI Link capacity. |
+| **LRS** | Supports up to the MI service-tier database limit (100 GP / 500 Next-gen GP), with **100 simultaneous restores per instance** and **150 per subscription**. |
 
 #### → Azure SQL Database
 
@@ -200,7 +210,7 @@ Not supported to SQL DB: native `.bak` restore, detach/attach, MI Link, local SQ
 
 #### → SQL database in Fabric (Preview)
 
-- **Fabric Migration Assistant**: schema via **DACPAC ≤ 20 MB**; data via **Fabric Data Factory copy job** + **on-prem data gateway**. No VNet gateway/Private Link. Offline; use for Fabric-native/analytics-first simple schemas, not broad enterprise OLTP by default.
+- **Fabric Migration Assistant**: schema via **DACPAC ≤ 20 MB**; data via **Fabric Data Factory copy job** + **on-prem data gateway**. No VNet gateway/Private Link. `targetAvailabilityDuringSync=not-present`, `businessCutoverDowntime=full load time`; use for Fabric-native/analytics-first simple schemas, not broad enterprise OLTP by default.
 
 #### → Arc-enabled SQL MI / container
 
@@ -215,13 +225,25 @@ Ship the initial full backup via Data Box or AzCopy over ExpressRoute, then catc
 
 ## Step C — Blockers, validation, uncertainty, and output status
 
-### C1. Downtime class
+### C1. Migration availability and cutover downtime outputs
 
-| Class | Typical methods |
-| --- | --- |
-| Near-zero | MI Link, Distributed/Always On AG, specialized CDC/replication tools |
-| Minimal | transactional replication, log shipping, native restore + differential/log tail |
-| Offline | native backup/restore, LRS final cutover, BACPAC, bcp, detach/attach, ADF, Data Box seed |
+The source-of-truth downtime model is the pair `targetAvailabilityDuringSync` + `businessCutoverDowntime`. A coarse `downtimeClass` may be emitted for cards, but it must be derived from `businessCutoverDowntime`.
+
+| Method | `targetAvailabilityDuringSync` | `businessCutoverDowntime` | Derived `downtimeClass` |
+| --- | --- | --- | --- |
+| **MI Link** | `read-only` (secondary queryable) | `< 1 minute` | `minimal` |
+| **LRS** | `unavailable` (RESTORING / NORECOVERY; no read or write) | `minutes` on General Purpose when the final backup is small; `hours` on Business Critical because the database seeds to secondary replicas before availability | `planned-cutover` |
+| **Native backup/restore** | `not-present` | `full restore time` | `extended` |
+| **Transactional replication** | `read-write` (subscriber accessible) | `near-zero` | `minimal` |
+| **DMS offline** | `not-present` | `total migration execution time` | `extended` |
+| **Distributed / Always On AG** | `read-only` (readable secondary, if configured) | `near-zero` (planned failover) | `minimal` |
+| **Log shipping** | `unavailable` (standby/restoring) | `minimal` | `minimal` |
+| **BACPAC / bcp / ADF / Data Box** | `not-present` | `full load time` | `extended` |
+
+Rules:
+- For LRS, emit `targetAvailabilityDuringSync=unavailable` and a planned cutover duration; do not use the extended/load-time class.
+- If `target = Azure SQL MI Business Critical` and `method = LRS`, add warning `lrsBusinessCriticalCutoverCanTakeHours=true`; rank MI Link higher whenever all MI Link prerequisites are satisfiable.
+- Reserve `minimal downtime` wording for MI Link when comparing MI migration methods.
 
 ### C2. Cutover blockers and remediations
 
@@ -229,7 +251,7 @@ Ship the initial full backup via Data Box or AzCopy over ExpressRoute, then catc
 | --- | --- |
 | **TDE encrypted DB** | Install the server-level TDE certificate in the destination `master` before native restore; restore fails unless the certificate is present first. |
 | **Windows logins** | DMS may skip them unless enabled; grant MI read to Entra ID where needed; script/recreate logins and users. |
-| **MI Link ports** | Open **5022** both directions and validate VNet routing/firewalls before choosing MI Link. |
+| **MI Link ports** | Open required **5022** and **11000–11999** directions: MI NSG inbound 5022 + 11000–11999 from SQL Server IP; MI NSG outbound 5022 to SQL Server IP; SQL Server host/corporate firewall inbound 5022 from MI subnet /24; SQL Server host/corporate firewall outbound 5022 + 11000–11999 to MI subnet. If either port set cannot be opened, MI Link is `unsupported`; choose LRS. |
 | **MI managed DTC ports** | For SQL↔SQL DTC on MI, validate port 135 and 14000–15000 inbound, 49152–65535 outbound. |
 | Other methods' network | DMS/LRS/replication need outbound **443** to Blob, **1433** (+ **1434/UDP** for named instances where applicable). |
 | **DAG / AG** | Requires AD Domain Services or workgroup AG + certificates; validate quorum and endpoint security. |

@@ -19,8 +19,11 @@
         "sql_db": "unsupported"
       },
       "primary_target": "Azure SQL Managed Instance",
-      "method": "LRS or transactional replication; MI Link if near-zero gates are met",
-      "recommendationStatus": "validated",
+      "method": "LRS",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": [
         "Azure SQL Database for DTC-dependent workload"
       ]
@@ -51,7 +54,10 @@
       },
       "primary_target": "Azure SQL Database",
       "method": "Transactional replication",
-      "recommendationStatus": "validated",
+      "targetAvailabilityDuringSync": "read-write",
+      "businessCutoverDowntime": "near-zero",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": [
         "2016-2019 only gate"
       ]
@@ -81,8 +87,11 @@
         "sql_mi": "eligible"
       },
       "primary_target": "Azure SQL Managed Instance",
-      "method": "Log Replay Service (LRS)",
-      "recommendationStatus": "validated",
+      "method": "LRS",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": [
         "MI Link"
       ]
@@ -111,12 +120,15 @@
     },
     "expect": {
       "eligibility": {
-        "fabric_sql_db": "eligible",
+        "fabric_sql_db": "unknown_requires_assessment",
         "sql_db": "eligible"
       },
-      "primary_target": "SQL database in Fabric",
-      "method": "Fabric Migration Assistant",
-      "recommendationStatus": "validated",
+      "primary_target": "provisional shortlist only",
+      "method": "Confirm Fabric Preview gates first",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "recommendationStatus": "provisional",
+      "confidence": "low",
       "mustNotRecommend": [
         "generic SQL DB before Fabric"
       ]
@@ -147,10 +159,13 @@
         "sql_mi": "eligible"
       },
       "primary_target": "Azure SQL Managed Instance",
-      "method": "DMS or LRS via S3→Blob; MI Link forbidden",
+      "method": "LRS",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": [
-        "MI Link from AWS RDS"
+        "MI Link"
       ]
     },
     "assertRulePresent": [
@@ -180,7 +195,10 @@
       },
       "primary_target": "provisional shortlist only",
       "method": "Assessment and dependency discovery first",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
       "recommendationStatus": "provisional",
+      "confidence": "low",
       "mustNotRecommend": [
         "validated recommendation"
       ]
@@ -207,11 +225,21 @@
     },
     "expect": {
       "eligibility": {
-        "version_consistency": "must pass"
+        "sql_vm": "eligible",
+        "avs": "unsupported",
+        "sql_mi": "eligible",
+        "sql_db": "eligible",
+        "fabric_sql_db": "unsupported",
+        "arc_sql_mi": "unsupported",
+        "container": "unsupported",
+        "arc_in_place": "eligible"
       },
-      "primary_target": "n/a",
-      "method": "n/a",
-      "recommendationStatus": "validated",
+      "primary_target": "SQL Server enabled by Azure Arc",
+      "method": "Arc best-practices assessment",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": [
         "mismatched versions"
       ]
@@ -238,11 +266,21 @@
     },
     "expect": {
       "eligibility": {
-        "version_consistency": "must pass after applied change"
+        "sql_vm": "eligible",
+        "avs": "unsupported",
+        "sql_mi": "eligible",
+        "sql_db": "eligible",
+        "fabric_sql_db": "unsupported",
+        "arc_sql_mi": "unsupported",
+        "container": "unsupported",
+        "arc_in_place": "eligible"
       },
-      "primary_target": "n/a",
-      "method": "n/a",
-      "recommendationStatus": "validated",
+      "primary_target": "SQL Server enabled by Azure Arc",
+      "method": "Arc best-practices assessment",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": [
         "unapplied-change version bump"
       ]
@@ -275,7 +313,10 @@
       },
       "primary_target": "SQL Server on Azure VM",
       "method": "Native backup/restore",
-      "recommendationStatus": "validated",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": [
         "Azure SQL MI",
         "Azure SQL Database"
@@ -306,8 +347,11 @@
         "sql_mi": "eligible"
       },
       "primary_target": "Azure SQL Managed Instance",
-      "method": "LRS or native backup/restore",
-      "recommendationStatus": "validated",
+      "method": "LRS",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -338,7 +382,10 @@
       },
       "primary_target": "SQL Server on Azure VM",
       "method": "Native backup/restore",
-      "recommendationStatus": "validated",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": [
         "Azure SQL MI"
       ]
@@ -370,8 +417,11 @@
         "sql_vm": "eligible"
       },
       "primary_target": "SQL Server on Azure VM",
-      "method": "Log shipping or native backup/restore",
-      "recommendationStatus": "validated",
+      "method": "Log shipping",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minimal",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -400,8 +450,11 @@
         "sql_db": "unknown_requires_assessment"
       },
       "primary_target": "provisional shortlist only",
-      "method": "Dependency discovery first",
+      "method": "Assessment and dependency discovery first",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
       "recommendationStatus": "provisional",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -430,8 +483,11 @@
         "sql_db": "unknown_requires_assessment"
       },
       "primary_target": "provisional shortlist only",
-      "method": "DTC participant discovery first",
+      "method": "Assessment and dependency discovery first",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
       "recommendationStatus": "provisional",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -460,8 +516,11 @@
         "sql_db": "unsupported"
       },
       "primary_target": "Azure SQL Managed Instance",
-      "method": "LRS or native backup/restore",
+      "method": "LRS",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -490,8 +549,11 @@
         "sql_db": "eligible_with_remediation"
       },
       "primary_target": "Azure SQL Managed Instance",
-      "method": "LRS or native backup/restore",
-      "recommendationStatus": "validated",
+      "method": "LRS",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -521,9 +583,12 @@
       },
       "primary_target": "Azure SQL Database",
       "method": "modern DMS (offline)",
-      "recommendationStatus": "validated",
-      "mustNotRecommend": [],
-      "tier": "Hyperscale"
+      "tier": "Hyperscale",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": []
     },
     "assertRulePresent": [
       "Database size > 4 TB[\\s\\S]*?\\*\\*Hyperscale\\*\\*",
@@ -552,9 +617,12 @@
       },
       "primary_target": "Azure SQL Database",
       "method": "modern DMS (offline)",
-      "recommendationStatus": "validated",
-      "mustNotRecommend": [],
-      "tier": "Serverless"
+      "tier": "Serverless",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": []
     },
     "assertRulePresent": [
       "Intermittent/dev/test/seasonal usage[\\s\\S]*?\\*\\*Serverless\\*\\*",
@@ -583,9 +651,12 @@
       },
       "primary_target": "Azure SQL Database",
       "method": "modern DMS (offline)",
-      "recommendationStatus": "validated",
-      "mustNotRecommend": [],
-      "tier": "Elastic Pool"
+      "tier": "Elastic Pool",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": []
     },
     "assertRulePresent": [
       "Many tenants/databases with variable utilization[\\s\\S]*?\\*\\*Elastic Pool\\*\\*",
@@ -613,10 +684,14 @@
         "sql_mi": "eligible"
       },
       "primary_target": "Azure SQL Managed Instance",
-      "method": "LRS or MI Link if gates met",
-      "recommendationStatus": "validated",
-      "mustNotRecommend": [],
-      "tier": "MI Business Critical"
+      "method": "LRS",
+      "tier": "MI Business Critical",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "hours",
+      "lrsBusinessCriticalCutoverCanTakeHours": true,
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": []
     },
     "assertRulePresent": [
       "Low-latency storage required[\\s\\S]*?\\*\\*MI Business Critical\\*\\*",
@@ -644,10 +719,13 @@
         "sql_mi": "eligible"
       },
       "primary_target": "Azure SQL Managed Instance",
-      "method": "LRS or native backup/restore",
-      "recommendationStatus": "validated",
-      "mustNotRecommend": [],
-      "tier": "MI General Purpose"
+      "method": "LRS",
+      "tier": "MI General Purpose",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": []
     },
     "assertRulePresent": [
       "Moderate latency/IO[\\s\\S]*?\\*\\*MI General Purpose\\*\\*",
@@ -675,12 +753,15 @@
         "sql_mi": "eligible"
       },
       "primary_target": "Azure SQL Managed Instance",
-      "method": "LRS or native backup/restore",
+      "method": "LRS",
+      "tier": "unknown_requires_assessment",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
+      "confidence": "low",
       "mustNotRecommend": [
         "MI General Purpose default"
-      ],
-      "tier": "unknown_requires_assessment"
+      ]
     },
     "assertRulePresent": [
       "performance.latency`, `performance.iops`, `performance.log_throughput`",
@@ -708,7 +789,10 @@
       },
       "primary_target": "SQL Server enabled by Azure Arc",
       "method": "Arc best-practices assessment",
-      "recommendationStatus": "validated",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -734,11 +818,14 @@
     },
     "expect": {
       "eligibility": {
-        "arc_in_place": "eligible"
+        "arc_in_place": "unsupported"
       },
-      "primary_target": "SQL Server enabled by Azure Arc",
-      "method": "Arc onboarding and assessment",
-      "recommendationStatus": "validated",
+      "primary_target": "SQL Server on Azure VM",
+      "method": "Standalone assessment / native backup/restore",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -768,7 +855,10 @@
       },
       "primary_target": "Arc-enabled SQL Managed Instance",
       "method": "Native backup/restore after endpoint is available",
-      "recommendationStatus": "validated",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -798,7 +888,10 @@
       },
       "primary_target": "SQL Server in a container",
       "method": "Backup/restore via mounted volume",
-      "recommendationStatus": "validated",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -829,7 +922,10 @@
       },
       "primary_target": "provisional shortlist only",
       "method": "Clarify Kubernetes engine model first",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
       "recommendationStatus": "provisional",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -859,7 +955,10 @@
       },
       "primary_target": "Azure VMware Solution",
       "method": "VMware HCX / vMotion",
-      "recommendationStatus": "validated",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -891,7 +990,10 @@
       },
       "primary_target": "Arc-enabled SQL Managed Instance",
       "method": "Native backup/restore",
-      "recommendationStatus": "validated",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -919,15 +1021,18 @@
       "eligibility": {
         "sql_mi": "eligible"
       },
-      "primary_target": "Azure SQL Managed Instance",
-      "method": "Log Replay Service (LRS)",
-      "recommendationStatus": "validated",
+      "primary_target": "Azure SQL Database",
+      "method": "Transactional replication",
+      "targetAvailabilityDuringSync": "read-write",
+      "businessCutoverDowntime": "near-zero",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": [
         "MI Link"
       ]
     },
     "assertRulePresent": [
-      "Open \\*\\*5022\\*\\* both directions",
+      "MI Link ports[\\s\\S]*?5022[\\s\\S]*?11000–11999",
       "Log Replay Service \\(LRS\\)[\\s\\S]*?SQL Server 2008–2022"
     ],
     "auditRef": "P1-22"
@@ -942,7 +1047,8 @@
       "source_version": "2019",
       "management_model": "fully managed PaaS",
       "feature_dependencies": [
-        "None"
+        "None",
+        "TDE"
       ],
       "downtime": "offline"
     },
@@ -952,8 +1058,11 @@
         "sql_vm": "eligible"
       },
       "primary_target": "Azure SQL Managed Instance",
-      "method": "Native backup/restore with TDE certificate installed first",
-      "recommendationStatus": "validated",
+      "method": "Native backup/restore",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -981,8 +1090,11 @@
         "sql_mi": "eligible"
       },
       "primary_target": "Azure SQL Managed Instance",
-      "method": "LRS plus ancillary remediation",
+      "method": "LRS",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -1011,10 +1123,13 @@
         "sql_mi": "eligible"
       },
       "primary_target": "Azure SQL Managed Instance",
-      "method": "DMS or LRS via export→Blob",
+      "method": "LRS",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": [
-        "MI Link from GCP Cloud SQL"
+        "MI Link"
       ]
     },
     "assertRulePresent": [
@@ -1036,19 +1151,22 @@
         "None"
       ],
       "downtime": "near-zero",
-      "network_ports": "5022 open; sysadmin + AG endpoints available"
+      "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available"
     },
     "expect": {
       "eligibility": {
         "sql_mi": "eligible"
       },
-      "primary_target": "Azure SQL Managed Instance",
-      "method": "MI Link",
-      "recommendationStatus": "validated",
+      "primary_target": "Azure SQL Database",
+      "method": "Transactional replication",
+      "targetAvailabilityDuringSync": "read-write",
+      "businessCutoverDowntime": "near-zero",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
-      "AWS EC2[\\s\\S]*?✅ if sysadmin \\+ AG \\+ 5022 \\+ networking",
+      "AWS EC2[\\s\\S]*?✅ if sysadmin \\+ AG \\+ 5022 \\+ 11000–11999 \\+ networking",
       "MI Link prerequisites: SQL Server 2016\\+"
     ],
     "auditRef": "P1-26"
@@ -1076,7 +1194,10 @@
       },
       "primary_target": "Azure SQL Managed Instance or Azure SQL Database",
       "method": "Data Box seed → sync delta",
-      "recommendationStatus": "validated",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-load-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -1098,15 +1219,18 @@
         "None"
       ],
       "downtime": "near-zero",
-      "network_ports": "5022 open"
+      "network_ports": "5022 open; 11000-11999 open"
     },
     "expect": {
       "eligibility": {
         "sql_mi": "eligible"
       },
-      "primary_target": "Azure SQL Managed Instance",
-      "method": "MI Link",
+      "primary_target": "Azure SQL Database",
+      "method": "Transactional replication",
+      "targetAvailabilityDuringSync": "read-write",
+      "businessCutoverDowntime": "near-zero",
       "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -1134,9 +1258,12 @@
       "eligibility": {
         "sql_mi": "eligible"
       },
-      "primary_target": "Azure SQL Managed Instance",
-      "method": "LRS or native backup/restore",
-      "recommendationStatus": "validated",
+      "primary_target": "Azure SQL Database",
+      "method": "Transactional replication",
+      "targetAvailabilityDuringSync": "read-write",
+      "businessCutoverDowntime": "near-zero",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": [
         "MI Link"
       ]
@@ -1159,15 +1286,26 @@
       "feature_dependencies": [
         "None"
       ],
-      "downtime": "offline"
+      "downtime": "offline",
+      "size": "estate scale / business case / dependency map"
     },
     "expect": {
       "eligibility": {
-        "assessment": "required_first"
+        "sql_vm": "eligible",
+        "avs": "unsupported",
+        "sql_mi": "eligible",
+        "sql_db": "eligible",
+        "fabric_sql_db": "unsupported",
+        "arc_sql_mi": "unsupported",
+        "container": "unsupported",
+        "arc_in_place": "unsupported"
       },
       "primary_target": "Azure Migrate discovery first",
       "method": "Azure Migrate appliance/import/Arc discovery",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
       "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -1192,11 +1330,21 @@
     },
     "expect": {
       "eligibility": {
-        "retired_tooling": "blocked"
+        "sql_vm": "eligible",
+        "avs": "unsupported",
+        "sql_mi": "eligible",
+        "sql_db": "eligible",
+        "fabric_sql_db": "unsupported",
+        "arc_sql_mi": "unsupported",
+        "container": "unsupported",
+        "arc_in_place": "unsupported"
       },
-      "primary_target": "n/a",
-      "method": "SSMS 22, Arc, Azure Migrate, modern DMS, Extended Events/RML/OStress",
-      "recommendationStatus": "validated",
+      "primary_target": "Azure SQL Database",
+      "method": "modern DMS (offline)",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": [
         "DMA",
         "Azure Data Studio migration extension",
@@ -1234,8 +1382,12 @@
         "sql_db": "eligible"
       },
       "primary_target": "Azure SQL Database",
-      "method": "modern DMS or BACPAC/SqlPackage",
-      "recommendationStatus": "validated",
+      "method": "modern DMS (offline)",
+      "tier": "General Purpose",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -1265,8 +1417,11 @@
         "sql_vm": "eligible"
       },
       "primary_target": "SQL Server on Azure VM",
-      "method": "Native backup/restore or Azure Migrate replication",
-      "recommendationStatus": "validated",
+      "method": "Native backup/restore",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -1296,9 +1451,12 @@
       },
       "primary_target": "Azure SQL Database",
       "method": "modern DMS (offline)",
-      "recommendationStatus": "validated",
-      "mustNotRecommend": [],
-      "tier": "Business Critical"
+      "tier": "Business Critical",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": []
     },
     "assertRulePresent": [
       "Strict lowest-latency IO[\\s\\S]*?\\*\\*Business Critical\\*\\*",
@@ -1329,11 +1487,14 @@
       },
       "primary_target": "Azure SQL Database",
       "method": "modern DMS (offline)",
+      "tier": "unknown_requires_assessment",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time",
       "recommendationStatus": "provisional",
+      "confidence": "low",
       "mustNotRecommend": [
         "General Purpose default"
-      ],
-      "tier": "unknown_requires_assessment"
+      ]
     },
     "assertRulePresent": [
       "Tier-driving inputs unknown: size, latency, IOPS/log rate",
@@ -1354,19 +1515,22 @@
         "None"
       ],
       "downtime": "near-zero",
-      "network_ports": "5022 open; sysadmin + AG endpoints available"
+      "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available"
     },
     "expect": {
       "eligibility": {
         "sql_mi": "eligible"
       },
-      "primary_target": "Azure SQL Managed Instance",
-      "method": "MI Link",
-      "recommendationStatus": "validated",
+      "primary_target": "Azure SQL Database",
+      "method": "Transactional replication",
+      "targetAvailabilityDuringSync": "read-write",
+      "businessCutoverDowntime": "near-zero",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
-      "GCP Compute Engine[\\s\\S]*?✅ if sysadmin \\+ AG \\+ 5022 \\+ networking",
+      "GCP Compute Engine[\\s\\S]*?✅ if sysadmin \\+ AG \\+ 5022 \\+ 11000–11999 \\+ networking",
       "not possible from AWS RDS/GCP Cloud SQL"
     ],
     "auditRef": "P1-36"
@@ -1392,7 +1556,10 @@
       },
       "primary_target": "SQL Server on Azure VM",
       "method": "Distributed AG or Always On AG",
-      "recommendationStatus": "validated",
+      "targetAvailabilityDuringSync": "read-only",
+      "businessCutoverDowntime": "near-zero",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -1415,16 +1582,20 @@
       ],
       "downtime": "offline",
       "driver": "analytics/Fabric",
-      "compliance": "Private Link required"
+      "compliance": "Private Link required",
+      "fabric_constraints": "DACPAC <= 20 MB; preview accepted; on-prem data gateway acceptable; Private Link required"
     },
     "expect": {
       "eligibility": {
         "fabric_sql_db": "unsupported",
         "sql_db": "eligible"
       },
-      "primary_target": "Azure SQL Database or SQL MI",
-      "method": "modern DMS/BACPAC/LRS",
-      "recommendationStatus": "validated",
+      "primary_target": "Azure SQL Database",
+      "method": "modern DMS (offline)",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -1447,15 +1618,20 @@
       ],
       "downtime": "offline",
       "driver": "analytics/Fabric",
-      "size": "> 4 TB"
+      "size": "> 4 TB",
+      "fabric_constraints": "DACPAC > 20 MB; preview accepted; on-prem data gateway acceptable; no Private Link required"
     },
     "expect": {
       "eligibility": {
         "fabric_sql_db": "unsupported"
       },
-      "primary_target": "Azure SQL Database or SQL MI",
-      "method": "DMS/BACPAC/LRS",
-      "recommendationStatus": "validated",
+      "primary_target": "Azure SQL Database",
+      "method": "modern DMS (offline)",
+      "tier": "Hyperscale",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -1484,7 +1660,10 @@
       },
       "primary_target": "Azure SQL Database",
       "method": "modern DMS (offline)",
-      "recommendationStatus": "validated",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
       "mustNotRecommend": [
         "DMS classic"
       ]
@@ -1494,6 +1673,399 @@
       "Azure DMS \\*classic\\* — SQL scenarios[\\s\\S]*?\\*\\*modern\\*\\* DMS"
     ],
     "auditRef": "P1-40"
+  },
+  {
+    "id": "fabric-driver-preview-gates-met-validated",
+    "title": "Fabric driver with all Preview gates and validation evidence",
+    "why": "Covers the positive Fabric path only when mandatory Preview gates and validation evidence are supplied.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2022",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "None",
+        "tool-confirmed dependency inventory"
+      ],
+      "downtime": "offline",
+      "driver": "analytics/Fabric",
+      "size": "< 150 GB",
+      "fabric_constraints": "DACPAC <= 20 MB; preview accepted; on-prem data gateway acceptable; no Private Link required",
+      "performance": "measured Perfmon/DMV baseline; sizing data confirmed",
+      "compliance": "target-region feature availability confirmed; architect sign-off"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_vm": "eligible",
+        "avs": "unsupported",
+        "sql_mi": "eligible",
+        "sql_db": "eligible",
+        "fabric_sql_db": "unsupported",
+        "arc_sql_mi": "unsupported",
+        "container": "unsupported",
+        "arc_in_place": "unsupported"
+      },
+      "primary_target": "Azure SQL Database",
+      "method": "BACPAC/SqlPackage",
+      "tier": "General Purpose",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-load-time",
+      "recommendationStatus": "validated",
+      "confidence": "high",
+      "mustNotRecommend": []
+    },
+    "assertRulePresent": [
+      "Fabric analytics branch before generic SQL DB",
+      "DACPAC ≤ 20 MB",
+      "No VNet gateway/Private Link"
+    ],
+    "auditRef": "P0/P1-fabric-validated"
+  },
+  {
+    "id": "validated-mi-link-evidence-complete",
+    "title": "MI Link reaches validated only with complete evidence",
+    "why": "Exercises validated/high confidence status with tool evidence, measured sizing, region confirmation, and architect sign-off.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2019",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "SQL Agent",
+        "tool-confirmed dependency inventory"
+      ],
+      "downtime": "near-zero",
+      "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
+      "performance": "measured Perfmon/DMV baseline; moderate latency/IO; cost-sensitive; sizing data confirmed",
+      "compliance": "target-region feature availability confirmed; architect sign-off"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_vm": "eligible",
+        "avs": "unsupported",
+        "sql_mi": "eligible",
+        "sql_db": "eligible_with_remediation",
+        "fabric_sql_db": "unsupported",
+        "arc_sql_mi": "unsupported",
+        "container": "unsupported",
+        "arc_in_place": "unsupported"
+      },
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "MI Link",
+      "tier": "MI General Purpose",
+      "targetAvailabilityDuringSync": "read-only",
+      "businessCutoverDowntime": "<1min",
+      "recommendationStatus": "validated",
+      "confidence": "high",
+      "mustNotRecommend": []
+    },
+    "assertRulePresent": [
+      "MI Link prerequisites: SQL Server 2016\\+",
+      "Required ports are:[\\s\\S]*?5022[\\s\\S]*?11000–11999",
+      "confidence = high"
+    ],
+    "auditRef": "validated-1"
+  },
+  {
+    "id": "validated-sql-db-dms-evidence-complete",
+    "title": "SQL DB offline reaches validated with complete evidence",
+    "why": "Exercises a validated SQL DB recommendation without relying on declarative interview answers alone.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2022",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "None",
+        "tool-confirmed dependency inventory"
+      ],
+      "downtime": "offline",
+      "driver": "app modernization",
+      "size": "150 GB – 4 TB",
+      "performance": "measured Perfmon/DMV baseline; general purpose; moderate IO; sizing data confirmed",
+      "compliance": "target-region feature availability confirmed; architect sign-off"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_vm": "eligible",
+        "avs": "unsupported",
+        "sql_mi": "eligible",
+        "sql_db": "eligible",
+        "fabric_sql_db": "unsupported",
+        "arc_sql_mi": "unsupported",
+        "container": "unsupported",
+        "arc_in_place": "unsupported"
+      },
+      "primary_target": "Azure SQL Database",
+      "method": "modern DMS (offline)",
+      "tier": "General Purpose",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time",
+      "recommendationStatus": "validated",
+      "confidence": "high",
+      "mustNotRecommend": []
+    },
+    "assertRulePresent": [
+      "Offline[\\s\\S]*?\\*\\*modern DMS \\(offline\\)\\*\\*",
+      "confidence = high"
+    ],
+    "auditRef": "validated-2"
+  },
+  {
+    "id": "mi-link-11000-blocked-falls-to-lrs",
+    "title": "MI Link excluded when 11000-11999 is blocked even if 5022 is open",
+    "why": "Regression for audit correction: 11000-11999 is mandatory, not just 5022.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2019",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "SQL Agent"
+      ],
+      "downtime": "near-zero",
+      "network_ports": "5022 open; 11000-11999 blocked",
+      "performance": "moderate latency/IO; cost-sensitive"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_vm": "eligible",
+        "avs": "unsupported",
+        "sql_mi": "eligible",
+        "sql_db": "eligible_with_remediation",
+        "fabric_sql_db": "unsupported",
+        "arc_sql_mi": "unsupported",
+        "container": "unsupported",
+        "arc_in_place": "unsupported"
+      },
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "LRS",
+      "tier": "MI General Purpose",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": [
+        "MI Link"
+      ]
+    },
+    "assertRulePresent": [
+      "If \\*\\*5022\\*\\* or \\*\\*11000–11999\\*\\* cannot be opened[\\s\\S]*?MI Link `unsupported`",
+      "fall back to LRS"
+    ],
+    "auditRef": "audit-11000-blocked"
+  },
+  {
+    "id": "mi-link-capacity-nextgen-200-databases-ok",
+    "title": "MI Link 200-database estate fits Next-gen GP capacity",
+    "why": "Regression for MI Link capacity: Next-gen GP supports up to 500 links.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2019",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "SQL Agent"
+      ],
+      "downtime": "near-zero",
+      "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
+      "size": "200 databases; Next-gen General Purpose",
+      "performance": "moderate latency/IO; cost-sensitive; Next-gen General Purpose"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_vm": "eligible",
+        "avs": "unsupported",
+        "sql_mi": "eligible",
+        "sql_db": "eligible_with_remediation",
+        "fabric_sql_db": "unsupported",
+        "arc_sql_mi": "unsupported",
+        "container": "unsupported",
+        "arc_in_place": "unsupported"
+      },
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "MI Link",
+      "tier": "MI Next-gen General Purpose",
+      "targetAvailabilityDuringSync": "read-only",
+      "businessCutoverDowntime": "<1min",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": []
+    },
+    "assertRulePresent": [
+      "Up to \\*\\*100 links\\*\\*[\\s\\S]*?\\*\\*500 links\\*\\*",
+      "One link = one database"
+    ],
+    "auditRef": "audit-mi-link-capacity-nextgen"
+  },
+  {
+    "id": "mi-link-capacity-gp-200-databases-exceeds",
+    "title": "MI Link 200-database estate exceeds GP/BC capacity",
+    "why": "Regression for MI Link capacity: GP/BC support up to 100 links.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2019",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "SQL Agent"
+      ],
+      "downtime": "near-zero",
+      "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
+      "size": "200 databases; General Purpose",
+      "performance": "moderate latency/IO; cost-sensitive"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_vm": "eligible",
+        "avs": "unsupported",
+        "sql_mi": "eligible",
+        "sql_db": "eligible_with_remediation",
+        "fabric_sql_db": "unsupported",
+        "arc_sql_mi": "unsupported",
+        "container": "unsupported",
+        "arc_in_place": "unsupported"
+      },
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "LRS",
+      "tier": "MI General Purpose",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
+      "exclusions.mi_link": "MI Link capacity 100 links exceeded by 200 databases.",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": [
+        "MI Link"
+      ]
+    },
+    "assertRulePresent": [
+      "Up to \\*\\*100 links\\*\\*[\\s\\S]*?\\*\\*500 links\\*\\*",
+      "This is not MI Link capacity"
+    ],
+    "auditRef": "audit-mi-link-capacity-gp"
+  },
+  {
+    "id": "arc-2012-below-floor-standalone-lrs-ok",
+    "title": "SQL 2012 is below Arc floor but standalone LRS remains valid",
+    "why": "Regression for conservative Arc 2014+ floor and standalone LRS 2008-2022 support.",
+    "inputs": {
+      "intent": "assessment-only",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2012",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "minimal"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_vm": "eligible",
+        "avs": "unsupported",
+        "sql_mi": "eligible",
+        "sql_db": "eligible",
+        "fabric_sql_db": "unsupported",
+        "arc_sql_mi": "unsupported",
+        "container": "unsupported",
+        "arc_in_place": "unsupported"
+      },
+      "primary_target": "SQL Server on Azure VM",
+      "method": "Standalone assessment / native backup/restore",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": []
+    },
+    "assertRulePresent": [
+      "Arc-enabled SQL Server overall migration experience:[\\s\\S]*?SQL Server \\*\\*2014\\+\\*\\*",
+      "Standalone LRS[\\s\\S]*?SQL Server \\*\\*2008–2022\\*\\*"
+    ],
+    "auditRef": "audit-arc-floor"
+  },
+  {
+    "id": "lrs-business-critical-hours-warning",
+    "title": "LRS to MI Business Critical warns hours-long cutover",
+    "why": "Regression for two-dimensional downtime model and BC replica seeding warning.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2019",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "SQL Agent"
+      ],
+      "downtime": "minimal",
+      "network_ports": "5022 open; 11000-11999 blocked",
+      "performance": "low-latency writes; high IOPS/log throughput; read-scale replicas"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_vm": "eligible",
+        "avs": "unsupported",
+        "sql_mi": "eligible",
+        "sql_db": "eligible_with_remediation",
+        "fabric_sql_db": "unsupported",
+        "arc_sql_mi": "unsupported",
+        "container": "unsupported",
+        "arc_in_place": "unsupported"
+      },
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "LRS",
+      "tier": "MI Business Critical",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "hours",
+      "lrsBusinessCriticalCutoverCanTakeHours": true,
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": []
+    },
+    "assertRulePresent": [
+      "`hours` on Business Critical",
+      "lrsBusinessCriticalCutoverCanTakeHours=true"
+    ],
+    "auditRef": "audit-lrs-bc-hours"
+  },
+  {
+    "id": "mi-link-ranked-above-lrs-bc-when-gates-met",
+    "title": "MI Link outranks LRS for MI BC when gates are met",
+    "why": "Regression for ranking MI Link above hours-long LRS cutover when prerequisites are satisfiable.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2019",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "SQL Agent"
+      ],
+      "downtime": "near-zero",
+      "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
+      "performance": "low-latency writes; high IOPS/log throughput; read-scale replicas"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_vm": "eligible",
+        "avs": "unsupported",
+        "sql_mi": "eligible",
+        "sql_db": "eligible_with_remediation",
+        "fabric_sql_db": "unsupported",
+        "arc_sql_mi": "unsupported",
+        "container": "unsupported",
+        "arc_in_place": "unsupported"
+      },
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "MI Link",
+      "tier": "MI Business Critical",
+      "targetAvailabilityDuringSync": "read-only",
+      "businessCutoverDowntime": "<1min",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": []
+    },
+    "assertRulePresent": [
+      "rank MI Link higher whenever all MI Link prerequisites are satisfiable",
+      "MI Link prerequisites: SQL Server 2016\\+"
+    ],
+    "auditRef": "audit-mi-link-ranks-higher-bc"
   }
 ]
-

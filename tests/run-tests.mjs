@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { evaluate } from './engine/evaluate.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const rel = (...p) => path.join(root, ...p);
@@ -31,6 +32,38 @@ function walk(dir, predicate, out = []) {
   return out;
 }
 function fileLine(file, line) { return `${path.relative(root, file)}:${line}`.replaceAll('/', '\\'); }
+function getByPath(obj, dotted) {
+  return dotted.split('.').reduce((acc, part) => acc == null ? undefined : acc[part], obj);
+}
+function valuesEqual(expected, actual) {
+  return JSON.stringify(expected) === JSON.stringify(actual);
+}
+function compareExpected(scenario, actual) {
+  const failures = [];
+  const expect = scenario.expect || {};
+  for (const [field, expected] of Object.entries(expect)) {
+    if (field === 'mustNotRecommend') continue;
+    if (field === 'methodOneOf') {
+      if (!expected.includes(actual.method)) failures.push(`expected method one of ${JSON.stringify(expected)}, got ${JSON.stringify(actual.method)}`);
+      continue;
+    }
+    if (field === 'eligibility') {
+      for (const [target, expectedState] of Object.entries(expected)) {
+        const actualState = actual.eligibility?.[target];
+        if (!valuesEqual(expectedState, actualState)) failures.push(`eligibility.${target}: expected ${JSON.stringify(expectedState)}, got ${JSON.stringify(actualState)}`);
+      }
+      continue;
+    }
+    const actualField = field === 'primary_target' ? actual.primaryTarget : getByPath(actual, field);
+    if (!valuesEqual(expected, actualField)) failures.push(`${field}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actualField)}`);
+  }
+  for (const forbidden of expect.mustNotRecommend || []) {
+    const haystack = `${actual.primaryTarget} ${actual.alternativeTarget || ''} ${actual.method}`.toLowerCase();
+    const needle = String(forbidden).toLowerCase();
+    if (needle && haystack.includes(needle)) failures.push(`mustNotRecommend: output contained ${JSON.stringify(forbidden)}`);
+  }
+  return failures;
+}
 
 const rulesPath = rel('reference', 'decision-rules.md');
 const skillPath = rel('SKILL.md');
@@ -39,9 +72,64 @@ const skill = readText('SKILL.md');
 let scenarios = [];
 try {
   scenarios = JSON.parse(readText(path.join('tests', 'golden-scenarios.json')));
-  add('golden-scenarios-json', Array.isArray(scenarios) && scenarios.length >= 35, [`${Array.isArray(scenarios) ? scenarios.length : 0} scenarios loaded`]);
+  add('golden-scenarios-json', Array.isArray(scenarios) && scenarios.length >= 48, [`${Array.isArray(scenarios) ? scenarios.length : 0} scenarios loaded`]);
 } catch (err) {
   add('golden-scenarios-json', false, [String(err)]);
+}
+
+{
+  const failures = [];
+  const targetCounts = new Map();
+  const availabilityValues = new Set();
+  for (const s of scenarios) {
+    try {
+      const actual = evaluate(s.inputs || {});
+      targetCounts.set(actual.primaryTarget, (targetCounts.get(actual.primaryTarget) || 0) + 1);
+      availabilityValues.add(actual.targetAvailabilityDuringSync);
+      const scenarioFailures = compareExpected(s, actual);
+      if (scenarioFailures.length) failures.push(`${s.id}: ${scenarioFailures.join('; ')}`);
+    } catch (err) {
+      failures.push(`${s.id}: engine threw ${err.stack || err}`);
+    }
+  }
+  add('golden-decision-outcomes', failures.length === 0, failures.length ? failures : [`Executed ${scenarios.length} scenarios against tests\\engine\\evaluate.mjs.`], { executedScenarios: scenarios.length });
+}
+
+{
+  const targetCounts = {};
+  const availabilityCounts = {};
+  for (const s of scenarios) {
+    const actual = evaluate(s.inputs || {});
+    targetCounts[actual.primaryTarget] = (targetCounts[actual.primaryTarget] || 0) + 1;
+    availabilityCounts[actual.targetAvailabilityDuringSync] = (availabilityCounts[actual.targetAvailabilityDuringSync] || 0) + 1;
+  }
+  const maxTarget = Math.max(0, ...Object.values(targetCounts));
+  const maxAllowed = Math.floor(scenarios.length * 0.4);
+  const availabilityDistinct = Object.keys(availabilityCounts).length;
+  const failures = [];
+  if (maxTarget > maxAllowed) failures.push(`primary_target distribution collapsed: max ${maxTarget}/${scenarios.length} > ${maxAllowed}; ${JSON.stringify(targetCounts)}`);
+  if (availabilityDistinct < 4) failures.push(`targetAvailabilityDuringSync has only ${availabilityDistinct} distinct values; ${JSON.stringify(availabilityCounts)}`);
+  add('decision-distribution-sanity', failures.length === 0, failures.length ? failures : [
+    `primary_target distribution ${JSON.stringify(targetCounts)}`,
+    `targetAvailabilityDuringSync distribution ${JSON.stringify(availabilityCounts)}`
+  ]);
+}
+
+{
+  const requiredMustNot = new Map([
+    ['mi-link-11000-blocked-falls-to-lrs', 'MI Link'],
+    ['port-5022-blocked-no-mi-link-lrs-in', 'MI Link'],
+    ['aws-rds-to-mi-near-zero-no-mi-link', 'MI Link'],
+    ['gcp-cloud-sql-no-mi-link', 'MI Link'],
+    ['retired-tooling-never-current-recommendation', 'DMS classic']
+  ]);
+  const failures = [];
+  for (const [id, forbidden] of requiredMustNot) {
+    const scenario = scenarios.find(s => s.id === id);
+    if (!scenario) failures.push(`${id}: missing scenario`);
+    else if (!(scenario.expect?.mustNotRecommend || []).includes(forbidden)) failures.push(`${id}: mustNotRecommend must include ${forbidden}`);
+  }
+  add('must-not-recommend-metadata', failures.length === 0, failures.length ? failures : ['Required must-not-recommend guards are populated.']);
 }
 
 {
@@ -54,13 +142,16 @@ try {
     { id: 'unsourced TDE statistic', re: /~80%|fails\s+~80/iu },
     { id: 'unsourced dependency statistic', re: /~60%/u },
     { id: 'unsourced landing-zone statistic', re: /~4x|4x\s+faster/iu },
-    { id: 'undocumented sql_variant claim', re: /sql_variant/iu }
+    { id: 'undocumented sql_variant claim', re: /sql_variant/iu },
+    { id: 'old MI Link 10 database capacity', re: /MI Link[^\n]*(?:up to\s*)?10\s+(?:simultaneous\s+)?(?:databases|dbs|links)|(?:up to\s*)?10\s+(?:simultaneous\s+)?(?:databases|dbs|links)[^\n]*MI Link/iu, allow: /wizard|portal|batch|selection limit|not MI Link capacity/iu }
   ];
   for (const file of files) {
     const text = fs.readFileSync(file, 'utf8');
     const lines = text.split(/\r?\n/);
     lines.forEach((line, i) => {
-      for (const f of forbidden) if (f.re.test(line)) failures.push(`${fileLine(file, i + 1)} ${f.id}: ${line.trim()}`);
+      for (const f of forbidden) if (f.re.test(line) && !(f.allow && f.allow.test(line))) failures.push(`${fileLine(file, i + 1)} ${f.id}: ${line.trim()}`);
+      const isAuthoritativeRuleFile = !file.includes(`${path.sep}tools${path.sep}`) && !file.includes(`${path.sep}examples${path.sep}`);
+      if (isAuthoritativeRuleFile && /MI Link/i.test(line) && /\bports?\b|5022/i.test(line) && !/11000/.test(line) && !/managed DTC|DTC ports|Retired|ports below/i.test(line)) failures.push(`${fileLine(file, i + 1)} MI Link ports mention omits 11000-11999: ${line.trim()}`);
       const retiredContext = /retired|unavailable|deprecated|replaced|do not recommend|never recommend|use instead/i.test(line);
       const recommendsDea = /\b(run|use|recommend|capture)\s+(?:retired\s+)?DEA\b|\bDEA\s+capture\b/i.test(line);
       const recommendsReplay = /\b(run|use|recommend)\s+Distributed Replay\b|Distributed Replay\s+(?:capture|replay)/i.test(line);
@@ -95,7 +186,6 @@ try {
   const failures = [];
   for (const key of declared) {
     if (!skillNorm.includes(norm(key))) {
-      // Allow keys that are collected by their human label rather than exact snake_case.
       const aliases = {
         downtime: ['downtime tolerance'],
         network_ports: ['network path and ports', 'ports'],
@@ -171,4 +261,3 @@ if (jsonMode) {
   console.log(`SUMMARY ${summary.passed}/${summary.total} passed, ${summary.failed} failed`);
 }
 process.exit(summary.failed ? 1 : 0);
-

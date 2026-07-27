@@ -16,7 +16,7 @@ At session start, fetch the live knowledge-base document:
 
 - Raw URL: `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/main/docs/sql-server-to-azure-migration.md`
 - Use the live doc when available. If offline, use `reference/decision-rules.md` and tell the user that the offline fallback may lag.
-- Current coordinated knowledge-base line: **v1.5**, dated **2026-07-27**.
+- Current coordinated knowledge-base line: **v1.6**, dated **2026-07-27**.
 - Display the **knowledge-base version** in every recommendation and, when available, the **commit SHA** and **fetch timestamp**.
 - Determinism contract: **same inputs + same KB version + same engine version ⇒ same result**.
 
@@ -41,9 +41,9 @@ Apply `reference/decision-rules.md` by name:
 | Topic | Gate / consequence |
 | --- | --- |
 | Transactional replication → Azure SQL Database | Source **SQL Server 2016 and later** (includes 2022 and 2025); **push subscriber only**; snapshot + one-way transactional only; replicated tables need a **primary key**. |
-| Log Replay Service (standalone) | Supports source **SQL Server 2008 through 2022** for Azure SQL MI migration. |
-| LRS inside Azure Arc portal migration | The **LRS method** in the Arc portal flow has a **2012+** method floor. The overall Arc-enabled source floor is **SQL Server 2014+**; the Arc **MI Link** method needs **2016+**. Do not conflate these gates. |
-| MI Link | Source **2016+**; requires **sysadmin** on source, **distributed availability groups**, permission to create AG endpoints, **port 5022 both directions**, and VNet connectivity. Impossible from **AWS RDS for SQL Server** and **GCP Cloud SQL** because managed PaaS sources do not grant sysadmin or custom AG endpoints. |
+| Log Replay Service (standalone) | Supports source **SQL Server 2008 through 2022** for Azure SQL MI migration. Target is **unavailable** during sync (RESTORING/NORECOVERY); business cutover is typically **minutes** on GP with a small final backup, but can be **hours** on Business Critical while replicas seed. |
+| Azure Arc migration floors | Overall Arc migration experience for SQL MI and SQL VM targets: **SQL Server 2014 (12.x)+**. Arc → Azure SQL MI via **MI Link**: **2016+** and Windows Server 2016+. Arc → Azure SQL MI via **LRS**: Microsoft documents a **2012+** method floor but the same Arc page states **2014+** overall; treat this as a documented Microsoft inconsistency and apply the conservative **2014+** Arc floor. Arc → **SQL Server on Azure VM**: **2014+**. Standalone LRS outside Arc remains **2008–2022**. |
+| MI Link | Source **2016+**; needs source **sysadmin**, distributed AGs, AG endpoint permission, and VNet connectivity. Ports are mandatory for all tiers/update policies/VPN/ExpressRoute/peering and MI-side ports are not customisable: MI subnet NSG inbound **5022** + **11000–11999** from SQL Server IP and outbound **5022**; SQL host/corporate firewall inbound **5022** from MI subnet /24 and outbound **5022 and 11000–11999** to MI. **11000–11999** is the dynamic MI-side distributed-AG HADR data channel. If **5022 or 11000–11999** cannot be opened in required directions, MI Link is `unsupported`; use LRS. [MI Link preparation](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-preparation). Links: **100** on GP/BC, **500** on Next-gen GP, one link/database; Arc portal's **10 databases per batch** is only a wizard selection limit. AWS RDS/GCP Cloud SQL cannot use MI Link because they lack sysadmin/custom AG endpoints. |
 | Managed cloud sources | AWS RDS / GCP Cloud SQL: **MI Link and transactional replication are out**. LRS/DMS work by backup upload to Blob. Native restore is indirect: export/S3/backup → Blob → restore. |
 | FILESTREAM / FileTable | Hard block on Azure SQL MI and Azure SQL Database → SQL VM, AVS, or container. |
 | PolyBase | Ask which kind. MI supports data virtualization over Blob/ADLS Gen2 for Parquet/CSV, with no Delta Lake, no pushdown, and no S3. MI does **not** support PolyBase connectors to external RDBMS such as Oracle, Teradata, MongoDB, or another SQL Server. |
@@ -110,8 +110,8 @@ Ask one at a time. “Not sure” is allowed, but decision-driving unknowns must
 9. **Downtime tolerance** — “How much cutover downtime can the business accept?”
    - `Near-zero (minutes)` · `Minimal (tens of minutes to a couple of hours)` · `Offline planned window` · `Not sure`
 
-10. **Network path and ports** — “What is the network path to Azure, and can required ports be opened?”
-    - `Good ExpressRoute/high bandwidth` · `Limited WAN` · `Very large multi-TB move` · `5022 blocked` · `1433/443 blocked or unknown` · `Not sure`
+10. **Network path and ports** — “What is the network path to Azure, and can MI Link ports 5022 and 11000–11999 be opened in the required directions?”
+    - `Good ExpressRoute/high bandwidth` · `Limited WAN` · `Very large multi-TB move` · `5022 or 11000–11999 blocked` · `1433/443 blocked or unknown` · `Not sure`
 
 11. **Compliance / sovereignty** — “Any data residency, sovereign, or edge constraints?”
     - `Standard commercial` · `EU data boundary` · `Government / sovereign` · `Edge / air-gapped` · `Not sure`
@@ -165,11 +165,18 @@ Every recommendation carries:
 
 Confidence rules:
 
-- **High**: all Phase A blockers are known, dependency inventory is tool-confirmed, performance/tier inputs are measured, region/features verified, and architect validation is complete.
+- **High**: measured/tool-confirmed evidence is present for dependencies, performance/sizing, regional features, and cutover feasibility; interview-only answers can never exceed **medium**.
 - **Medium**: triage answers are complete and internally consistent, but dependency/performance evidence is not yet tool-confirmed.
 - **Low**: one or more decision-driving unknowns remain, answers conflict, or a candidate depends on unverified remediation.
 
-A recommendation stays **provisional** until assessment tooling confirms dependency inventory, sizing, regional availability, and cutover feasibility. Only mark **validated** when evidence is attached or explicitly provided.
+`provisional` is the default and the only possible `recommendationStatus` from interview answers alone. `validated` requires **all** of:
+
+- tool-confirmed dependency inventory / assessment run;
+- measured performance and sizing data;
+- confirmed target-region feature availability;
+- explicit architect sign-off.
+
+If any checklist item is missing, keep `recommendationStatus: provisional`.
 
 ## Scoring and ranking
 
@@ -184,6 +191,18 @@ A recommendation stays **provisional** until assessment tooling confirms depende
    - SQL DB **Elastic Pool**: many tenants/databases with variable aggregate demand.
    - SQL DB **Business Critical**: low-latency/high-availability single DB requirements.
 4. **Method selection** uses target, source location/version/permissions, downtime, size, network, log rate, HA topology, and TDE.
+
+Migration method availability semantics:
+
+| Method | `targetAvailabilityDuringSync` | `businessCutoverDowntime` |
+| --- | --- | --- |
+| MI Link | `read-only` (secondary queryable) | `< 1 minute` |
+| LRS | `unavailable` (RESTORING/NORECOVERY) | `minutes` on GP with a small final backup; **`hours` on Business Critical** while replicas seed |
+| Native backup/restore | `not-present` | full restore time |
+| Transactional replication | `read-write` | `near-zero` |
+| DMS offline | `not-present` | total migration execution time |
+
+Do not call LRS “offline”; call it online migration with expected cutover downtime. Reserve “minimal downtime” for MI Link. For SQL MI Business Critical + LRS, warn that cutover can take hours and prefer MI Link when its prerequisites are satisfiable.
 
 ## Output contract — Markdown card
 
@@ -203,7 +222,8 @@ One sentence explaining why this is the recommended assessment path.
 | --- | --- |
 | 🎯 **Target / tier** | `<target and tier>` |
 | 🔁 **Migration method** | `<method>` |
-| ⏱️ **Downtime class** | `<near-zero|minimal|offline>` |
+| 👁️ **Target availability during sync** | `<read-only|unavailable|not-present|read-write>` |
+| ⏱️ **Business cutover downtime** | `<near-zero|< 1 minute|minutes|hours|full restore time|total migration execution time>` |
 | 🧭 **Assess / orchestrate** | `<SSMS 22|Arc migration|Azure Migrate|modern DMS|Az.DataMigration>` |
 | 💰 **Cost view** | `Cost levers only: <AHB/ESU/reservations>; no estimate until sizing/pricing assessment` |
 
@@ -250,7 +270,10 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
   },
   "recommendation": {
     "status": "provisional",
-    "primary": {},
+    "primary": {
+      "targetAvailabilityDuringSync": null,
+      "businessCutoverDowntime": null
+    },
     "alternative": {},
     "confidence": "medium",
     "assumptions": [],
@@ -259,7 +282,7 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
     "requiredAssessments": [],
     "evidence": []
   },
-  "knowledgeBase": { "version": "1.5", "commit": "…", "verifiedAt": "…" }
+  "knowledgeBase": { "version": "1.6", "commit": "…", "verifiedAt": "…" }
 }
 ```
 
@@ -270,11 +293,11 @@ Field definitions:
 - `profile.dependencies`: SQL Agent, linked servers, cross-DB, FILESTREAM/FileTable, PolyBase kind, DTC kind, CLR permission set, Service Broker, SSIS/SSRS/SSAS.
 - `profile.businessContinuity`: downtime tolerance, RPO, RTO, DR architecture, rollback plan, backup retention/restore requirements.
 - `profile.security`: TDE, authentication model, Entra/AD dependencies, sovereignty/compliance.
-- `profile.network`: ExpressRoute/WAN, VNet connectivity, DNS, AD, ports 5022/1433/443, Blob reachability.
+- `profile.network`: ExpressRoute/WAN, VNet connectivity, DNS, AD, MI Link ports **5022 and 11000–11999** in required directions, app/Blob ports such as 1433/443, Blob reachability.
 - `profile.commercial`: Software Assurance, AHB, ESU, reservations, program fit.
-- `recommendation.primary`: target, tier, method, downtime class, control plane, rationale, blockers, remediations, cost levers.
+- `recommendation.primary`: target, tier, method, `targetAvailabilityDuringSync`, `businessCutoverDowntime`, control plane, rationale, blockers, remediations, cost levers; use the method-semantics table above.
 - `recommendation.alternative`: target, tier, method, condition where it wins, trade-offs.
-- `recommendation.status`: `provisional` unless tool evidence and architect validation are complete; otherwise `validated`.
+- `recommendation.status`: `provisional` by default; `validated` only after tool-confirmed dependency inventory, measured sizing/performance, confirmed regional feature availability, and explicit architect sign-off.
 - `recommendation.hardBlockers`: facts that make a target/method impossible.
 - `recommendation.requiredAssessments`: SSMS 22, Azure Migrate, Arc migration assessment, modern DMS, dependency discovery, Extended Events + RML/OStress validation, Query Store/DMV analysis.
 - `recommendation.evidence`: KB rules, Microsoft Learn links, assessment artifacts, measured baselines.
@@ -286,6 +309,6 @@ Field definitions:
 - If answers conflict, show the conflict and the trade-off instead of forcing a target.
 - Never treat “not sure” as permission to ignore a decision-driving blocker.
 - Always include Phase A exclusion reasons and the missing information that could change the decision.
-- Always state the biggest risk, commonly ports, TDE certificate order, network throughput, or dependency-map gaps. Keep the risk; do not cite unsupported statistics.
+- Always state the biggest risk, commonly ports, TDE certificate order, network throughput, Business Critical LRS replica-seeding cutover duration, or dependency-map gaps. Keep the risk; do not cite unsupported statistics.
 - Use Microsoft Learn evidence links where possible.
 - For performance-sensitive workloads, recommend capture with Extended Events, replay with RML Utilities / OStress, and analysis with Query Store + DMVs.

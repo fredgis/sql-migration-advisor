@@ -6,7 +6,7 @@
 >
 > **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of 27 July 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
 >
-> **Version.** v1.5 — 27 July 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
+> **Version.** v1.6 — 27 July 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**
@@ -133,7 +133,7 @@ flowchart TD
 | 5 | SQL database in Fabric *(Preview for migration)* | PaaS | Fabric-native OLTP unified with OneLake. Migrate via Fabric Migration Assistant (DACPAC schema ≤ 20 MB, on-prem data gateway only, no Private Link). Not an enterprise OLTP target yet. | Subset; preview | [Migration Assistant](https://learn.microsoft.com/en-us/fabric/database/sql/migration-assistant) |
 | 6 | SQL Server in containers — AKS / ARO / ACI / ACA | Container | Full control of the engine in a container (dev/test, edge, custom). Pod + PersistentVolume; HA via the Kubernetes scheduler. | High — SQL on Linux (no FILESTREAM/FileTable, SSRS/SSAS/SSIS, ML Services; SQL Agent off by default) | [SQL on Kubernetes](https://learn.microsoft.com/en-us/sql/linux/quickstart-sql-server-containers-kubernetes) |
 | 7 | Azure Arc-enabled SQL Managed Instance | Container (PaaS) | Managed SQL MI engine on any Kubernetes (AKS, ARO, EKS, GKE, OpenShift) via `kubectl`+CRD. Sovereignty / edge / multi-cloud. | ~Same as SQL MI | [create Arc SQL MI](https://learn.microsoft.com/en-us/azure/azure-arc/data/create-sql-managed-instance) |
-| 8 | SQL Server enabled by Azure Arc | Hybrid (control plane) | Not a runtime target — the bootstrap pillar: connect on-prem SQL *without touching it* → weekly continuous assessment, blocker detection, ESU, PAYG (OpEx) licensing, governance, and a portal Copilot-assisted Database migration — to **Azure SQL MI** (MI Link / LRS) and, **GA since July 2026**, to **SQL Server on Azure VM** (native backup/restore). Arc-enabled SQL Server 2014+ overall; path-specific floors apply (LRS via Arc: SQL Server 2012+ / Windows Server 2012+; MI Link: SQL Server 2016+ / Windows Server 2016+). | n/a | [Arc migration](https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migration-overview) |
+| 8 | SQL Server enabled by Azure Arc | Hybrid (control plane) | Not a runtime target — the bootstrap pillar: connect on-prem SQL *without touching it* → weekly continuous assessment, blocker detection, ESU, PAYG (OpEx) licensing, governance, and a portal Copilot-assisted Database migration — to **Azure SQL MI** (MI Link / LRS) and, **GA since July 2026**, to **SQL Server on Azure VM** (native backup/restore). Arc-enabled SQL Server 2014+ overall; path-specific floors apply (MI Link: SQL Server 2016+ / Windows Server 2016+; use the conservative 2014+ Arc floor for LRS because Microsoft Learn is inconsistent — see §9). | n/a | [Arc migration](https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migration-overview) |
 
 > **Lift & shift is not VM-only.** Both SQL Server on Azure VM (IaaS) and Azure SQL Managed Instance (managed PaaS) are valid lift-and-shift targets. Since 2024, MI compatibility (SQL Agent, cross-DB queries, linked servers…) makes it the default *managed* lift-and-shift.
 
@@ -144,7 +144,7 @@ flowchart TD
 | Tool / experience | Role | Status (2026) | Notes |
 | --- | --- | --- | --- |
 | [Azure Migrate](https://learn.microsoft.com/en-us/azure/migrate/how-to-create-azure-sql-assessment) | Discovery / assessment / sizing / business case at scale | GA (+ Arc-based agentless discovery, Preview) | Appliance (VMware/Hyper-V/Physical) or import-based or Arc-based. Right-sizes SQL DB / MI / VM. |
-| [SQL Server migration in Azure Arc](https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migration-overview) | Portal-driven assess + migrate for any Arc-enabled SQL Server | GA; **MI and VM targets both GA** | Copilot-assisted; targets **Azure SQL MI** (MI Link / LRS) and — **GA July 2026** — **SQL Server on Azure VM** ([lift-and-shift, native backup/restore](https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migrate-to-sql-server-on-azure-vms)); continuous assessment; Arc-enabled SQL Server 2014+ overall, with path-specific floors (LRS: SQL Server 2012+ / Windows Server 2012+; MI Link: SQL Server 2016+ / Windows Server 2016+). |
+| [SQL Server migration in Azure Arc](https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migration-overview) | Portal-driven assess + migrate for any Arc-enabled SQL Server | GA; **MI and VM targets both GA** | Copilot-assisted; targets **Azure SQL MI** (MI Link / LRS) and — **GA July 2026** — **SQL Server on Azure VM** ([lift-and-shift, native backup/restore](https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migrate-to-sql-server-on-azure-vms)); continuous assessment; Arc-enabled SQL Server 2014+ overall, with MI Link requiring SQL Server 2016+ / Windows Server 2016+. The Azure Arc portal MI wizard can select up to 10 databases per batch with Azure Extension for SQL Server ≥ 1.1.3348.364 (earlier versions: one database at a time); this is an Arc wizard batch limit, not MI Link capacity. |
 | [SSMS 22 Migration Component](https://learn.microsoft.com/en-us/sql/ssms/sql-server-management-studio-ssms) | DBA-first entry point: assess + launch a recommended migration path from SSMS | GA (Windows-only) | Replaces DMA / ADS extension. Backup/restore, MI Link, DMS. Azure SQL assessment capability expected ~Q3 CY2026 *(public roadmap, subject to change)*. |
 | [Azure DMS (modern)](https://learn.microsoft.com/en-us/azure/dms/dms-overview) | Managed migration orchestration (Azure resource · portal / PowerShell / CLI) | GA | Use the modern DMS — DMS *classic* SQL scenarios retired 15 Mar 2026. Offline-only to Azure SQL DB; online/minimal-downtime to MI / SQL VM (MI Link preferred for MI). |
 | [PowerShell `Az.DataMigration` / Azure CLI](https://learn.microsoft.com/en-us/powershell/module/az.datamigration/) | Automate DMS at scale (CI/CD) | GA | Often the only viable path beyond ~50 databases. |
@@ -180,7 +180,7 @@ Standardized columns (Microsoft Learn style): **Method · Min source · Target/m
 | Method | Min source | Downtime | Key constraints / notes |
 | --- | --- | --- | --- |
 | [Azure Migrate (lift & shift)](https://learn.microsoft.com/en-us/azure/migrate/migrate-services-overview) | SQL 2008 SP4 | Online (replication) | Whole VM/instance, incl. FCI and AG; up to ~35,000 VMs. |
-| [SQL migration in Azure Arc → SQL VM](https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migrate-to-sql-server-on-azure-vms) | SQL 2012 (Arc-enabled) | Offline (backup/restore) | **GA (July 2026):** portal-driven, Copilot-assisted lift-and-shift for Arc-enabled sources — provisions the target Azure VM and runs native backup/restore. A phased on-ramp: rehost now, modernize to SQL MI / SQL DB later. |
+| [SQL migration in Azure Arc → SQL VM](https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migrate-to-sql-server-on-azure-vms) | SQL 2014+ (Arc-enabled) | Offline (backup/restore) | **GA (July 2026):** portal-driven, Copilot-assisted lift-and-shift for Arc-enabled sources — provisions the target Azure VM and runs native backup/restore. A phased on-ramp: rehost now, modernize to SQL MI / SQL DB later. |
 | [Distributed availability group (DAG)](https://learn.microsoft.com/en-us/data-migration/sql-server/virtual-machines/availability-group-migrate) | SQL 2016 | Near-zero | Reuse on-prem AG; needs AD Domain Services (or workgroup AG + certs) and ports open. |
 | [Backup to a file (.bak) + copy](https://learn.microsoft.com/en-us/data-migration/sql-server/virtual-machines/guide) | SQL 2008 SP4 | Offline | Simple, supports > 1 TB; use compression / multi-file split for WAN. |
 | [Backup to URL (Azure Blob)](https://learn.microsoft.com/en-us/sql/relational-databases/backup-restore/sql-server-backup-to-url) | SQL 2014 | Offline | 12.8 TB (SQL 2016+) / 1 TB otherwise; for > 1 TB use local backup + AzCopy. |
@@ -193,13 +193,15 @@ Standardized columns (Microsoft Learn style): **Method · Min source · Target/m
 
 | Method | Min source | Downtime | Key constraints / notes |
 | --- | --- | --- | --- |
-| [Managed Instance link (MI Link)](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-feature-overview) | SQL 2016 and later (incl. 2022, 2025; Win Server 2016+, Ent/Std/Dev) | Near-zero (online) | Distributed-AG based; R/O readable target during migration; reverse failback to SQL 2022 / 2025 (DR / Azure exit); up to 10 simultaneous DBs (Arc ext 1.1.3348.364+); needs port 5022 both ways. |
-| [Log Replay Service (LRS)](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate) | Standalone LRS: SQL Server 2008–2022 | Offline (planned) | Full/diff/log → Azure Blob; public endpoint; 30-day max window; FULL recovery + NORECOVERY (no reads). SQL Server 2016+ can `BACKUP TO URL` directly; SQL Server 2008–2016 must back up locally and upload manually. Documented sources include SQL Server on VMs, AWS EC2, AWS RDS for SQL Server, GCP Compute Engine, and GCP Cloud SQL for SQL Server. Arc portal migration has separate floors: LRS method SQL Server 2012+ / Windows Server 2012+; MI Link method SQL Server 2016+ / Windows Server 2016+. |
+| [Managed Instance link (MI Link)](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-feature-overview) | SQL 2016 and later (incl. 2022, 2025; Win Server 2016+, Ent/Std/Dev) | Near-zero (online; <1 minute cutover) | Distributed-AG based; R/O readable target during migration; reverse failback to SQL 2022 / 2025 (DR / Azure exit); one link per database, up to 100 links on General Purpose / Business Critical and up to 500 links on Next-gen General Purpose; requires MI Link network ports below. |
+| [Log Replay Service (LRS)](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate) | Standalone LRS: SQL Server 2008–2022 | Online sync; cutover downtime | Full/diff/log → Azure Blob; public endpoint; 30-day max window; target remains RESTORING / NORECOVERY (no reads/writes) until cutover. Cutover restores the final backup: minutes on GP with a small final backup, but potentially hours on Business Critical while replicas are seeded. Supports up to the service-tier database limit (for example 100 GP, 500 Next-gen GP), with 100 simultaneous restores per instance and 150 per subscription. Arc portal migration uses the conservative 2014+ Arc floor; standalone LRS remains 2008–2022. |
 | [Native backup & restore (.bak)](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/restore-sample-database-quickstart) | SQL 2008 | Offline | Simplest; migrate TDE certificate *before* restore or it fails late; master/msdb restore not supported (script instance objects). |
 | [Transactional replication](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/replication-transactional-overview) | SQL 2012 | Online | Replicate all/part; article-type limits. |
 | [bcp / Smart Bulk Copy](https://github.com/Azure-Samples/smartbulkcopy) | any | Offline | High-speed data-only / partial (parallel copy). |
 | [BACPAC / SqlPackage](https://learn.microsoft.com/en-us/azure/azure-sql/database/database-import) | any | Offline | Smaller DBs / simple. |
 | [Azure Data Factory — Copy](https://learn.microsoft.com/en-us/azure/data-factory/connector-azure-sql-managed-instance) | any | Offline / batch | When migration = integration / transformation. |
+
+> **MI Link network ports.** Always open the full documented set, regardless of service tier, update policy, VPN / ExpressRoute / VNet peering, or other connectivity mechanism: on the **SQL Managed Instance subnet NSG**, inbound **5022** and **11000–11999** from the SQL Server IP, and outbound **5022** to the SQL Server IP (Microsoft's summary table states 5022 + 11000–11999 both inbound and outbound for the MI NSG). On the **SQL Server host OS firewall and any corporate firewall**, allow inbound **5022** from the MI subnet /24 and outbound **5022** and **11000–11999** to the MI subnet. Ports **11000–11999** carry the MI-side distributed-AG HADR data-replication channel; the actual MI HADR port is dynamically assigned within the range and can be checked with `sys.dm_hadr_fabric_config_parameters` where `parameter_name = 'HadrPort'` (for example, 11002). MI-side ports cannot be customized; the SQL Server-side endpoint port can. Microsoft’s simplified SQL Server-side table lists only 5022, but the authoritative prose also requires outbound 11000–11999 — follow the prose.
 
 > **MI compatibility nuance — PolyBase and DTC.** PolyBase used only for cloud file access (Azure Blob Storage / ADLS Gen2, CSV/delimited or Parquet through `OPENROWSET(BULK)`, `CREATE EXTERNAL TABLE`, CETAS) is **MI eligible**. PolyBase used to query Oracle, Teradata, MongoDB or another SQL Server through external RDBMS connectors is **MI ineligible**; use SQL Server on Azure VM or Synapse. Homogeneous SQL↔SQL DTC (SQL MI ↔ SQL MI / SQL Server) is **MI eligible** via managed DTC; heterogeneous DTC to a third-party RDBMS is **MI ineligible** and needs SQL VM or refactoring. FILESTREAM / FileTable remains a hard blocker for SQL MI and SQL DB.
 
@@ -273,19 +275,19 @@ Databases rarely move alone — these sub-components block go-live if forgotten:
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 22, 'rankSpacing': 30}, 'themeVariables': {'fontSize': '12px'}}}%%
 flowchart TB
-    subgraph NZ["🟢 Near-zero downtime"]
+    subgraph NZ["🟢 Near-zero / minimum cutover downtime"]
         N1[MI Link]
         N2[Distributed / Always On AG]
         N3[Striim &#40;third-party&#41;]
     end
-    subgraph MIN["🟡 Minimal downtime"]
+    subgraph ONSYNC["🟡 Online sync · target availability varies"]
+        L0[Log Replay Service]
         L1[Transactional replication]
         L2[Log shipping]
         L3[Native restore + diff/log]
     end
     subgraph OFF["🟠 Offline · planned"]
         F1[Native backup/restore]
-        F2[Log Replay Service]
         F3[BACPAC / SqlPackage]
         F4[bcp / Smart Bulk Copy]
         F5[Detach / attach · ADF · Data Box]
@@ -294,9 +296,21 @@ flowchart TB
     classDef mn fill:#C9A227,stroke:#8A6D10,color:#2a1c05;
     classDef of fill:#E8A13A,stroke:#A86E18,color:#2a1c05;
     class N1,N2,N3 nz;
-    class L1,L2,L3 mn;
-    class F1,F2,F3,F4,F5 of;
+    class L0,L1,L2,L3 mn;
+    class F1,F3,F4,F5 of;
 ```
+
+Separate **target availability during sync** from **business cutover downtime**; calling every staged method simply "offline" hides the operational difference:
+
+| Method | `targetAvailabilityDuringSync` | `businessCutoverDowntime` |
+| --- | --- | --- |
+| **MI Link** | read-only (secondary queryable) | < 1 minute |
+| **LRS** | unavailable (RESTORING/NORECOVERY) | minutes (GP, small final backup) → **hours** (Business Critical, replica seeding) |
+| **Native backup/restore** | not present | full restore time |
+| **Transactional replication** | read-write (subscriber accessible) | near-zero |
+| **DMS offline** | not present | total migration execution time |
+
+Microsoft describes LRS as an online migration with expected downtime during cutover, not as a true minimum-downtime method. Prefer MI Link for Business Critical when sub-minute cutover is required because MI Link is the true online option and its secondary is queryable during sync.
 
 **Sizing rule.** Never size MI/SQL DB on *average* CPU. Use a Perfmon baseline ≥ 7 days + ~20% headroom for cutover. Network: don't estimate `size ÷ bandwidth` — Backup-to-URL throughput is capped by the Blob layer; test with AzCopy + one full backup before committing a go-live date, and plan a rollback / fallback window in case the estimate proves optimistic.
 
@@ -339,9 +353,9 @@ flowchart TB
 | Distributed Replay | Deprecated as of SQL Server 2022 and not available in SQL Server 2022 or later → use RML Utilities / OStress |
 | SQL Data Sync | Retires 30 Sep 2027 → use ADF / transactional replication / AG |
 | DMS → Azure SQL DB | Offline only (online available for MI / SQL VM) |
-| MI Link source | SQL Server 2016 and later (incl. 2022, 2025), Windows Server 2016+, Ent/Std/Dev; requires sysadmin, distributed AG capability, AG endpoints, port 5022 both ways and network connectivity to the MI VNet |
+| MI Link source | SQL Server 2016 and later (incl. 2022, 2025), Windows Server 2016+, Ent/Std/Dev; requires sysadmin, distributed AG capability, AG endpoints, MI Link network ports (5022 plus MI-side HADR 11000–11999) and connectivity to the MI VNet |
 | Standalone LRS source | SQL Server 2008–2022; SQL Server 2016+ can `BACKUP TO URL` directly, 2008–2016 need local backup + upload |
-| Azure Arc portal migration source floors | Arc-enabled SQL Server 2014+ overall; LRS method requires SQL Server 2012+ / Windows Server 2012+; MI Link method requires SQL Server 2016+ / Windows Server 2016+ |
+| Azure Arc portal migration source floors | Arc-enabled SQL Server 2014+ overall; MI Link method requires SQL Server 2016+ / Windows Server 2016+; Microsoft documentation inconsistency: the Arc MI method table says LRS method SQL Server 2012+ / Windows Server 2012+, but the same page and the overall Arc migration overview state SQL Server migration in Azure Arc starts with SQL Server 2014 (12.x), so use the conservative 2014+ Arc experience floor. Standalone LRS outside Arc remains SQL Server 2008–2022. |
 | Native restore → MI | SQL Server 2008+ |
 | Transactional replication → MI | SQL Server 2012+ |
 | Transactional replication → SQL DB / Fabric SQL DB | SQL Server 2016+ publisher for Azure SQL DB; Fabric SQL database publishing requires SQL Server 2022 RTM CU12+ |
@@ -353,7 +367,7 @@ flowchart TB
 
 ## 10. Cross-cloud sources & reverse migration
 
-**Source × method reality check:** DMS and LRS cover more cross-cloud sources than MI Link/native restore. MI Link requires SQL Server 2016+, sysadmin on the source, distributed availability group support, ability to create AG endpoints, port 5022 open both directions, and network connectivity to the MI VNet; it is therefore not possible from managed-PaaS sources that do not grant sysadmin or custom AG endpoints.
+**Source × method reality check:** DMS and LRS cover more cross-cloud sources than MI Link/native restore. MI Link requires SQL Server 2016+, sysadmin on the source, distributed availability group support, ability to create AG endpoints, MI Link network ports (5022 plus MI-side HADR 11000–11999), and network connectivity to the MI VNet; it is therefore not possible from managed-PaaS sources that do not grant sysadmin or custom AG endpoints.
 
 | Source | MI Link | LRS | DMS | Native backup/restore | Txn replication | BACPAC/bcp/ADF |
 |---|---|---|---|---|---|---|
@@ -423,7 +437,7 @@ flowchart TB
 
 - **TDE certificate**: protect-then-restore order matters — a TDE-protected database restore fails on the destination unless the TDE certificate / asymmetric key is first installed in the destination server's `master` database.
 - **Windows logins**: DMS skips them by default; enable the option and grant MI read to Entra ID (Privileged Role Administrator).
-- **MI Link ports**: needs 5022 both directions — frequently blocked in banking/industrial networks without a security exception.
+- **MI Link ports**: MI subnet NSG needs inbound 5022 and 11000–11999 from SQL Server plus outbound 5022; SQL Server host/corporate firewalls need inbound 5022 from the MI subnet and outbound 5022 and 11000–11999 to MI. The 11000–11999 range is always required for MI-side HADR data replication and is frequently missed in locked-down networks.
 - **Other methods need network too**: DMS / LRS / transactional replication require outbound HTTPS (443) to Azure Storage/Blob, SQL 1433 (and 1434/UDP SQL Browser for named instances) — anticipate firewall/NSG blocks in locked-down environments.
 - **DAG**: requires AD Domain Services (or workgroup AG + certs) — an infra blocker architects forget.
 - **Transactional replication → SQL DB / Fabric SQL DB**: SQL Server 2016+ publishers can push to Azure SQL Database; Fabric SQL database publishing requires SQL Server 2022 RTM CU12+. Snapshot and one-way transactional replication are supported; peer-to-peer and merge are not; replicated tables require primary keys.
@@ -534,6 +548,8 @@ flowchart LR
 - Managed Instance link — <https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-feature-overview>
 - Managed Instance link preparation — <https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-preparation>
 - Log Replay Service — <https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate>
+- Log Replay Service overview — <https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-overview>
+- Compare LRS and MI Link — <https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-compare-mi-link>
 - Native backup & restore (MI) — <https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/restore-sample-database-quickstart>
 - Transactional replication (SQL DB) — <https://learn.microsoft.com/en-us/azure/azure-sql/database/replication-to-sql-database>
 - Import/Export · BACPAC — <https://learn.microsoft.com/en-us/azure/azure-sql/database/database-import>
@@ -589,13 +605,14 @@ flowchart LR
 
 ## 17. Document version & changelog
 
-Current version: **v1.5** (2026-07-27).
+Current version: **v1.6** (2026-07-27).
 
 <details>
-<summary><b>Version history</b> (current: v1.5)</summary>
+<summary><b>Version history</b> (current: v1.6)</summary>
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v1.6 | 2026-07-27 | Corrected MI Link network ports (including mandatory 11000–11999), MI Link link/database limits versus the Arc wizard batch limit, Azure Arc migration source floors and Microsoft’s LRS-method inconsistency, and LRS downtime semantics / target availability; added the related Microsoft Learn sources. |
 | v1.5 | 2026-07-27 | Corrected SQL MI PolyBase/data-virtualization and DTC nuance; updated transactional-replication publisher versions and Fabric SQL database note; separated standalone LRS floors from Arc portal path floors; replaced the blanket cross-cloud claim with a source×method matrix; documented DEA retirement / Distributed Replay replacement guidance; removed three unsourced migration statistics. |
 | v1.4 | 2026-07-20 | Added GA announcement of SQL Migration to SQL Server on Azure VMs in Azure Arc. |
 | v1.3 | 2026-07-15 | **SQL migration to SQL Server on Azure VMs in Azure Arc is now GA** (public preview since April 2026). Updated the Arc control-plane row (Azure SQL MI + SQL VM targets both GA), the 2025–2026 tooling-reset note, the source→target matrix (added Arc-enabled → SQL VM), and §5.1 (Arc guided VM lift-and-shift). Added the GA announcement and the Learn how-to links (§16). |
