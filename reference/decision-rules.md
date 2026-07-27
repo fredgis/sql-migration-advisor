@@ -185,7 +185,7 @@ LRS and Arc version paths:
 - **Standalone LRS** (PowerShell/CLI/API): SQL Server **2008–2022**. SQL Server 2016+ can `BACKUP TO URL` directly to Blob; SQL Server 2008–2016 backs up locally, then uploads.
 - **Arc-enabled SQL Server overall migration experience:** SQL Server **2014+**.
 - **Arc → Azure SQL MI via MI Link:** SQL Server **2016+** and Windows Server **2016+**.
-- **Arc → Azure SQL MI via LRS:** Microsoft documents a method-table floor of SQL Server **2012+** and Windows Server **2012+**, but this contradicts the same page's **2014+** overall Arc experience floor. Conservative engine rule: require Arc experience floor **2014+** for Arc-orchestrated LRS; standalone LRS outside Arc remains **2008–2022**.
+- **Arc → Azure SQL MI via LRS:** Microsoft documents a method-table floor of SQL Server **2012+** and Windows Server **2012+**, but this contradicts the same page's **2014+** overall Arc experience floor. Conservative engine rule: require Arc experience floor **2014+** for Arc-orchestrated LRS; standalone LRS outside Arc remains **2008–2022**. Note that the LRS-specific pages also list SQL Server 2012 among supported sources — that is consistent with the standalone **2008–2022** range and is *not* evidence of a 2012 floor for the Arc experience.
 - **Arc → SQL Server on Azure VM:** SQL Server **2014+**.
 
 MI migration capacity gates:

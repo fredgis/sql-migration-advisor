@@ -1685,14 +1685,20 @@
       "management_model": "fully managed PaaS",
       "feature_dependencies": [
         "None",
-        "tool-confirmed dependency inventory"
+        "Dependencies inventory artifact attached"
       ],
       "downtime": "offline",
       "driver": "analytics/Fabric",
       "size": "< 150 GB",
       "fabric_constraints": "DACPAC <= 20 MB; preview accepted; on-prem data gateway acceptable; no Private Link required",
-      "performance": "measured Perfmon/DMV baseline; sizing data confirmed",
-      "compliance": "target-region feature availability confirmed; architect sign-off"
+      "performance": "Perfmon/DMV baseline artifact attached; sizing data artifact attached",
+      "compliance": "target-region feature availability artifact attached; architecture approval artifact attached",
+      "evidence": {
+        "dependenciesToolConfirmed": true,
+        "performanceMeasured": true,
+        "regionAvailabilityConfirmed": true,
+        "architectSignedOff": true
+      }
     },
     "expect": {
       "eligibility": {
@@ -1732,12 +1738,18 @@
       "management_model": "fully managed PaaS",
       "feature_dependencies": [
         "SQL Agent",
-        "tool-confirmed dependency inventory"
+        "Dependencies inventory artifact attached"
       ],
       "downtime": "near-zero",
       "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
-      "performance": "measured Perfmon/DMV baseline; moderate latency/IO; cost-sensitive; sizing data confirmed",
-      "compliance": "target-region feature availability confirmed; architect sign-off"
+      "performance": "Perfmon/DMV baseline artifact attached; moderate latency/IO; cost-sensitive; sizing data artifact attached",
+      "compliance": "target-region feature availability artifact attached; architecture approval artifact attached",
+      "evidence": {
+        "dependenciesToolConfirmed": true,
+        "performanceMeasured": true,
+        "regionAvailabilityConfirmed": true,
+        "architectSignedOff": true
+      }
     },
     "expect": {
       "eligibility": {
@@ -1777,13 +1789,19 @@
       "management_model": "fully managed PaaS",
       "feature_dependencies": [
         "None",
-        "tool-confirmed dependency inventory"
+        "Dependencies inventory artifact attached"
       ],
       "downtime": "offline",
       "driver": "app modernization",
       "size": "150 GB – 4 TB",
-      "performance": "measured Perfmon/DMV baseline; general purpose; moderate IO; sizing data confirmed",
-      "compliance": "target-region feature availability confirmed; architect sign-off"
+      "performance": "Perfmon/DMV baseline artifact attached; general purpose; moderate IO; sizing data artifact attached",
+      "compliance": "target-region feature availability artifact attached; architecture approval artifact attached",
+      "evidence": {
+        "dependenciesToolConfirmed": true,
+        "performanceMeasured": true,
+        "regionAvailabilityConfirmed": true,
+        "architectSignedOff": true
+      }
     },
     "expect": {
       "eligibility": {
@@ -1869,8 +1887,10 @@
       ],
       "downtime": "near-zero",
       "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
-      "size": "200 databases; Next-gen General Purpose",
-      "performance": "moderate latency/IO; cost-sensitive; Next-gen General Purpose"
+      "size": "Next-gen General Purpose estate",
+      "performance": "moderate latency/IO; cost-sensitive; Next-gen General Purpose",
+      "database_count": 200,
+      "migration_batch_size": 12
     },
     "expect": {
       "eligibility": {
@@ -1890,7 +1910,8 @@
       "businessCutoverDowntime": "<1min",
       "recommendationStatus": "provisional",
       "confidence": "medium",
-      "mustNotRecommend": []
+      "mustNotRecommend": [],
+      "exclusions.arc_wizard_batch": "Arc portal wizard batch limit 10 databases exceeded by 12 selected databases."
     },
     "assertRulePresent": [
       "Up to \\*\\*100 links\\*\\*[\\s\\S]*?\\*\\*500 links\\*\\*",
@@ -1912,8 +1933,9 @@
       ],
       "downtime": "near-zero",
       "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
-      "size": "200 databases; General Purpose",
-      "performance": "moderate latency/IO; cost-sensitive"
+      "size": "General Purpose estate",
+      "performance": "moderate latency/IO; cost-sensitive",
+      "database_count": 200
     },
     "expect": {
       "eligibility": {
@@ -2067,5 +2089,128 @@
       "MI Link prerequisites: SQL Server 2016\\+"
     ],
     "auditRef": "audit-mi-link-ranks-higher-bc"
+  },
+  {
+    "id": "validated-free-text-keywords-without-evidence-provisional",
+    "title": "Validation keywords in free text do not validate a recommendation",
+    "why": "Regression for typed evidence: prose containing the old trigger phrases is ignored without the structured evidence object.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2022",
+      "management_model": "need OS/file-system/engine control",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "offline",
+      "performance": "Narrative only: tool-confirmed, measured, region confirmed, architect sign-off."
+    },
+    "expect": {
+      "eligibility": {
+        "sql_mi": "unsupported",
+        "sql_db": "unsupported"
+      },
+      "primary_target": "SQL Server on Azure VM",
+      "method": "Native backup/restore",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": []
+    },
+    "assertRulePresent": [
+      "recommendationStatus: provisional\\|validated",
+      "confidence = high"
+    ],
+    "auditRef": "audit-typed-evidence-free-text-negative"
+  },
+  {
+    "id": "validated-three-evidence-booleans-provisional",
+    "title": "Three of four validation evidence booleans are not enough",
+    "why": "Regression for typed evidence: validated/high requires all four structured booleans.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2022",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "offline",
+      "driver": "app modernization",
+      "size": "150 GB – 4 TB",
+      "performance": "general purpose; moderate IO",
+      "evidence": {
+        "dependenciesToolConfirmed": true,
+        "performanceMeasured": true,
+        "regionAvailabilityConfirmed": true,
+        "architectSignedOff": false
+      }
+    },
+    "expect": {
+      "eligibility": {
+        "sql_db": "eligible"
+      },
+      "primary_target": "Azure SQL Database",
+      "method": "modern DMS (offline)",
+      "tier": "General Purpose",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": []
+    },
+    "assertRulePresent": [
+      "recommendationStatus: provisional\\|validated",
+      "confidence = high"
+    ],
+    "auditRef": "audit-typed-evidence-partial-negative"
+  },
+  {
+    "id": "mi-link-capacity-gp-database-count-120-exceeds-despite-size-text",
+    "title": "Normalized database_count drives MI Link capacity instead of size prose",
+    "why": "Auditor regression: { database_count: 120, size: 2 TB, performance: moderate } must trip the 100-link GP/BC limit.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2019",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "SQL Agent"
+      ],
+      "downtime": "near-zero",
+      "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
+      "database_count": 120,
+      "size": "2 TB",
+      "performance": "moderate"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_vm": "eligible",
+        "avs": "unsupported",
+        "sql_mi": "eligible",
+        "sql_db": "eligible_with_remediation",
+        "fabric_sql_db": "unsupported",
+        "arc_sql_mi": "unsupported",
+        "container": "unsupported",
+        "arc_in_place": "unsupported"
+      },
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "LRS",
+      "tier": "MI General Purpose",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
+      "exclusions.mi_link": "MI Link capacity 100 links exceeded by 120 databases.",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": [
+        "MI Link"
+      ]
+    },
+    "assertRulePresent": [
+      "Up to \\*\\*100 links\\*\\*[\\s\\S]*?\\*\\*500 links\\*\\*",
+      "One link = one database"
+    ],
+    "auditRef": "audit-normalized-database-count-120"
   }
 ]

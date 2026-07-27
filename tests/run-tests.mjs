@@ -9,6 +9,12 @@ const rel = (...p) => path.join(root, ...p);
 const jsonMode = process.argv.includes('--json');
 const results = [];
 
+// Deliberate anti-degeneracy gates. If future rules legitimately change the
+// scenario distribution, consciously re-baseline these rather than drifting.
+const MAX_TARGET_SHARE = 0.32;
+const MIN_DISTINCT_METHODS = 18;
+const MIN_DISTINCT_AVAILABILITY_VALUES = 5;
+
 function readText(relativePath) { return fs.readFileSync(rel(relativePath), 'utf8'); }
 function norm(s) { return String(s).toLowerCase().replace(/[`*_]/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' '); }
 function lineOf(text, index) { return text.slice(0, Math.max(index, 0)).split(/\r?\n/).length; }
@@ -97,21 +103,26 @@ try {
 
 {
   const targetCounts = {};
+  const methodCounts = {};
   const availabilityCounts = {};
   for (const s of scenarios) {
     const actual = evaluate(s.inputs || {});
     targetCounts[actual.primaryTarget] = (targetCounts[actual.primaryTarget] || 0) + 1;
+    methodCounts[actual.method] = (methodCounts[actual.method] || 0) + 1;
     availabilityCounts[actual.targetAvailabilityDuringSync] = (availabilityCounts[actual.targetAvailabilityDuringSync] || 0) + 1;
   }
   const maxTarget = Math.max(0, ...Object.values(targetCounts));
-  const maxAllowed = Math.floor(scenarios.length * 0.4);
+  const maxTargetShare = scenarios.length ? maxTarget / scenarios.length : 0;
+  const distinctMethods = Object.keys(methodCounts).length;
   const availabilityDistinct = Object.keys(availabilityCounts).length;
   const failures = [];
-  if (maxTarget > maxAllowed) failures.push(`primary_target distribution collapsed: max ${maxTarget}/${scenarios.length} > ${maxAllowed}; ${JSON.stringify(targetCounts)}`);
-  if (availabilityDistinct < 4) failures.push(`targetAvailabilityDuringSync has only ${availabilityDistinct} distinct values; ${JSON.stringify(availabilityCounts)}`);
+  if (maxTargetShare > MAX_TARGET_SHARE) failures.push(`primary_target distribution collapsed: max share ${maxTarget}/${scenarios.length} = ${maxTargetShare.toFixed(3)} > ${MAX_TARGET_SHARE}; ${JSON.stringify(targetCounts)}`);
+  if (distinctMethods < MIN_DISTINCT_METHODS) failures.push(`method diversity ${distinctMethods} < ${MIN_DISTINCT_METHODS}; ${JSON.stringify(methodCounts)}`);
+  if (availabilityDistinct < MIN_DISTINCT_AVAILABILITY_VALUES) failures.push(`targetAvailabilityDuringSync diversity ${availabilityDistinct} < ${MIN_DISTINCT_AVAILABILITY_VALUES}; ${JSON.stringify(availabilityCounts)}`);
   add('decision-distribution-sanity', failures.length === 0, failures.length ? failures : [
-    `primary_target distribution ${JSON.stringify(targetCounts)}`,
-    `targetAvailabilityDuringSync distribution ${JSON.stringify(availabilityCounts)}`
+    `primary_target max share ${maxTarget}/${scenarios.length} = ${maxTargetShare.toFixed(3)} <= ${MAX_TARGET_SHARE}; distribution ${JSON.stringify(targetCounts)}`,
+    `distinct methods ${distinctMethods} >= ${MIN_DISTINCT_METHODS}; distribution ${JSON.stringify(methodCounts)}`,
+    `distinct targetAvailabilityDuringSync values ${availabilityDistinct} >= ${MIN_DISTINCT_AVAILABILITY_VALUES}; distribution ${JSON.stringify(availabilityCounts)}`
   ]);
 }
 
@@ -162,6 +173,14 @@ try {
 }
 
 {
+  const check = spawnSync(process.execPath, [rel('tools','rules','check-rules-data.mjs')], { cwd: root, encoding: 'utf8' });
+  const details = [];
+  if (check.stdout.trim()) details.push(...check.stdout.trim().split(/\r?\n/));
+  if (check.stderr.trim()) details.push(...check.stderr.trim().split(/\r?\n/));
+  add('rules-data-consistency', check.status === 0, details.length ? details : [`exit ${check.status}`], { exitCode: check.status });
+}
+
+{
   const check = spawnSync(process.execPath, [rel('tools','weekly-check','check-consistency.mjs')], { cwd: root, encoding: 'utf8' });
   const details = [];
   if (check.stdout.trim()) details.push(...check.stdout.trim().split(/\r?\n/));
@@ -182,6 +201,7 @@ try {
 {
   const section = (rules.match(/### A0\. Required input normalization[\s\S]*?### A1\./u) || [''])[0];
   const declared = new Set([...section.matchAll(/`([a-z_]+)`/g)].map(m => m[1]));
+  for (const structuredInput of ['database_count', 'migration_batch_size', 'evidence']) declared.add(structuredInput);
   const skillNorm = norm(skill);
   const failures = [];
   for (const key of declared) {
@@ -194,7 +214,11 @@ try {
         performance: ['tier drivers', 'iops', 'latency'],
         compliance: ['compliance sovereignty'],
         fabric_constraints: ['fabric', 'private link', 'gateway'],
-        kubernetes_model: ['kubernetes engine model', 'managed engine', 'full diy container']
+        kubernetes_model: ['kubernetes engine model', 'managed engine', 'full diy container'],
+        database_count: ['number of databases', 'database count', 'one link/database'],
+        migration_batch_size: ['10 databases per batch', 'wizard selection limit'],
+        arc_extension_version: ['Azure Extension for SQL Server', '1.1.3348.364'],
+        evidence: ['recommendation evidence', 'validated requires']
       }[key] || [];
       if (!aliases.some(a => skillNorm.includes(norm(a)))) failures.push(`SKILL.md does not collect normalized input ${key}`);
     }
@@ -202,7 +226,7 @@ try {
   for (const s of scenarios) {
     for (const key of Object.keys(s.inputs || {})) {
       if (!declared.has(key)) failures.push(`${s.id}: input key '${key}' is not declared in reference\\decision-rules.md A0`);
-      const aliases = key === 'downtime' ? ['downtime tolerance'] : key === 'network_ports' ? ['network path and ports','ports'] : key === 'size' ? ['largest db size'] : key === 'tenant_count' ? ['tenants','tenant variability'] : key === 'performance' ? ['tier drivers','iops','latency'] : key === 'compliance' ? ['compliance','sovereignty'] : key === 'fabric_constraints' ? ['fabric','private link','gateway'] : key === 'kubernetes_model' ? ['kubernetes engine model','managed engine','full diy container'] : [];
+      const aliases = key === 'downtime' ? ['downtime tolerance'] : key === 'network_ports' ? ['network path and ports','ports'] : key === 'size' ? ['largest db size'] : key === 'tenant_count' ? ['tenants','tenant variability'] : key === 'performance' ? ['tier drivers','iops','latency'] : key === 'compliance' ? ['compliance','sovereignty'] : key === 'fabric_constraints' ? ['fabric','private link','gateway'] : key === 'kubernetes_model' ? ['kubernetes engine model','managed engine','full diy container'] : key === 'database_count' ? ['number of databases','database count','one link/database'] : key === 'migration_batch_size' ? ['10 databases per batch','wizard selection limit'] : key === 'arc_extension_version' ? ['Azure Extension for SQL Server','1.1.3348.364'] : key === 'evidence' ? ['recommendation evidence','validated requires'] : [];
       if (!skillNorm.includes(norm(key)) && !aliases.some(a => skillNorm.includes(norm(a)))) failures.push(`${s.id}: SKILL.md cannot collect input '${key}'`);
     }
   }

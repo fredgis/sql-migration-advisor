@@ -3,11 +3,15 @@
  *
  * This is deliberately a small, dependency-free test oracle. It is NOT the
  * production sql-migration-advisor engine: in production, Copilot reads the
- * markdown skill and reference rules. The mirror exists so golden scenarios
- * execute deterministically in CI. It can drift from the markdown, so each
- * scenario still carries assertRulePresent anchors checked against the real
- * rule text.
+ * markdown skill and reference rules. Machine-checkable constants and gates
+ * are loaded from reference/decision-rules.data.json so the JavaScript mirror
+ * cannot silently drift on values.
  */
+
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const RULES = require('../../reference/decision-rules.data.json');
 
 const TARGETS = ['sql_vm', 'avs', 'sql_mi', 'sql_db', 'fabric_sql_db', 'arc_sql_mi', 'container', 'arc_in_place'];
 const E = {
@@ -16,6 +20,11 @@ const E = {
   UNSUPPORTED: 'unsupported',
   UNKNOWN: 'unknown_requires_assessment'
 };
+const MI_LINK = RULES.miLink;
+const ARC_FLOORS = RULES.azureArcFloors;
+const SOURCE_FLOORS = RULES.sourceVersionFloors;
+const ARC_WIZARD = RULES.arcPortalWizard;
+const VALIDATED_EVIDENCE_KEYS = RULES.validatedEvidence.requiredBooleans;
 
 function textOf(value) {
   if (Array.isArray(value)) return value.map(textOf).join(' | ');
@@ -26,32 +35,33 @@ function has(haystack, needle) { return textOf(haystack).toLowerCase().includes(
 function any(inputs, ...needles) { const t = textOf(inputs).toLowerCase(); return needles.some(n => t.includes(String(n).toLowerCase())); }
 function dep(inputs, needle) { return (inputs.feature_dependencies || []).some(d => has(d, needle)); }
 function versionNumber(v) {
-  const s = textOf(v);
-  if (/2008/.test(s)) return 2008;
-  const m = s.match(/20\d{2}/);
+  const m = textOf(v).match(/\b(?:19|20)\d{2}\b/);
   return m ? Number(m[0]) : undefined;
 }
 function sourceKind(inputs) { return String(inputs.source_location || '').toLowerCase(); }
 function isManagedCloudSqlSource(inputs) { const s = sourceKind(inputs); return s.includes('aws rds') || s.includes('gcp cloud sql'); }
 function isSelfManagedSource(inputs) { return !isManagedCloudSqlSource(inputs); }
+function portPattern(port) { return new RegExp(`${port}[^.;,]*(blocked|cannot|can't|closed)|(blocked|cannot|can't|closed)[^.;,]*${port}`); }
+function rangePattern(range) { return new RegExp(`(${range.start}|${range.end})[^.;,]*(blocked|cannot|can't|closed)|(blocked|cannot|can't|closed)[^.;,]*(${range.start}|${range.end})`); }
 function portsOpenForMiLink(inputs) {
   const ports = String(inputs.network_ports || '').toLowerCase();
+  const endpoint = MI_LINK.ports.sqlServerEndpoint;
+  const hadr = MI_LINK.ports.managedInstanceHadrRange;
   if (!ports || /not sure|unknown/.test(ports)) return false;
-  if (/(5022[^.;,]*(blocked|cannot|can't|closed)|(blocked|cannot|can't|closed)[^.;,]*5022)/.test(ports)) return false;
-  if (/(11000|11999)[^.;,]*(blocked|cannot|can't|closed)|(blocked|cannot|can't|closed)[^.;,]*(11000|11999)/.test(ports)) return false;
-  return /5022/.test(ports) && (/11000|11999/.test(ports));
+  if (portPattern(endpoint).test(ports)) return false;
+  if (rangePattern(hadr).test(ports)) return false;
+  return ports.includes(String(endpoint)) && (ports.includes(String(hadr.start)) || ports.includes(String(hadr.end)));
 }
 function portsKnownBlockedForMiLink(inputs) {
   const ports = String(inputs.network_ports || '').toLowerCase();
-  return /(5022[^.;,]*(blocked|cannot|can't|closed)|(blocked|cannot|can't|closed)[^.;,]*5022)/.test(ports)
-    || /(11000|11999)[^.;,]*(blocked|cannot|can't|closed)|(blocked|cannot|can't|closed)[^.;,]*(11000|11999)/.test(ports);
+  return portPattern(MI_LINK.ports.sqlServerEndpoint).test(ports)
+    || rangePattern(MI_LINK.ports.managedInstanceHadrRange).test(ports);
 }
 function hasValidatedEvidence(inputs) {
-  const all = textOf(inputs).toLowerCase();
-  return /tool-confirmed|dependency inventory confirmed|assessment confirmed|arc discovery confirmed|ssms 22 assessment confirmed/.test(all)
-    && /measured|perfmon|dmv|baseline|query store|sizing data confirmed/.test(all)
-    && /region confirmed|regional availability confirmed|feature availability confirmed|target-region/.test(all)
-    && /architect sign-off|architect signed off|architect approval|architect-approved/.test(all);
+  const evidence = inputs.evidence;
+  return !!evidence
+    && typeof evidence === 'object'
+    && VALIDATED_EVIDENCE_KEYS.every(key => evidence[key] === true);
 }
 function addUnique(arr, value) { if (value && !arr.includes(value)) arr.push(value); }
 function setUnknown(eligibility, keys, reason, out) {
@@ -60,17 +70,11 @@ function setUnknown(eligibility, keys, reason, out) {
   addUnique(out.evidenceRequired, reason);
 }
 function methodAvailability(method, tier) {
-  if (method === 'MI Link') return ['read-only', '<1min'];
-  if (method === 'LRS') return ['unavailable', tier === 'MI Business Critical' ? 'hours' : 'minutes'];
-  if (method === 'Native backup/restore') return ['not-present', 'full-restore-time'];
-  if (method === 'BACPAC/SqlPackage') return ['not-present', 'full-load-time'];
-  if (method === 'Transactional replication') return ['read-write', 'near-zero'];
-  if (method === 'modern DMS (offline)') return ['not-present', 'total-migration-time'];
-  if (method === 'Distributed AG or Always On AG') return ['read-only', 'near-zero'];
-  if (method === 'Log shipping') return ['unavailable', 'minimal'];
-  if (method === 'Fabric Migration Assistant') return ['not-present', 'full-load-time'];
-  if (/Data Box|BACPAC|bcp|ADF|SqlPackage/.test(method)) return ['not-present', 'full-load-time'];
-  return ['unknown_requires_assessment', 'unknown_requires_assessment'];
+  const model = RULES.methodAvailability[method]
+    || (/Data Box|BACPAC|bcp|ADF|SqlPackage/.test(method) ? RULES.methodAvailability['bcp / Smart Bulk Copy / BACPAC / ADF'] : undefined);
+  if (!model) return [E.UNKNOWN, E.UNKNOWN];
+  if (model.businessCutoverDowntimeByTier) return [model.targetAvailabilityDuringSync, model.businessCutoverDowntimeByTier[tier] || model.businessCutoverDowntimeByTier.default];
+  return [model.targetAvailabilityDuringSync, model.businessCutoverDowntime];
 }
 function chooseMiTier(inputs, out) {
   const p = String(inputs.performance || '').toLowerCase();
@@ -167,10 +171,10 @@ function applyManagement(inputs, eligibility, out) {
   const k8s = String(inputs.kubernetes_model || '').toLowerCase();
   const v = versionNumber(inputs.source_version);
   if (has(inputs.intent, 'assessment-only') || has(inputs.intent, 'modernize in place') || has(inputs.driver, 'modernize in place')) {
-    eligibility.arc_in_place = v && v < 2014 ? E.UNSUPPORTED : E.ELIGIBLE;
-    if (v && v < 2014) {
-      out.exclusions.arc_in_place = 'Arc migration/assessment experience requires SQL Server 2014+.';
-      addUnique(out.hardBlockers, 'SQL Server 2012 is below the 2014+ Arc experience floor');
+    eligibility.arc_in_place = v && v < ARC_FLOORS.overallMigrationExperience.sqlServerMin ? E.UNSUPPORTED : E.ELIGIBLE;
+    if (eligibility.arc_in_place === E.UNSUPPORTED) {
+      out.exclusions.arc_in_place = `Arc migration/assessment experience requires SQL Server ${ARC_FLOORS.overallMigrationExperience.sqlServerMin}+.`;
+      addUnique(out.hardBlockers, `SQL Server ${v} is below the ${ARC_FLOORS.overallMigrationExperience.sqlServerMin}+ Arc experience floor`);
     }
   }
   if (/need os|file-system|file system|engine control|third-party agents/.test(model)) {
@@ -185,7 +189,6 @@ function applyManagement(inputs, eligibility, out) {
   if (has(inputs.driver, 'data-center exit') && /need os|file-system|file system|engine control/.test(model)) eligibility.avs = E.ELIGIBLE;
 }
 function chooseTarget(inputs, eligibility, out) {
-  const v = versionNumber(inputs.source_version);
   if (eligibility.arc_in_place === E.ELIGIBLE && (has(inputs.intent, 'assessment-only') || has(inputs.intent, 'modernize in place'))) return ['SQL Server enabled by Azure Arc', 'Arc best-practices assessment'];
   if (eligibility.arc_in_place === E.UNSUPPORTED && (has(inputs.intent, 'assessment-only') || has(inputs.intent, 'modernize in place'))) return ['SQL Server on Azure VM', 'Standalone assessment / native backup/restore'];
   if (eligibility.arc_sql_mi === E.UNKNOWN || eligibility.container === E.UNKNOWN) return ['provisional shortlist only', 'Clarify Kubernetes engine model first'];
@@ -202,7 +205,7 @@ function chooseTarget(inputs, eligibility, out) {
   if (dep(inputs, 'TDE')) return ['Azure SQL Managed Instance', 'Native backup/restore'];
   if (dep(inputs, 'SQL Agent') || dep(inputs, 'linked servers') || dep(inputs, 'homogeneous') || dep(inputs, 'PolyBase/cloud files') || dep(inputs, 'SQL CLR') || dep(inputs, 'Service Broker') || dep(inputs, 'cross-DB')) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
   if (isManagedCloudSqlSource(inputs) && has(inputs.downtime, 'near-zero')) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
-  if (has(inputs.source_version, '2008')) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
+  if (has(inputs.source_version, String(SOURCE_FLOORS.standaloneLrs.sqlServerMin))) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
   if (has(inputs.driver, 'app modernization') || eligibility.fabric_sql_db === E.UNSUPPORTED || any(inputs.size, '> 4 TB', '150 GB') || any(inputs.performance, 'intermittent', 'strict SLA', 'transaction log') || any(inputs.tenant_count, 'many tenants')) return ['Azure SQL Database', chooseSqlDbMethod(inputs)];
   if (has(inputs.downtime, 'near-zero') || has(inputs.downtime, 'minimal')) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
   return ['Azure SQL Database', chooseSqlDbMethod(inputs)];
@@ -217,18 +220,45 @@ function chooseSqlDbMethod(inputs) {
   if (any(inputs.size, '< 150 GB', 'small')) return 'BACPAC/SqlPackage';
   return 'modern DMS (offline)';
 }
+function miLinkCapacityForTier(tier) {
+  if (/next-gen|next gen/i.test(String(tier || ''))) return MI_LINK.capacityLinks.nextGenGeneralPurpose;
+  if (/business critical/i.test(String(tier || ''))) return MI_LINK.capacityLinks.businessCritical;
+  return MI_LINK.capacityLinks.generalPurpose;
+}
+function normalizedDatabaseCount(inputs) {
+  const count = Number(inputs.database_count);
+  return Number.isFinite(count) && count > 0 ? count : undefined;
+}
+function versionAtLeast(actual, required) {
+  const a = String(actual || '').split('.').map(Number);
+  const r = String(required || '').split('.').map(Number);
+  for (let i = 0; i < Math.max(a.length, r.length); i += 1) {
+    const av = Number.isFinite(a[i]) ? a[i] : 0;
+    const rv = Number.isFinite(r[i]) ? r[i] : 0;
+    if (av !== rv) return av > rv;
+  }
+  return true;
+}
+function applyArcWizardBatchLimit(inputs, out) {
+  const selected = Number(inputs.migration_batch_size);
+  if (!Number.isFinite(selected) || selected <= 0) return;
+  const extension = inputs.arc_extension_version;
+  const limit = !extension || versionAtLeast(extension, ARC_WIZARD.extensionMinVersionForBatchLimit)
+    ? ARC_WIZARD.batchLimitAtOrAboveExtension
+    : ARC_WIZARD.batchLimitBeforeExtension;
+  if (selected > limit) out.exclusions.arc_wizard_batch = `Arc portal wizard batch limit ${limit} databases exceeded by ${selected} selected databases.`;
+}
 function chooseMiMethod(inputs, out) {
   const v = versionNumber(inputs.source_version);
   const targetTier = chooseMiTier(inputs, { unknowns: [], evidenceRequired: [] });
-  const dbCountText = `${textOf(inputs.size)} ${textOf(inputs.performance)}`.toLowerCase();
-  const m = dbCountText.match(/(\d+)\s*(database|db|link)/);
-  const dbCount = m ? Number(m[1]) : undefined;
-  const cap = /next-gen|next gen/.test(dbCountText) ? 500 : 100;
+  const dbCount = normalizedDatabaseCount(inputs);
+  const cap = miLinkCapacityForTier(targetTier);
   if (dbCount && dbCount > cap) {
     out.exclusions.mi_link = `MI Link capacity ${cap} links exceeded by ${dbCount} databases.`;
   }
+  applyArcWizardBatchLimit(inputs, out);
   if (has(inputs.downtime, 'near-zero') || has(inputs.downtime, 'minimal')) {
-    if (!isManagedCloudSqlSource(inputs) && v >= 2016 && portsOpenForMiLink(inputs) && (!dbCount || dbCount <= cap)) return 'MI Link';
+    if (!isManagedCloudSqlSource(inputs) && v >= SOURCE_FLOORS.miLink.sqlServerMin && portsOpenForMiLink(inputs) && (!dbCount || dbCount <= cap)) return 'MI Link';
     return 'LRS';
   }
   if (has(inputs.downtime, 'offline')) return dep(inputs, 'TDE') ? 'Native backup/restore' : 'LRS';
@@ -239,12 +269,15 @@ function applyMethodGates(inputs, target, method, eligibility, out) {
   if (target === 'Azure SQL Managed Instance') {
     if (method !== 'MI Link') {
       if (isManagedCloudSqlSource(inputs)) out.exclusions.mi_link = 'MI Link is impossible from AWS RDS/GCP Cloud SQL because sysadmin/AG endpoints are unavailable.';
-      else if (v && v < 2016) out.exclusions.mi_link = 'MI Link requires SQL Server 2016+.';
-      else if (portsKnownBlockedForMiLink(inputs)) out.exclusions.mi_link = 'MI Link requires 5022 and 11000-11999 in the documented directions.';
+      else if (v && v < SOURCE_FLOORS.miLink.sqlServerMin) out.exclusions.mi_link = `MI Link requires SQL Server ${SOURCE_FLOORS.miLink.sqlServerMin}+.`;
+      else if (portsKnownBlockedForMiLink(inputs)) {
+        const p = MI_LINK.ports;
+        out.exclusions.mi_link = `MI Link requires ${p.sqlServerEndpoint} and ${p.managedInstanceHadrRange.start}-${p.managedInstanceHadrRange.end} in the documented directions.`;
+      }
     }
-    if (method === 'LRS' && v && v < 2008) {
+    if (method === 'LRS' && v && v < SOURCE_FLOORS.standaloneLrs.sqlServerMin) {
       eligibility.sql_mi = E.UNSUPPORTED;
-      addUnique(out.hardBlockers, 'Standalone LRS supports SQL Server 2008-2022.');
+      addUnique(out.hardBlockers, `Standalone LRS supports SQL Server ${SOURCE_FLOORS.standaloneLrs.sqlServerMin}-${SOURCE_FLOORS.standaloneLrs.sqlServerMax}.`);
     }
   }
 }
@@ -296,6 +329,3 @@ export function evaluate(inputs = {}) {
   out.eligibility = eligibility;
   return out;
 }
-
-
-
