@@ -120,6 +120,39 @@ Then:
 > `SKILL.md` plus `reference/` and `examples/`. To keep the skills folder lean, copy just
 > `SKILL.md`, `reference/` and `examples/` instead of cloning the whole repo.
 
+### 🔄 Already installed? Update it
+
+The decision rules and the interview change over time (see [Keep it up to date](#keep-it-up-to-date)),
+so refresh your copy now and then.
+
+If you cloned the repo:
+
+```bash
+# macOS / Linux
+cd ~/.copilot/skills/sql-migration-advisor && git pull
+```
+
+```powershell
+# Windows (PowerShell)
+cd "$env:USERPROFILE\.copilot\skills\sql-migration-advisor"; git pull
+```
+
+If you copied only the three files, copy them again from the latest repo:
+`SKILL.md`, `reference/decision-rules.md`, `examples/sample-recommendation.md`.
+
+Then **restart Copilot CLI** — skills load at startup, so an update isn't picked up until you do.
+To check which version you're running:
+
+```powershell
+Select-String -Path "$env:USERPROFILE\.copilot\skills\sql-migration-advisor\SKILL.md" -Pattern "knowledge-base line"
+```
+
+It should match the knowledge-base badge at the top of this README.
+
+> Not urgent if you skip it: the skill **fetches the knowledge base live** on every run, so the
+> facts stay current even on an older copy. Updating refreshes the *interview and the decision
+> rules* — worth doing after a version bump.
+
 ---
 
 ## How it works
