@@ -1,0 +1,22 @@
+[
+  { "id": "mi-eligible-homogeneous-dtc", "reason": "P0-1 audit regression: homogeneous SQL-to-SQL DTC must not eliminate SQL MI." },
+  { "id": "sql2022-publisher-to-azure-sql-db-replication", "reason": "P0-2 audit regression: transactional replication publisher range includes current SQL Server versions." },
+  { "id": "sql2008r2-to-mi-short-cutover-lrs-evaluated", "reason": "P0-3 audit regression: standalone LRS remains valid for SQL Server 2008 through 2022." },
+  { "id": "fabric-driver-small-simple-schema", "reason": "P0-4 audit regression: Fabric-driven branch must remain reachable before generic SQL DB." },
+  { "id": "aws-rds-to-mi-near-zero-no-mi-link", "reason": "P0-5 audit regression: managed cloud SQL sources cannot use MI Link." },
+  { "id": "unknown-feature-dependencies-provisional", "reason": "P0-6 audit regression: unknown dependencies must produce provisional assessment, not silent defaults." },
+  { "id": "kb-rules-readme-version-mismatch-blocks", "reason": "P0-7 audit regression: KB/rules/version drift coverage must not be deleted." },
+  { "id": "change-detected-not-applied-no-version-bump", "reason": "P0-8 audit regression: detected-but-unapplied changes must not bump the KB version." },
+  { "id": "mi-link-11000-blocked-falls-to-lrs", "reason": "Audit regression: MI Link requires both 5022 and 11000-11999, not just 5022." },
+  { "id": "mi-link-capacity-nextgen-200-databases-ok", "reason": "Audit regression: Next-gen GP supports larger MI Link estates." },
+  { "id": "mi-link-capacity-gp-200-databases-exceeds", "reason": "Audit regression: GP/BC MI Link capacity is 100 links." },
+  { "id": "mi-link-capacity-gp-database-count-120-exceeds-despite-size-text", "reason": "Audit regression: normalized database_count, not size prose, drives MI Link capacity." },
+  { "id": "sql2025-mi-link-blocked-must-not-fall-to-lrs", "reason": "Audit regression: SQL Server 2025 must not fall back to standalone LRS when MI Link is blocked." },
+  { "id": "unknown-mi-tier-120-databases-capacity-assessment", "reason": "Audit regression: unknown MI tier with 120 databases requires capacity assessment." },
+  { "id": "missing-arc-extension-version-batch-size-requires-verification", "reason": "Audit regression: missing Arc extension version with multi-database batch requires verification." },
+  { "id": "lrs-business-critical-hours-warning", "reason": "Audit regression: LRS to MI Business Critical can have hours-long cutover while replicas seed." },
+  { "id": "mi-link-ranked-above-lrs-bc-when-gates-met", "reason": "Audit regression: MI Link outranks LRS for BC when gates are met." },
+  { "id": "validated-free-text-keywords-without-evidence-provisional", "reason": "Typed-evidence negative: validation keywords in prose must not validate the result." },
+  { "id": "validated-three-evidence-booleans-provisional", "reason": "Typed-evidence negative: all four structured evidence booleans are required for validated/high." },
+  { "id": "sql2025-mi-link-and-sql-db-blocked-no-lrs-fallback", "reason": "Final audit regression: blocked MI Link plus SQL DB blocker on SQL Server 2025 must not invent MI LRS fallback." }
+]

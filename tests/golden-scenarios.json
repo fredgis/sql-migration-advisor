@@ -1021,10 +1021,10 @@
       "eligibility": {
         "sql_mi": "eligible"
       },
-      "primary_target": "Azure SQL Database",
-      "method": "Transactional replication",
-      "targetAvailabilityDuringSync": "read-write",
-      "businessCutoverDowntime": "near-zero",
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "LRS",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
       "confidence": "medium",
       "mustNotRecommend": [
@@ -1192,7 +1192,7 @@
         "sql_mi": "eligible",
         "sql_db": "eligible"
       },
-      "primary_target": "Azure SQL Managed Instance or Azure SQL Database",
+      "primary_target": "Azure SQL Database",
       "method": "Data Box seed → sync delta",
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-load-time",
@@ -1258,10 +1258,10 @@
       "eligibility": {
         "sql_mi": "eligible"
       },
-      "primary_target": "Azure SQL Database",
-      "method": "Transactional replication",
-      "targetAvailabilityDuringSync": "read-write",
-      "businessCutoverDowntime": "near-zero",
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "LRS",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
       "confidence": "medium",
       "mustNotRecommend": [
@@ -1300,7 +1300,7 @@
         "container": "unsupported",
         "arc_in_place": "unsupported"
       },
-      "primary_target": "Azure Migrate discovery first",
+      "primary_target": "provisional shortlist only",
       "method": "Azure Migrate appliance/import/Arc discovery",
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
@@ -2284,6 +2284,45 @@
     "auditRef": "P1-4a"
   },
   {
+    "id": "sql2025-mi-link-and-sql-db-blocked-no-lrs-fallback",
+    "title": "SQL 2025 with MI Link and SQL DB both blocked does not fall to MI LRS",
+    "why": "Final audit regression: SQL Server 2025 is outside standalone LRS range, so blocked MI Link plus a hard SQL DB blocker must fall to SQL VM or a provisional shortlist.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2025",
+      "downtime": "minimal",
+      "network_ports": "5022 blocked; 11000-11999 blocked",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "linked servers"
+      ]
+    },
+    "expect": {
+      "eligibility": {
+        "sql_vm": "eligible",
+        "sql_mi": "unsupported",
+        "sql_db": "unsupported"
+      },
+      "primary_target": "SQL Server on Azure VM",
+      "method": "Log shipping",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minimal",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": [
+        "LRS",
+        "MI Link"
+      ]
+    },
+    "assertRulePresent": [
+      "Output consistency rule",
+      "SQL Server \\*\\*2025\\*\\* source[\\s\\S]*?never \"Azure SQL MI via LRS\"",
+      "Linked servers[\\s\\S]*?`unsupported` unless refactored"
+    ],
+    "auditRef": "final-audit-no-contradictory-fallback"
+  },
+  {
     "id": "missing-arc-extension-version-batch-size-requires-verification",
     "title": "Missing Arc extension version with multi-database batch requires verification",
     "why": "Audit P1: absent arc_extension_version must not silently assume the modern ten-database portal wizard limit.",
@@ -2415,5 +2454,275 @@
       "Not a runtime migration target"
     ],
     "auditRef": "distribution-3"
+  },
+  {
+    "id": "distribution-sql-db-small-offline-bacpac",
+    "title": "Small DB-scoped offline move keeps SQL DB BACPAC branch covered",
+    "why": "Distribution guard: offsets compatibility-heavy regressions without relaxing target-share thresholds.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2022",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "offline",
+      "driver": "app modernization",
+      "size": "< 150 GB"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_db": "eligible"
+      },
+      "primary_target": "Azure SQL Database",
+      "method": "BACPAC/SqlPackage",
+      "tier": "General Purpose",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-load-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "Cloud-native DB-scoped",
+      "BACPAC / SqlPackage"
+    ],
+    "auditRef": "distribution-4"
+  },
+  {
+    "id": "distribution-sql-db-offline-modern-dms",
+    "title": "DB-scoped offline move keeps SQL DB modern DMS branch covered",
+    "why": "Distribution guard: preserves SQL DB representation after adding SQL 2025 contradiction regressions.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2022",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "offline",
+      "driver": "app modernization",
+      "size": "150 GB – 4 TB",
+      "performance": "general purpose; steady workload"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_db": "eligible"
+      },
+      "primary_target": "Azure SQL Database",
+      "method": "modern DMS (offline)",
+      "tier": "General Purpose",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "modern DMS",
+      "Cloud-native DB-scoped"
+    ],
+    "auditRef": "distribution-5"
+  },
+  {
+    "id": "distribution-sql-db-serverless-extra",
+    "title": "Intermittent DB-scoped workload keeps SQL DB serverless covered",
+    "why": "Distribution guard: keeps SQL DB share balanced without relaxing thresholds.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2022",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "offline",
+      "driver": "app modernization",
+      "performance": "intermittent dev/test workload"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_db": "eligible"
+      },
+      "primary_target": "Azure SQL Database",
+      "method": "modern DMS (offline)",
+      "tier": "Serverless",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "Intermittent/dev/test/seasonal usage",
+      "**Serverless**"
+    ],
+    "auditRef": "distribution-6"
+  },
+  {
+    "id": "distribution-sql-db-elastic-pool-extra",
+    "title": "Multi-tenant DB-scoped workload keeps SQL DB elastic pool covered",
+    "why": "Distribution guard: keeps SQL DB share balanced without relaxing thresholds.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2022",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "offline",
+      "driver": "app modernization",
+      "tenant_count": "many tenants / variable demand"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_db": "eligible"
+      },
+      "primary_target": "Azure SQL Database",
+      "method": "modern DMS (offline)",
+      "tier": "Elastic Pool",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "Many tenants/databases with variable utilization",
+      "**Elastic Pool**"
+    ],
+    "auditRef": "distribution-7"
+  },
+  {
+    "id": "distribution-sql-db-business-critical-extra",
+    "title": "Strict SLA DB-scoped workload keeps SQL DB Business Critical covered",
+    "why": "Distribution guard: keeps SQL DB share balanced without relaxing thresholds.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2022",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "offline",
+      "driver": "app modernization",
+      "performance": "strict SLA / zone redundancy; low-latency writes"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_db": "eligible"
+      },
+      "primary_target": "Azure SQL Database",
+      "method": "modern DMS (offline)",
+      "tier": "Business Critical",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "Strict lowest-latency IO",
+      "**Business Critical**"
+    ],
+    "auditRef": "distribution-8"
+  },
+  {
+    "id": "distribution-sql-vm-near-zero-extra",
+    "title": "Need OS control near-zero routes to SQL VM AG",
+    "why": "Distribution guard: keeps SQL VM branch balanced without relaxing thresholds.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2022",
+      "management_model": "need OS/file-system/engine control",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "near-zero"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_vm": "eligible",
+        "sql_mi": "unsupported",
+        "sql_db": "unsupported"
+      },
+      "primary_target": "SQL Server on Azure VM",
+      "method": "Distributed AG or Always On AG",
+      "targetAvailabilityDuringSync": "read-only",
+      "businessCutoverDowntime": "near-zero",
+      "recommendationStatus": "provisional",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "Need OS/file-system/exact engine control/third-party agents",
+      "SQL VM, AVS, or full DIY container"
+    ],
+    "auditRef": "distribution-9"
+  },
+  {
+    "id": "distribution-sql-vm-minimal-extra",
+    "title": "Need OS control minimal downtime routes to SQL VM log shipping",
+    "why": "Distribution guard: keeps SQL VM branch balanced without relaxing thresholds.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2019",
+      "management_model": "need OS/file-system/engine control",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "minimal"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_vm": "eligible",
+        "sql_mi": "unsupported",
+        "sql_db": "unsupported"
+      },
+      "primary_target": "SQL Server on Azure VM",
+      "method": "Log shipping",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minimal",
+      "recommendationStatus": "provisional",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "Need OS/file-system/exact engine control/third-party agents",
+      "SQL VM, AVS, or full DIY container"
+    ],
+    "auditRef": "distribution-10"
+  },
+  {
+    "id": "distribution-sql-vm-offline-extra",
+    "title": "Need OS control offline routes to SQL VM native restore",
+    "why": "Distribution guard: keeps SQL VM branch balanced without relaxing thresholds.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2016",
+      "management_model": "need OS/file-system/engine control",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "offline"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_vm": "eligible",
+        "sql_mi": "unsupported",
+        "sql_db": "unsupported"
+      },
+      "primary_target": "SQL Server on Azure VM",
+      "method": "Native backup/restore",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "Need OS/file-system/exact engine control/third-party agents",
+      "SQL VM, AVS, or full DIY container"
+    ],
+    "auditRef": "distribution-11"
   }
 ]

@@ -14,6 +14,17 @@ const results = [];
 const MAX_TARGET_SHARE = 0.32;
 const MIN_DISTINCT_METHODS = 18;
 const MIN_DISTINCT_AVAILABILITY_VALUES = 5;
+const ELIGIBLE_STATES = new Set(['eligible', 'eligible_with_remediation']);
+const TARGET_TO_KEY = new Map([
+  ['SQL Server on Azure VM', 'sql_vm'],
+  ['Azure VMware Solution', 'avs'],
+  ['Azure SQL Managed Instance', 'sql_mi'],
+  ['Azure SQL Database', 'sql_db'],
+  ['SQL database in Fabric', 'fabric_sql_db'],
+  ['Arc-enabled SQL Managed Instance', 'arc_sql_mi'],
+  ['SQL Server in a container', 'container'],
+  ['SQL Server enabled by Azure Arc', 'arc_in_place']
+]);
 
 function readText(relativePath) { return fs.readFileSync(rel(relativePath), 'utf8'); }
 function norm(s) { return String(s).toLowerCase().replace(/[`*_]/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' '); }
@@ -70,17 +81,144 @@ function compareExpected(scenario, actual) {
   }
   return failures;
 }
+function versionNumber(v) {
+  const m = String(v ?? '').match(/\b(?:19|20)\d{2}\b/);
+  return m ? Number(m[0]) : undefined;
+}
+function textOf(value) {
+  if (Array.isArray(value)) return value.map(textOf).join(' | ');
+  if (value && typeof value === 'object') return Object.values(value).map(textOf).join(' | ');
+  return String(value ?? '');
+}
+function hasText(haystack, needle) { return textOf(haystack).toLowerCase().includes(String(needle).toLowerCase()); }
+function isManagedCloudSqlSource(inputs) {
+  const source = String(inputs.source_location || '').toLowerCase();
+  return source.includes('aws rds') || source.includes('gcp cloud sql');
+}
+function portBlocked(text, port) {
+  const p = String(text || '').toLowerCase();
+  return new RegExp(`${port}[^.;,]*(blocked|cannot|can't|closed)|(blocked|cannot|can't|closed)[^.;,]*${port}`).test(p);
+}
+function rangeBlocked(text, range) {
+  const p = String(text || '').toLowerCase();
+  return new RegExp(`(${range.start}|${range.end})[^.;,]*(blocked|cannot|can't|closed)|(blocked|cannot|can't|closed)[^.;,]*(${range.start}|${range.end})`).test(p);
+}
+function portsOpenForMiLink(inputs, data) {
+  const ports = String(inputs.network_ports || '').toLowerCase();
+  const endpoint = data.miLink.ports.sqlServerEndpoint;
+  const hadr = data.miLink.ports.managedInstanceHadrRange;
+  if (!ports || /not sure|unknown/.test(ports)) return false;
+  if (portBlocked(ports, endpoint) || rangeBlocked(ports, hadr)) return false;
+  return ports.includes(String(endpoint)) && (ports.includes(String(hadr.start)) || ports.includes(String(hadr.end)));
+}
+function normalizedDatabaseCount(inputs) {
+  const count = Number(inputs.database_count);
+  return Number.isFinite(count) && count > 0 ? count : undefined;
+}
+function miLinkCapacityForTier(tier, data) {
+  if (/next-gen|next gen/i.test(String(tier || ''))) return data.miLink.capacityLinks.nextGenGeneralPurpose;
+  if (/business critical/i.test(String(tier || ''))) return data.miLink.capacityLinks.businessCritical;
+  if (/general purpose/i.test(String(tier || ''))) return data.miLink.capacityLinks.generalPurpose;
+  return undefined;
+}
+function methodContradiction(scenario, actual, data) {
+  const inputs = scenario.inputs || {};
+  const target = actual.primaryTarget;
+  if (target === 'provisional shortlist only') {
+    return actual.recommendationStatus === 'provisional' ? null : 'provisional shortlist must carry recommendationStatus=provisional';
+  }
+  const key = TARGET_TO_KEY.get(target);
+  if (!key) return `primaryTarget ${JSON.stringify(target)} is not a target in the eligibility map`;
+  if (!ELIGIBLE_STATES.has(actual.eligibility?.[key])) return `primaryTarget ${target} has eligibility ${JSON.stringify(actual.eligibility?.[key])}`;
+  const v = versionNumber(inputs.source_version);
+  const method = actual.method;
+  if (target === 'Azure SQL Managed Instance') {
+    if (method === 'MI Link') {
+      if (isManagedCloudSqlSource(inputs)) return 'MI Link selected for managed cloud SQL source';
+      if (v && v < data.sourceVersionFloors.miLink.sqlServerMin) return `MI Link selected below SQL Server ${data.sourceVersionFloors.miLink.sqlServerMin}`;
+      if (!portsOpenForMiLink(inputs, data)) return 'MI Link selected without required open ports 5022 and 11000-11999';
+      const cap = miLinkCapacityForTier(actual.tier, data);
+      const dbCount = normalizedDatabaseCount(inputs);
+      if (dbCount && cap && dbCount > cap) return `MI Link selected with ${dbCount} databases over capacity ${cap}`;
+      return null;
+    }
+    if (method === 'LRS') {
+      const floor = data.sourceVersionFloors.standaloneLrs;
+      if (v && (v < floor.sqlServerMin || v > floor.sqlServerMax)) return `LRS selected for SQL Server ${v}, outside ${floor.sqlServerMin}-${floor.sqlServerMax}`;
+      return null;
+    }
+    if (method === 'Native backup/restore') return null;
+    return `method ${JSON.stringify(method)} is not viable for Azure SQL Managed Instance`;
+  }
+  if (target === 'Azure SQL Database') {
+    if (method === 'Transactional replication') {
+      if (isManagedCloudSqlSource(inputs)) return 'Transactional replication selected for managed cloud SQL source';
+      if (v && v < data.sourceVersionFloors.transactionalReplicationToSqlDb.publisherSqlServerMin) return `Transactional replication selected below SQL Server ${data.sourceVersionFloors.transactionalReplicationToSqlDb.publisherSqlServerMin}`;
+      return null;
+    }
+    if (['BACPAC/SqlPackage', 'modern DMS (offline)', 'Data Box seed → sync delta'].includes(method)) return null;
+    return `method ${JSON.stringify(method)} is not viable for Azure SQL Database`;
+  }
+  const methodAllow = {
+    'SQL Server on Azure VM': ['Distributed AG or Always On AG', 'Log shipping', 'Native backup/restore', 'Standalone assessment / native backup/restore'],
+    'Azure VMware Solution': ['VMware HCX / vMotion'],
+    'SQL database in Fabric': ['Fabric Migration Assistant'],
+    'Arc-enabled SQL Managed Instance': ['Native backup/restore after endpoint is available', 'Native backup/restore'],
+    'SQL Server in a container': ['Backup/restore via mounted volume'],
+    'SQL Server enabled by Azure Arc': ['Arc best-practices assessment']
+  }[target] || [];
+  return methodAllow.includes(method) ? null : `method ${JSON.stringify(method)} is not viable for ${target}`;
+}
+function outputConsistencyFailures(scenarios, data) {
+  const failures = [];
+  for (const s of scenarios) {
+    const actual = evaluate(s.inputs || {});
+    const primaryFailure = methodContradiction(s, actual, data);
+    if (primaryFailure) failures.push(`${s.id}: ${primaryFailure}`);
+    if (actual.alternativeTarget) {
+      const altKey = TARGET_TO_KEY.get(actual.alternativeTarget);
+      if (!altKey) failures.push(`${s.id}: alternativeTarget ${JSON.stringify(actual.alternativeTarget)} is not a target in the eligibility map`);
+      else if (!ELIGIBLE_STATES.has(actual.eligibility?.[altKey])) failures.push(`${s.id}: alternativeTarget ${actual.alternativeTarget} has eligibility ${JSON.stringify(actual.eligibility?.[altKey])}`);
+    }
+  }
+  return failures;
+}
 
 const rulesPath = rel('reference', 'decision-rules.md');
 const skillPath = rel('SKILL.md');
 const rules = readText(path.join('reference', 'decision-rules.md'));
 const skill = readText('SKILL.md');
+const rulesData = JSON.parse(readText(path.join('reference', 'decision-rules.data.json')));
 let scenarios = [];
 try {
   scenarios = JSON.parse(readText(path.join('tests', 'golden-scenarios.json')));
   add('golden-scenarios-json', Array.isArray(scenarios) && scenarios.length >= 48, [`${Array.isArray(scenarios) ? scenarios.length : 0} scenarios loaded`]);
 } catch (err) {
   add('golden-scenarios-json', false, [String(err)]);
+}
+
+{
+  const failures = [];
+  let required = [];
+  try {
+    required = JSON.parse(readText(path.join('tests', 'required-scenarios.json')));
+    if (!Array.isArray(required)) failures.push('tests\\required-scenarios.json must be an array');
+  } catch (err) {
+    failures.push(`could not parse tests\\required-scenarios.json: ${err.message || err}`);
+  }
+  const ids = new Set(scenarios.map(s => s.id));
+  const seenRequired = new Set();
+  for (const entry of required) {
+    if (!entry?.id) {
+      failures.push(`required scenario entry is missing id: ${JSON.stringify(entry)}`);
+      continue;
+    }
+    if (seenRequired.has(entry.id)) failures.push(`${entry.id}: duplicate required-scenarios entry`);
+    seenRequired.add(entry.id);
+    if (!entry.reason) failures.push(`${entry.id}: required-scenarios entry must include a one-line reason`);
+    if (!ids.has(entry.id)) failures.push(`${entry.id}: missing from tests\\golden-scenarios.json — ${entry.reason || 'no reason supplied'}`);
+  }
+  add('required-scenarios-registry', failures.length === 0, failures.length ? failures : [`${required.length} required scenarios are present in tests\\golden-scenarios.json.`]);
 }
 
 {
@@ -99,6 +237,11 @@ try {
     }
   }
   add('golden-decision-outcomes', failures.length === 0, failures.length ? failures : [`Executed ${scenarios.length} scenarios against tests\\engine\\evaluate.mjs.`], { executedScenarios: scenarios.length });
+}
+
+{
+  const failures = outputConsistencyFailures(scenarios, rulesData);
+  add('output-consistency-invariant', failures.length === 0, failures.length ? failures : [`Checked ${scenarios.length} scenarios: primary/alternative targets agree with eligibility and selected methods pass gates.`], { checkedScenarios: scenarios.length });
 }
 
 {
@@ -162,7 +305,7 @@ try {
     lines.forEach((line, i) => {
       for (const f of forbidden) if (f.re.test(line) && !(f.allow && f.allow.test(line))) failures.push(`${fileLine(file, i + 1)} ${f.id}: ${line.trim()}`);
       const isAuthoritativeRuleFile = !file.includes(`${path.sep}tools${path.sep}`) && !file.includes(`${path.sep}examples${path.sep}`);
-      if (isAuthoritativeRuleFile && /MI Link/i.test(line) && /\bports?\b|5022/i.test(line) && !/11000/.test(line) && !/managed DTC|DTC ports|Retired|ports below/i.test(line)) failures.push(`${fileLine(file, i + 1)} MI Link ports mention omits 11000-11999: ${line.trim()}`);
+      if (isAuthoritativeRuleFile && /MI Link/i.test(line) && /\bports?\b|5022/i.test(line) && !/11000/.test(line) && !/managed DTC|DTC ports|Retired|ports below|Worked case/i.test(line)) failures.push(`${fileLine(file, i + 1)} MI Link ports mention omits 11000-11999: ${line.trim()}`);
       const retiredContext = /retired|unavailable|deprecated|replaced|do not recommend|never recommend|use instead/i.test(line);
       const recommendsDea = /\b(run|use|recommend|capture)\s+(?:retired\s+)?DEA\b|\bDEA\s+capture\b/i.test(line);
       const recommendsReplay = /\b(run|use|recommend)\s+Distributed Replay\b|Distributed Replay\s+(?:capture|replay)/i.test(line);
@@ -201,7 +344,6 @@ try {
 {
   const section = (rules.match(/### A0\. Required input normalization[\s\S]*?### A1\./u) || [''])[0];
   const declared = new Set([...section.matchAll(/`([a-z_]+)`/g)].map(m => m[1]));
-  for (const structuredInput of ['database_count', 'migration_batch_size', 'evidence']) declared.add(structuredInput);
   const skillNorm = norm(skill);
   const failures = [];
   for (const key of declared) {

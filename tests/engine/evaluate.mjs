@@ -14,6 +14,17 @@ const require = createRequire(import.meta.url);
 const RULES = require('../../reference/decision-rules.data.json');
 
 const TARGETS = ['sql_vm', 'avs', 'sql_mi', 'sql_db', 'fabric_sql_db', 'arc_sql_mi', 'container', 'arc_in_place'];
+const TARGET_LABELS = {
+  sql_vm: 'SQL Server on Azure VM',
+  avs: 'Azure VMware Solution',
+  sql_mi: 'Azure SQL Managed Instance',
+  sql_db: 'Azure SQL Database',
+  fabric_sql_db: 'SQL database in Fabric',
+  arc_sql_mi: 'Arc-enabled SQL Managed Instance',
+  container: 'SQL Server in a container',
+  arc_in_place: 'SQL Server enabled by Azure Arc'
+};
+const LABEL_TO_TARGET = Object.fromEntries(Object.entries(TARGET_LABELS).map(([key, label]) => [label, key]));
 const E = {
   ELIGIBLE: 'eligible',
   REMEDIATE: 'eligible_with_remediation',
@@ -169,7 +180,10 @@ function applyFeatureEligibility(inputs, eligibility, out) {
     out.exclusions.sql_db = 'DTC dependency is not supported on SQL DB.';
   }
   if (dep(inputs, 'DTC/unknown')) setUnknown(eligibility, ['sql_mi', 'sql_db'], 'DTC participants and linked-server map', out);
-  if (dep(inputs, 'linked servers')) { eligibility.sql_mi = E.REMEDIATE; eligibility.sql_db = E.UNSUPPORTED; }
+  if (dep(inputs, 'linked servers')) {
+    eligibility.sql_mi = E.REMEDIATE; eligibility.sql_db = E.UNSUPPORTED;
+    out.exclusions.sql_db = 'Linked servers are a hard Azure SQL Database blocker unless refactored.';
+  }
   if (dep(inputs, 'SQL Agent')) { eligibility.sql_mi = E.ELIGIBLE; eligibility.sql_db = E.REMEDIATE; }
   if (dep(inputs, 'SQL CLR') || dep(inputs, 'Service Broker') || dep(inputs, 'cross-DB')) { eligibility.sql_mi = E.REMEDIATE; eligibility.sql_db = E.UNSUPPORTED; }
   if (dep(inputs, 'Not sure') || dep(inputs, 'unknown dependencies')) setUnknown(eligibility, ['sql_mi', 'sql_db'], 'Dependency inventory', out);
@@ -208,8 +222,8 @@ function chooseTarget(inputs, eligibility, out) {
   if (eligibility.sql_mi === E.UNKNOWN || eligibility.sql_db === E.UNKNOWN) return ['provisional shortlist only', 'Assessment and dependency discovery first'];
   if (eligibility.sql_mi === E.UNSUPPORTED && eligibility.sql_db === E.UNSUPPORTED) return ['SQL Server on Azure VM', chooseVmMethod(inputs)];
   if (eligibility.sql_vm === E.ELIGIBLE && (eligibility.sql_mi === E.UNSUPPORTED || eligibility.sql_db === E.UNSUPPORTED) && has(inputs.management_model, 'need OS')) return ['SQL Server on Azure VM', chooseVmMethod(inputs)];
-  if (any(inputs.network_ports, 'limited WAN') && any(inputs.size, `> ${SQL_DB_TIERS.hyperscaleSizeThresholdTb} TB`, 'multi-TB', 'multitb')) return ['Azure SQL Managed Instance or Azure SQL Database', 'Data Box seed → sync delta'];
-  if (any(inputs.size, 'estate scale', 'business case', 'dependency map')) return ['Azure Migrate discovery first', 'Azure Migrate appliance/import/Arc discovery'];
+  if (any(inputs.network_ports, 'limited WAN') && any(inputs.size, `> ${SQL_DB_TIERS.hyperscaleSizeThresholdTb} TB`, 'multi-TB', 'multitb')) return ['Azure SQL Database', 'Data Box seed → sync delta'];
+  if (any(inputs.size, 'estate scale', 'business case', 'dependency map')) return ['provisional shortlist only', 'Azure Migrate appliance/import/Arc discovery'];
   if (dep(inputs, 'TDE')) return ['Azure SQL Managed Instance', 'Native backup/restore'];
   if ((has(inputs.downtime, 'near-zero') || has(inputs.downtime, 'minimal'))
     && lrsSourceUnsupported(inputs)
@@ -218,6 +232,8 @@ function chooseTarget(inputs, eligibility, out) {
   if (dep(inputs, 'SQL Agent') || dep(inputs, 'linked servers') || dep(inputs, 'homogeneous') || dep(inputs, 'PolyBase/cloud files') || dep(inputs, 'SQL CLR') || dep(inputs, 'Service Broker') || dep(inputs, 'cross-DB')) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
   if (isManagedCloudSqlSource(inputs) && has(inputs.downtime, 'near-zero')) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
   if (has(inputs.source_version, String(SOURCE_FLOORS.standaloneLrs.sqlServerMin))) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
+  if ((has(inputs.downtime, 'near-zero') || has(inputs.downtime, 'minimal')) && versionNumber(inputs.source_version) < SOURCE_FLOORS.transactionalReplicationToSqlDb.publisherSqlServerMin) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
+  if ((has(inputs.downtime, 'near-zero') || has(inputs.downtime, 'minimal')) && portsKnownBlockedForMiLink(inputs) && !lrsSourceUnsupported(inputs)) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
   if (has(inputs.driver, 'app modernization') || eligibility.fabric_sql_db === E.UNSUPPORTED || any(inputs.size, `> ${SQL_DB_TIERS.hyperscaleSizeThresholdTb} TB`, `${SQL_DB_TIERS.generalPurposeSmallDatabaseSignalGb} GB`) || any(inputs.performance, 'intermittent', 'strict SLA', 'transaction log') || any(inputs.tenant_count, 'many tenants')) return ['Azure SQL Database', chooseSqlDbMethod(inputs)];
   if (has(inputs.downtime, 'near-zero') || has(inputs.downtime, 'minimal')) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
   return ['Azure SQL Database', chooseSqlDbMethod(inputs)];
@@ -308,6 +324,88 @@ function applyMethodGates(inputs, target, method, eligibility, out) {
     }
   }
 }
+function miLinkKnownCapacityExceeded(inputs, out = {}) {
+  const dbCount = normalizedDatabaseCount(inputs);
+  if (!dbCount) return false;
+  const tier = out.tier || chooseMiTier(inputs, { unknowns: [], evidenceRequired: [] });
+  const cap = miLinkCapacityForTier(tier);
+  return !!cap && dbCount > cap;
+}
+function methodGateFailure(inputs, target, method, out = {}) {
+  const v = versionNumber(inputs.source_version);
+  if (target === 'Azure SQL Managed Instance') {
+    if (method === 'MI Link') {
+      if (isManagedCloudSqlSource(inputs)) return 'MI Link is impossible from AWS RDS/GCP Cloud SQL because sysadmin/AG endpoints are unavailable.';
+      if (v && v < SOURCE_FLOORS.miLink.sqlServerMin) return `MI Link requires SQL Server ${SOURCE_FLOORS.miLink.sqlServerMin}+.`;
+      if (!portsOpenForMiLink(inputs)) {
+        const p = MI_LINK.ports;
+        return `MI Link requires ${p.sqlServerEndpoint} and ${p.managedInstanceHadrRange.start}-${p.managedInstanceHadrRange.end} in the documented directions.`;
+      }
+      if (miLinkKnownCapacityExceeded(inputs, out)) return out.exclusions?.mi_link || 'MI Link database capacity is exceeded.';
+      return null;
+    }
+    if (method === 'LRS') {
+      if (v && (v < SOURCE_FLOORS.standaloneLrs.sqlServerMin || v > SOURCE_FLOORS.standaloneLrs.sqlServerMax)) {
+        return `Standalone LRS supports SQL Server ${SOURCE_FLOORS.standaloneLrs.sqlServerMin}-${SOURCE_FLOORS.standaloneLrs.sqlServerMax}.`;
+      }
+      return null;
+    }
+    if (method === 'Native backup/restore') return null;
+    return `${method} is not a supported Azure SQL Managed Instance migration method in this rules mirror.`;
+  }
+  if (target === 'Azure SQL Database') {
+    if (method === 'Transactional replication') {
+      if (isManagedCloudSqlSource(inputs)) return 'Transactional replication requires source rights unavailable on managed cloud SQL sources.';
+      if (v && v < SOURCE_FLOORS.transactionalReplicationToSqlDb.publisherSqlServerMin) return `Transactional replication publisher requires SQL Server ${SOURCE_FLOORS.transactionalReplicationToSqlDb.publisherSqlServerMin}+.`;
+      return null;
+    }
+    if (method === 'BACPAC/SqlPackage' || method === 'modern DMS (offline)' || method === 'Data Box seed → sync delta') return null;
+    return `${method} is not a supported Azure SQL Database migration method in this rules mirror.`;
+  }
+  if (target === 'SQL Server on Azure VM') return ['Distributed AG or Always On AG', 'Log shipping', 'Native backup/restore', 'Standalone assessment / native backup/restore'].includes(method) ? null : `${method} is not a SQL VM migration method.`;
+  if (target === 'Azure VMware Solution') return method === 'VMware HCX / vMotion' ? null : `${method} is not an AVS migration method.`;
+  if (target === 'SQL database in Fabric') return method === 'Fabric Migration Assistant' ? null : `${method} is not a Fabric SQL database migration method.`;
+  if (target === 'Arc-enabled SQL Managed Instance') return /^Native backup\/restore/.test(method) ? null : `${method} is not an Arc-enabled SQL MI migration method.`;
+  if (target === 'SQL Server in a container') return method === 'Backup/restore via mounted volume' ? null : `${method} is not a SQL Server container migration method.`;
+  if (target === 'SQL Server enabled by Azure Arc') return method === 'Arc best-practices assessment' ? null : `${method} is not an Arc assessment method.`;
+  return null;
+}
+function viableTargetKeyForLabel(label, eligibility) {
+  const key = LABEL_TO_TARGET[label];
+  return key && [E.ELIGIBLE, E.REMEDIATE].includes(eligibility[key]) ? key : undefined;
+}
+function addMethodExclusion(target, reason, out) {
+  const key = LABEL_TO_TARGET[target] || target;
+  if (key) out.exclusions[`${key}_method`] = reason;
+}
+function chooseConsistentFallback(inputs, eligibility, out) {
+  const candidates = [
+    ['sql_vm', TARGET_LABELS.sql_vm, chooseVmMethod(inputs)],
+    ['sql_db', TARGET_LABELS.sql_db, chooseSqlDbMethod(inputs)],
+    ['sql_mi', TARGET_LABELS.sql_mi, chooseMiMethod(inputs, out)]
+  ];
+  for (const [key, label, method] of candidates) {
+    if (![E.ELIGIBLE, E.REMEDIATE].includes(eligibility[key])) continue;
+    const reason = methodGateFailure(inputs, label, method, out);
+    if (!reason) return [label, method];
+    addMethodExclusion(label, reason, out);
+  }
+  addUnique(out.evidenceRequired, 'Run Azure Migrate / Arc assessment and dependency discovery to validate any provisional candidate.');
+  return ['provisional shortlist only', 'Assessment and dependency discovery first'];
+}
+function enforceOutputConsistency(inputs, eligibility, out) {
+  if (out.primaryTarget === 'provisional shortlist only') return;
+  const key = viableTargetKeyForLabel(out.primaryTarget, eligibility);
+  const methodFailure = methodGateFailure(inputs, out.primaryTarget, out.method, out);
+  if (key && !methodFailure) return;
+  if (!key) addMethodExclusion(out.primaryTarget, `Target eligibility is ${eligibility[LABEL_TO_TARGET[out.primaryTarget]] || 'not in eligibility map'}.`, out);
+  if (methodFailure) addMethodExclusion(out.primaryTarget, methodFailure, out);
+  const [fallbackTarget, fallbackMethod] = chooseConsistentFallback(inputs, eligibility, out);
+  out.primaryTarget = fallbackTarget;
+  out.primary_target = fallbackTarget;
+  out.method = fallbackMethod;
+  delete out.alternativeTarget;
+}
 function finalizeStatus(inputs, out, eligibility) {
   const hasUnknown = Object.values(eligibility).includes(E.UNKNOWN) || out.unknowns.length > 0 || out.tier === E.UNKNOWN;
   if (hasValidatedEvidence(inputs) && !hasUnknown && out.hardBlockers.length === 0) {
@@ -345,12 +443,16 @@ export function evaluate(inputs = {}) {
   else if (primaryTarget === 'SQL database in Fabric') out.tier = 'Fabric SQL database Preview';
 
   applyMethodGates(inputs, primaryTarget, method, eligibility, out);
-  const [availability, cutover] = methodAvailability(method, out.tier);
+  enforceOutputConsistency(inputs, eligibility, out);
+  if (out.primaryTarget === 'Azure SQL Managed Instance') out.tier = chooseMiTier(inputs, out);
+  else if (out.primaryTarget === 'Azure SQL Database') out.tier = chooseSqlDbTier(inputs, out);
+  else if (out.primaryTarget !== 'SQL database in Fabric') delete out.tier;
+  const [availability, cutover] = methodAvailability(out.method, out.tier);
   out.targetAvailabilityDuringSync = availability;
   out.businessCutoverDowntime = cutover;
-  if (method === 'LRS' && out.tier === 'MI Business Critical') out.lrsBusinessCriticalCutoverCanTakeHours = true;
-  if (method === 'MI Link') out.alternativeTarget = 'Azure SQL Managed Instance via LRS fallback';
-  if (primaryTarget === 'Azure SQL Database' && eligibility.sql_mi !== E.UNSUPPORTED) out.alternativeTarget = 'Azure SQL Managed Instance';
+  if (out.method === 'LRS' && out.tier === 'MI Business Critical') out.lrsBusinessCriticalCutoverCanTakeHours = true;
+  if (out.method === 'MI Link' && eligibility.sql_vm !== E.UNSUPPORTED) out.alternativeTarget = 'SQL Server on Azure VM';
+  if (out.primaryTarget === 'Azure SQL Database' && eligibility.sql_mi !== E.UNSUPPORTED) out.alternativeTarget = 'Azure SQL Managed Instance';
 
   finalizeStatus(inputs, out, eligibility);
   out.eligibility = eligibility;

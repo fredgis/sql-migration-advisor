@@ -67,6 +67,14 @@ Apply `reference/decision-rules.md` by name:
 
 Ask one at a time. “Not sure” is allowed, but decision-driving unknowns must be surfaced; do not silently default them.
 
+**Asking rules — how to call `ask_user` (these prevent a real UX failure):**
+
+- **Never require a minimum number of selections.** Do not set `minItems` on a multi-select and never render “Select at least 1 item”. The user must always be able to answer nothing.
+- **Ask each question at most once.** If the answer comes back empty, or the user declines or cancels, **do not re-ask it, and never re-ask it in a stricter form.** Re-prompting a question the user already answered is a bug.
+- **An empty multi-select is an answer, not a failure.** Treat it as `Not sure` for that field: record the field as an **unknown**, continue the interview, and carry it into `unknowns[]` / `evidenceRequired[]` so the recommendation stays `provisional`. Do not treat it as `None`, and do not treat it as a reason to interrogate the user again.
+- If the user explicitly selects `None`, that is a definite answer meaning “no such dependencies” — accept it and move on.
+- If a decision-driving field ends up unknown, say so once in the output (“feature dependencies not confirmed — run a dependency discovery”), rather than blocking the interview to chase it.
+
 1. **Scope** — “How big is this migration?”
    - `Single database` · `A few databases (2–10)` · `Large estate (10+ servers/DBs)`
    - Large estate ⇒ Azure Migrate discovery/business case + `Az.DataMigration` automation; then profile representative groups.
