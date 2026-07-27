@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "How the rules are kept correct",
+    "subtitle": "runs on every push and pull request",
+    "output": "quality-gate.html"
+  },
+  "components": [
+    { "id": "checker", "type": "security", "label": "check-rules-data.mjs", "sublabel": "174 constants · strict", "pos": [40, 160], "size": [225, 60], "tag": "blocking" },
+    { "id": "rulesmd", "type": "external", "label": "decision-rules.md", "sublabel": "the prose the agent reads", "pos": [325, 160], "size": [210, 60] },
+    { "id": "data", "type": "database", "label": "decision-rules.data.json", "sublabel": "single source of constants", "pos": [40, 340], "size": [225, 60] },
+    { "id": "engine", "type": "backend", "label": "evaluate.mjs", "sublabel": "executable mirror", "pos": [325, 340], "size": [210, 60] },
+    { "id": "tests", "type": "backend", "label": "Golden scenarios", "sublabel": "66 profiles replayed", "pos": [595, 340], "size": [200, 60] },
+    { "id": "ci", "type": "cloud", "label": "CI gate", "sublabel": "every push & PR", "pos": [855, 340], "size": [185, 60], "tag": "blocking" }
+  ],
+  "connections": [
+    { "from": "data", "to": "engine", "label": "constants", "labelDy": -24 },
+    { "from": "engine", "to": "tests", "label": "evaluates", "labelDy": -24 },
+    { "from": "tests", "to": "ci", "label": "must pass", "variant": "emphasis", "labelDy": -24 },
+    { "from": "data", "to": "checker", "label": "expected values", "fromSide": "top", "toSide": "bottom" },
+    { "from": "checker", "to": "rulesmd", "label": "must match the prose", "variant": "security", "labelDy": -24 }
+  ],
+  "cards": [
+    { "dot": "violet", "title": "One source of truth", "items": ["Ports, capacities, version floors, thresholds", "The engine holds no hard-coded numbers"] },
+    { "dot": "rose", "title": "Drift is caught", "items": ["174 constants verified against the markdown", "Strict mode in CI: a warning fails the build"] },
+    { "dot": "emerald", "title": "Decisions are tested", "items": ["66 scenarios compared field by field", "Break a rule and the suite fails, by name"] },
+    { "dot": "slate", "title": "Honest limit", "items": ["Constants are single-sourced", "Rule logic still lives in prose and in JS"] }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "How a recommendation is produced",
+    "subtitle": "runs per conversation, when a user asks",
+    "output": "decision-pipeline.html"
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "User ask", "sublabel": "\"migrate SQL Server\"", "pos": [40, 300], "size": [160, 60] },
+    { "id": "interview", "type": "frontend", "label": "Guided interview", "sublabel": "Tier 1 → Tier 2", "pos": [240, 300], "size": [185, 60] },
+    { "id": "kb", "type": "database", "label": "Knowledge base", "sublabel": "fetched live · v1.6", "pos": [465, 140], "size": [195, 60] },
+    { "id": "phasea", "type": "security", "label": "Phase A — Eligibility", "sublabel": "hard constraints only", "pos": [465, 300], "size": [195, 60], "tag": "4 states" },
+    { "id": "rules", "type": "external", "label": "decision-rules.md", "sublabel": "offline fallback", "pos": [465, 460], "size": [195, 60] },
+    { "id": "phaseb", "type": "backend", "label": "Phase B — Ranking", "sublabel": "8 named criteria", "pos": [700, 300], "size": [185, 60] },
+    { "id": "card", "type": "backend", "label": "Recommendation", "sublabel": "primary + alternative", "pos": [925, 300], "size": [185, 60], "tag": "provisional" }
+  ],
+  "connections": [
+    { "from": "user", "to": "interview", "label": "asks", "labelDy": -24 },
+    { "from": "interview", "to": "phasea", "label": "answers", "labelDy": -24 },
+    { "from": "phasea", "to": "phaseb", "label": "survivors", "variant": "emphasis", "labelDy": -24 },
+    { "from": "phaseb", "to": "card", "label": "ranked", "variant": "emphasis", "labelDy": -24 },
+    { "from": "kb", "to": "phasea", "label": "grounds every claim", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
+    { "from": "rules", "to": "phasea", "label": "if offline", "variant": "dashed", "fromSide": "top", "toSide": "bottom" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Interview", "items": ["Tier 1 triage always runs", "Tier 2 only when it can change the answer"] },
+    { "dot": "rose", "title": "Phase A — eligibility", "items": ["eligible · eligible_with_remediation", "unsupported · unknown_requires_assessment", "A decision-driving unknown never defaults silently"] },
+    { "dot": "emerald", "title": "Phase B — ranking", "items": ["Refactoring effort, downtime, operational burden", "compatibility, resilience, cost, reversibility, sovereignty"] },
+    { "dot": "amber", "title": "Output", "items": ["Primary + best alternative + why others were excluded", "Confidence, assumptions, unknowns, evidence required", "Stays provisional until an assessment confirms it"] }
+  ]
+}

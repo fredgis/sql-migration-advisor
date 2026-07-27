@@ -58,6 +58,12 @@ Step by step:
 7. **Offer follow-ups.** A per-database table for an estate, a cutover runbook, or a one-slide summary
    (handed off to another skill).
 
+<p align="center">
+  <img src="./decision-pipeline.svg" alt="Decision pipeline: a user ask feeds a guided interview, then Phase A filters eligibility against hard constraints, Phase B ranks the survivors, and a provisional recommendation card is produced. The knowledge base grounds Phase A; decision-rules.md is the offline fallback." width="960">
+</p>
+
+<sub>Runs **per conversation** — there is no schedule. Diagram source: [`decision-pipeline.architecture.json`](./decision-pipeline.architecture.json) · interactive: [`decision-pipeline.html`](./decision-pipeline.html).</sub>
+
 ### The interview in full
 
 The interview is deliberately two-tier: **Tier 1** is always enough to produce a *provisional*
@@ -261,6 +267,12 @@ before versioning changes.
 > the deterministic checks still report, but no AI-only version bump is allowed.
 
 ### Golden test suite
+
+<p align="center">
+  <img src="./quality-gate.svg" alt="Quality gate: decision-rules.data.json is the single source of constants; it feeds evaluate.mjs, which replays 66 golden scenarios into a blocking CI gate, while check-rules-data.mjs verifies the same 174 constants against the decision-rules markdown in strict mode." width="960">
+</p>
+
+<sub>Runs on **every push and pull request** — separate from the weekly knowledge-base check (Mondays 05:00 UTC). Diagram source: [`quality-gate.architecture.json`](./quality-gate.architecture.json) · interactive: [`quality-gate.html`](./quality-gate.html).</sub>
 
 The repo now includes [`tests/`](../tests/) with golden migration scenarios, consistency checks and
 anti-regression cases. The suite guards the behaviours that were easiest to over-claim: unknowns on
