@@ -141,7 +141,7 @@ You should see the Azure cast plus `modernizer`. The optional Azure MCP wiring f
 ## Module 1 — Deploy and seed the legacy source (Track B · optional · ~35 min · costs money)
 
 > [!NOTE]
-> **This module is optional.** It belongs to Track B and is the only part that spends money. The HVE Squad (Modules 2 through 5) does **not** need it — the advisor reasons from the inventory in [`../knowledge-docs/`](../knowledge-docs/), not from a live database. Deploy this only if you want a real SQL Server 2016 to inspect, or if you intend to run the cutover for real in Track C. To stay on Track A, skip straight to [Module 2](#module-2--enter-the-fde-open-the-migration-request).
+> **This module is optional.** It belongs to Track B and is the only part that spends money. The HVE Squad (Modules 2 through 5) does **not** need it — the advisor reasons from the inventory in [`../knowledge-docs/`](../knowledge-docs/), not from a live database. Deploy this only if you want a real SQL Server 2016 to inspect, or if you intend to run the cutover for real in Track C. To stay on Track A, skip straight to [Module 2](#module-2--enter-the-fde-open-the-migration-request-track-a--10-min--0).
 
 This module gives the advisor a real thing to inspect: a running SQL Server 2016 with the objects that drive the decision.
 

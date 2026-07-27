@@ -223,7 +223,7 @@
 
   <!-- STEP A : target flowchart -->
   <section>
-    <div class="shead"><span class="badge">A</span><h2>Pick the target — decision tree, first match wins</h2>
+    <div class="shead"><span class="badge">A</span><h2>Pick the target — eligibility filter, then ranking</h2>
       <span class="note">large estate (10+)? run Azure Migrate discovery first, then apply this tree to each dominant profile (Az.DataMigration at scale)</span></div>
 
     <div class="flow">
@@ -333,7 +333,7 @@
           <img src="icons/fabric.svg" alt="Microsoft Fabric" style="width:44px;height:44px"/>
           <img src="icons/fabric-sql-db.svg" alt="SQL database in Fabric" style="width:38px;height:38px"/></span>
         <div class="tx"><div class="t">SQL database in Fabric <small style="color:#107C10;font-weight:700">· in Microsoft Fabric · GA</small></div>
-          <div class="d">Fabric Migration Assistant + Fabric Mirroring for the analytical copy · schema via DACPAC ≤ 20 MB · on-prem gateway. <span class="tag">tested as a gate BEFORE SQL DB so first-match-wins can reach it</span></div></div></div>
+          <div class="d">Fabric Migration Assistant + Fabric Mirroring for the analytical copy · schema via DACPAC ≤ 20 MB · on-prem gateway. <span class="tag">tested as a gate BEFORE SQL DB so the branch stays reachable</span></div></div></div>
 
       <!-- fall-through -->
       <div class="ffall">
@@ -482,7 +482,7 @@
       </div></div>
   </div>
 
-  <div class="src-final">Official Microsoft Azure architecture icons &amp; Microsoft Fabric icons, used per their diagram-usage terms. Step A is a real first-match-wins decision tree (diamonds + Yes/No arrows) with the Fabric gate placed before the SQL DB fall-through; Steps B–D, the retirements guardrail, tie-breakers and cross-cloud paths complete the engine. · github.com/fredgis/FY27SQLMotion</div>
+  <div class="src-final">Official Microsoft Azure architecture icons &amp; Microsoft Fabric icons, used per their diagram-usage terms. Step A is a real eligibility decision tree (diamonds + Yes/No arrows) with the Fabric gate placed before the SQL DB fall-through; Steps B–D, the retirements guardrail, tie-breakers and cross-cloud paths complete the engine. · github.com/fredgis/sql-migration-advisor</div>
 
 </div>
 </body>

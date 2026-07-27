@@ -219,7 +219,7 @@ function buildPdf(body) {
   const appendix = [
     '', '\\newpage', '',
     '## Appendix — Using the `sql-migration-advisor` Copilot CLI skill', '',
-    'This knowledge base also powers `sql-migration-advisor`, a GitHub Copilot CLI skill that turns the inventory above into a guided recommendation. Ask Copilot *"migrate a SQL Server environment to Azure"*: it runs a short ~10-question interview (scope, source location & version, primary driver, instance-level feature dependencies, largest DB size, downtime tolerance, network & ports, compliance, ancillary services), then returns a grounded recommendation card — target, method, downtime class, blockers + remediations, cost levers, and the right Microsoft program — and never recommends retired tooling (DMA, Azure Data Studio extension, DMS classic).', '',
+    'This knowledge base also powers `sql-migration-advisor`, a GitHub Copilot CLI skill that turns the inventory above into a guided, preliminary recommendation. Ask Copilot *"migrate a SQL Server environment to Azure"*: it runs a short two-tier interview — triage (scope, source location & version, intent, feature dependencies, size, downtime tolerance, network, compliance, ancillary services), then confirmation questions only where they can change the answer — and returns a grounded recommendation card: target and tier, method, downtime class, blockers + remediations, the best alternative, confidence and open evidence gaps, cost levers, and the right Microsoft program. It never recommends retired tooling (DMA, Azure Data Studio extension, DMS classic).', '',
     '### Install (once)', '',
     'macOS / Linux:', '', '```bash',
     'git clone https://github.com/fredgis/sql-migration-advisor.git ~/.copilot/skills/sql-migration-advisor',

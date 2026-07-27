@@ -11,6 +11,7 @@
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
   <img alt="Knowledge base v1.5" src="https://img.shields.io/badge/knowledge%20base-v1.5-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
+  <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml/badge.svg"></a>
 </p>
 
 <p align="center">
@@ -77,7 +78,7 @@ An external audit deliberately challenged the advisor before wider use. It found
 
 | Path | Purpose |
 | --- | --- |
-| [`SKILL.md`](SKILL.md) | The skill — trigger description, principles, the ~10-question interview, and the output-card template. |
+| [`SKILL.md`](SKILL.md) | The skill — trigger description, principles, the two-tier interview (triage, then confirmation), and the output-card template. |
 | [`reference/decision-rules.md`](reference/decision-rules.md) | The deterministic decision engine: Phase A eligibility filter, then Phase B ranking and tier selection — used as the offline fallback. |
 | [`examples/sample-recommendation.md`](examples/sample-recommendation.md) | A worked end-to-end example (SQL 2014 → Azure SQL MI via LRS). |
 | [`docs/sql-server-to-azure-migration.md`](docs/sql-server-to-azure-migration.md) | The knowledge base — every target family, method, tool, and commercial lever, with Microsoft Learn links. |
