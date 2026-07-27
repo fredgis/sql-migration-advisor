@@ -12,7 +12,7 @@ This suite gives the prompt-only skill a deterministic gate.
 
 ## Drift risk
 
-Machine-checkable constants are now single-sourced in `reference/decision-rules.data.json`: the executable mirror imports them, and CI checks them against `reference/decision-rules.md`. Drift on values such as ports, source-version floors, capacities, batch limits, method availability, and retired tooling is therefore structurally prevented in JavaScript and detected against the markdown.
+Audited high-risk constants are now single-sourced in `reference/decision-rules.data.json`: the executable mirror imports them, and CI checks them against `reference/decision-rules.md`. Drift on values such as ports, source-version floors/ranges, capacities, batch limits, size thresholds, method availability, and retired tooling is therefore structurally prevented in JavaScript and detected against the markdown.
 
 Rule **logic** still exists twice: markdown prose for the LLM and JavaScript branches for deterministic tests. `assertRulePresent` proves textual presence, not semantic equivalence. The intended end state is a canonical structured source that also generates the prose and tables in `decision-rules.md` / `SKILL.md`, making both value and logic drift structurally impossible.
 
@@ -23,6 +23,7 @@ node --check tests\run-tests.mjs
 node --check tests\engine\evaluate.mjs
 node --check tools\rules\check-rules-data.mjs
 node tools\rules\check-rules-data.mjs
+node tools\rules\check-rules-data.mjs --strict
 node tests\run-tests.mjs
 node tests\run-tests.mjs --json
 ```

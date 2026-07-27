@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   regression:
     runs-on: ubuntu-latest
@@ -13,6 +16,6 @@ jobs:
         with:
           node-version: 20
       - name: Check canonical rules data
-        run: node tools/rules/check-rules-data.mjs
+        run: node tools/rules/check-rules-data.mjs --strict
       - name: Run deterministic regression tests
         run: node tests/run-tests.mjs

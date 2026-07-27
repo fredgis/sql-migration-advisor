@@ -6,21 +6,44 @@
     "description": "Machine-checkable constants and gates extracted from decision-rules.md v1.6."
   },
   "sourceVersionFloors": {
-    "miLink": { "sqlServerMin": 2016, "windowsServerMin": 2016 },
-    "standaloneLrs": { "sqlServerMin": 2008, "sqlServerMax": 2022 },
-    "nativeRestoreToMi": { "sqlServerMin": 2008 },
-    "transactionalReplicationToSqlDb": { "publisherSqlServerMin": 2016 }
+    "miLink": {
+      "sqlServerMin": 2016,
+      "windowsServerMin": 2016
+    },
+    "standaloneLrs": {
+      "sqlServerMin": 2008,
+      "sqlServerMax": 2022
+    },
+    "nativeRestoreToMi": {
+      "sqlServerMin": 2008
+    },
+    "transactionalReplicationToSqlDb": {
+      "publisherSqlServerMin": 2016
+    }
   },
   "azureArcFloors": {
-    "overallMigrationExperience": { "sqlServerMin": 2014 },
-    "miLinkToManagedInstance": { "sqlServerMin": 2016, "windowsServerMin": 2016 },
-    "lrsToManagedInstanceConservative": { "sqlServerMin": 2014, "documentedMethodSqlServerMin": 2012 },
-    "sqlServerOnAzureVm": { "sqlServerMin": 2014 }
+    "overallMigrationExperience": {
+      "sqlServerMin": 2014
+    },
+    "miLinkToManagedInstance": {
+      "sqlServerMin": 2016,
+      "windowsServerMin": 2016
+    },
+    "lrsToManagedInstanceConservative": {
+      "sqlServerMin": 2014,
+      "documentedMethodSqlServerMin": 2012
+    },
+    "sqlServerOnAzureVm": {
+      "sqlServerMin": 2014
+    }
   },
   "miLink": {
     "ports": {
       "sqlServerEndpoint": 5022,
-      "managedInstanceHadrRange": { "start": 11000, "end": 11999 }
+      "managedInstanceHadrRange": {
+        "start": 11000,
+        "end": 11999
+      }
     },
     "capacityLinks": {
       "generalPurpose": 100,
@@ -34,66 +57,263 @@
     "batchLimitBeforeExtension": 1
   },
   "lrs": {
-    "serviceTierDatabaseLimits": { "generalPurpose": 100, "nextGenGeneralPurpose": 500 },
+    "serviceTierDatabaseLimits": {
+      "generalPurpose": 100,
+      "nextGenGeneralPurpose": 500
+    },
     "simultaneousRestoresPerInstance": 100,
     "simultaneousRestoresPerSubscription": 150
   },
   "methodAvailability": {
-    "MI Link": { "targetAvailabilityDuringSync": "read-only", "businessCutoverDowntime": "<1min" },
-    "LRS": { "targetAvailabilityDuringSync": "unavailable", "businessCutoverDowntimeByTier": { "default": "minutes", "MI Business Critical": "hours" } },
-    "Native backup/restore": { "targetAvailabilityDuringSync": "not-present", "businessCutoverDowntime": "full-restore-time" },
-    "BACPAC/SqlPackage": { "targetAvailabilityDuringSync": "not-present", "businessCutoverDowntime": "full-load-time" },
-    "Transactional replication": { "targetAvailabilityDuringSync": "read-write", "businessCutoverDowntime": "near-zero" },
-    "modern DMS (offline)": { "targetAvailabilityDuringSync": "not-present", "businessCutoverDowntime": "total-migration-time" },
-    "Distributed AG or Always On AG": { "targetAvailabilityDuringSync": "read-only", "businessCutoverDowntime": "near-zero" },
-    "Log shipping": { "targetAvailabilityDuringSync": "unavailable", "businessCutoverDowntime": "minimal" },
-    "Fabric Migration Assistant": { "targetAvailabilityDuringSync": "not-present", "businessCutoverDowntime": "full-load-time" },
-    "Data Box seed → sync delta": { "targetAvailabilityDuringSync": "not-present", "businessCutoverDowntime": "full-load-time" },
-    "bcp / Smart Bulk Copy / BACPAC / ADF": { "targetAvailabilityDuringSync": "not-present", "businessCutoverDowntime": "full-load-time" }
+    "MI Link": {
+      "targetAvailabilityDuringSync": "read-only",
+      "businessCutoverDowntime": "<1min"
+    },
+    "LRS": {
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntimeByTier": {
+        "default": "minutes",
+        "MI Business Critical": "hours"
+      }
+    },
+    "Native backup/restore": {
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time"
+    },
+    "BACPAC/SqlPackage": {
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-load-time"
+    },
+    "Transactional replication": {
+      "targetAvailabilityDuringSync": "read-write",
+      "businessCutoverDowntime": "near-zero"
+    },
+    "modern DMS (offline)": {
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time"
+    },
+    "Distributed AG or Always On AG": {
+      "targetAvailabilityDuringSync": "read-only",
+      "businessCutoverDowntime": "near-zero"
+    },
+    "Log shipping": {
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minimal"
+    },
+    "Fabric Migration Assistant": {
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-load-time"
+    },
+    "Data Box seed → sync delta": {
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-load-time"
+    },
+    "bcp / Smart Bulk Copy / BACPAC / ADF": {
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-load-time"
+    }
   },
   "crossCloudEligibility": {
-    "On-prem / Azure VM": { "miLink": "eligible: 2016+ + 5022 + 11000-11999 + networking", "lrs": "eligible: 2008-2022", "dms": "eligible", "nativeBackupRestore": "eligible: direct BACKUP TO URL", "transactionalReplication": "eligible: 2016+", "bacpacBcpAdf": "eligible" },
-    "AWS EC2": { "miLink": "eligible if sysadmin + AG + 5022 + 11000-11999 + networking", "lrs": "eligible via Blob upload", "dms": "eligible", "nativeBackupRestore": "eligible via Blob upload", "transactionalReplication": "eligible if sysadmin", "bacpacBcpAdf": "eligible" },
-    "AWS RDS for SQL Server": { "miLink": "unsupported: no sysadmin / no AG endpoints", "lrs": "eligible via S3 to Blob upload", "dms": "eligible", "nativeBackupRestore": "indirect S3 to Blob to restore", "transactionalReplication": "unsupported: not practical without sysadmin/distributor rights", "bacpacBcpAdf": "eligible" },
-    "GCP Compute Engine": { "miLink": "eligible if sysadmin + AG + 5022 + 11000-11999 + networking", "lrs": "eligible via Blob upload", "dms": "eligible", "nativeBackupRestore": "eligible via Blob upload", "transactionalReplication": "eligible if sysadmin", "bacpacBcpAdf": "eligible" },
-    "GCP Cloud SQL for SQL Server": { "miLink": "unsupported: no sysadmin / no AG endpoints", "lrs": "eligible via export to Blob", "dms": "eligible", "nativeBackupRestore": "indirect", "transactionalReplication": "unsupported: not practical without sysadmin/distributor rights", "bacpacBcpAdf": "eligible" }
+    "On-prem / Azure VM": {
+      "miLink": "eligible: 2016+ + 5022 + 11000-11999 + networking",
+      "lrs": "eligible: 2008-2022",
+      "dms": "eligible",
+      "nativeBackupRestore": "eligible: direct BACKUP TO URL",
+      "transactionalReplication": "eligible: 2016+",
+      "bacpacBcpAdf": "eligible"
+    },
+    "AWS EC2": {
+      "miLink": "eligible if sysadmin + AG + 5022 + 11000-11999 + networking",
+      "lrs": "eligible via Blob upload",
+      "dms": "eligible",
+      "nativeBackupRestore": "eligible via Blob upload",
+      "transactionalReplication": "eligible if sysadmin",
+      "bacpacBcpAdf": "eligible"
+    },
+    "AWS RDS for SQL Server": {
+      "miLink": "unsupported: no sysadmin / no AG endpoints",
+      "lrs": "eligible via S3 to Blob upload",
+      "dms": "eligible",
+      "nativeBackupRestore": "indirect S3 to Blob to restore",
+      "transactionalReplication": "unsupported: not practical without sysadmin/distributor rights",
+      "bacpacBcpAdf": "eligible"
+    },
+    "GCP Compute Engine": {
+      "miLink": "eligible if sysadmin + AG + 5022 + 11000-11999 + networking",
+      "lrs": "eligible via Blob upload",
+      "dms": "eligible",
+      "nativeBackupRestore": "eligible via Blob upload",
+      "transactionalReplication": "eligible if sysadmin",
+      "bacpacBcpAdf": "eligible"
+    },
+    "GCP Cloud SQL for SQL Server": {
+      "miLink": "unsupported: no sysadmin / no AG endpoints",
+      "lrs": "eligible via export to Blob",
+      "dms": "eligible",
+      "nativeBackupRestore": "indirect",
+      "transactionalReplication": "unsupported: not practical without sysadmin/distributor rights",
+      "bacpacBcpAdf": "eligible"
+    }
   },
   "hardEligibilityRules": {
-    "FILESTREAM/FileTable": { "sql_mi": "unsupported", "sql_db": "unsupported", "sql_vm_avs_container": "eligible" },
-    "PolyBase/cloud files": { "sql_mi": "eligible", "sql_db": "assess separately", "sql_vm_avs_container": "eligible" },
-    "PolyBase/external RDBMS": { "sql_mi": "unsupported", "sql_db": "unsupported unless refactored", "sql_vm_avs_container": "eligible" },
-    "PolyBase/unknown": { "sql_mi": "unknown_requires_assessment", "sql_db": "unknown_requires_assessment", "evidenceRequired": "list external data sources/connectors" },
-    "homogeneous SQL↔SQL DTC": { "sql_mi": "eligible", "sql_db": "unsupported", "sql_vm_avs_container": "eligible" },
-    "heterogeneous DTC": { "sql_mi": "unsupported", "sql_db": "unsupported", "sql_vm_avs_container": "eligible" },
-    "DTC/unknown": { "sql_mi": "unknown_requires_assessment", "sql_db": "unknown_requires_assessment", "evidenceRequired": "transaction participants and linked-server map" },
-    "linked servers": { "sql_mi": "eligible_with_remediation", "sql_db": "unsupported unless refactored", "sql_vm_avs_container": "eligible" },
-    "SQL Agent": { "sql_mi": "eligible", "sql_db": "eligible_with_remediation", "sql_vm_avs_container": "eligible" },
-    "Need OS/file-system/exact engine control/third-party agents": { "sql_mi": "unsupported", "sql_db": "unsupported", "sql_vm_avs_container": "eligible" }
+    "FILESTREAM/FileTable": {
+      "sql_mi": "unsupported",
+      "sql_db": "unsupported",
+      "sql_vm_avs_container": "eligible"
+    },
+    "PolyBase/cloud files": {
+      "sql_mi": "eligible",
+      "sql_db": "assess separately",
+      "sql_vm_avs_container": "eligible"
+    },
+    "PolyBase/external RDBMS": {
+      "sql_mi": "unsupported",
+      "sql_db": "unsupported unless refactored",
+      "sql_vm_avs_container": "eligible"
+    },
+    "PolyBase/unknown": {
+      "sql_mi": "unknown_requires_assessment",
+      "sql_db": "unknown_requires_assessment",
+      "evidenceRequired": "list external data sources/connectors"
+    },
+    "homogeneous SQL↔SQL DTC": {
+      "sql_mi": "eligible",
+      "sql_db": "unsupported",
+      "sql_vm_avs_container": "eligible"
+    },
+    "heterogeneous DTC": {
+      "sql_mi": "unsupported",
+      "sql_db": "unsupported",
+      "sql_vm_avs_container": "eligible"
+    },
+    "DTC/unknown": {
+      "sql_mi": "unknown_requires_assessment",
+      "sql_db": "unknown_requires_assessment",
+      "evidenceRequired": "transaction participants and linked-server map"
+    },
+    "linked servers": {
+      "sql_mi": "eligible_with_remediation",
+      "sql_db": "unsupported unless refactored",
+      "sql_vm_avs_container": "eligible"
+    },
+    "SQL Agent": {
+      "sql_mi": "eligible",
+      "sql_db": "eligible_with_remediation",
+      "sql_vm_avs_container": "eligible"
+    },
+    "Need OS/file-system/exact engine control/third-party agents": {
+      "sql_mi": "unsupported",
+      "sql_db": "unsupported",
+      "sql_vm_avs_container": "eligible"
+    }
   },
   "tierSelection": {
     "azureSqlManagedInstance": {
-      "businessCriticalSignals": ["low-latency storage", "high IOPS/log throughput", "heavy tempdb", "in-memory OLTP", "read-scale secondary", "highest HA/resilience"],
-      "generalPurposeSignals": ["moderate latency/IO", "general enterprise workload", "cost-sensitive", "no read-scale secondary", "no high log throughput"],
+      "businessCriticalSignals": [
+        "low-latency storage",
+        "high IOPS/log throughput",
+        "heavy tempdb",
+        "in-memory OLTP",
+        "read-scale secondary",
+        "highest HA/resilience"
+      ],
+      "generalPurposeSignals": [
+        "moderate latency/IO",
+        "general enterprise workload",
+        "cost-sensitive",
+        "no read-scale secondary",
+        "no high log throughput"
+      ],
       "unknownResult": "unknown_requires_assessment"
     },
     "azureSqlDatabase": {
-      "hyperscaleSignals": ["Database size > 4 TB", "very fast scale-out storage", "large OLTP", "HTAP", "rapid backup/restore"],
-      "businessCriticalSignals": ["strict lowest-latency IO", "high transaction log rate", "zone-redundant high SLA", "read-scale replica", "in-memory OLTP"],
-      "generalPurposeSignals": ["general steady workload", "moderate IO/latency", "cost-sensitive", "size within GP limits"],
-      "serverlessSignals": ["intermittent", "dev/test", "seasonal", "idle periods", "auto-pause"],
-      "elasticPoolSignals": ["many tenants/databases", "variable utilization", "shared budget"],
+      "hyperscaleSignals": [
+        "Database size > 4 TB",
+        "very fast scale-out storage",
+        "large OLTP",
+        "HTAP",
+        "rapid backup/restore"
+      ],
+      "businessCriticalSignals": [
+        "strict lowest-latency IO",
+        "high transaction log rate",
+        "zone-redundant high SLA",
+        "read-scale replica",
+        "in-memory OLTP"
+      ],
+      "generalPurposeSignals": [
+        "general steady workload",
+        "moderate IO/latency",
+        "cost-sensitive",
+        "size within GP limits"
+      ],
+      "serverlessSignals": [
+        "intermittent",
+        "dev/test",
+        "seasonal",
+        "idle periods",
+        "auto-pause"
+      ],
+      "elasticPoolSignals": [
+        "many tenants/databases",
+        "variable utilization",
+        "shared budget"
+      ],
       "unknownResult": "unknown_requires_assessment"
     }
   },
   "validatedEvidence": {
-    "requiredBooleans": ["dependenciesToolConfirmed", "performanceMeasured", "regionAvailabilityConfirmed", "architectSignedOff"]
+    "requiredBooleans": [
+      "dependenciesToolConfirmed",
+      "performanceMeasured",
+      "regionAvailabilityConfirmed",
+      "architectSignedOff"
+    ]
   },
   "retiredTooling": [
-    { "name": "Data Experimentation Assistant (DEA)", "date": "15 Dec 2024", "useInstead": "Extended Events capture + RML Utilities / OStress replay + Query Store/DMVs" },
-    { "name": "Distributed Replay", "date": "Deprecated in SQL Server 2022; unavailable in SQL Server 2022+", "useInstead": "RML Utilities / OStress" },
-    { "name": "Data Migration Assistant (DMA)", "date": "16 Jul 2025", "useInstead": "SSMS 22 / Arc / Azure Migrate" },
-    { "name": "Azure Data Studio + SQL Migration extension", "date": "28 Feb 2026", "useInstead": "VS Code + MSSQL; SSMS 22 / DMS" },
-    { "name": "Azure DMS classic — SQL scenarios", "date": "15 Mar 2026", "useInstead": "modern DMS (portal / PowerShell / CLI)" },
-    { "name": "SQL Data Sync", "date": "retires 30 Sep 2027", "useInstead": "ADF / transactional replication / AG" }
-  ]
+    {
+      "name": "Data Experimentation Assistant (DEA)",
+      "date": "15 Dec 2024",
+      "useInstead": "Extended Events capture + RML Utilities / OStress replay + Query Store/DMVs"
+    },
+    {
+      "name": "Distributed Replay",
+      "date": "Deprecated in SQL Server 2022; unavailable in SQL Server 2022+",
+      "useInstead": "RML Utilities / OStress"
+    },
+    {
+      "name": "Data Migration Assistant (DMA)",
+      "date": "16 Jul 2025",
+      "useInstead": "SSMS 22 / Arc / Azure Migrate"
+    },
+    {
+      "name": "Azure Data Studio + SQL Migration extension",
+      "date": "28 Feb 2026",
+      "useInstead": "VS Code + MSSQL; SSMS 22 / DMS"
+    },
+    {
+      "name": "Azure DMS classic — SQL scenarios",
+      "date": "15 Mar 2026",
+      "useInstead": "modern DMS (portal / PowerShell / CLI)"
+    },
+    {
+      "name": "SQL Data Sync",
+      "date": "retires 30 Sep 2027",
+      "useInstead": "ADF / transactional replication / AG"
+    }
+  ],
+  "fabricMigration": {
+    "maxDacpacMb": 20
+  },
+  "sqlDatabaseTiers": {
+    "hyperscaleSizeThresholdTb": 4,
+    "generalPurposeSmallDatabaseSignalGb": 150
+  },
+  "markdownAssertionExclusions": {
+    "validatedEvidence.dependenciesToolConfirmed": "Internal validated-evidence boolean used by the executable test oracle; decision-rules.md asserts the evidence/validation contract generically rather than naming this boolean.",
+    "validatedEvidence.performanceMeasured": "Internal validated-evidence boolean used by the executable test oracle; decision-rules.md asserts the evidence/validation contract generically rather than naming this boolean.",
+    "validatedEvidence.regionAvailabilityConfirmed": "Internal validated-evidence boolean used by the executable test oracle; decision-rules.md asserts the evidence/validation contract generically rather than naming this boolean.",
+    "validatedEvidence.architectSignedOff": "Internal validated-evidence boolean used by the executable test oracle; decision-rules.md asserts the evidence/validation contract generically rather than naming this boolean.",
+    "sqlDatabaseTiers.generalPurposeSmallDatabaseSignalGb": "The executable oracle uses this numeric small-database signal from audited examples; decision-rules.md states the General Purpose small-size concept as \"size within GP limits\" rather than a numeric threshold."
+  }
 }

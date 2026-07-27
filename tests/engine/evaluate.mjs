@@ -24,6 +24,8 @@ const MI_LINK = RULES.miLink;
 const ARC_FLOORS = RULES.azureArcFloors;
 const SOURCE_FLOORS = RULES.sourceVersionFloors;
 const ARC_WIZARD = RULES.arcPortalWizard;
+const FABRIC_MIGRATION = RULES.fabricMigration;
+const SQL_DB_TIERS = RULES.sqlDatabaseTiers;
 const VALIDATED_EVIDENCE_KEYS = RULES.validatedEvidence.requiredBooleans;
 
 function textOf(value) {
@@ -87,17 +89,23 @@ function chooseMiTier(inputs, out) {
     addUnique(out.evidenceRequired, 'Perfmon/DMV baseline, wait stats, log rate, HA/read-scale requirement');
     return E.UNKNOWN;
   }
+  const dbCount = normalizedDatabaseCount(inputs);
+  if (dbCount && dbCount > MI_LINK.capacityLinks.generalPurpose && !p && !explicitTier) {
+    addUnique(out.unknowns, 'MI service tier for MI Link capacity');
+    addUnique(out.evidenceRequired, 'select or assess the MI service tier');
+    return E.UNKNOWN;
+  }
   return undefined;
 }
 function chooseSqlDbTier(inputs, out) {
   const p = String(inputs.performance || '').toLowerCase();
   const size = String(inputs.size || '').toLowerCase();
   const tenants = String(inputs.tenant_count || '').toLowerCase();
-  if (/>\s*4\s*tb|over 4 tb|multi-tb|multitb/.test(size)) return 'Hyperscale';
+  if (new RegExp(`>\\s*${SQL_DB_TIERS.hyperscaleSizeThresholdTb}\\s*tb|over ${SQL_DB_TIERS.hyperscaleSizeThresholdTb} tb|multi-tb|multitb`).test(size)) return 'Hyperscale';
   if (/intermittent|seasonal|idle|auto-pause|dev\/test/.test(p)) return 'Serverless';
   if (/many tenants|multi-tenant|variable demand|elastic/.test(tenants)) return 'Elastic Pool';
   if (/business critical|low-latency|low latency|high transaction log|strict sla|zone redundancy|read-scale|in-memory/.test(p)) return 'Business Critical';
-  if (/general purpose|moderate|cost-sensitive|steady/.test(p) || /150 gb|<\s*150 gb/.test(size)) return 'General Purpose';
+  if (/general purpose|moderate|cost-sensitive|steady/.test(p) || new RegExp(`${SQL_DB_TIERS.generalPurposeSmallDatabaseSignalGb} gb|<\\s*${SQL_DB_TIERS.generalPurposeSmallDatabaseSignalGb} gb`).test(size)) return 'General Purpose';
   if (/none\/unknown|not sure|unknown/.test(p) || /not sure|unknown/.test(size) || /not sure|unknown/.test(tenants)) {
     addUnique(out.unknowns, 'SQL DB tier-driving size/performance/tenancy inputs');
     addUnique(out.evidenceRequired, 'Performance baseline and tenancy profile');
@@ -117,7 +125,7 @@ function applyFabric(inputs, eligibility, out) {
   if (!mentionsGate) {
     eligibility.fabric_sql_db = E.UNKNOWN;
     addUnique(out.unknowns, 'Fabric Preview gates: DACPAC size, Private Link, gateway, preview acceptance');
-    addUnique(out.evidenceRequired, 'Confirm DACPAC <= 20 MB, no Private Link requirement, gateway acceptable, Preview acceptable');
+    addUnique(out.evidenceRequired, `Confirm DACPAC <= ${FABRIC_MIGRATION.maxDacpacMb} MB, no Private Link requirement, gateway acceptable, Preview acceptable`);
     return;
   }
   if (/private link required|requires private link|private link: required|private link yes/.test(fabricText)) {
@@ -125,9 +133,9 @@ function applyFabric(inputs, eligibility, out) {
     out.exclusions.fabric_sql_db = 'Fabric SQL database Preview has no Private Link/VNet gateway path.';
     return;
   }
-  if (/dacpac\s*>\s*20|>\s*20\s*mb|over 20\s*mb|>\s*4\s*tb/.test(fabricText)) {
+  if (new RegExp(`dacpac\\s*>\\s*${FABRIC_MIGRATION.maxDacpacMb}|>\\s*${FABRIC_MIGRATION.maxDacpacMb}\\s*mb|over ${FABRIC_MIGRATION.maxDacpacMb}\\s*mb|>\\s*${SQL_DB_TIERS.hyperscaleSizeThresholdTb}\\s*tb`).test(fabricText)) {
     eligibility.fabric_sql_db = E.UNSUPPORTED;
-    out.exclusions.fabric_sql_db = 'Fabric Migration Assistant requires DACPAC <= 20 MB.';
+    out.exclusions.fabric_sql_db = `Fabric Migration Assistant requires DACPAC <= ${FABRIC_MIGRATION.maxDacpacMb} MB.`;
     return;
   }
   if (/preview (not|no)|preview unacceptable|gateway (not|no)|cannot use on-prem data gateway/.test(fabricText)) {
@@ -135,7 +143,7 @@ function applyFabric(inputs, eligibility, out) {
     out.exclusions.fabric_sql_db = 'Fabric Preview acceptance and on-prem data gateway are mandatory.';
     return;
   }
-  if (/dacpac\s*(<=|≤|under|=)\s*20|no private link|gateway acceptable|preview accepted/.test(fabricText)) eligibility.fabric_sql_db = E.ELIGIBLE;
+  if (new RegExp(`dacpac\\s*(<=|≤|under|=)\\s*${FABRIC_MIGRATION.maxDacpacMb}|no private link|gateway acceptable|preview accepted`).test(fabricText)) eligibility.fabric_sql_db = E.ELIGIBLE;
   else eligibility.fabric_sql_db = E.UNKNOWN;
 }
 function applyFeatureEligibility(inputs, eligibility, out) {
@@ -200,13 +208,17 @@ function chooseTarget(inputs, eligibility, out) {
   if (eligibility.sql_mi === E.UNKNOWN || eligibility.sql_db === E.UNKNOWN) return ['provisional shortlist only', 'Assessment and dependency discovery first'];
   if (eligibility.sql_mi === E.UNSUPPORTED && eligibility.sql_db === E.UNSUPPORTED) return ['SQL Server on Azure VM', chooseVmMethod(inputs)];
   if (eligibility.sql_vm === E.ELIGIBLE && (eligibility.sql_mi === E.UNSUPPORTED || eligibility.sql_db === E.UNSUPPORTED) && has(inputs.management_model, 'need OS')) return ['SQL Server on Azure VM', chooseVmMethod(inputs)];
-  if (any(inputs.network_ports, 'limited WAN') && any(inputs.size, '> 4 TB', 'multi-TB', 'multitb')) return ['Azure SQL Managed Instance or Azure SQL Database', 'Data Box seed → sync delta'];
+  if (any(inputs.network_ports, 'limited WAN') && any(inputs.size, `> ${SQL_DB_TIERS.hyperscaleSizeThresholdTb} TB`, 'multi-TB', 'multitb')) return ['Azure SQL Managed Instance or Azure SQL Database', 'Data Box seed → sync delta'];
   if (any(inputs.size, 'estate scale', 'business case', 'dependency map')) return ['Azure Migrate discovery first', 'Azure Migrate appliance/import/Arc discovery'];
   if (dep(inputs, 'TDE')) return ['Azure SQL Managed Instance', 'Native backup/restore'];
+  if ((has(inputs.downtime, 'near-zero') || has(inputs.downtime, 'minimal'))
+    && lrsSourceUnsupported(inputs)
+    && !portsOpenForMiLink(inputs)
+    && eligibility.sql_db !== E.UNSUPPORTED) return ['Azure SQL Database', chooseSqlDbMethod(inputs)];
   if (dep(inputs, 'SQL Agent') || dep(inputs, 'linked servers') || dep(inputs, 'homogeneous') || dep(inputs, 'PolyBase/cloud files') || dep(inputs, 'SQL CLR') || dep(inputs, 'Service Broker') || dep(inputs, 'cross-DB')) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
   if (isManagedCloudSqlSource(inputs) && has(inputs.downtime, 'near-zero')) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
   if (has(inputs.source_version, String(SOURCE_FLOORS.standaloneLrs.sqlServerMin))) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
-  if (has(inputs.driver, 'app modernization') || eligibility.fabric_sql_db === E.UNSUPPORTED || any(inputs.size, '> 4 TB', '150 GB') || any(inputs.performance, 'intermittent', 'strict SLA', 'transaction log') || any(inputs.tenant_count, 'many tenants')) return ['Azure SQL Database', chooseSqlDbMethod(inputs)];
+  if (has(inputs.driver, 'app modernization') || eligibility.fabric_sql_db === E.UNSUPPORTED || any(inputs.size, `> ${SQL_DB_TIERS.hyperscaleSizeThresholdTb} TB`, `${SQL_DB_TIERS.generalPurposeSmallDatabaseSignalGb} GB`) || any(inputs.performance, 'intermittent', 'strict SLA', 'transaction log') || any(inputs.tenant_count, 'many tenants')) return ['Azure SQL Database', chooseSqlDbMethod(inputs)];
   if (has(inputs.downtime, 'near-zero') || has(inputs.downtime, 'minimal')) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
   return ['Azure SQL Database', chooseSqlDbMethod(inputs)];
 }
@@ -217,13 +229,14 @@ function chooseVmMethod(inputs) {
 }
 function chooseSqlDbMethod(inputs) {
   if (has(inputs.downtime, 'minimal') || has(inputs.downtime, 'near-zero')) return 'Transactional replication';
-  if (any(inputs.size, '< 150 GB', 'small')) return 'BACPAC/SqlPackage';
+  if (any(inputs.size, `< ${SQL_DB_TIERS.generalPurposeSmallDatabaseSignalGb} GB`, 'small')) return 'BACPAC/SqlPackage';
   return 'modern DMS (offline)';
 }
 function miLinkCapacityForTier(tier) {
   if (/next-gen|next gen/i.test(String(tier || ''))) return MI_LINK.capacityLinks.nextGenGeneralPurpose;
   if (/business critical/i.test(String(tier || ''))) return MI_LINK.capacityLinks.businessCritical;
-  return MI_LINK.capacityLinks.generalPurpose;
+  if (/general purpose/i.test(String(tier || ''))) return MI_LINK.capacityLinks.generalPurpose;
+  return undefined;
 }
 function normalizedDatabaseCount(inputs) {
   const count = Number(inputs.database_count);
@@ -239,11 +252,21 @@ function versionAtLeast(actual, required) {
   }
   return true;
 }
+function lrsSourceUnsupported(inputs) {
+  const v = versionNumber(inputs.source_version);
+  return !!v && (v < SOURCE_FLOORS.standaloneLrs.sqlServerMin || v > SOURCE_FLOORS.standaloneLrs.sqlServerMax);
+}
 function applyArcWizardBatchLimit(inputs, out) {
   const selected = Number(inputs.migration_batch_size);
   if (!Number.isFinite(selected) || selected <= 0) return;
   const extension = inputs.arc_extension_version;
-  const limit = !extension || versionAtLeast(extension, ARC_WIZARD.extensionMinVersionForBatchLimit)
+  if (!extension && selected > ARC_WIZARD.batchLimitBeforeExtension) {
+    out.arcWizardBatchEligibility = E.UNKNOWN;
+    addUnique(out.unknowns, 'Azure Extension for SQL Server version for Arc portal wizard batch limit');
+    addUnique(out.evidenceRequired, 'verify Azure Extension for SQL Server version');
+    return;
+  }
+  const limit = versionAtLeast(extension, ARC_WIZARD.extensionMinVersionForBatchLimit)
     ? ARC_WIZARD.batchLimitAtOrAboveExtension
     : ARC_WIZARD.batchLimitBeforeExtension;
   if (selected > limit) out.exclusions.arc_wizard_batch = `Arc portal wizard batch limit ${limit} databases exceeded by ${selected} selected databases.`;
@@ -253,12 +276,16 @@ function chooseMiMethod(inputs, out) {
   const targetTier = chooseMiTier(inputs, { unknowns: [], evidenceRequired: [] });
   const dbCount = normalizedDatabaseCount(inputs);
   const cap = miLinkCapacityForTier(targetTier);
-  if (dbCount && dbCount > cap) {
+  if (dbCount && !cap && dbCount > MI_LINK.capacityLinks.generalPurpose) {
+    out.capacityEligibility = E.UNKNOWN;
+    addUnique(out.unknowns, 'MI Link capacity depends on selected MI service tier');
+    addUnique(out.evidenceRequired, 'select or assess the MI service tier');
+  } else if (dbCount && cap && dbCount > cap) {
     out.exclusions.mi_link = `MI Link capacity ${cap} links exceeded by ${dbCount} databases.`;
   }
   applyArcWizardBatchLimit(inputs, out);
   if (has(inputs.downtime, 'near-zero') || has(inputs.downtime, 'minimal')) {
-    if (!isManagedCloudSqlSource(inputs) && v >= SOURCE_FLOORS.miLink.sqlServerMin && portsOpenForMiLink(inputs) && (!dbCount || dbCount <= cap)) return 'MI Link';
+    if (!isManagedCloudSqlSource(inputs) && v >= SOURCE_FLOORS.miLink.sqlServerMin && portsOpenForMiLink(inputs) && (!dbCount || (cap && dbCount <= cap) || (!cap && dbCount <= MI_LINK.capacityLinks.generalPurpose) || out.capacityEligibility === E.UNKNOWN)) return 'MI Link';
     return 'LRS';
   }
   if (has(inputs.downtime, 'offline')) return dep(inputs, 'TDE') ? 'Native backup/restore' : 'LRS';
@@ -275,7 +302,7 @@ function applyMethodGates(inputs, target, method, eligibility, out) {
         out.exclusions.mi_link = `MI Link requires ${p.sqlServerEndpoint} and ${p.managedInstanceHadrRange.start}-${p.managedInstanceHadrRange.end} in the documented directions.`;
       }
     }
-    if (method === 'LRS' && v && v < SOURCE_FLOORS.standaloneLrs.sqlServerMin) {
+    if (method === 'LRS' && v && (v < SOURCE_FLOORS.standaloneLrs.sqlServerMin || v > SOURCE_FLOORS.standaloneLrs.sqlServerMax)) {
       eligibility.sql_mi = E.UNSUPPORTED;
       addUnique(out.hardBlockers, `Standalone LRS supports SQL Server ${SOURCE_FLOORS.standaloneLrs.sqlServerMin}-${SOURCE_FLOORS.standaloneLrs.sqlServerMax}.`);
     }

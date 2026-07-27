@@ -1889,8 +1889,7 @@
       "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
       "size": "Next-gen General Purpose estate",
       "performance": "moderate latency/IO; cost-sensitive; Next-gen General Purpose",
-      "database_count": 200,
-      "migration_batch_size": 12
+      "database_count": 200
     },
     "expect": {
       "eligibility": {
@@ -1910,8 +1909,7 @@
       "businessCutoverDowntime": "<1min",
       "recommendationStatus": "provisional",
       "confidence": "medium",
-      "mustNotRecommend": [],
-      "exclusions.arc_wizard_batch": "Arc portal wizard batch limit 10 databases exceeded by 12 selected databases."
+      "mustNotRecommend": []
     },
     "assertRulePresent": [
       "Up to \\*\\*100 links\\*\\*[\\s\\S]*?\\*\\*500 links\\*\\*",
@@ -2212,5 +2210,210 @@
       "One link = one database"
     ],
     "auditRef": "audit-normalized-database-count-120"
+  },
+  {
+    "id": "sql2025-mi-link-blocked-must-not-fall-to-lrs",
+    "title": "SQL 2025 with MI Link blocked must not fall back to standalone LRS",
+    "why": "Audit P1: standalone LRS is only declared for SQL Server 2008-2022, so SQL 2025 must not silently get LRS when MI Link is blocked.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2025",
+      "downtime": "minimal",
+      "network_ports": "5022 blocked",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "SQL Agent"
+      ]
+    },
+    "expect": {
+      "eligibility": {
+        "sql_db": "eligible_with_remediation"
+      },
+      "primary_target": "Azure SQL Database",
+      "method": "Transactional replication",
+      "targetAvailabilityDuringSync": "read-write",
+      "businessCutoverDowntime": "near-zero",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": [
+        "LRS",
+        "MI Link"
+      ]
+    },
+    "assertRulePresent": [
+      "Standalone LRS[\\s\\S]*?SQL Server \\*\\*2008–2022\\*\\*",
+      "If \\*\\*5022\\*\\* or \\*\\*11000–11999\\*\\* cannot be opened[\\s\\S]*?fall back to LRS",
+      "publisher SQL Server \\*\\*2016 and later\\*\\*, including SQL Server 2022 and 2025"
+    ],
+    "auditRef": "P1-1"
+  },
+  {
+    "id": "unknown-mi-tier-120-databases-capacity-assessment",
+    "title": "Unknown MI tier with 120 databases requires MI Link capacity assessment",
+    "why": "Audit P1: unknown MI tier must not default to General Purpose capacity and rule out MI Link.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2019",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "SQL Agent"
+      ],
+      "downtime": "minimal",
+      "network_ports": "5022 open and 11000-11999 open",
+      "database_count": 120,
+      "performance": null
+    },
+    "expect": {
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "MI Link",
+      "tier": "unknown_requires_assessment",
+      "capacityEligibility": "unknown_requires_assessment",
+      "targetAvailabilityDuringSync": "read-only",
+      "businessCutoverDowntime": "<1min",
+      "recommendationStatus": "provisional",
+      "confidence": "low",
+      "mustNotRecommend": []
+    },
+    "assertRulePresent": [
+      "Up to \\*\\*100 links\\*\\* on MI General Purpose",
+      "up to \\*\\*500 links\\*\\* on Next-gen General Purpose",
+      "Tier-driving inputs unknown[\\s\\S]*?`unknown_requires_assessment`"
+    ],
+    "auditRef": "P1-4a"
+  },
+  {
+    "id": "missing-arc-extension-version-batch-size-requires-verification",
+    "title": "Missing Arc extension version with multi-database batch requires verification",
+    "why": "Audit P1: absent arc_extension_version must not silently assume the modern ten-database portal wizard limit.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2019",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "SQL Agent"
+      ],
+      "downtime": "minimal",
+      "network_ports": "5022 open and 11000-11999 open",
+      "migration_batch_size": 5,
+      "performance": "general purpose"
+    },
+    "expect": {
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "MI Link",
+      "arcWizardBatchEligibility": "unknown_requires_assessment",
+      "targetAvailabilityDuringSync": "read-only",
+      "businessCutoverDowntime": "<1min",
+      "recommendationStatus": "provisional",
+      "confidence": "low",
+      "mustNotRecommend": [
+        "validated recommendation"
+      ]
+    },
+    "assertRulePresent": [
+      "up to \\*\\*10 databases\\*\\* per batch with Azure Extension for SQL Server \\*\\*1.1.3348.364\\+\\*\\*",
+      "earlier extension versions select one database at a time",
+      "Never turn an unknown into a silent safe default"
+    ],
+    "auditRef": "P1-4b"
+  },
+  {
+    "id": "distribution-sql-vm-os-control-native-restore",
+    "title": "Need OS control routes to SQL Server on Azure VM",
+    "why": "Distribution guard: keeps compatibility/OS-control branch covered while new P1 scenarios add PaaS cases.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2019",
+      "management_model": "need OS/file-system access and third-party agents",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "offline"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_mi": "unsupported",
+        "sql_db": "unsupported",
+        "sql_vm": "eligible"
+      },
+      "primary_target": "SQL Server on Azure VM",
+      "method": "Native backup/restore",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "Need OS/file-system/exact engine control/third-party agents[\\s\\S]*?`unsupported`[\\s\\S]*?`unsupported`[\\s\\S]*?`eligible`",
+      "Target SQL VM, AVS, or full DIY container"
+    ],
+    "auditRef": "distribution-1"
+  },
+  {
+    "id": "distribution-kubernetes-engine-model-unknown",
+    "title": "Kubernetes engine model unknown requires clarification",
+    "why": "Distribution guard: covers no-silent-default behavior for Arc SQL MI versus DIY container.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2022",
+      "management_model": "Kubernetes",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "offline"
+    },
+    "expect": {
+      "eligibility": {
+        "arc_sql_mi": "unknown_requires_assessment",
+        "container": "unknown_requires_assessment"
+      },
+      "primary_target": "provisional shortlist only",
+      "method": "Clarify Kubernetes engine model first",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "recommendationStatus": "provisional",
+      "confidence": "low"
+    },
+    "assertRulePresent": [
+      "Kubernetes/edge/sovereign",
+      "full DIY container",
+      "Never turn an unknown into a silent safe default"
+    ],
+    "auditRef": "distribution-2"
+  },
+  {
+    "id": "distribution-arc-assessment-old-source-falls-to-vm-assessment",
+    "title": "Arc assessment intent below Arc floor falls to VM assessment",
+    "why": "Distribution guard: covers Arc assessment floor and fallback branch.",
+    "inputs": {
+      "intent": "assessment-only",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2012",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "offline"
+    },
+    "expect": {
+      "eligibility": {
+        "arc_in_place": "unsupported"
+      },
+      "primary_target": "SQL Server on Azure VM",
+      "method": "Standalone assessment / native backup/restore",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "recommendationStatus": "provisional",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "Arc-enabled SQL Server overall migration experience:[\\s\\S]*?SQL Server \\*\\*2014\\+\\*\\*",
+      "Not a runtime migration target"
+    ],
+    "auditRef": "distribution-3"
   }
 ]
