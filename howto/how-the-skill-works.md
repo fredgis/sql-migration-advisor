@@ -68,24 +68,56 @@ evidence gap.
 
 **Tier 1 — Triage** (13 questions, plus 3 conditional unlocks)
 
-| # | Question | Answer options | What it drives |
+The middle column is the question **as the agent actually asks it**.
+
+| # | The agent asks | Answer options | What it drives |
 | --- | --- | --- | --- |
-| 1 | **Scope** — how big is this migration? | Single DB · A few (2–10) · Large estate (10+) | Large estate ⇒ Azure Migrate discovery + `Az.DataMigration`, then profile representative groups |
-| 2 | **Source location** — where does SQL Server run today? | On-prem · AWS EC2 · AWS RDS · GCP Compute Engine · GCP Cloud SQL | Managed sources ⇒ MI Link and transactional replication are out |
-| 3 | **Source version** | 2008/R2 · 2012 · 2014 · 2016 · 2017/2019 · 2022 · 2025 | MI Link, LRS, native restore, replication, Arc portal, ESU |
-| 4 | **Migration intent / readiness** | Move now · Modernize in place (assess first) · Assessment only · Rehost first, modernize later | Unlocks the **Arc in-place** control-plane path |
-| 5 | **Primary driver** | End-of-support/ESU · Cost · App modernization · Data-center exit · Analytics/Fabric · Sovereignty/edge | Target bias and the Fabric branch |
-| 6 | **Management model** | Fully managed PaaS · OS/engine control · Kubernetes on-prem/edge | PaaS vs IaaS vs Kubernetes family |
-| 6a | ↳ **Kubernetes engine model** *(only if Q6 = Kubernetes)* | Managed engine (Arc data controller) · Full DIY container | **Arc-enabled SQL MI vs container** |
-| 7 | **Feature dependencies** *(multi-select)* | FILESTREAM/FileTable · PolyBase · DTC · Cross-DB queries · SQL CLR · Linked servers · SQL Agent · Service Broker · None · Not sure | Phase A eligibility |
-| 7a | ↳ **PolyBase qualifier** *(only if PolyBase)* | Cloud files only (Blob/ADLS, Parquet/CSV) · External RDBMS connector · S3/Delta/pushdown · Not sure | Cloud-files ⇒ **MI stays eligible**; external RDBMS ⇒ MI out |
-| 7b | ↳ **DTC qualifier** *(only if DTC)* | SQL-to-SQL only (MI↔MI, MI↔SQL Server) · Heterogeneous/third-party RDBMS · Not sure | SQL-to-SQL ⇒ **MI stays eligible**; heterogeneous ⇒ MI out |
-| 8 | **Largest database size** | < 150 GB · 150 GB – 4 TB · > 4 TB · Not sure | Hyperscale gate, backup caps, seed-then-sync |
-| 9 | **Downtime tolerance** | Near-zero · Minimal · Offline window · Not sure | Method selection and downtime class |
-| 10 | **Network path and ports** | Good ExpressRoute · Limited WAN · Multi-TB move · 5022 blocked · 1433/443 blocked · Not sure | MI Link viability, Data Box seeding |
-| 11 | **Compliance / sovereignty** | Standard commercial · EU data boundary · Government/sovereign · Edge/air-gapped · Not sure | Biases SQL VM, AVS, Arc-enabled SQL MI |
-| 12 | **Ancillary services and security** *(multi-select)* | SSIS · SSRS · SSAS · TDE-encrypted DBs · Many SQL Agent jobs · Windows logins · None · Not sure | Blockers and remediations |
-| 13 | **Tier-selection inputs** *(asked when MI or SQL DB is still eligible)* | Low-latency writes · High IOPS/log throughput · Strict SLA/zone redundancy · Read-scale replicas · Intermittent usage · Many tenants · None/unknown | GP vs Business Critical vs Hyperscale vs Serverless vs Elastic Pool |
+| 1 | *"How big is this migration?"* | Single database · A few databases (2–10) · Large estate (10+ servers/DBs) | Large estate ⇒ Azure Migrate discovery + `Az.DataMigration`, then profile representative groups |
+| 2 | *"Where does the source SQL Server run today?"* | On-prem · AWS EC2 · AWS RDS for SQL Server · GCP Compute Engine · GCP Cloud SQL | Managed sources ⇒ MI Link and transactional replication are out |
+| 3 | *"Which SQL Server version is the source?"* | 2008/2008 R2 · 2012 · 2014 · 2016 · 2017/2019 · 2022 · 2025 | MI Link, LRS, native restore, replication, Arc portal, ESU |
+| 4 | *"What outcome do you need now?"* | Move to Azure now · Modernize in place / not ready yet (assess first) · Assessment only · Rehost first, modernize later | Unlocks the **Arc in-place** control-plane path |
+| 5 | *"What is the main reason to migrate now?"* | End-of-support / ESU pressure · Cost optimization · App modernization · Data-center exit (VMware) · Analytics / Fabric unification · Sovereignty / edge | Target bias and the Fabric branch |
+| 6 | *"How much control do you need over the engine and OS?"* | Fully managed PaaS · Need OS / file-system / engine control · Need Kubernetes on-prem / edge / multi-cloud | PaaS vs IaaS vs Kubernetes family |
+| 6a | ↳ *"Do you want Microsoft to run the engine on your cluster, or do you want to own it end to end?"* *(only if Q6 = Kubernetes)* | Managed engine (Arc data controller: auto patch/backup/HA) · Full DIY container (we own HA/patch/backup) | **Arc-enabled SQL MI vs container** |
+| 7 | *"Does the workload use any of these?"* *(multi-select)* | FILESTREAM / FileTable · PolyBase · DTC / distributed transactions · Cross-DB queries · SQL CLR · Linked servers · SQL Agent jobs · Service Broker · None · Not sure | Phase A eligibility |
+| 7a | ↳ *"What does PolyBase actually query — files in Azure/cloud storage, or an external database like Oracle or Teradata?"* *(only if PolyBase)* | Cloud files only (Blob/ADLS Gen2, Parquet/CSV) · External RDBMS connector · S3 / Delta / pushdown required · Not sure | Cloud files ⇒ **SQL MI stays eligible**; external RDBMS ⇒ MI out |
+| 7b | ↳ *"Are those distributed transactions only between SQL Servers, or do they span a non-SQL database?"* *(only if DTC)* | SQL-to-SQL only (MI↔MI or MI↔SQL Server) · Heterogeneous / third-party RDBMS · Not sure | SQL-to-SQL ⇒ **SQL MI stays eligible**; heterogeneous ⇒ MI out |
+| 8 | *"How large is the biggest database?"* | < 150 GB · 150 GB – 4 TB · > 4 TB · Not sure | Hyperscale gate, backup size caps, seed-then-sync |
+| 9 | *"How much cutover downtime can the business accept?"* | Near-zero (minutes) · Minimal (tens of minutes to a couple of hours) · Offline planned window · Not sure | Method selection and downtime class |
+| 10 | *"What is the network path to Azure, and can the required ports be opened?"* | Good ExpressRoute / high bandwidth · Limited WAN · Very large multi-TB move · 5022 blocked · 1433/443 blocked or unknown · Not sure | MI Link viability, Data Box seeding |
+| 11 | *"Any data residency, sovereign, or edge constraints?"* | Standard commercial · EU data boundary · Government / sovereign · Edge / air-gapped · Not sure | Biases SQL VM, AVS, Arc-enabled SQL MI |
+| 12 | *"Anything around the database to bring along?"* *(multi-select)* | SSIS packages · SSRS reports · SSAS models · TDE-encrypted DBs · Many SQL Agent jobs · Windows logins · None · Not sure | Blockers and remediations |
+| 13 | *"Any tier drivers?"* *(asked when SQL MI or SQL DB is still eligible)* | Low-latency writes · High IOPS / log throughput · Strict SLA / zone redundancy · Read-scale replicas · Intermittent usage · Many tenants / variable demand · None or unknown | GP vs Business Critical vs Hyperscale vs Serverless vs Elastic Pool |
+
+<details>
+<summary><b>What a real exchange looks like</b></summary>
+
+> **Agent** — How big is this migration?<br />
+> **User** — A few databases, maybe 6.
+>
+> **Agent** — Where does the source SQL Server run today?<br />
+> **User** — AWS RDS for SQL Server.
+>
+> *(the agent notes: managed source ⇒ MI Link and transactional replication are already out)*
+>
+> **Agent** — Which SQL Server version is the source?<br />
+> **User** — 2019.
+>
+> **Agent** — Does the workload use any of these? FILESTREAM/FileTable, PolyBase, DTC, cross-DB queries, SQL CLR, linked servers, SQL Agent jobs, Service Broker…<br />
+> **User** — SQL Agent jobs, and we do use distributed transactions.
+>
+> **Agent** — Are those distributed transactions only between SQL Servers, or do they span a non-SQL database?<br />
+> **User** — Only SQL to SQL.
+>
+> *(SQL MI stays eligible — this is exactly the question that used to be missing, and its absence wrongly eliminated SQL MI)*
+>
+> **Agent** — How much cutover downtime can the business accept?<br />
+> **User** — A couple of hours is fine.
+
+From here the agent has enough for a **provisional** recommendation, and only asks the Tier 2 questions
+that could still change it.
+
+</details>
 
 **Tier 2 — Confirmation** (asked only when it can still change the answer)
 

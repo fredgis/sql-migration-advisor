@@ -90,7 +90,7 @@ Ask one at a time. “Not sure” is allowed, but decision-driving unknowns must
    - `Fully managed PaaS` · `Need OS / file-system / engine control` · `Need Kubernetes on-prem / edge / multi-cloud`
    - If Kubernetes/edge: ask unlock question **6a**.
 
-6a. **Kubernetes engine model** — only if Q6 = Kubernetes/edge:
+6a. **Kubernetes engine model** — only if Q6 = Kubernetes/edge — “Do you want Microsoft to run the engine on your cluster, or do you want to own it end to end?”
    - `Managed engine (Arc data controller: auto patch/backup/HA)` · `Full DIY container (we own HA/patch/backup)`
    - Decides Arc-enabled SQL MI vs SQL Server container.
 
@@ -98,10 +98,10 @@ Ask one at a time. “Not sure” is allowed, but decision-driving unknowns must
    - `FILESTREAM / FileTable` · `PolyBase` · `DTC / distributed transactions` · `Cross-DB queries` · `SQL CLR` · `Linked servers` · `SQL Agent jobs` · `Service Broker` · `None` · `Not sure`
    - If PolyBase: ask **7a**. If DTC: ask **7b**. If CLR is selected or unknown and MI/SQL DB remain candidates, ask Tier 2 CLR permission set.
 
-7a. **PolyBase qualifier** — only if PolyBase is used:
+7a. **PolyBase qualifier** — only if PolyBase is used — “What does PolyBase actually query — files in Azure/cloud storage, or an external database like Oracle or Teradata?”
    - `Cloud files only (Blob/ADLS Gen2 Parquet/CSV)` · `External RDBMS connector` · `S3 / Delta / pushdown required` · `Not sure`
 
-7b. **DTC qualifier** — only if DTC/distributed transactions are used:
+7b. **DTC qualifier** — only if DTC/distributed transactions are used — “Are those distributed transactions only between SQL Servers, or do they span a non-SQL database?”
    - `SQL-to-SQL only (MI↔MI or MI↔SQL Server)` · `Heterogeneous / third-party RDBMS` · `Not sure`
 
 8. **Largest DB size** — “How large is the biggest database?”
