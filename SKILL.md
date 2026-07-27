@@ -144,6 +144,27 @@ Ask only questions that can change candidates still in play, or when the user wa
 | Software Assurance / AHB entitlement | SQL DB/MI/VM cost comparison | cost lever eligibility |
 | Maintenance/patching restrictions | VM/AVS/container vs managed PaaS | operational burden and target ranking |
 
+### Structured inputs (capture as typed values, never as prose)
+
+These four are **not** free-text answers. Record them as typed values, because rules read them directly and
+a wrong guess silently changes the recommendation.
+
+| Field | Ask when | Type | Consumed by |
+| --- | --- | --- | --- |
+| `database_count` | more than one database is in scope | integer | MI Link capacity (100 General Purpose / Business Critical, 500 Next-gen General Purpose) and the estate-discovery branch. Never infer it from a free-text size answer. |
+| `migration_batch_size` | the Azure Arc portal migration is being used | integer | Arc wizard per-batch limit — a different limit from MI Link capacity |
+| `arc_extension_version` | the Azure Arc portal migration is being used | version string, e.g. `1.1.3348.364` | Gates the Arc wizard batch limit. **Unknown is not treated as recent** — it yields `unknown_requires_assessment`. |
+| `evidence` | the user wants a **validated** (not provisional) recommendation | four booleans: `dependenciesToolConfirmed`, `performanceMeasured`, `regionAvailabilityConfirmed`, `architectSignedOff` | `recommendationStatus` and `confidence`. All four must be `true` for `validated`; free text mentioning these phrases never substitutes for the typed values. |
+
+### Never contradict your own eligibility result
+
+The recommended target and method must agree with the eligibility table produced in the same run:
+
+- The primary target must be `eligible` or `eligible_with_remediation` — **never** one just marked `unsupported`.
+- The method must be viable for that target and pass its own gates (source-version range, ports, source type, capacity).
+- If nothing survives with a viable method, return a **provisional shortlist** with the exclusion reasons and the assessment to run next. Do not invent a fallback.
+- Worked case: a SQL Server **2025** source with MI Link blocked and Azure SQL Database incompatible ⇒ LRS is **not** legal (standalone LRS covers 2008–2022), so answer **SQL Server on Azure VM** or a provisional shortlist — never "SQL MI via LRS".
+
 ## Uncertainty and confidence model
 
 Decision-driving unknowns are: linked servers, SQL Agent, FILESTREAM/FileTable, PolyBase kind, DTC kind, CLR permission set, TDE, largest DB size, downtime tolerance, source location, source version, and source permissions for MI Link.

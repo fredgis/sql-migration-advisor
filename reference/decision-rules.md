@@ -30,9 +30,26 @@ Normalize questionnaire/free-form answers into these fields before filtering:
 | `kubernetes_model` | managed engine via Arc data controller · full DIY container · unknown |
 | `feature_dependencies` | FILESTREAM/FileTable · PolyBase/cloud files · PolyBase/external RDBMS · PolyBase/unknown · homogeneous SQL↔SQL DTC · heterogeneous DTC · DTC/unknown · linked servers · SQL Agent · SQL CLR · Service Broker · cross-DB queries |
 | `fabric_constraints` | DACPAC size, Private Link need, on-prem gateway acceptable, preview acceptable |
+| `database_count` | integer — total databases in scope. Drives MI Link capacity (100 GP/BC, 500 Next-gen GP) and the estate-discovery branch. Never inferred from free-text size. |
+| `migration_batch_size` | integer — databases selected per Azure Arc portal migration batch. Checked against the Arc wizard limit, not against MI Link capacity. |
+| `arc_extension_version` | Azure Extension for SQL Server version (e.g. `1.1.3348.364`). Gates the Arc wizard batch limit; **unknown is not treated as recent** — it yields `unknown_requires_assessment`. |
+| `evidence` | typed booleans: `dependenciesToolConfirmed` · `performanceMeasured` · `regionAvailabilityConfirmed` · `architectSignedOff`. All four `true` are required for `validated`; free text never substitutes. |
 | `downtime`, `network_ports`, `size`, `tenant_count`, `performance`, `compliance` | used in Steps B→D; engine outputs include `targetAvailabilityDuringSync` and `businessCutoverDowntime` |
 
 If a selected feature lacks a subtype needed for a hard rule (for example `PolyBase` with no source type, or `DTC` with no participant type), mark the affected candidate `unknown_requires_assessment`; do **not** silently pick the safer target.
+
+**Output consistency rule (must always hold).** The recommended target and method must never contradict the
+eligibility table the engine just produced:
+- The `primaryTarget` must be `eligible` or `eligible_with_remediation`. Never recommend a target that the
+  same run marked `unsupported`.
+- The chosen `method` must be viable for that target *and* satisfy its own gates (source version range,
+  ports, source type, capacity). A method whose gates fail is not selectable, even as a fallback.
+- If no target survives with a viable method, do **not** invent one: return a **provisional shortlist**
+  with `recommendationStatus: provisional`, the reason each candidate was excluded, and the assessment to
+  run next.
+- Worked case: SQL Server **2025** source, MI Link blocked (ports or prerequisites) and Azure SQL Database
+  incompatible ⇒ LRS is **not** a legal fallback (standalone LRS supports 2008–2022 only), so the answer is
+  **SQL Server on Azure VM** — or a provisional shortlist — never "Azure SQL MI via LRS".
 
 ### A1. Candidate target eligibility states
 
