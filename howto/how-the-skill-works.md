@@ -274,10 +274,18 @@ API key** (key auth is disabled on the deployment) and **no stored client secret
 credential on the app registration, scoped to this repository.
 
 The review runs at **`xhigh` reasoning effort**: it is a weekly, whole-corpus pass over the knowledge base
-*and* the decision tree, which is exactly the case that justifies the deepest reasoning available. A real run
-spends around 12,000 reasoning tokens, so `max_output_tokens` is set to 24,000 — reasoning tokens are billed
-against that budget, and a smaller one truncates the verdict. Both are overridable via `AI_REASONING_EFFORT`
-and `AI_MAX_OUTPUT_TOKENS`.
+*and* the decision tree, which is exactly the case that justifies the deepest reasoning available. Reasoning
+tokens are billed against `max_output_tokens`, and a 30-day news window already spends around 18,000 of them,
+so the budget is 32,000 — a response that comes back `incomplete` is discarded rather than half-parsed, since
+the JSON contract is all-or-nothing. Both knobs are overridable via `AI_REASONING_EFFORT` and
+`AI_MAX_OUTPUT_TOKENS`.
+
+The prompt is written for a reasoning model rather than a chat model: it states the task first, then what
+counts as evidence, then an explicit *precision beats recall* bar — **every finding must carry a Microsoft
+source URL**, and style, wording and structure observations are out of scope. The model answers with a
+structured `findings[]` array (file, locator, current text, correction, why, source, confidence, affected
+claim), which `decide.mjs` renders directly into the issue or PR body. That shape is what makes a finding
+reviewable: a human can check the cited source without reconstructing what the model meant.
 
 Five repository secrets carry the coordinates, so nothing about the tenant, subscription, application or
 resource appears in this public repo:

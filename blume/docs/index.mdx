@@ -179,10 +179,13 @@ changes were actually applied; otherwise the run is housekeeping or report-only.
 routine, reviewable event.
 
 The review runs on an **Azure AI Foundry** model deployment, at the deepest reasoning setting available —
-it is a whole-corpus pass over both the knowledge base and the decision tree. Authentication is Entra ID
-through **GitHub OIDC**: no API key, no stored client secret, just a federated credential scoped to this
-repository. If the model is unavailable, the step is skipped and every deterministic check still runs: an
-advisory verdict can never, on its own, change a version.
+it is a whole-corpus pass over both the knowledge base and the decision tree. The prompt holds it to
+*precision beats recall*: a finding without a Microsoft source URL is not reported, and it answers with
+structured findings — file, locator, current text, correction, source, confidence — so a reviewer can check
+the cited page instead of guessing what was meant. Authentication is Entra ID through **GitHub OIDC**: no
+API key, no stored client secret, just a federated credential scoped to this repository. If the model is
+unavailable, the step is skipped and every deterministic check still runs: an advisory verdict can never,
+on its own, change a version.
 
 ---
 

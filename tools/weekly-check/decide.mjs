@@ -152,7 +152,26 @@ const versionStatement = substantiveApplied
   ? `Version bump: **yes** (${bump}), because substantive content diffs were applied before metadata changes.`
   : 'Version bump: **no**. A model verdict, broken links, or claim drift alone cannot increment the version; substantive content must first be edited and consistency tests must pass.';
 
-const body = `## 🔄 Weekly knowledge-base freshness check
+// GitHub rejects an issue or PR body over 65536 characters, and a wide news window alone can
+// exceed that. The decision and the proposed edits must always survive, so the bulky appended
+// reports are clipped to whatever budget is left — full copies stay in the run's job summary.
+const BODY_LIMIT = 65536;
+const SAFETY_MARGIN = 512;
+const runUrl = process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY && process.env.GITHUB_RUN_ID
+  ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
+  : '';
+const seeFull = runUrl ? ` See the [full report in the run summary](${runUrl}).` : ' The full report is in the run summary.';
+
+function clip(text, budget) {
+  if (text.length <= budget) return text;
+  const note = `\n\n_… clipped: ${text.length - budget} more characters.${seeFull}_`;
+  const keep = Math.max(0, budget - note.length);
+  const cut = text.slice(0, keep);
+  const lastBreak = cut.lastIndexOf('\n');
+  return (lastBreak > keep * 0.5 ? cut.slice(0, lastBreak) : cut) + note;
+}
+
+const render = (attachments) => `## 🔄 Weekly knowledge-base freshness check
 
 This was prepared automatically by the weekly check workflow.
 
@@ -169,27 +188,50 @@ ${reported}
 ${aiSuggestions || '_None proposed by the automated review. Confirm the news and reports below do not require content changes._'}
 
 ### 🧾 Claims/source drift report
-${read('claims-report.md', '_No claims report produced._')}
+${attachments.claims}
 
 ### 📰 Watched news
-${read('news.md', '_No news file._')}
+${attachments.news}
 
 > News feeds surface announcements; the claims registry separately detects silent Microsoft Learn/source-section edits by content hash.
 
 ### 🔗 Link classification
-${read('link-summary.md', '_No link classification produced._')}
+${attachments.links}
 
 <details><summary>Raw lychee report</summary>
 
-${read('lychee-report.md', '_No link report produced._')}
+${attachments.lychee}
 
 </details>
 
 ---
 _Automated by \`.github/workflows/weekly-kb-check.yml\`. Human review is required for any reported substantive KB/rules change._
 `;
-fs.writeFileSync('pr-body.md', body);
-fs.writeFileSync('issue-body.md', body);
+
+const attachments = {
+  claims: read('claims-report.md', '_No claims report produced._'),
+  news: read('news.md', '_No news file._'),
+  links: read('link-summary.md', '_No link classification produced._'),
+  lychee: read('lychee-report.md', '_No link report produced._'),
+};
+// Clip the least decision-relevant appendix first, so a huge news list never costs us the
+// claims report or the link classification.
+for (const key of ['lychee', 'news', 'claims', 'links']) {
+  const over = render(attachments).length - (BODY_LIMIT - SAFETY_MARGIN);
+  if (over <= 0) break;
+  attachments[key] = clip(attachments[key], Math.max(0, attachments[key].length - over));
+}
+const body = render(attachments);
+// Last resort: a very long findings list could still overflow on its own. Truncating is
+// better than failing to open the issue at all — the findings are also in the run summary.
+const finalBody = body.length > BODY_LIMIT
+  ? clip(body, BODY_LIMIT - SAFETY_MARGIN)
+  : body;
+if (body.length > BODY_LIMIT) {
+  console.warn(`warning: body was ${body.length} chars, truncated to fit the ${BODY_LIMIT} GitHub limit`);
+}
+fs.writeFileSync('pr-body.md', finalBody);
+fs.writeFileSync('issue-body.md', finalBody);
 
 const out = process.env.GITHUB_OUTPUT;
 if (out) fs.appendFileSync(out, `changed=${changed}\nbump=${bump}\npr_required=${prRequired}\nissue_required=${issueRequired}\napply_mode=${housekeeping ? 'housekeeping' : (substantiveApplied ? 'substantive' : 'none')}\n`);
