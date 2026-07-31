@@ -312,7 +312,7 @@
       <div class="fcard vm" style="left:700px;top:296px;width:808px;height:60px">
         <img class="svc" src="icons/sql-vm.svg" alt="SQL on Azure VM"/>
         <div class="tx"><div class="t">SQL Server on Azure VM</div>
-          <div class="d">IaaS rehost · full OS control · <b>free ESU</b> for end-of-support · near-zero cutover via Distributed AG.</div></div></div>
+          <div class="d">IaaS rehost · full OS control · <b>ESU</b> (free on Azure VM for 2014 and earlier; <b>2016 is paid</b>) · near-zero cutover via Distributed AG.</div></div></div>
 
       <div class="fcard k8s" style="left:700px;top:434px;width:808px;height:60px">
         <img class="svc" src="icons/arc-sql-mi.svg" alt="Arc SQL MI"/>
@@ -360,7 +360,7 @@
           <div class="r"><span class="pill p-nz">near-zero</span><b>MI Link</b> — <span class="g">source 2016+ · sysadmin + distributed AG · ports <b>5022 + 11000–11999</b> · up to 100 links (500 on Next-gen GP)</span></div>
           <div class="r"><span class="pill p-min">online, cutover</span><b>Log Replay Service (LRS)</b> — <span class="g">source 2008–2022 standalone · target <i>unavailable</i> while restoring · cutover minutes (GP) → hours (BC)</span></div>
           <div class="r"><span class="pill p-off">offline</span><b>Native backup/restore (.bak)</b> — <span class="g">2008+ · migrate TDE cert FIRST</span></div>
-          <div class="r"><span class="pill p-min">online subset</span><b>Transactional replication</b> — <span class="g">2012+</span></div>
+          <div class="r"><span class="pill p-min">online subset</span><b>Transactional replication</b> — <span class="g">2016+ (subscriber support varies by MI update policy)</span></div>
         </div></div>
       <div class="panel"><h3><img src="icons/sql-database.svg" alt=""/>→ Azure SQL Database</h3>
         <div class="rows">
@@ -426,7 +426,7 @@
       <div class="panel"><h3><span class="dot"></span>Cost levers</h3>
         <div class="rows">
           <div class="r"><b>Azure Hybrid Benefit</b> — SQL DB (vCore) · SQL MI · SQL VM &nbsp;<span class="pill p-no">not Fabric SQL DB</span></div>
-          <div class="r"><b>ESU</b> — free on Azure VM (3 yrs) · on-prem only via Azure Arc (paid) — changes the stay-vs-migrate math</div>
+          <div class="r"><b>ESU</b> — free on Azure VM for <b>2014 and earlier</b>; <b>SQL 2016 is paid everywhere</b> (Azure VM or on-prem via Arc) — changes the stay-vs-migrate math</div>
           <div class="r"><b>Sizing</b> — never average CPU: Perfmon baseline ≥ 7 days + ~20% headroom</div>
           <div class="r g">AHB + reservations + ESU → up to ~85% savings</div>
         </div></div>
@@ -470,7 +470,7 @@
         <tr><td>Fabric-native / analytics-first</td><td>SQL DB in Fabric + Mirroring</td></tr>
         <tr><td>Edge / sovereign / multi-cloud</td><td>Arc-enabled SQL MI on local AKS</td></tr>
         <tr><td>Short-term data-center exit</td><td>AVS + VMware HCX</td></tr>
-        <tr><td>Off end-of-support, minimal change</td><td>SQL VM "as-is" + free ESU</td></tr>
+        <tr><td>Off end-of-support, minimal change</td><td>SQL VM "as-is" + ESU (paid for 2016)</td></tr>
       </table></div>
     <div class="panel"><h3><span class="dot" style="background:#8661C5"></span>Cross-cloud sources &amp; reverse path</h3>
       <div class="rows">

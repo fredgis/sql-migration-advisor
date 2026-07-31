@@ -5,7 +5,7 @@ Apply Steps **A → D** in order. Steps map to the two engine phases:
 - **Phase B — Ranking and plan:** Steps B → D. Rank only surviving targets, then choose method, tier, blockers, cost, and assessment.
 
 Determinism contract: **same inputs + same KB version + same engine version ⇒ same result**. Every recommendation must carry the KB version, engine version, and, when available, the source commit SHA and fetch timestamp.
-Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v1.6**, verified July 2026.
+Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v1.7**, verified July 2026.
 
 Three layers, never mixed:
 - **Target** = where the DB ends up (runtime).
@@ -34,9 +34,11 @@ Normalize questionnaire/free-form answers into these fields before filtering:
 | `migration_batch_size` | integer — databases selected per Azure Arc portal migration batch. Checked against the Arc wizard limit, not against MI Link capacity. |
 | `arc_extension_version` | Azure Extension for SQL Server version (e.g. `1.1.3348.364`). Gates the Arc wizard batch limit; **unknown is not treated as recent** — it yields `unknown_requires_assessment`. |
 | `evidence` | typed booleans: `dependenciesToolConfirmed` · `performanceMeasured` · `regionAvailabilityConfirmed` · `architectSignedOff`. All four `true` are required for `validated`; free text never substitutes. |
-| `downtime`, `network_ports`, `size`, `tenant_count`, `performance`, `compliance` | used in Steps B→D; engine outputs include `targetAvailabilityDuringSync` and `businessCutoverDowntime` |
+| `downtime`, `network_ports`, `size`, `tenant_count`, `performance`, `compliance` | used in Steps B→D; engine outputs include `targetAvailabilityDuringSync`, `businessCutoverDowntime`, and cost flags such as `ahbEligible` |
 
 If a selected feature lacks a subtype needed for a hard rule (for example `PolyBase` with no source type, or `DTC` with no participant type), mark the affected candidate `unknown_requires_assessment`; do **not** silently pick the safer target.
+
+For `ahbEligible`, derive the flag in Step D from the selected target, SQL DB purchasing model, compute tier, and whether Hyperscale is a new database or the documented qualifying existing provisioned-compute exception; do not treat every vCore SQL DB as eligible.
 
 **Output consistency rule (must always hold).** The recommended target and method must never contradict the
 eligibility table the engine just produced:
@@ -58,11 +60,11 @@ Classify each target independently. Only `eligible` and `eligible_with_remediati
 | Candidate target | `unsupported` hard blockers | `eligible_with_remediation` examples | Notes |
 | --- | --- | --- | --- |
 | **SQL Server enabled by Azure Arc** *(control plane, in-place)* | none for assessment/control-plane use | Arc onboarding, agent/network prerequisites, paid on-prem ESU | Not a runtime migration target. Use when intent is assess/modernize in place/not ready. |
-| **SQL Server on Azure VM** | none of these rules eliminate it | right-size VM/storage, HA design, patch/backup operations, TDE cert migration | Maximum compatibility and OS/engine control; free ESU on Azure VM. |
+| **SQL Server on Azure VM** | none of these rules eliminate it | right-size VM/storage, HA design, patch/backup operations, TDE cert migration | Maximum compatibility and OS/engine control; free ESU only for SQL Server 2014 and earlier; SQL Server 2016 ESU is paid even on Azure VM. |
 | **Azure VMware Solution (AVS)** | not a VMware estate or no need to keep VMware operational model | HCX/vMotion readiness, AVS capacity/networking | Rehost VMware estate with minimal refactor; keeps FCI/AG patterns. |
 | **Azure SQL Managed Instance (MI)** | FILESTREAM/FileTable; PolyBase to external RDBMS; heterogeneous DTC to third-party RDBMS; need OS/file-system access; unsupported third-party linked server dependency | SQL Agent jobs usually native; SQL CLR/Service Broker/cross-DB usually compatible but assess; cloud-file PolyBase eligible; homogeneous SQL↔SQL DTC eligible | PaaS lift-and-shift for instance features. |
 | **Azure SQL Database** | FILESTREAM/FileTable; linked servers; cross-database three-part-name dependency; instance-level CLR/Service Broker dependency; native restore requirement; DTC dependency | refactor SQL Agent jobs to Elastic Jobs/Automation, refactor cross-DB/linked-server patterns, use contained DB model | Use for cloud-native DB-scoped workloads after dependencies are removed. |
-| **SQL database in Fabric** *(Preview)* | not analytics/Fabric-driven; DACPAC > 20 MB; requires Private Link; cannot use on-prem data gateway; preview not acceptable; complex enterprise OLTP dependency set | simplify schema, reduce DACPAC, accept gateway/offline copy | Evaluate before general SQL DB when driver/profile is Fabric analytics. |
+| **SQL database in Fabric** *(Preview)* | not analytics/Fabric-driven; preview not acceptable; complex enterprise OLTP dependency set; no viable ingestion path | use T-SQL, transactional replication, Fabric pipelines / Data Factory copy jobs, Dataflow Gen2, or TDS-capable tools; if using the Fabric Migration Assistant Preview specifically, its limits are DACPAC > 20 MB, requires Private Link, or cannot use the required on-prem gateway | Evaluate before general SQL DB when driver/profile is Fabric analytics; do not eliminate the target solely because Migration Assistant Preview limits do not fit. |
 | **Arc-enabled SQL Managed Instance** | no Kubernetes/edge/sovereign requirement; Kubernetes model = full DIY container | Arc data controller prerequisites, storage class, network, HA sizing | Managed engine on Kubernetes: auto patch/backup/HA through Arc data services. |
 | **SQL Server in a container** | requires managed PaaS/managed engine and will not operate DIY | backup/HA/patch/runbook must be built by customer | Dev/test/edge or full DIY containerized SQL Server. |
 
@@ -103,7 +105,7 @@ Use this order to produce the target shortlist; it prevents masked branches.
    - `management_model = Kubernetes on-prem/edge/multicloud` + `kubernetes_model = unknown` → `unknown_requires_assessment`; ask/record evidence. Safe default: do **not** silently pick Arc MI or container.
 
 4. **Fabric analytics branch before generic SQL DB**:
-   If `driver = analytics/Fabric` or workload profile = BI/analytics-first, evaluate **SQL database in Fabric** before Azure SQL Database. It may survive only when: Preview accepted, DACPAC ≤ 20 MB, no Private Link requirement, on-prem data gateway acceptable, and schema/dependency set is simple. Otherwise mark Fabric `unsupported` or `eligible_with_remediation` and continue to SQL DB/MI/VM.
+   If `driver = analytics/Fabric` or workload profile = BI/analytics-first, evaluate **SQL database in Fabric** before Azure SQL Database. It may survive when Preview is accepted and at least one ingestion path fits (T-SQL, transactional replication, Fabric pipelines / Data Factory copy jobs, Dataflow Gen2, TDS-capable tools, or the Fabric Migration Assistant Preview). Apply the DACPAC ≤ 20 MB, no-Private-Link and on-prem-gateway checks only when the selected path is the Migration Assistant; otherwise mark Fabric `unsupported` or `eligible_with_remediation` based on the actual target/tool blocker and continue to SQL DB/MI/VM.
 
 5. **Maximum compatibility / OS control**:
    If Phase A leaves only VM-class targets, choose SQL VM unless AVS or container criteria above are stronger.
@@ -120,7 +122,7 @@ Use this order to produce the target shortlist; it prevents masked branches.
 |---|---|---|---|---|---|---|
 | On-prem / Azure VM | ✅ 2016+ + 5022 + 11000–11999 + networking | ✅ 2008–2022 | ✅ | ✅ direct `BACKUP TO URL` | ✅ 2016+ | ✅ |
 | AWS EC2 | ✅ if sysadmin + AG + 5022 + 11000–11999 + networking | ✅ via Blob upload | ✅ | ✅ via Blob upload | ✅ if sysadmin | ✅ |
-| **AWS RDS for SQL Server** | ❌ no sysadmin / no AG endpoints | ✅ via S3→Blob upload | ✅ | ⚠️ indirect (S3→Blob→restore) | ❌ not practical — requires sysadmin/distributor rights the platform does not grant | ✅ |
+| **AWS RDS for SQL Server** | ❌ no sysadmin / no AG endpoints | ✅ via S3→Blob upload | ✅ offline to Azure SQL DB / MI / VM; ✅ online only to MI / VM (not Azure SQL DB) | ⚠️ indirect (S3→Blob→restore) | ❌ not practical — requires sysadmin/distributor rights the platform does not grant | ✅ |
 | GCP Compute Engine | ✅ if sysadmin + AG + 5022 + 11000–11999 + networking | ✅ via Blob upload | ✅ | ✅ via Blob upload | ✅ if sysadmin | ✅ |
 | **GCP Cloud SQL for SQL Server** | ❌ no sysadmin / no AG endpoints | ✅ via export→Blob | ✅ | ⚠️ indirect | ❌ not practical — requires sysadmin/distributor rights the platform does not grant | ✅ |
 
@@ -218,16 +220,17 @@ MI migration capacity gates:
 | --- | --- | --- |
 | Offline | **modern DMS (offline)** | SQL Server 2008+; online SQL DB path not available |
 | Offline | **BACPAC / SqlPackage** | smaller/medium or schema-compatible workloads; test export/import |
-| Online subset | **Transactional replication** | publisher SQL Server **2016 and later**, including SQL Server 2022 and 2025; Azure SQL DB/Fabric SQL DB can only be a push subscriber |
+| Online subset | **Transactional replication** | target-specific publisher floor: Azure SQL Database subscriber = publisher SQL Server **2016 and later**, including SQL Server 2022 and 2025; Fabric SQL database subscriber = SQL Server **2022 RTM CU12 and greater**; SQL DB/Fabric can only be a push subscriber |
+| Online / CDC | **Striim (third-party)** | use for SQL Server → Azure SQL Database when online/near-zero downtime is required; pair with DMS/SqlPackage/SSMS schema assessment and migration |
 | Bulk / integration | bcp / Smart Bulk Copy / **ADF Copy** | data-only or integration pipeline |
 
-Transactional replication to Azure SQL DB/Fabric SQL DB: snapshot + one-way transactional only; no peer-to-peer and no merge. Tables need a primary key. Unsupported/limited articles include `hierarchyid`, FILESTREAM, spatial conversions, plus documented partitioning/index limits. Fabric SQL database publisher needs SQL Server 2022 RTM CU12+.
+Transactional replication to Azure SQL DB/Fabric SQL DB: snapshot + one-way transactional only; no peer-to-peer and no merge. Tables need a primary key. Unsupported/limited articles include `hierarchyid`, FILESTREAM, spatial conversions, plus documented partitioning/index limits. Distribution database and replication agents cannot live in Azure SQL Database. Fabric SQL database publisher needs SQL Server 2022 RTM CU12+, and Private Link is not supported for replication into Fabric SQL database. For Azure SQL MI subscribers, publisher floor is SQL Server 2016+ and exact combinations depend on the MI update policy/supportability matrix.
 
 Not supported to SQL DB: native `.bak` restore, detach/attach, MI Link, local SQL Agent, linked servers, DTC.
 
 #### → SQL database in Fabric (Preview)
 
-- **Fabric Migration Assistant**: schema via **DACPAC ≤ 20 MB**; data via **Fabric Data Factory copy job** + **on-prem data gateway**. No VNet gateway/Private Link. `targetAvailabilityDuringSync=not-present`, `businessCutoverDowntime=full load time`; use for Fabric-native/analytics-first simple schemas, not broad enterprise OLTP by default.
+- **Fabric Migration Assistant (Preview)**: schema via **DACPAC ≤ 20 MB**; data via **Fabric Data Factory copy job** + **on-prem data gateway**. No VNet gateway/Private Link for the assistant. `targetAvailabilityDuringSync=not-present`, `businessCutoverDowntime=full load time`; use for Fabric-native/analytics-first simple schemas, not broad enterprise OLTP by default. Alternative Fabric SQL database ingestion paths include T-SQL, transactional replication (SQL Server 2022 RTM CU12+ publisher), Fabric pipelines / Data Factory copy jobs, Dataflow Gen2, and any TDS-capable tool; do not eliminate Fabric solely because assistant limits do not fit.
 
 #### → Arc-enabled SQL MI / container
 
@@ -272,11 +275,11 @@ Rules:
 | **MI managed DTC ports** | For SQL↔SQL DTC on MI, validate port 135 and 14000–15000 inbound, 49152–65535 outbound. |
 | Other methods' network | DMS/LRS/replication need outbound **443** to Blob, **1433** (+ **1434/UDP** for named instances where applicable). |
 | **DAG / AG** | Requires AD Domain Services or workgroup AG + certificates; validate quorum and endpoint security. |
-| **Transactional replication → SQL DB/Fabric SQL DB** | Publisher SQL Server 2016+; push subscriber only; primary keys required; snapshot/one-way transactional only; article limits apply. |
+| **Transactional replication → SQL DB/Fabric SQL DB/MI** | SQL DB subscriber: publisher SQL Server 2016+; Fabric SQL database subscriber: publisher SQL Server 2022 RTM CU12+ and Private Link unsupported; MI subscriber: publisher SQL Server 2016+ with update-policy matrix check. SQL DB/Fabric are push-subscriber only; primary keys required; snapshot/one-way transactional only; distribution DB and agents cannot live in Azure SQL Database; article limits apply. |
 | **SQL Agent jobs** | MI: native SQL Agent. SQL DB: refactor to Elastic Jobs, Automation, Functions, or external scheduler. |
 | **Linked servers / cross-DB** | OK on VM and often MI after provider validation; not on SQL DB; refactor or choose MI/VM. |
 | **SSIS** | Migrate to Azure-SSIS Integration Runtime; handle SSISDB separately. |
-| **SSRS** | Move to Power BI paginated reports or keep/report-server on VM where required. |
+| **SSRS** | Move RDL workloads to **Power BI paginated reports** for managed cloud, or use **Power BI Report Server on a VM** when the managed service does not fit. Starting with SQL Server 2025 (17.x), on-premises reporting services is consolidated under Power BI Report Server; no new SSRS versions after SSRS 2022, which is supported until 11 Jan 2033. |
 | **SSAS** | Move to Azure Analysis Services or Power BI Premium/Fabric semantic models. |
 | Dependency gap | Undocumented linked servers, jobs, file access, CLR, DTC, and external data sources commonly derail migrations; run dependency discovery before committing. |
 
@@ -312,9 +315,9 @@ Rules:
 
 ### D1. Cost and sizing levers
 
-- **Azure Hybrid Benefit (AHB):** applies to SQL DB (vCore), SQL MI, and SQL VM; not Fabric SQL DB.
-- **ESU:** free on Azure VMs for eligible versions; on-prem ESU through Azure Arc is paid and can justify assess-first/in-place plans.
-- Combine AHB + reservations + ESU where eligible; state that savings depend on license position and commitment.
+- **Azure Hybrid Benefit (AHB):** applies to Azure SQL Database General Purpose / Business Critical in the vCore provisioned compute tier, SQL MI, and SQL VM; not Fabric SQL DB, DTU, serverless, or new Hyperscale databases. Existing Hyperscale single databases with provisioned compute can continue using AHB to save on compute costs until December 2026; new Hyperscale databases have no SQL software license fee instead.
+- **ESU:** free on Azure VMs / AVS only for SQL Server 2014 and earlier; SQL Server 2016 is paid everywhere, including Azure VM, and materially changes stay-vs-migrate maths. Non-Azure/on-prem/hosted environments subscribe after connecting to Azure Arc, either with Software Assurance under eligible agreements or via Arc-connected PAYG billing without SA.
+- Set `ahbEligible=true` only for eligible compute models: SQL MI, SQL VM, SQL DB GP/BC vCore provisioned, and the documented existing-Hyperscale-provisioned exception; set `ahbEligible=false` for DTU, serverless, Fabric SQL DB, and new Hyperscale databases. Combine AHB + reservations + ESU where eligible; state that savings depend on license position and commitment.
 - **Sizing:** never size MI/SQL DB on average CPU alone. Require Perfmon/DMV baseline for at least 7 days, peak windows, storage latency, IOPS, log generation, tempdb, and about 20% headroom.
 
 ### D2. Assessment / control plane to run next
@@ -339,11 +342,11 @@ Rules:
 
 | Retired | Date | Use instead |
 | --- | --- | --- |
-| Data Experimentation Assistant (DEA) | 15 Dec 2024 | Extended Events capture + RML Utilities / OStress replay + Query Store/DMVs |
+| Database Experimentation Assistant (DEA) | 15 Dec 2024 | Extended Events capture + RML Utilities / OStress replay + Query Store/DMVs |
 | Distributed Replay | Deprecated in SQL Server 2022; unavailable in SQL Server 2022+ | RML Utilities / OStress |
 | Data Migration Assistant (DMA) | 16 Jul 2025 | SSMS 22 / Arc / Azure Migrate |
-| Azure Data Studio + SQL Migration extension | 28 Feb 2026 | VS Code + MSSQL; SSMS 22 / DMS |
-| Azure DMS *classic* — SQL scenarios | 15 Mar 2026 | **modern** DMS (portal / PowerShell / CLI) |
+| Azure Data Studio + SQL Migration extension | ADS retired 28 Feb 2026; migration extension has no separate announced retirement | VS Code + MSSQL; SSMS 22 / DMS |
+| Azure DMS *classic* — SQL scenarios | absorbed into current DMS portal experience | **modern** DMS (portal / PowerShell / CLI) |
 | SQL Data Sync | retires 30 Sep 2027 | ADF / transactional replication / AG |
 
 ---

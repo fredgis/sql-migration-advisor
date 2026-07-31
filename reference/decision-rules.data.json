@@ -1,9 +1,9 @@
 {
   "schema": "sql-migration-advisor.decision-rules-data/v1",
-  "version": "v1.6",
+  "version": "v1.7",
   "source": {
     "markdown": "reference/decision-rules.md",
-    "description": "Machine-checkable constants and gates extracted from decision-rules.md v1.6."
+    "description": "Machine-checkable constants and gates extracted from decision-rules.md v1.7."
   },
   "sourceVersionFloors": {
     "miLink": {
@@ -272,7 +272,7 @@
   },
   "retiredTooling": [
     {
-      "name": "Data Experimentation Assistant (DEA)",
+      "name": "Database Experimentation Assistant (DEA)",
       "date": "15 Dec 2024",
       "useInstead": "Extended Events capture + RML Utilities / OStress replay + Query Store/DMVs"
     },
@@ -288,12 +288,12 @@
     },
     {
       "name": "Azure Data Studio + SQL Migration extension",
-      "date": "28 Feb 2026",
+      "date": "ADS retired 28 Feb 2026; migration extension has no separate announced retirement",
       "useInstead": "VS Code + MSSQL; SSMS 22 / DMS"
     },
     {
       "name": "Azure DMS classic — SQL scenarios",
-      "date": "15 Mar 2026",
+      "date": "absorbed into current DMS portal experience",
       "useInstead": "modern DMS (portal / PowerShell / CLI)"
     },
     {

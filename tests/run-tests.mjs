@@ -394,7 +394,7 @@ try {
     { name: 'DMA replacement', re: /Data Migration Assistant \(DMA\)[^\n]*SSMS 22 \/ Arc \/ Azure Migrate/u },
     { name: 'Azure Data Studio replacement', re: /Azure Data Studio \+ SQL Migration extension[^\n]*VS Code \+ MSSQL; SSMS 22 \/ DMS/u },
     { name: 'DMS classic replacement', re: /Azure DMS \*classic\* — SQL scenarios[^\n]*\*\*modern\*\* DMS/u },
-    { name: 'DEA replacement', re: /Data Experimentation Assistant \(DEA\)[^\n]*Extended Events capture \+ RML Utilities \/ OStress/u }
+    { name: 'DEA replacement', re: /Database Experimentation Assistant \(DEA\)[^\n]*Extended Events capture \+ RML Utilities \/ OStress/u }
   ];
   const missing = checks.filter(c => !c.re.test(retired)).map(c => c.name);
   add('retired-tooling-guard', missing.length === 0, missing.length ? missing : ['Retired tooling table lists required retired tools and replacements.']);

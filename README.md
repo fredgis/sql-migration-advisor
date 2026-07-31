@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Knowledge base v1.6" src="https://img.shields.io/badge/knowledge%20base-v1.6-2b8a3e">
+  <img alt="Knowledge base v1.7" src="https://img.shields.io/badge/knowledge%20base-v1.7-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml/badge.svg"></a>
 </p>
@@ -281,10 +281,11 @@ base and this README on the same version. Last verified: July 2026.
 
 <!-- CHANGELOG:START -->
 <details>
-<summary><b>📓 Changelog</b> — current: <b>v1.6</b> (July 2026)</summary>
+<summary><b>📓 Changelog</b> — current: <b>v1.7</b> (July 2026)</summary>
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| v1.7 | 2026-07-31 | Corrected SQL Server 2016 paid-ESU status, Hyperscale AHB exception guidance, SSRS/PBIRS consolidation, replication floors, Fabric Migration Assistant scope, Striim online/CDC guidance, retired-tool status, and Amazon RDS online-DMS nuance. |
 | v1.6 | 2026-07-27 | Completed the MI Link port requirement (5022 **and** 11000–11999); corrected MI Link capacity to 100 links (500 on Next-gen General Purpose) and moved the "10 databases" figure to the Azure Arc wizard batch limit where it belongs; made the Azure Arc source floor consistently SQL Server 2014+; replaced the single downtime label with `targetAvailabilityDuringSync` + `businessCutoverDowntime` so LRS is no longer mislabelled offline. |
 | v1.5 | 2026-07-27 | Corrected SQL MI PolyBase/data-virtualization and DTC nuance; fixed transactional-replication, LRS and cross-cloud method gates; replaced retired validation guidance; removed unsourced statistics; added uncertainty, traceability, claims drift detection and golden decision tests. |
 | v1.4 | 2026-07-20 | Added GA announcement of SQL Migration to SQL Server on Azure VMs in Azure Arc. |

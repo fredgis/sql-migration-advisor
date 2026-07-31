@@ -718,6 +718,9 @@ Rules-data failure
 Golden scenario failure
     → fix the engine or consciously update the expected behaviour
 
+Artifact coherence failure
+    → regenerate the PDF, poster or images from their sources
+
 Human review failure
     → improve the source evidence, scope or technical interpretation
 ```
@@ -730,7 +733,65 @@ This keeps the process honest:
 
 ---
 
-## 11. Repository structure
+## 11. After a pull request is merged
+
+Merging is not the end of the change. The knowledge base has **derived artifacts** — a branded PDF, its
+preview image, the poster and the social/hero images — and those must never drift from the Markdown they
+are generated from. A merged PR that edits the knowledge base but leaves a two-week-old PDF in place is a
+silent inconsistency: two readers of the same repository get two different answers.
+
+`.github/workflows/artifacts.yml` closes that gap.
+
+```mermaid
+flowchart TD
+    A[Pull request touches a source] --> B[verify job: check-artifacts.mjs]
+    B -- stale --> C[PR reports which artifact is out of date]
+    B -- in sync --> D[Merge to main]
+    C --> D
+    D --> E[regenerate job on main]
+    E --> F{Anything stale?}
+    F -- No --> G[Done]
+    F -- Yes --> H[Sync mirrored SVGs]
+    H --> I[Rebuild PDF + preview]
+    I --> J[Rebuild poster and images]
+    J --> K[Commit artifacts back to main]
+    K --> L[Re-verify]
+```
+
+### What counts as an artifact
+
+| Artifact | Generated from | Rebuild command |
+|---|---|---|
+| `docs/sql-server-to-azure-migration.pdf` | the knowledge base + `tools/pdf/**` | `node tools/pdf/build.mjs` |
+| `docs/preview/sql-migration-advisor-pdf-preview.png` | the same, via patchwork | `node tools/pdf/patchwork.mjs` |
+| `docs/sql-migration-advisor-poster.png` | `tools/diagram/poster.html` | `node tools/diagram/build.mjs poster` |
+| `images/sql-migration-advisor-radial.png` | `tools/diagram/radial.html` | `node tools/diagram/build.mjs radial` |
+| `images/sql-migration-advisor-hero.png` | `hero.html` **and** `radial.html` (the hero embeds it) | `node tools/diagram/build.mjs hero` |
+| `images/sql-migration-advisor-linkedin.png` | `tools/diagram/social.html` | `node tools/diagram/build.mjs social` |
+| `blume/public/*.svg` | the matching `howto/*.svg` | byte-for-byte copy |
+
+### How staleness is decided
+
+`tools/artifacts/check-artifacts.mjs` does not trust file timestamps — they are meaningless after a fresh
+clone. It uses **git history**: an artifact is stale when its last commit is a strict ancestor of the last
+commit that touched one of its sources. Mirrored SVGs are compared byte for byte instead, since they are
+copies rather than builds.
+
+### The two halves
+
+- **On a pull request** the check is *verify only*. It reports the drift and names the rebuild command, but
+  it does not rewrite anything in someone else's branch.
+- **On a push to `main`** — that is, once a PR has been merged — the regenerate job rebuilds whatever is
+  stale and commits it back. It reacts only to *source* paths, never to the artifacts it writes, so it
+  cannot retrigger itself.
+
+The diagram SVGs are the one deliberate exception: they are produced by a local diagramming tool that is
+not available on a runner, so CI verifies that `blume/public` matches `howto/` but does not regenerate the
+SVGs themselves. Changing a diagram therefore remains an explicit, human action.
+
+---
+
+## 12. Repository structure
 
 ```text
 sql-migration-advisor/
@@ -756,6 +817,7 @@ sql-migration-advisor/
 ├── tools/
 │   ├── weekly-check/
 │   ├── rules/
+│   ├── artifacts/
 │   ├── pdf/
 │   └── diagram/
 │
@@ -774,12 +836,13 @@ sql-migration-advisor/
 └── .github/workflows/
     ├── tests.yml
     ├── weekly-kb-check.yml
+    ├── artifacts.yml
     └── deploy-docs.yml
 ```
 
 ---
 
-## 12. Why this architecture is useful
+## 13. Why this architecture is useful
 
 ### Traceable
 
@@ -811,7 +874,7 @@ The output explains why a path was selected and why other paths were rejected.
 
 ---
 
-## 13. Final message
+## 14. Final message
 
 The SQL Migration Advisor is not an AI that replaces migration experts.
 

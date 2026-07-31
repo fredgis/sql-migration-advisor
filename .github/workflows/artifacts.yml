@@ -1,0 +1,149 @@
+name: Artifacts coherence
+
+# Keeps generated artifacts consistent with the sources they derive from.
+#
+# On a pull request: verify only. A PR that edits the knowledge base or a diagram
+# source without refreshing the PDF/poster is reported, not silently accepted.
+#
+# On a push to main (that is, once a PR has been merged): regenerate whatever the
+# merge made stale and commit it back, so main is never left with a knowledge base
+# and a PDF that disagree.
+#
+# The regeneration job only reacts to source paths, never to the artifacts it writes,
+# so it cannot retrigger itself.
+
+on:
+  pull_request:
+    paths:
+      - 'docs/sql-server-to-azure-migration.md'
+      - 'tools/pdf/**'
+      - 'tools/diagram/**'
+      - 'howto/*.svg'
+      - 'blume/public/*.svg'
+      - 'tools/artifacts/**'
+      - '.github/workflows/artifacts.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/sql-server-to-azure-migration.md'
+      - 'tools/pdf/**'
+      - 'tools/diagram/**'
+      - 'howto/*.svg'
+      - 'tools/artifacts/**'
+      - '.github/workflows/artifacts.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: artifacts-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify artifacts are in sync
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Check artifact coherence
+        run: node tools/artifacts/check-artifacts.mjs
+
+  regenerate:
+    name: Regenerate stale artifacts
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Detect what is stale
+        id: detect
+        run: |
+          if node tools/artifacts/check-artifacts.mjs --json > artifacts-report.json; then
+            echo "stale=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+          fi
+          cat artifacts-report.json
+          {
+            echo '## Artifact coherence'
+            echo '```json'
+            cat artifacts-report.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Sync mirrored diagram SVGs
+        if: steps.detect.outputs.stale == 'true'
+        run: |
+          for f in skill-architecture runtime-loop weekly-update roadmap decision-pipeline quality-gate; do
+            [ -f "howto/$f.svg" ] && cp "howto/$f.svg" "blume/public/$f.svg"
+          done
+
+      - name: Install the PDF toolchain
+        if: steps.detect.outputs.stale == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pandoc texlive-xetex texlive-fonts-recommended texlive-latex-recommended \
+            texlive-latex-extra lmodern fonts-dejavu poppler-utils
+
+      - name: Setup Chrome
+        id: chrome
+        if: steps.detect.outputs.stale == 'true'
+        uses: browser-actions/setup-chrome@v1
+        with:
+          install-dependencies: true
+
+      - name: Regenerate the PDF and its preview
+        if: steps.detect.outputs.stale == 'true'
+        continue-on-error: true
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+          PUPPETEER_EXECUTABLE_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: |
+          npm install --prefix tools/pdf --no-audit --no-fund
+          node tools/pdf/build.mjs
+          node tools/pdf/patchwork.mjs
+
+      - name: Regenerate the poster and images
+        if: steps.detect.outputs.stale == 'true'
+        continue-on-error: true
+        env:
+          CHROME: ${{ steps.chrome.outputs.chrome-path }}
+        run: node tools/diagram/build.mjs poster radial hero social
+
+      - name: Commit the refreshed artifacts
+        if: steps.detect.outputs.stale == 'true'
+        run: |
+          rm -f artifacts-report.json
+          if git diff --quiet; then
+            echo "Nothing changed after regeneration."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore(artifacts): regenerate artifacts after $(git rev-parse --short HEAD)
+
+          Rebuilt by .github/workflows/artifacts.yml because a source changed.
+          Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+          git push
+
+      - name: Re-verify
+        if: steps.detect.outputs.stale == 'true'
+        run: node tools/artifacts/check-artifacts.mjs
