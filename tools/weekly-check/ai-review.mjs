@@ -10,7 +10,8 @@
 //   AZURE_AI_DEPLOYMENT  model deployment name (required)
 //   AI_PROMPT_FILE       prompt file, default prompt.txt
 //   AI_RESPONSE_FILE     output file, default response.txt
-//   AI_MAX_OUTPUT_TOKENS default 8000
+//   AI_REASONING_EFFORT  reasoning depth, default xhigh
+//   AI_MAX_OUTPUT_TOKENS default 24000 (reasoning tokens are billed to this budget)
 //
 // The review is advisory: it can never bump a version on its own. So a failure
 // here must never break the weekly run — we log it, write an empty response and
@@ -19,7 +20,11 @@ import fs from 'node:fs';
 
 const PROMPT_FILE = process.env.AI_PROMPT_FILE || 'prompt.txt';
 const RESPONSE_FILE = process.env.AI_RESPONSE_FILE || 'response.txt';
-const MAX_TOKENS = parseInt(process.env.AI_MAX_OUTPUT_TOKENS || '8000', 10);
+// This is a weekly, whole-corpus review of the knowledge base plus the decision tree, so it is
+// worth the deepest reasoning the deployment offers. Reasoning tokens count against
+// max_output_tokens, hence the generous budget.
+const REASONING_EFFORT = process.env.AI_REASONING_EFFORT || 'xhigh';
+const MAX_TOKENS = parseInt(process.env.AI_MAX_OUTPUT_TOKENS || '24000', 10);
 
 const SYSTEM_PROMPT = [
   'You are a meticulous technical editor who maintains a SQL Server to Azure migration',
@@ -67,6 +72,7 @@ const body = {
   model: deployment,
   instructions: SYSTEM_PROMPT,
   input: prompt,
+  reasoning: { effort: REASONING_EFFORT },
   max_output_tokens: MAX_TOKENS,
 };
 
@@ -100,7 +106,9 @@ if (!text) giveUp('model returned no text');
 
 fs.writeFileSync(RESPONSE_FILE, text);
 const usage = payload.usage || {};
+const reasoned = usage.output_tokens_details?.reasoning_tokens;
 console.log(
-  `AI review complete: ${text.length} chars` +
-    (usage.total_tokens ? ` (${usage.input_tokens || '?'} in / ${usage.output_tokens || '?'} out tokens)` : '')
+  `AI review complete (effort ${REASONING_EFFORT}): ${text.length} chars` +
+    (usage.total_tokens ? ` (${usage.input_tokens || '?'} in / ${usage.output_tokens || '?'} out tokens` : '') +
+    (reasoned != null ? `, ${reasoned} reasoning)` : usage.total_tokens ? ')' : '')
 );

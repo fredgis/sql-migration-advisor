@@ -273,6 +273,12 @@ it for an Azure token, and the script calls the endpoint with that short-lived b
 API key** (key auth is disabled on the deployment) and **no stored client secret** — only a federated
 credential on the app registration, scoped to this repository.
 
+The review runs at **`xhigh` reasoning effort**: it is a weekly, whole-corpus pass over the knowledge base
+*and* the decision tree, which is exactly the case that justifies the deepest reasoning available. A real run
+spends around 12,000 reasoning tokens, so `max_output_tokens` is set to 24,000 — reasoning tokens are billed
+against that budget, and a smaller one truncates the verdict. Both are overridable via `AI_REASONING_EFFORT`
+and `AI_MAX_OUTPUT_TOKENS`.
+
 Five repository secrets carry the coordinates, so nothing about the tenant, subscription, application or
 resource appears in this public repo:
 
