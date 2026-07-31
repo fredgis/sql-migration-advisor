@@ -11,10 +11,10 @@ jobs:
   regression:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 24
       - name: Check canonical rules data
         run: node tools/rules/check-rules-data.mjs --strict
       - name: Run deterministic regression tests

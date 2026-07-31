@@ -30,7 +30,7 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
-  models: read
+  id-token: write
 
 concurrency:
   group: weekly-kb-check-${{ github.event_name }}
@@ -41,14 +41,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Check KB / decision-rules consistency
         run: node tools/weekly-check/check-consistency.mjs
@@ -59,14 +59,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Check links (lychee)
         id: lychee
@@ -102,26 +102,30 @@ jobs:
       - name: Build review prompt
         run: node tools/weekly-check/build-prompt.mjs > prompt.txt
 
-      - name: AI review (GitHub Models · GPT-5)
-        id: ai
+      - name: Sign in to Azure (GitHub OIDC, no stored secret)
+        id: azlogin
         continue-on-error: true
-        uses: actions/ai-inference@v2
+        uses: azure/login@v2
         with:
-          model: openai/gpt-5
-          system-prompt: >-
-            You are a meticulous technical editor who maintains a SQL Server to Azure
-            migration knowledge base and its distilled decision tree. Report only
-            accurate, relevant, source-backed recommendations. Your verdict is advisory:
-            a version bump requires an actual substantive diff plus passing consistency checks.
-            Answer with a single JSON object and nothing else.
-          prompt-file: prompt.txt
-          max-completion-tokens: '8000'
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Save AI response
-        if: always()
+      - name: AI review (Azure AI Foundry)
+        id: ai
+        if: steps.azlogin.outcome == 'success'
+        continue-on-error: true
         env:
-          RESP: ${{ steps.ai.outputs.response }}
-        run: printf '%s' "$RESP" > response.txt
+          AZURE_AI_ENDPOINT: ${{ secrets.AZURE_AI_ENDPOINT }}
+          AZURE_AI_DEPLOYMENT: ${{ secrets.AZURE_AI_DEPLOYMENT }}
+        run: |
+          TOKEN="$(az account get-access-token --resource https://ai.azure.com --query accessToken -o tsv)"
+          echo "::add-mask::$TOKEN"
+          AZURE_AI_TOKEN="$TOKEN" node tools/weekly-check/ai-review.mjs
+
+      - name: Ensure an AI response file exists
+        if: always()
+        run: test -f response.txt || touch response.txt
 
       - name: Decide
         id: decide
