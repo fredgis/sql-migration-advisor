@@ -56,7 +56,7 @@ knowledge-base version, commit SHA and fetch timestamp so the advice is traceabl
 
 ## Why it is trustworthy
 
-- **Verified knowledge** — the v1.6 knowledge base is source-backed and corrected against Microsoft Learn.
+- **Verified knowledge** — the v1.7 knowledge base is source-backed and corrected against Microsoft Learn.
 - **Deterministic engine** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers.
 - **Explicit uncertainty** — recommendations carry confidence, provisional/validated status, assumptions, unknowns, blockers and evidence required.
 - **Freshness gates** — version bumps require substantive diffs; link checks classify bot-blocked pages; high-risk claims are tracked in [`reference/claims-registry.json`](reference/claims-registry.json).
@@ -218,8 +218,8 @@ Mermaid decision diagrams. The `SKILL.md` mirrors its AI Migration Agent I/O con
 ## The knowledge base as a PDF
 
 The same knowledge base ships as a polished, branded PDF —
-[`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (~18 pages,
-v1.6, July 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
+[`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (22 pages,
+v1.7, July 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
 

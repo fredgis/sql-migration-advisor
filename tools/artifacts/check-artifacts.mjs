@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const jsonMode = process.argv.includes('--json');
+const fixProse = process.argv.includes('--fix-prose');
 
 const MIRRORS = [
   ['howto/skill-architecture.svg', 'blume/public/skill-architecture.svg'],
@@ -75,6 +76,24 @@ const isStrictAncestor = (a, b) => {
   catch { return false; }
 };
 
+// Prose that describes an artifact drifts too. The README quotes the PDF's page count
+// and version; if the PDF is rebuilt and the sentence is not, the repo contradicts itself.
+// Page count needs poppler (pdfinfo), which the PDF workflow already installs; when it is
+// missing we report a note rather than failing, so a bare runner is not blocked.
+function pdfPageCount(relPath) {
+  try {
+    const out = execFileSync('pdfinfo', [path.join(ROOT, relPath)], { encoding: 'utf8' });
+    const m = out.match(/^Pages:\s+(\d+)/m);
+    return m ? parseInt(m[1], 10) : null;
+  } catch { return null; }
+}
+
+function currentKbVersion() {
+  const m = fs.readFileSync(path.join(ROOT, 'docs', 'sql-server-to-azure-migration.md'), 'utf8')
+    .match(/\*\*Version\.\*\*\s*(v\d+\.\d+)/);
+  return m ? m[1] : null;
+}
+
 const problems = [];
 const notes = [];
 
@@ -105,6 +124,47 @@ for (const { artifact, sources, rebuild } of DERIVED) {
   }
 }
 
+// --- prose that quotes an artifact must match the artifact ---
+{
+  const readmePath = path.join(ROOT, 'README.md');
+  let readme = fs.readFileSync(readmePath, 'utf8');
+  const version = currentKbVersion();
+  const pdfRel = 'docs/sql-server-to-azure-migration.pdf';
+  const actual = pdfPageCount(pdfRel);
+
+  // e.g. "(22 pages,\nv1.7, July 2026)"
+  const shape = /(sql-server-to-azure-migration\.pdf\)\s*\()~?(\d+)(\s*pages,\s*)(v\d+\.\d+)/;
+  const claim = readme.match(shape);
+  if (!claim) {
+    notes.push('README does not quote the PDF page count and version in the expected shape; skipped');
+  } else if (fixProse && version && actual != null) {
+    const fixed = readme.replace(shape, `$1${actual}$3${version}`);
+    if (fixed !== readme) {
+      fs.writeFileSync(readmePath, fixed);
+      readme = fixed;
+      notes.push(`README PDF sentence rewritten to ${actual} pages, ${version}`);
+    }
+  } else {
+    const [, , claimedPages, , claimedVersion] = claim;
+    if (version && claimedVersion !== version) {
+      problems.push({
+        kind: 'prose-version-mismatch', artifact: 'README.md', source: pdfRel,
+        fix: `node tools/artifacts/check-artifacts.mjs --fix-prose`,
+        detail: `README says ${claimedVersion}, knowledge base is ${version}`,
+      });
+    }
+    if (actual == null) {
+      notes.push('pdfinfo not available, skipped the README page-count check');
+    } else if (parseInt(claimedPages, 10) !== actual) {
+      problems.push({
+        kind: 'prose-pagecount-mismatch', artifact: 'README.md', source: pdfRel,
+        fix: `node tools/artifacts/check-artifacts.mjs --fix-prose`,
+        detail: `README says ${claimedPages} pages, the PDF has ${actual}`,
+      });
+    }
+  }
+}
+
 if (jsonMode) {
   console.log(JSON.stringify({ ok: problems.length === 0, problems, notes }, null, 2));
 } else {
@@ -116,6 +176,7 @@ if (jsonMode) {
     for (const p of problems) {
       const where = p.source ? ` (source ${p.source}${p.sourceCommit ? `, source at ${p.sourceCommit} vs artifact at ${p.artifactCommit}` : ''})` : '';
       console.error(`- ${p.kind}: ${p.artifact}${where}`);
+      if (p.detail) console.error(`    ${p.detail}`);
       console.error(`    rebuild with: ${p.fix}`);
     }
   }

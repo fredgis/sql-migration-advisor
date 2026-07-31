@@ -53,6 +53,9 @@ jobs:
         with:
           node-version: '24'
 
+      - name: Install poppler (for the PDF page-count check)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends poppler-utils
+
       - name: Check artifact coherence
         run: node tools/artifacts/check-artifacts.mjs
 
@@ -70,6 +73,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
+
+      - name: Install poppler (for the PDF page-count check)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends poppler-utils
 
       - name: Detect what is stale
         id: detect
@@ -126,6 +132,10 @@ jobs:
         env:
           CHROME: ${{ steps.chrome.outputs.chrome-path }}
         run: node tools/diagram/build.mjs poster radial hero social
+
+      - name: Refresh prose that quotes the artifacts
+        if: steps.detect.outputs.stale == 'true'
+        run: node tools/artifacts/check-artifacts.mjs --fix-prose || true
 
       - name: Commit the refreshed artifacts
         if: steps.detect.outputs.stale == 'true'

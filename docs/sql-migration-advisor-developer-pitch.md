@@ -777,6 +777,11 @@ clone. It uses **git history**: an artifact is stale when its last commit is a s
 commit that touched one of its sources. Mirrored SVGs are compared byte for byte instead, since they are
 copies rather than builds.
 
+It also checks the **prose that quotes an artifact**. The README states the PDF's page count and version in
+a sentence; when the PDF is rebuilt and that sentence is not, the repository contradicts itself. The checker
+compares the sentence against the real page count (via `pdfinfo`) and the real knowledge-base version, and
+`--fix-prose` rewrites it — which is what the regenerate job runs after a rebuild.
+
 ### The two halves
 
 - **On a pull request** the check is *verify only*. It reports the drift and names the rebuild command, but
