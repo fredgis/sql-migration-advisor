@@ -329,6 +329,11 @@ turning them into gates rather than notes.
 
 - Repo setting **Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests"** enabled.
 - Workflow `permissions:` include `contents: write`, `pull-requests: write`, `issues: write`, `id-token: write`.
+- For the model review, an Azure AI Foundry deployment plus five repository secrets — `AZURE_CLIENT_ID`,
+  `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AZURE_AI_ENDPOINT`, `AZURE_AI_DEPLOYMENT` — and, on the app
+  registration, the **Cognitive Services OpenAI User** role on the AI resource plus a federated credential
+  per trusted subject (`repo:<owner>/<repo>:ref:refs/heads/main` and `repo:<owner>/<repo>:pull_request`).
+  Without them the review step is skipped and every deterministic check still runs.
 
 ---
 

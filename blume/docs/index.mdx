@@ -170,13 +170,19 @@ under *Interview structure*.
 
 ## Weekly knowledge-base automation
 
-<img src={`${import.meta.env.BASE_URL}/weekly-update.svg`} alt="Weekly automation: a scheduled Action runs an AI review of the knowledge base and decision rules, then opens a pull request when an update is needed" />
+<img src={`${import.meta.env.BASE_URL}/weekly-update.svg`} alt="Weekly automation: a scheduled Action checks consistency, classifies links, scans news and claim drift, runs a model review on Azure AI Foundry, and opens a pull request only when a substantive change was actually applied" />
 
 A scheduled GitHub Action first checks version consistency, classifies links as ok, unreachable or
-unverified-bot-blocked, scans Microsoft news, and verifies high-risk claims against a claims registry. An AI
-review summarizes potential drift, but a version bump is allowed only when substantive content changes were
-actually applied; otherwise the run is housekeeping or report-only. Freshness becomes a routine, reviewable
-event.
+unverified-bot-blocked, scans Microsoft news, and verifies high-risk claims against a claims registry. A
+model review then summarizes potential drift, but a version bump is allowed only when substantive content
+changes were actually applied; otherwise the run is housekeeping or report-only. Freshness becomes a
+routine, reviewable event.
+
+The review runs on an **Azure AI Foundry** model deployment, at the deepest reasoning setting available —
+it is a whole-corpus pass over both the knowledge base and the decision tree. Authentication is Entra ID
+through **GitHub OIDC**: no API key, no stored client secret, just a federated credential scoped to this
+repository. If the model is unavailable, the step is skipped and every deterministic check still runs: an
+advisory verdict can never, on its own, change a version.
 
 ---
 
