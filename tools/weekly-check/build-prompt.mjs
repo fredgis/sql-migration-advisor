@@ -1,4 +1,4 @@
-// Assemble the user prompt for the GitHub Models review step.
+// Assemble the user prompt for the model review step.
 // Prints to stdout (the workflow redirects it to prompt.txt).
 import fs from 'node:fs';
 import path from 'node:path';

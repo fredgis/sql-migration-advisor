@@ -251,9 +251,9 @@ knowledge base current **every Monday** (~07:00 Europe/Paris — 05:00 UTC), so 
 3. **News + claims drift.** Official Azure / SQL Server feeds are scanned, and
    [`reference/claims-registry.json`](reference/claims-registry.json) hashes the source sections
    behind high-risk claims to catch silent Microsoft Learn edits.
-4. **AI review.** [GitHub Models](https://docs.github.com/github-models) — via the built-in
-   token, no external secrets — reviews the evidence and produces a report; broken links and AI
-   verdicts are report-only until a human applies the substantive fix.
+4. **AI review.** An **Azure AI Foundry** model deployment reviews the evidence and produces a
+   report. Authentication is Entra ID via **GitHub OIDC** — no API key and no stored client
+   secret. Broken links and AI verdicts are report-only until a human applies the substantive fix.
 5. **Gated update.** A version bump requires `--substantive` plus a verified content diff versus
    `HEAD`. Housekeeping can refresh stamps without a version bump or changelog row. When a real
    change is applied, the workflow opens a Pull Request with the evidence and regenerated PDF
@@ -265,6 +265,11 @@ visible version and a collapsible changelog (§17) so every substantive update i
 
 > Enable *Settings → Actions → General → "Allow GitHub Actions to create and approve pull
 > requests"* so the weekly job can open its PR.
+>
+> The AI review step needs five repository secrets pointing at your own model deployment:
+> `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AZURE_AI_ENDPOINT` and
+> `AZURE_AI_DEPLOYMENT`, plus a federated credential on the app registration for this repository.
+> Without them the review step is simply skipped — every other check still runs.
 
 ---
 

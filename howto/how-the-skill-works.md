@@ -232,7 +232,7 @@ itself honest with a scheduled workflow, [`weekly-kb-check.yml`](../.github/work
 that runs every **Monday 05:00 UTC** (and on manual `workflow_dispatch`).
 
 <p align="center">
-  <img src="./weekly-update.svg" alt="Weekly freshness automation: a Monday schedule triggers a link and news scan (lychee + RSS), a GPT-5 review on GitHub Models returns a JSON verdict, decide.mjs judges staleness, apply-update.mjs bumps the version and changelog, and a pull request is opened for a human to merge into the knowledge base." width="1040">
+  <img src="./weekly-update.svg" alt="Weekly freshness automation: a Monday schedule triggers a link and news scan (lychee + RSS), a model review on Azure AI Foundry returns a JSON verdict, decide.mjs judges staleness, apply-update.mjs bumps the version and changelog, and a pull request is opened for a human to merge into the knowledge base." width="1040">
 </p>
 
 What each stage does:
@@ -248,9 +248,9 @@ What each stage does:
 4. **Claims drift detection (`verify-claims.mjs`).** Re-fetches the source sections in
    [`reference/claims-registry.json`](../reference/claims-registry.json), hashes the relevant text and
    reports silent Microsoft Learn edits behind high-risk claims.
-5. **AI review (`build-prompt.mjs` → GitHub Models).** Sends the evidence, the knowledge base and the
-   decision tree to the model to flag real changes and any drift between documents. The verdict is an input
-   to review, not proof that content was fixed.
+5. **AI review (`build-prompt.mjs` → `ai-review.mjs`).** Sends the evidence, the knowledge base and the
+   decision tree to an Azure AI Foundry model to flag real changes and any drift between documents. The
+   verdict is an input to review, not proof that content was fixed.
 6. **Decide (`decide.mjs`).** Separates substantive changes from housekeeping and report-only findings.
    Broken links, bot-blocked links and AI suggestions can open an issue or PR body, but they do not justify a
    version bump by themselves.
@@ -263,18 +263,35 @@ What each stage does:
 
 ### The review model
 
-The review runs on **`openai/gpt-5`** via GitHub Models (`actions/ai-inference@v2`), using the built-in
-`GITHUB_TOKEN` with `permissions: models: read` — **no external secret required**. GPT-5 was chosen
-because it is the most capable model *available on GitHub Models*: it reasons, has broad up-to-date
-knowledge, and has a large enough context window to review the knowledge base, decision tree, link report,
-news digest and claims-drift summary in one pass. Its output is advisory: the gates require actual file diffs
-before versioning changes.
+The review runs on an **Azure AI Foundry model deployment**, called from
+[`tools/weekly-check/ai-review.mjs`](../tools/weekly-check/ai-review.mjs) using the Responses API and Node
+built-ins only. It replaces GitHub Models, which entered a retirement brownout and began returning
+HTTP 410.
 
-> **Note for implementers:** GitHub Models does **not** host any Anthropic/Claude models — only OpenAI,
-> Meta, Microsoft, Mistral AI, DeepSeek and Cohere. To run Claude (or any non-hosted model) you must
-> replace the `actions/ai-inference` step with a provider call (Anthropic API, Amazon Bedrock, or
-> **Microsoft Foundry**) and add the corresponding secret. The AI step is `continue-on-error`; if it fails,
-> the deterministic checks still report, but no AI-only version bump is allowed.
+Authentication is **Entra ID via GitHub OIDC**: the workflow requests an `id-token`, `azure/login` exchanges
+it for an Azure token, and the script calls the endpoint with that short-lived bearer token. There is **no
+API key** (key auth is disabled on the deployment) and **no stored client secret** — only a federated
+credential on the app registration, scoped to this repository.
+
+Five repository secrets carry the coordinates, so nothing about the tenant, subscription, application or
+resource appears in this public repo:
+
+| Secret | Purpose |
+| --- | --- |
+| `AZURE_CLIENT_ID` | The app registration federated to this repository |
+| `AZURE_TENANT_ID` · `AZURE_SUBSCRIPTION_ID` | Sign-in context for `azure/login` |
+| `AZURE_AI_ENDPOINT` | e.g. `https://<resource>.services.ai.azure.com/openai/v1` |
+| `AZURE_AI_DEPLOYMENT` | The model deployment name |
+
+The service principal needs the **Cognitive Services OpenAI User** role on the AI resource, and a federated
+credential per trusted subject (`ref:refs/heads/main` for scheduled and dispatched runs, `pull_request` for
+knowledge-base PRs).
+
+> **Note for implementers:** the model is a swappable component. Any provider works as long as the step
+> writes the verdict JSON to `response.txt` — point `ai-review.mjs` at a different endpoint, or replace it
+> with a provider-specific call. The step is `continue-on-error` and the script exits 0 on any failure, so a
+> model outage degrades to "no AI verdict": the deterministic checks still run, and no AI-only version bump
+> is ever allowed.
 
 ### Golden test suite
 
@@ -305,7 +322,7 @@ turning them into gates rather than notes.
 ### Prerequisites for the automation
 
 - Repo setting **Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests"** enabled.
-- Workflow `permissions:` include `contents: write`, `pull-requests: write`, `models: read`.
+- Workflow `permissions:` include `contents: write`, `pull-requests: write`, `issues: write`, `id-token: write`.
 
 ---
 
@@ -336,7 +353,7 @@ A checklist to reuse the pattern for another domain (or to adopt this one):
 3. **Encode the guardrails in `SKILL.md`** (retired-tool list, layer separation, preview honesty) so the
    behaviour survives model changes.
 4. **Adopt the freshness automation** (`tools/weekly-check/` + the workflow). Re-point `keywords.json`
-   feeds/keywords to your domain. Confirm the model choice against the live GitHub Models catalog, or wire
+   feeds/keywords to your domain. Point the review at your own model deployment, or wire
    an external provider + secret if you need a specific model.
 5. **Keep humans in the loop** — the Action opens a PR; it does not auto-merge content or claim fixes it did not apply.
 6. **Mind file hygiene** — `SKILL.md` should be UTF-8 with **LF** line endings (a CRLF front-matter

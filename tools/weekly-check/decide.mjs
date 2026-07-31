@@ -124,7 +124,7 @@ const reported = [
   hasBotBlocked ? `- ${(linkSummary.unverifiedBotBlocked || []).length} link(s) returned 403/429 and are classified as unverified bot-blocked, not healthy.` : '- No 403/429 bot-blocked links reported.',
   claimDrift ? `- Claims registry detected ${(claims.drifted || []).length} source-section hash drift(s); affected rules require human review.` : '- No claim hash drift reported.',
   claimUnverified ? `- Claims registry could not verify ${(claims.unverified || []).length} claim source(s); review manually.` : '- All fetched claim sources verified or were baselined.',
-  needsUpdate ? '- GitHub Models flagged possible substantive edits. This is report-only until a patch is actually applied.' : `- GitHub Models did not require a substantive update; ${NEWS_COUNT} candidate news item(s) reviewed.`
+  needsUpdate ? '- The model review flagged possible substantive edits. This is report-only until a patch is actually applied.' : `- The model review did not require a substantive update; ${NEWS_COUNT} candidate news item(s) reviewed.`
 ].join('\n');
 const versionStatement = substantiveApplied
   ? `Version bump: **yes** (${bump}), because substantive content diffs were applied before metadata changes.`

@@ -99,8 +99,8 @@ rect.c-bg-rect { fill: var(--bg); }
 
         <rect x="655" y="300" width="155" height="60" rx="6" class="c-mask"/>
         <rect x="655" y="300" width="155" height="60" rx="6" class="c-cloud" stroke-width="1.5"/>
-        <text x="732.5" y="328" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">GPT-5 review</text>
-        <text x="732.5" y="344" class="t-muted" font-size="9" text-anchor="middle">GitHub Models</text>
+        <text x="732.5" y="328" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Model review</text>
+        <text x="732.5" y="344" class="t-muted" font-size="9" text-anchor="middle">Azure AI Foundry</text>
         <text x="732.5" y="352" class="t-cloud" font-size="7" text-anchor="middle">verdict JSON</text>
 
         <rect x="655" y="460" width="155" height="60" rx="6" class="c-mask"/>

@@ -326,7 +326,7 @@ flowchart TD
     B --> C[Check links]
     C --> D[Read Microsoft news feeds]
     D --> E[Verify high-risk claims]
-    E --> F[AI review with GitHub Models]
+    E --> F[AI review with an Azure AI Foundry model]
     F --> G{Real content change?}
     G -- Yes --> H[Apply update and open PR]
     G -- No, but review needed --> I[Open GitHub issue]
@@ -346,9 +346,13 @@ The weekly workflow checks:
 
 The AI review is advisory.
 
+It runs on an **Azure AI Foundry** model deployment. Authentication uses Entra ID through **GitHub OIDC**: there is no API key and no stored client secret, and the workflow exchanges a short-lived GitHub identity token for an Azure token at run time.
+
 It cannot create a knowledge-base version change by itself.
 
 A real file change and passing checks are required.
+
+If the model is unreachable or its credentials are missing, the review step is skipped and the rest of the weekly workflow still runs.
 
 ---
 
