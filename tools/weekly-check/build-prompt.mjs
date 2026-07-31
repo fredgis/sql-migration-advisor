@@ -18,25 +18,70 @@ const claimsRegistry = read(CLAIMS, '[]').trim();
 const news = read('news.md', '').trim() || '_No news file._';
 
 process.stdout.write(
-`Review the FULL knowledge base AND the FULL decision tree below, then decide whether a
-substantive update is warranted THIS WEEK, based on:
-(a) official Azure / SQL Server news feeds,
-(b) the link classification (403/429 are unverified, not healthy),
-(c) claims/source content drift, and
-(d) drift between the two documents — the decision tree is a distilled mirror of the
-    knowledge base and must stay consistent with it.
+`You are auditing a SQL Server → Azure migration knowledge base and its distilled decision
+tree. Both are reproduced in full below, together with this week's evidence.
 
-Important governance rule: your needsUpdate verdict is advisory only. It must never by
-itself bump the version. A version increment is allowed only after substantive content
-edits have actually been applied and consistency tests pass. Broken links alone should be
-reported for human review unless a link URL is actually rewritten.
+# Task
 
-Only recommend changes relevant to migrating SQL Server to Azure: GA/preview/retirement,
-changed dates, target/method/tool changes, pricing/ESU/licensing, inaccessible/moved
-sources, or KB-to-decision-tree drift. Ignore unrelated products.
+Decide whether a substantive content update is warranted, and list the exact edits.
 
-Respond with ONLY a JSON object (no prose, no code fence):
-{"needsUpdate": true|false, "bump": "minor"|"major", "changelog": "<=300 chars, truthful summary of APPLIED content edits only; do not claim link fixes unless URLs were rewritten", "suggestions": "markdown bullets; each names the file (docs/sql-server-to-azure-migration.md or reference/decision-rules.md), concrete edit, affected claim/rule if applicable, and source link; empty string if none"}
+# What counts as evidence
+
+Base every finding on one of the four evidence blocks below, and cite the authoritative
+source for it:
+(a) official Azure / SQL Server news,
+(b) link classification — 403/429 mean "unverified", never "healthy",
+(c) claims/source content drift,
+(d) drift between the two documents — the decision tree is a mirror of the knowledge base
+    and must agree with it.
+
+# Precision beats recall
+
+A false finding costs more than a missed one: it sends a human to verify something that
+was already correct, and repeated false alarms make the whole review ignored.
+
+- Every finding MUST carry a specific Microsoft source URL that supports it. No URL, no finding.
+- If you are not confident the current text is wrong, do not report it.
+- Do not report style, wording, formatting or structure. Only facts that would change a
+  migration recommendation.
+- Do not restate something the documents already say correctly.
+- Ignore products unrelated to migrating SQL Server to Azure.
+
+In scope: GA/preview/retirement transitions, changed dates, version gates and floors,
+target/method/tool support changes, ports and limits, pricing/ESU/licensing rules,
+moved or dead sources, and KB-vs-decision-tree contradictions.
+
+# Governance
+
+Your verdict is advisory. It can never, on its own, increment the version. A version bump
+happens only after substantive edits are actually applied and the consistency tests pass.
+Broken links are reported for a human unless a URL is genuinely rewritten. So set
+"needsUpdate": true only when real content edits are required — not merely because news
+exists or a link was unreachable.
+
+# Output
+
+Return ONLY a JSON object, no prose and no code fence:
+
+{
+  "needsUpdate": true|false,
+  "bump": "minor"|"major",
+  "changelog": "<=300 chars; truthful summary of the content edits you are proposing; never claim a link was fixed unless a URL is actually rewritten",
+  "findings": [
+    {
+      "file": "docs/sql-server-to-azure-migration.md" | "reference/decision-rules.md",
+      "locator": "section or heading, e.g. '§5.2 MI methods table'",
+      "current": "what the document says today (short quote or paraphrase)",
+      "correction": "what it should say instead",
+      "why": "what changed, or why the current text is wrong",
+      "source": "https://learn.microsoft.com/...",
+      "confidence": "high"|"medium",
+      "claim_id": "affected claim or rule id, or null"
+    }
+  ]
+}
+
+Return "findings": [] when nothing warrants a change — that is a valid and useful answer.
 
 === KNOWLEDGE BASE — docs/sql-server-to-azure-migration.md (FULL) ===
 ${doc}

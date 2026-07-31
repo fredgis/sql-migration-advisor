@@ -17,7 +17,29 @@ if (resp) {
 }
 const needsUpdate = ai.needsUpdate === true;
 const bump = ai.bump === 'major' ? 'major' : 'minor';
-const aiSuggestions = (ai.suggestions && String(ai.suggestions).trim()) || '';
+
+// The model returns structured findings; render them as review-ready markdown.
+// A plain "suggestions" string is still accepted so an older response shape keeps working.
+function renderFindings(a) {
+  if (Array.isArray(a.findings) && a.findings.length) {
+    return a.findings.map((f, i) => {
+      const head = `${i + 1}. **${f.file || 'unknown file'}**${f.locator ? ` — ${f.locator}` : ''}`;
+      const rows = [
+        f.current ? `   - current: ${String(f.current).trim()}` : null,
+        f.correction ? `   - correction: ${String(f.correction).trim()}` : null,
+        f.why ? `   - why: ${String(f.why).trim()}` : null,
+        f.source ? `   - source: ${String(f.source).trim()}` : '   - source: _none given — treat as unverified_',
+        f.claim_id ? `   - affected: \`${String(f.claim_id).trim()}\`` : null,
+        f.confidence ? `   - confidence: ${String(f.confidence).trim()}` : null,
+      ].filter(Boolean);
+      return [head, ...rows].join('\n');
+    }).join('\n\n');
+  }
+  return (a.suggestions && String(a.suggestions).trim()) || '';
+}
+const aiSuggestions = renderFindings(ai);
+const findingsCount = Array.isArray(ai.findings) ? ai.findings.length : null;
+const unsourcedFindings = Array.isArray(ai.findings) ? ai.findings.filter(f => !f || !f.source).length : 0;
 const claimDrift = (claims.drifted || []).length > 0;
 const claimUnverified = (claims.unverified || []).length > 0;
 const hasUnreachable = (linkSummary.unreachable || []).length > 0;
@@ -171,5 +193,5 @@ fs.writeFileSync('issue-body.md', body);
 
 const out = process.env.GITHUB_OUTPUT;
 if (out) fs.appendFileSync(out, `changed=${changed}\nbump=${bump}\npr_required=${prRequired}\nissue_required=${issueRequired}\napply_mode=${housekeeping ? 'housekeeping' : (substantiveApplied ? 'substantive' : 'none')}\n`);
-console.log(`changed=${changed} pr_required=${prRequired} issue_required=${issueRequired} apply_mode=${housekeeping ? 'housekeeping' : (substantiveApplied ? 'substantive' : 'none')} bump=${bump} needsUpdate=${needsUpdate} news=${NEWS_COUNT} unreachable=${(linkSummary.unreachable || []).length} botBlocked=${(linkSummary.unverifiedBotBlocked || []).length} claimDrift=${(claims.drifted || []).length}`);
+console.log(`changed=${changed} pr_required=${prRequired} issue_required=${issueRequired} apply_mode=${housekeeping ? 'housekeeping' : (substantiveApplied ? 'substantive' : 'none')} bump=${bump} needsUpdate=${needsUpdate} findings=${findingsCount ?? 'n/a'} unsourced=${unsourcedFindings} news=${NEWS_COUNT} unreachable=${(linkSummary.unreachable || []).length} botBlocked=${(linkSummary.unverifiedBotBlocked || []).length} claimDrift=${(claims.drifted || []).length}`);
 console.log(`changelog: ${changelog}`);
