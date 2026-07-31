@@ -12,7 +12,12 @@ tools/diagram/icons/
 /prompt.txt
 /response.txt
 /lychee-report.md
+/link-summary.md
+/link-summary.json
+/claims-report.md
+/claims-report.json
 /pr-body.md
+/issue-body.md
 /changelog.txt
 
 # Node

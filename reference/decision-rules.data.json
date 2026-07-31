@@ -1,9 +1,9 @@
 {
   "schema": "sql-migration-advisor.decision-rules-data/v1",
-  "version": "v1.7",
+  "version": "v1.8",
   "source": {
     "markdown": "reference/decision-rules.md",
-    "description": "Machine-checkable constants and gates extracted from decision-rules.md v1.7."
+    "description": "Machine-checkable constants and gates extracted from decision-rules.md v1.8."
   },
   "sourceVersionFloors": {
     "miLink": {
@@ -16,6 +16,17 @@
     },
     "nativeRestoreToMi": {
       "sqlServerMin": 2008
+    },
+    "backupToUrl": {
+      "sqlServerMin": 2012,
+      "sqlServerMinBuild": "SP1 CU2",
+      "blockBlobSasSqlServerMin": 2016
+    },
+    "alwaysOnAvailabilityGroupToVm": {
+      "sqlServerMin": 2012
+    },
+    "distributedAvailabilityGroupToVm": {
+      "sqlServerMin": 2016
     },
     "transactionalReplicationToSqlDb": {
       "publisherSqlServerMin": 2016
@@ -224,6 +235,12 @@
         "no read-scale secondary",
         "no high log throughput"
       ],
+      "nextGenGeneralPurposeSignals": [
+        "101-500 databases or MI Links",
+        "up to 128 vCores",
+        "up to 32 TB",
+        "configurable IOPS"
+      ],
       "unknownResult": "unknown_requires_assessment"
     },
     "azureSqlDatabase": {
@@ -307,6 +324,7 @@
   },
   "sqlDatabaseTiers": {
     "hyperscaleSizeThresholdTb": 4,
+    "hyperscaleMaxSizeTb": 128,
     "generalPurposeSmallDatabaseSignalGb": 150
   },
   "markdownAssertionExclusions": {

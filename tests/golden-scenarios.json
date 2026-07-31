@@ -98,7 +98,7 @@
     },
     "assertRulePresent": [
       "Standalone LRS[\\s\\S]*?SQL Server \\*\\*2008–2022\\*\\*",
-      "SQL Server 2008–2016 backs up locally, then uploads"
+      "SQL Server \\*\\*2012 SP1 CU2\\+\\*\\* can `BACKUP TO URL` directly to Blob"
     ],
     "auditRef": "P0-3"
   },
@@ -124,7 +124,7 @@
         "sql_db": "eligible"
       },
       "primary_target": "provisional shortlist only",
-      "method": "Confirm Fabric Preview gates first",
+      "method": "Confirm a Fabric ingestion path first; Migration Assistant Preview gates apply only if that path is chosen",
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
       "recommendationStatus": "provisional",
@@ -229,7 +229,7 @@
         "avs": "unsupported",
         "sql_mi": "eligible",
         "sql_db": "eligible",
-        "fabric_sql_db": "unsupported",
+        "fabric_sql_db": "eligible",
         "arc_sql_mi": "unsupported",
         "container": "unsupported",
         "arc_in_place": "eligible"
@@ -270,7 +270,7 @@
         "avs": "unsupported",
         "sql_mi": "eligible",
         "sql_db": "eligible",
-        "fabric_sql_db": "unsupported",
+        "fabric_sql_db": "eligible",
         "arc_sql_mi": "unsupported",
         "container": "unsupported",
         "arc_in_place": "eligible"
@@ -1295,7 +1295,7 @@
         "avs": "unsupported",
         "sql_mi": "eligible",
         "sql_db": "eligible",
-        "fabric_sql_db": "unsupported",
+        "fabric_sql_db": "eligible",
         "arc_sql_mi": "unsupported",
         "container": "unsupported",
         "arc_in_place": "unsupported"
@@ -1334,7 +1334,7 @@
         "avs": "unsupported",
         "sql_mi": "eligible",
         "sql_db": "eligible",
-        "fabric_sql_db": "unsupported",
+        "fabric_sql_db": "eligible",
         "arc_sql_mi": "unsupported",
         "container": "unsupported",
         "arc_in_place": "unsupported"
@@ -1564,7 +1564,7 @@
     },
     "assertRulePresent": [
       "Near-zero[\\s\\S]*?\\*\\*Distributed AG\\*\\* or \\*\\*Always On AG\\*\\*",
-      "DAG: source 2016\\+"
+      "Distributed AG: source \\*\\*2016\\+\\*\\*[\\s\\S]*?Always On AG: source \\*\\*2012\\+\\*\\*"
     ],
     "auditRef": "P1-37"
   },
@@ -1587,7 +1587,7 @@
     },
     "expect": {
       "eligibility": {
-        "fabric_sql_db": "unsupported",
+        "fabric_sql_db": "eligible_with_remediation",
         "sql_db": "eligible"
       },
       "primary_target": "Azure SQL Database",
@@ -1623,7 +1623,7 @@
     },
     "expect": {
       "eligibility": {
-        "fabric_sql_db": "unsupported"
+        "fabric_sql_db": "eligible_with_remediation"
       },
       "primary_target": "Azure SQL Database",
       "method": "modern DMS (offline)",
@@ -1706,7 +1706,7 @@
         "avs": "unsupported",
         "sql_mi": "eligible",
         "sql_db": "eligible",
-        "fabric_sql_db": "unsupported",
+        "fabric_sql_db": "eligible_with_remediation",
         "arc_sql_mi": "unsupported",
         "container": "unsupported",
         "arc_in_place": "unsupported"
@@ -1757,7 +1757,7 @@
         "avs": "unsupported",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
-        "fabric_sql_db": "unsupported",
+        "fabric_sql_db": "eligible",
         "arc_sql_mi": "unsupported",
         "container": "unsupported",
         "arc_in_place": "unsupported"
@@ -1809,7 +1809,7 @@
         "avs": "unsupported",
         "sql_mi": "eligible",
         "sql_db": "eligible",
-        "fabric_sql_db": "unsupported",
+        "fabric_sql_db": "eligible",
         "arc_sql_mi": "unsupported",
         "container": "unsupported",
         "arc_in_place": "unsupported"
@@ -1851,7 +1851,7 @@
         "avs": "unsupported",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
-        "fabric_sql_db": "unsupported",
+        "fabric_sql_db": "eligible",
         "arc_sql_mi": "unsupported",
         "container": "unsupported",
         "arc_in_place": "unsupported"
@@ -1897,7 +1897,7 @@
         "avs": "unsupported",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
-        "fabric_sql_db": "unsupported",
+        "fabric_sql_db": "eligible",
         "arc_sql_mi": "unsupported",
         "container": "unsupported",
         "arc_in_place": "unsupported"
@@ -1941,7 +1941,7 @@
         "avs": "unsupported",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
-        "fabric_sql_db": "unsupported",
+        "fabric_sql_db": "eligible",
         "arc_sql_mi": "unsupported",
         "container": "unsupported",
         "arc_in_place": "unsupported"
@@ -1984,7 +1984,7 @@
         "avs": "unsupported",
         "sql_mi": "eligible",
         "sql_db": "eligible",
-        "fabric_sql_db": "unsupported",
+        "fabric_sql_db": "eligible",
         "arc_sql_mi": "unsupported",
         "container": "unsupported",
         "arc_in_place": "unsupported"
@@ -2025,7 +2025,7 @@
         "avs": "unsupported",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
-        "fabric_sql_db": "unsupported",
+        "fabric_sql_db": "eligible",
         "arc_sql_mi": "unsupported",
         "container": "unsupported",
         "arc_in_place": "unsupported"
@@ -2068,7 +2068,7 @@
         "avs": "unsupported",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
-        "fabric_sql_db": "unsupported",
+        "fabric_sql_db": "eligible",
         "arc_sql_mi": "unsupported",
         "container": "unsupported",
         "arc_in_place": "unsupported"
@@ -2188,7 +2188,7 @@
         "avs": "unsupported",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
-        "fabric_sql_db": "unsupported",
+        "fabric_sql_db": "eligible",
         "arc_sql_mi": "unsupported",
         "container": "unsupported",
         "arc_in_place": "unsupported"

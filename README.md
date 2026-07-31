@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Knowledge base v1.7" src="https://img.shields.io/badge/knowledge%20base-v1.7-2b8a3e">
+  <img alt="Knowledge base v1.8" src="https://img.shields.io/badge/knowledge%20base-v1.8-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml/badge.svg"></a>
 </p>
@@ -56,7 +56,7 @@ knowledge-base version, commit SHA and fetch timestamp so the advice is traceabl
 
 ## Why it is trustworthy
 
-- **Verified knowledge** — the v1.7 knowledge base is source-backed and corrected against Microsoft Learn.
+- **Verified knowledge** — the v1.8 knowledge base is source-backed and corrected against Microsoft Learn.
 - **Deterministic engine** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers.
 - **Explicit uncertainty** — recommendations carry confidence, provisional/validated status, assumptions, unknowns, blockers and evidence required.
 - **Freshness gates** — version bumps require substantive diffs; link checks classify bot-blocked pages; high-risk claims are tracked in [`reference/claims-registry.json`](reference/claims-registry.json).
@@ -219,7 +219,7 @@ Mermaid decision diagrams. The `SKILL.md` mirrors its AI Migration Agent I/O con
 
 The same knowledge base ships as a polished, branded PDF —
 [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (22 pages,
-v1.7, July 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
+v1.8, July 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
 
@@ -281,10 +281,11 @@ base and this README on the same version. Last verified: July 2026.
 
 <!-- CHANGELOG:START -->
 <details>
-<summary><b>📓 Changelog</b> — current: <b>v1.7</b> (July 2026)</summary>
+<summary><b>📓 Changelog</b> — current: <b>v1.8</b> (July 2026)</summary>
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| v1.8 | 2026-07-31 | Fabric SQL database re-scoped Preview → GA (only the Migration Assistant stays Preview), Backup to URL floor corrected to SQL Server 2012 SP1 CU2, stale SSMS 22 assessment roadmap removed, SQL VM downtime corrected to near-zero with AG/DAG, Always On AG 2012+ split from distributed AG 2016+, Hyperscale bounded at 128 TB, MI Next-gen General Purpose made selectable, and retirement claims repointed to maintained sources. |
 | v1.7 | 2026-07-31 | Corrected SQL Server 2016 paid-ESU status, Hyperscale AHB exception guidance, SSRS/PBIRS consolidation, replication floors, Fabric Migration Assistant scope, Striim online/CDC guidance, retired-tool status, and Amazon RDS online-DMS nuance. |
 | v1.6 | 2026-07-27 | Completed the MI Link port requirement (5022 **and** 11000–11999); corrected MI Link capacity to 100 links (500 on Next-gen General Purpose) and moved the "10 databases" figure to the Azure Arc wizard batch limit where it belongs; made the Azure Arc source floor consistently SQL Server 2014+; replaced the single downtime label with `targetAvailabilityDuringSync` + `businessCutoverDowntime` so LRS is no longer mislabelled offline. |
 | v1.5 | 2026-07-27 | Corrected SQL MI PolyBase/data-virtualization and DTC nuance; fixed transactional-replication, LRS and cross-cloud method gates; replaced retired validation guidance; removed unsourced statistics; added uncertainty, traceability, claims drift detection and golden decision tests. |

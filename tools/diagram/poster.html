@@ -165,7 +165,7 @@
         <span class="layer"><b>Method</b> = the data-movement vehicle</span>
         <span class="layer">Never recommend retired tooling</span>
       </div>
-      <div class="src">Sourced from the <b>sql-migration-advisor</b> knowledge base — docs/sql-server-to-azure-migration.md (v1.5, July 2026). Whole engine, not just target selection. Official Azure &amp; Microsoft Fabric service icons.</div>
+      <div class="src">Sourced from the <b>sql-migration-advisor</b> knowledge base — docs/sql-server-to-azure-migration.md (v1.8, July 2026). Whole engine, not just target selection. Official Azure &amp; Microsoft Fabric service icons.</div>
     </div>
     <div class="brand">
       <img class="svc" src="icons/fabric.svg" alt="Microsoft Fabric" style="width:30px;height:30px;" />
@@ -297,7 +297,7 @@
         <div class="ex">SQL Agent · cross-DB · linked servers · SQL CLR · Service Broker — and none of the VM-only features above</div></div>
       <div class="fcond" style="left:92px;top:784px;width:476px">
         <div class="q">Analytics-first / Fabric-native — small, simple schema?</div>
-        <div class="ex">driver = analytics / Fabric unification · DACPAC ≤ 20 MB · no Private Link need</div></div>
+        <div class="ex">driver = analytics / Fabric unification · assistant gates: DACPAC ≤ 20 MB · no Private Link need</div></div>
 
       <!-- target cards -->
       <div class="fcard arc" style="left:700px;top:88px;width:808px;height:66px">
@@ -341,7 +341,7 @@
           <span class="t">Azure SQL Database — cloud-native, fully managed</span>
           <span class="s">management = fully managed · feature deps = none · choose the deployment model</span></div>
         <div class="models">
-          <div class="model"><img src="icons/sql-database.svg" alt=""/><div><div class="m">Hyperscale</div><div class="x">&gt; 4 TB · heavy write I/O · HTAP</div></div></div>
+          <div class="model"><img src="icons/sql-database.svg" alt=""/><div><div class="m">Hyperscale</div><div class="x">&gt; 4 TB up to 128 TB · heavy write I/O · HTAP</div></div></div>
           <div class="model"><img src="icons/sql-database.svg" alt=""/><div><div class="m">Serverless</div><div class="x">intermittent · dev/test · microservices (auto-pause)</div></div></div>
           <div class="model"><img src="icons/sql-elastic-pools.svg" alt=""/><div><div class="m">Elastic Pool</div><div class="x">multi-tenant SaaS consolidation</div></div></div>
           <div class="model"><img src="icons/sql-database.svg" alt=""/><div><div class="m">General Purpose / Business Critical</div><div class="x">default single DB · BC = 99.995% SLA (zone-redundant)</div></div></div>
@@ -388,8 +388,8 @@
         </div></div>
       <div class="panel"><h3><img src="icons/fabric.svg" alt=""/>→ SQL database in Fabric</h3>
         <div class="rows">
-          <div class="r"><span class="pill p-off">offline</span><b>Fabric Migration Assistant</b></div>
-          <div class="r g">schema via DACPAC ≤ 20 MB · data via Fabric Data Factory copy + on-prem gateway (no VNet / Private Link)</div>
+          <div class="r"><span class="pill p-off">offline</span><b>Fabric Migration Assistant</b> <span class="pill p-no">Preview — the target is GA</span></div>
+          <div class="r g">assistant limits: schema via DACPAC ≤ 20 MB · data via Fabric Data Factory copy + on-prem gateway (no VNet / Private Link) — T-SQL, transactional replication, pipelines, Dataflow Gen2 and TDS tools also ingest</div>
         </div></div>
     </div>
     <div class="note-full"><img src="icons/data-box.svg" alt="Data Box"/>

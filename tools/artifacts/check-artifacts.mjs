@@ -165,6 +165,31 @@ for (const { artifact, sources, rebuild } of DERIVED) {
   }
 }
 
+// The poster prints the knowledge-base version it was built from; that claim must
+// track the knowledge base too, or a rebuilt PNG silently advertises an old version.
+{
+  const posterPath = path.join(ROOT, 'tools', 'diagram', 'poster.html');
+  const version = currentKbVersion();
+  let poster = fs.readFileSync(posterPath, 'utf8');
+  const shape = /(sql-server-to-azure-migration\.md \()(v\d+\.\d+)/;
+  const claim = poster.match(shape);
+  if (!claim) {
+    notes.push('poster.html does not quote the knowledge-base version in the expected shape; skipped');
+  } else if (fixProse && version) {
+    const fixed = poster.replace(shape, `$1${version}`);
+    if (fixed !== poster) {
+      fs.writeFileSync(posterPath, fixed);
+      notes.push(`poster.html version claim rewritten to ${version}`);
+    }
+  } else if (version && claim[2] !== version) {
+    problems.push({
+      kind: 'prose-version-mismatch', artifact: 'tools/diagram/poster.html', source: 'docs/sql-server-to-azure-migration.md',
+      fix: 'node tools/artifacts/check-artifacts.mjs --fix-prose && node tools/diagram/build.mjs poster',
+      detail: `poster says ${claim[2]}, knowledge base is ${version}`,
+    });
+  }
+}
+
 if (jsonMode) {
   console.log(JSON.stringify({ ok: problems.length === 0, problems, notes }, null, 2));
 } else {

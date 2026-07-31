@@ -53,6 +53,10 @@ assertRegex('sourceVersionFloors.miLink.sqlServerMin', new RegExp(`MI Link[\\s\\
 assertRegex('sourceVersionFloors.standaloneLrs', new RegExp(`Standalone LRS[\\s\\S]*?SQL Server \\*\\*${floors.standaloneLrs.sqlServerMin}[–-]${floors.standaloneLrs.sqlServerMax}\\*\\*`, 'u'), `expected standalone LRS ${floors.standaloneLrs.sqlServerMin}-${floors.standaloneLrs.sqlServerMax}`);
 assertRegex('sourceVersionFloors.nativeRestoreToMi.sqlServerMin', new RegExp(`Native backup/restore[\\s\\S]*?SQL Server ${floors.nativeRestoreToMi.sqlServerMin}\\+`, 'u'), `expected native restore SQL Server ${floors.nativeRestoreToMi.sqlServerMin}+`);
 assertRegex('sourceVersionFloors.transactionalReplicationToSqlDb.publisherSqlServerMin', new RegExp(`publisher SQL Server \\*\\*${floors.transactionalReplicationToSqlDb.publisherSqlServerMin} and later\\*\\*`, 'u'), `expected transactional replication publisher floor ${floors.transactionalReplicationToSqlDb.publisherSqlServerMin}+`);
+assertRegex('sourceVersionFloors.backupToUrl', new RegExp(`BACKUP TO URL\`\\s*from\\s*\\*\\*${floors.backupToUrl.sqlServerMin}\\s+${flex(floors.backupToUrl.sqlServerMinBuild)}\\+\\*\\*`, 'u'), `expected Backup to URL floor SQL Server ${floors.backupToUrl.sqlServerMin} ${floors.backupToUrl.sqlServerMinBuild}+`);
+assertRegex('sourceVersionFloors.backupToUrl.blockBlobSasSqlServerMin', new RegExp(`${floors.backupToUrl.blockBlobSasSqlServerMin}\\+ use block blob \\+ SAS`, 'u'), `expected block blob + SAS from SQL Server ${floors.backupToUrl.blockBlobSasSqlServerMin}+`);
+assertRegex('sourceVersionFloors.alwaysOnAvailabilityGroupToVm.sqlServerMin', new RegExp(`Always On AG: source \\*\\*${floors.alwaysOnAvailabilityGroupToVm.sqlServerMin}\\+\\*\\*`, 'u'), `expected Always On AG floor ${floors.alwaysOnAvailabilityGroupToVm.sqlServerMin}+`);
+assertRegex('sourceVersionFloors.distributedAvailabilityGroupToVm.sqlServerMin', new RegExp(`Distributed AG: source \\*\\*${floors.distributedAvailabilityGroupToVm.sqlServerMin}\\+\\*\\*`, 'u'), `expected distributed AG floor ${floors.distributedAvailabilityGroupToVm.sqlServerMin}+`);
 
 const arc = data.azureArcFloors;
 assertRegex('azureArcFloors.overallMigrationExperience.sqlServerMin', new RegExp(`Arc-enabled SQL Server overall migration experience:[\\s\\S]*?SQL Server \\*\\*${arc.overallMigrationExperience.sqlServerMin}\\+\\*\\*`, 'u'), `expected Arc overall SQL Server ${arc.overallMigrationExperience.sqlServerMin}+`);
@@ -75,6 +79,7 @@ assertRegex('arcPortalWizard.batchLimitBeforeExtension', new RegExp(`earlier ext
 
 assertRegex('fabricMigration.maxDacpacMb', new RegExp(`DACPAC\\s*(?:<=|≤)\\s*${data.fabricMigration.maxDacpacMb}\\s*MB`, 'iu'), `expected Fabric DACPAC cap ${data.fabricMigration.maxDacpacMb} MB`);
 assertRegex('sqlDatabaseTiers.hyperscaleSizeThresholdTb', new RegExp(`Database size\\s*>\\s*${data.sqlDatabaseTiers.hyperscaleSizeThresholdTb}\\s*TB`, 'iu'), `expected SQL DB Hyperscale threshold > ${data.sqlDatabaseTiers.hyperscaleSizeThresholdTb} TB`);
+assertRegex('sqlDatabaseTiers.hyperscaleMaxSizeTb', new RegExp(`>\\s*${data.sqlDatabaseTiers.hyperscaleMaxSizeTb}\\s*TB\\s*\\(the Hyperscale maximum\\)`, 'iu'), `expected SQL DB Hyperscale maximum ${data.sqlDatabaseTiers.hyperscaleMaxSizeTb} TB`);
 assertRegex('sqlDatabaseTiers.generalPurposeSmallDatabaseSignalGb', new RegExp(`<\\s*${data.sqlDatabaseTiers.generalPurposeSmallDatabaseSignalGb}\\s*GB`, 'iu'), `expected small database signal < ${data.sqlDatabaseTiers.generalPurposeSmallDatabaseSignalGb} GB`);
 
 for (const [method, model] of Object.entries(data.methodAvailability)) {

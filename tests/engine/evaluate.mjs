@@ -126,32 +126,37 @@ function chooseSqlDbTier(inputs, out) {
 }
 function applyFabric(inputs, eligibility, out) {
   const fabricDriven = has(inputs.driver, 'analytics/Fabric') || any(inputs, 'analytics-first', 'BI/analytics-first');
+  // The target is GA; only the Migration Assistant is Preview. So neither a non-analytics
+  // driver nor "preview not acceptable" may mark the target unsupported — the first is a
+  // ranking signal, the second only disqualifies the assistant as a method.
+  out.fabricIndicated = fabricDriven;
   if (!fabricDriven) {
-    eligibility.fabric_sql_db = E.UNSUPPORTED;
-    out.exclusions.fabric_sql_db = 'Fabric branch only applies to analytics/Fabric-driven simple schemas.';
+    eligibility.fabric_sql_db = E.ELIGIBLE;
+    out.rankingNotes = out.rankingNotes || {};
+    out.rankingNotes.fabric_sql_db = 'GA target, but not indicated without an analytics/Fabric driver; ranked below SQL DB/MI.';
     return;
   }
   const fabricText = `${textOf(inputs.fabric_constraints)} ${textOf(inputs.compliance)} ${textOf(inputs.size)} ${textOf(inputs.feature_dependencies)}`.toLowerCase();
   const mentionsGate = /dacpac|preview|gateway|private link/.test(fabricText);
   if (!mentionsGate) {
     eligibility.fabric_sql_db = E.UNKNOWN;
-    addUnique(out.unknowns, 'Fabric Preview gates: DACPAC size, Private Link, gateway, preview acceptance');
-    addUnique(out.evidenceRequired, `Confirm DACPAC <= ${FABRIC_MIGRATION.maxDacpacMb} MB, no Private Link requirement, gateway acceptable, Preview acceptable`);
+    addUnique(out.unknowns, 'Fabric ingestion path, then Migration Assistant gates: DACPAC size, Private Link, gateway, preview acceptance');
+    addUnique(out.evidenceRequired, `Confirm an ingestion path; if it is the Migration Assistant, confirm DACPAC <= ${FABRIC_MIGRATION.maxDacpacMb} MB, no Private Link requirement, gateway acceptable, Preview acceptable`);
     return;
   }
   if (/private link required|requires private link|private link: required|private link yes/.test(fabricText)) {
-    eligibility.fabric_sql_db = E.UNSUPPORTED;
-    out.exclusions.fabric_sql_db = 'Fabric SQL database Preview has no Private Link/VNet gateway path.';
+    eligibility.fabric_sql_db = E.REMEDIATE;
+    out.exclusions.fabric_sql_db = 'The Fabric Migration Assistant has no Private Link/VNet gateway path; the GA target itself remains available through another ingestion path.';
     return;
   }
   if (new RegExp(`dacpac\\s*>\\s*${FABRIC_MIGRATION.maxDacpacMb}|>\\s*${FABRIC_MIGRATION.maxDacpacMb}\\s*mb|over ${FABRIC_MIGRATION.maxDacpacMb}\\s*mb|>\\s*${SQL_DB_TIERS.hyperscaleSizeThresholdTb}\\s*tb`).test(fabricText)) {
-    eligibility.fabric_sql_db = E.UNSUPPORTED;
-    out.exclusions.fabric_sql_db = `Fabric Migration Assistant requires DACPAC <= ${FABRIC_MIGRATION.maxDacpacMb} MB.`;
+    eligibility.fabric_sql_db = E.REMEDIATE;
+    out.exclusions.fabric_sql_db = `The Fabric Migration Assistant requires DACPAC <= ${FABRIC_MIGRATION.maxDacpacMb} MB; use another ingestion path for the GA target.`;
     return;
   }
   if (/preview (not|no)|preview unacceptable|gateway (not|no)|cannot use on-prem data gateway/.test(fabricText)) {
-    eligibility.fabric_sql_db = E.UNSUPPORTED;
-    out.exclusions.fabric_sql_db = 'Fabric Preview acceptance and on-prem data gateway are mandatory.';
+    eligibility.fabric_sql_db = E.REMEDIATE;
+    out.exclusions.fabric_sql_db = 'Preview acceptance and the on-prem data gateway are Migration Assistant gates, not target gates; select a non-assistant ingestion path.';
     return;
   }
   if (new RegExp(`dacpac\\s*(<=|≤|under|=)\\s*${FABRIC_MIGRATION.maxDacpacMb}|no private link|gateway acceptable|preview accepted`).test(fabricText)) eligibility.fabric_sql_db = E.ELIGIBLE;
@@ -217,8 +222,8 @@ function chooseTarget(inputs, eligibility, out) {
   if (eligibility.arc_sql_mi === E.ELIGIBLE) return ['Arc-enabled SQL Managed Instance', any(inputs, 'sovereignty', 'air-gapped') ? 'Native backup/restore' : 'Native backup/restore after endpoint is available'];
   if (eligibility.container === E.ELIGIBLE && /kubernetes/i.test(String(inputs.management_model || ''))) return ['SQL Server in a container', 'Backup/restore via mounted volume'];
   if (eligibility.avs === E.ELIGIBLE && has(inputs.driver, 'data-center exit')) return ['Azure VMware Solution', 'VMware HCX / vMotion'];
-  if (eligibility.fabric_sql_db === E.UNKNOWN) return ['provisional shortlist only', 'Confirm Fabric Preview gates first'];
-  if (eligibility.fabric_sql_db === E.ELIGIBLE) return ['SQL database in Fabric', 'Fabric Migration Assistant'];
+  if (out.fabricIndicated && eligibility.fabric_sql_db === E.UNKNOWN) return ['provisional shortlist only', 'Confirm a Fabric ingestion path first; Migration Assistant Preview gates apply only if that path is chosen'];
+  if (out.fabricIndicated && eligibility.fabric_sql_db === E.ELIGIBLE) return ['SQL database in Fabric', 'Fabric Migration Assistant'];
   if (eligibility.sql_mi === E.UNKNOWN || eligibility.sql_db === E.UNKNOWN) return ['provisional shortlist only', 'Assessment and dependency discovery first'];
   if (eligibility.sql_mi === E.UNSUPPORTED && eligibility.sql_db === E.UNSUPPORTED) return ['SQL Server on Azure VM', chooseVmMethod(inputs)];
   if (eligibility.sql_vm === E.ELIGIBLE && (eligibility.sql_mi === E.UNSUPPORTED || eligibility.sql_db === E.UNSUPPORTED) && has(inputs.management_model, 'need OS')) return ['SQL Server on Azure VM', chooseVmMethod(inputs)];
@@ -234,7 +239,7 @@ function chooseTarget(inputs, eligibility, out) {
   if (has(inputs.source_version, String(SOURCE_FLOORS.standaloneLrs.sqlServerMin))) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
   if ((has(inputs.downtime, 'near-zero') || has(inputs.downtime, 'minimal')) && versionNumber(inputs.source_version) < SOURCE_FLOORS.transactionalReplicationToSqlDb.publisherSqlServerMin) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
   if ((has(inputs.downtime, 'near-zero') || has(inputs.downtime, 'minimal')) && portsKnownBlockedForMiLink(inputs) && !lrsSourceUnsupported(inputs)) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
-  if (has(inputs.driver, 'app modernization') || eligibility.fabric_sql_db === E.UNSUPPORTED || any(inputs.size, `> ${SQL_DB_TIERS.hyperscaleSizeThresholdTb} TB`, `${SQL_DB_TIERS.generalPurposeSmallDatabaseSignalGb} GB`) || any(inputs.performance, 'intermittent', 'strict SLA', 'transaction log') || any(inputs.tenant_count, 'many tenants')) return ['Azure SQL Database', chooseSqlDbMethod(inputs)];
+  if (has(inputs.driver, 'app modernization') || !out.fabricIndicated || eligibility.fabric_sql_db === E.REMEDIATE || any(inputs.size, `> ${SQL_DB_TIERS.hyperscaleSizeThresholdTb} TB`, `${SQL_DB_TIERS.generalPurposeSmallDatabaseSignalGb} GB`) || any(inputs.performance, 'intermittent', 'strict SLA', 'transaction log') || any(inputs.tenant_count, 'many tenants')) return ['Azure SQL Database', chooseSqlDbMethod(inputs)];
   if (has(inputs.downtime, 'near-zero') || has(inputs.downtime, 'minimal')) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
   return ['Azure SQL Database', chooseSqlDbMethod(inputs)];
 }
@@ -440,7 +445,7 @@ export function evaluate(inputs = {}) {
 
   if (primaryTarget === 'Azure SQL Managed Instance') out.tier = chooseMiTier(inputs, out);
   else if (primaryTarget === 'Azure SQL Database') out.tier = chooseSqlDbTier(inputs, out);
-  else if (primaryTarget === 'SQL database in Fabric') out.tier = 'Fabric SQL database Preview';
+  else if (primaryTarget === 'SQL database in Fabric') out.tier = 'Fabric SQL database (GA)';
 
   applyMethodGates(inputs, primaryTarget, method, eligibility, out);
   enforceOutputConsistency(inputs, eligibility, out);
