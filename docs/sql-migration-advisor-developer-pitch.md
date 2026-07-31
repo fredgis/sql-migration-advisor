@@ -796,6 +796,46 @@ The diagram SVGs are the one deliberate exception: they are produced by a local 
 not available on a runner, so CI verifies that `blume/public` matches `howto/` but does not regenerate the
 SVGs themselves. Changing a diagram therefore remains an explicit, human action.
 
+### The four workflows and when they fire
+
+```text
+                    ┌──────────────────────────────────────────────┐
+   any push/PR ────►│ Tests                    tests.yml           │
+                    │ rules data --strict · 14 golden checks       │
+                    └──────────────────────────────────────────────┘
+
+                    ┌──────────────────────────────────────────────┐
+   Monday 05:00 UTC │ Weekly KB freshness check                    │
+   PR on KB/rules/  │        weekly-kb-check.yml                   │
+   claims/README ──►│ links → news → claims → prompt               │
+   dispatch (days=) │      → Foundry gpt-5.6-sol (xhigh)           │
+                    │      → decide                                │
+                    │         ├─ edits already there ─► PR + bump  │
+                    │         └─ otherwise ──────────► report-only │
+                    │                                    issue     │
+                    └──────────────────────────────────────────────┘
+                                     │ a human applies them
+                                     ▼
+                    ┌──────────────────────────────────────────────┐
+   push to main on  │ Artifacts coherence      artifacts.yml       │
+   KB.md · tools/   │ push ► regenerate: SVG → PDF+preview →       │
+   pdf|diagram|     │        poster/images → --fix-prose →         │
+   artifacts,       │        commit back → re-verify               │
+   howto/*.svg ────►│ PR   ► verify only (fails if stale)          │
+                    └──────────────────────────────────────────────┘
+
+                    ┌──────────────────────────────────────────────┐
+   push to main on  │ Deploy docs (Blume)     deploy-docs.yml      │
+   blume/ or     ──►│ sync howto/*.svg → public → build → Pages    │
+   howto/           └──────────────────────────────────────────────┘
+```
+
+### The three rules that hold it together
+
+- **The model verdict is advisory.** No version bump without a substantive diff *and* green checks.
+- **`artifacts.yml` triggers on sources only**, never on what it writes — so it cannot retrigger itself.
+- **Staleness comes from git history**, not file mtimes, which are meaningless after a clone.
+
 ---
 
 ## 12. Repository structure
