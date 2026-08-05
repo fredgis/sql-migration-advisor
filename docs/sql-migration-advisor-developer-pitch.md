@@ -41,7 +41,21 @@ flowchart TD
     J --> K[Phase B: Rank valid options]
     K --> L[Create preliminary recommendation]
     L --> M[Assessment tools and architect validation]
+
+    classDef entry fill:#e3f2fd,stroke:#1565c0,color:#111
+    classDef ask fill:#fff8e1,stroke:#f9a825,color:#111
+    classDef online fill:#e8f5e9,stroke:#2e7d32,color:#111
+    classDef offline fill:#ffebee,stroke:#c62828,color:#111
+    classDef human fill:#f3e5f5,stroke:#6a1b9a,color:#111
+    class A,B entry
+    class D ask
+    class C,E,F,I,J,K,L online
+    class G,H offline
+    class M human
 ```
+
+Green is the online path, red is the offline fallback with its explicit staleness warning, and purple is
+the human validation that no recommendation skips.
 
 The runtime process is simple:
 
@@ -310,7 +324,17 @@ flowchart LR
     D --> E[Region validation]
     E --> F[Architect approval]
     F --> G[Validated recommendation]
+
+    classDef prov fill:#fff8e1,stroke:#f9a825,color:#111
+    classDef evid fill:#e8f5e9,stroke:#2e7d32,color:#111
+    classDef done fill:#e3f2fd,stroke:#1565c0,color:#111
+    class A,B prov
+    class C,D,E,F evid
+    class G done
 ```
+
+Amber is what an interview alone can produce, green is each of the four typed proofs, and blue is the only
+state in which the recommendation stops being provisional.
 
 The skill is therefore a decision-support system, not an autonomous migration authority.
 
@@ -333,7 +357,18 @@ flowchart TD
     H --> J[Run CI tests]
     J --> K[Human review]
     K --> L[Merge into main]
+
+    classDef entry fill:#e3f2fd,stroke:#1565c0,color:#111
+    classDef step fill:#e8f5e9,stroke:#2e7d32,color:#111
+    classDef ask fill:#fff8e1,stroke:#f9a825,color:#111
+    classDef human fill:#f3e5f5,stroke:#6a1b9a,color:#111
+    class A entry
+    class B,C,D,E,F,H,J step
+    class G ask
+    class I,K,L human
 ```
+
+Both branches end with a human: the model can propose an edit, but only a person merges it.
 
 The weekly workflow checks:
 
@@ -402,7 +437,21 @@ flowchart TD
     I -- No --> H
     I -- Yes --> J[Merge into main]
     J --> K[The live skill uses the new KB version]
+
+    classDef entry fill:#e3f2fd,stroke:#1565c0,color:#111
+    classDef auto fill:#e8f5e9,stroke:#2e7d32,color:#111
+    classDef ask fill:#fff8e1,stroke:#f9a825,color:#111
+    classDef stop fill:#ffebee,stroke:#c62828,color:#111
+    classDef human fill:#f3e5f5,stroke:#6a1b9a,color:#111
+    class A,B entry
+    class C,D,E auto
+    class G,I ask
+    class H stop
+    class F,J,K human
 ```
+
+Three of the four gates are automated, but the fourth is not: a change can pass every machine check and
+still be rejected because the evidence behind it does not hold up.
 
 ### 9.1 Document consistency checks
 
@@ -749,19 +798,37 @@ silent inconsistency: two readers of the same repository get two different answe
 
 ```mermaid
 flowchart TD
-    A[Pull request touches a source] --> B[verify job: check-artifacts.mjs]
-    B -- stale --> C[PR reports which artifact is out of date]
+    A[Pull request touches a source] --> B[verify job<br/>check-artifacts.mjs]
+    B -- stale --> C[The PR reports which artifact is out of date<br/>nothing is rewritten in someone else's branch]
     B -- in sync --> D[Merge to main]
     C --> D
     D --> E[regenerate job on main]
     E --> F{Anything stale?}
     F -- No --> G[Done]
     F -- Yes --> H[Sync mirrored SVGs]
-    H --> I[Rebuild PDF + preview]
-    I --> J[Rebuild poster and images]
-    J --> K[Commit artifacts back to main]
-    K --> L[Re-verify]
+    H --> I[Rebuild the PDF and its preview]
+    I --> J[Rebuild the poster and images]
+    J --> K[--fix-prose: page count and version]
+    K --> L[Verify the regenerated tree<br/>artifacts · rules --strict · full suite]
+    L -- a check fails --> M[The job fails and proposes nothing<br/>it prints the local rebuild commands]
+    L -- all pass --> N[Commit to the reused branch chore/artifacts]
+    N --> O[Open or update the pull request<br/>the body records the checks and links the run]
+    O --> P[A human reviews the diff and merges]
+
+    classDef src fill:#e3f2fd,stroke:#1565c0,color:#111
+    classDef proc fill:#e8f5e9,stroke:#2e7d32,color:#111
+    classDef ask fill:#fff8e1,stroke:#f9a825,color:#111
+    classDef stop fill:#ffebee,stroke:#c62828,color:#111
+    classDef human fill:#f3e5f5,stroke:#6a1b9a,color:#111
+    class A,D src
+    class B,E,H,I,J,K,L,N,O proc
+    class F ask
+    class M stop
+    class C,G,P human
 ```
+
+Green is automated work, amber is a decision point, red is the path that stops without proposing anything,
+and purple is where a human is required.
 
 ### What counts as an artifact
 
@@ -792,8 +859,29 @@ compares the sentence against the real page count (via `pdfinfo`) and the real k
 - **On a pull request** the check is *verify only*. It reports the drift and names the rebuild command, but
   it does not rewrite anything in someone else's branch.
 - **On a push to `main`** — that is, once a PR has been merged — the regenerate job rebuilds whatever is
-  stale and commits it back. It reacts only to *source* paths, never to the artifacts it writes, so it
-  cannot retrigger itself.
+  stale and **opens a pull request** with the result. It reacts only to *source* paths, never to the
+  artifacts it writes, so it cannot retrigger itself.
+
+### Why it proposes instead of pushing
+
+The `protectmain` ruleset requires every change to `main` to go through a pull request, and
+`github-actions[bot]` holds no bypass, so the job's original `git push` was rejected exactly when it had
+something worth pushing. Granting the bot a bypass was the alternative, and it was rejected on purpose:
+it would let *any* workflow running on `main` write to `main`, which is not a trade a public repository
+should make for derived files. The job therefore commits to a reused `chore/artifacts` branch, so at most
+one artifact pull request is open at a time.
+
+That choice has a consequence which is handled rather than ignored. GitHub deliberately starts **no
+workflow runs for pull requests opened with `GITHUB_TOKEN`**, so the artifacts PR carries no checks of its
+own, and a reviewer seeing an empty check list could reasonably assume nothing was verified. Verification
+therefore runs *inside the job*, on the exact tree about to be proposed, and the pull request body records
+what ran with a link back to the run. Since `--fix-prose` can touch `README.md` and `poster.html`, both of
+which the test suite scans, the full suite and the strict rules check run alongside the artifact check. A
+tree that fails any of them is never proposed at all: the job fails and prints the local rebuild commands.
+
+Dispatching the workflow manually with `force: true` runs the whole path even when nothing is stale, so the
+pull-request logic can be exercised on demand instead of only when the next knowledge-base change happens to
+break something.
 
 The diagram SVGs are the one deliberate exception: they are produced by a local diagramming tool that is
 not available on a runner, so CI verifies that `blume/public` matches `howto/` but does not regenerate the
@@ -801,39 +889,42 @@ SVGs themselves. Changing a diagram therefore remains an explicit, human action.
 
 ### The four workflows and when they fire
 
-```text
-                    ┌──────────────────────────────────────────────┐
-   any push/PR ────►│ Tests                    tests.yml           │
-                    │ actionlint · rules data --strict             │
-                    │ 15 golden checks · engine coverage ≥ 85%     │
-                    └──────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    G1([Any push or pull request]) --> W1[Tests<br/>tests.yml]
+    G2([Monday 05:00 UTC · PR on KB,<br/>rules, claims or README · dispatch]) --> W2[Weekly KB freshness<br/>weekly-kb-check.yml]
+    G3([Push to main on the KB, tools/pdf,<br/>tools/diagram, tools/artifacts, howto SVGs]) --> W3[Artifacts coherence<br/>artifacts.yml]
+    G4([Push to main on blume/ or howto/]) --> W4[Deploy docs<br/>deploy-docs.yml]
 
-                    ┌──────────────────────────────────────────────┐
-   Monday 05:00 UTC │ Weekly KB freshness check                    │
-   PR on KB/rules/  │        weekly-kb-check.yml                   │
-   claims/README ──►│ consistency                                  │
-   dispatch (days=) │   └─► evidence   links · news · claims       │
-                    │        └─► review   Foundry gpt-5.6-sol      │
-                    │             └─► decide                       │
-                    │                  ├─ edits there ─► PR + bump │
-                    │                  └─ otherwise ──► report-only│
-                    │                                     issue    │
-                    └──────────────────────────────────────────────┘
-                                     │ a human ticks the checklist
-                                     ▼
-                    ┌──────────────────────────────────────────────┐
-   push to main on  │ Artifacts coherence      artifacts.yml       │
-   KB.md · tools/   │ push ► regenerate: SVG → PDF+preview →       │
-   pdf|diagram|     │        poster/images → --fix-prose →         │
-   artifacts,       │        commit back → re-verify               │
-   howto/*.svg ────►│ PR   ► verify only (fails if stale)          │
-                    └──────────────────────────────────────────────┘
+    W1 --> O1[actionlint · rules data --strict<br/>15 gates · 78 golden scenarios<br/>engine branch coverage >= 85%]
 
-                    ┌──────────────────────────────────────────────┐
-   push to main on  │ Deploy docs (Blume)     deploy-docs.yml      │
-   blume/ or     ──►│ sync howto/*.svg → public → build → Pages    │
-   howto/           └──────────────────────────────────────────────┘
+    W2 --> C1[consistency] --> C2[evidence<br/>links · news · claims] --> C3[review<br/>Foundry gpt-5.6-sol] --> C4[decide]
+    C4 --> O2a[Substantive edits:<br/>pull request + version bump]
+    C4 --> O2b[Otherwise:<br/>report-only issue with a checklist]
+
+    W3 --> O3a[On a pull request:<br/>verify only, fails if stale]
+    W3 --> O3b[On main: rebuild, verify the tree,<br/>then open a PR on chore/artifacts]
+
+    W4 --> O4[Mirror howto SVGs to blume/public<br/>build, deploy to GitHub Pages]
+
+    O2a --> H([A human reviews and merges])
+    O2b --> H
+    O3b --> H
+
+    classDef trig fill:#e3f2fd,stroke:#1565c0,color:#111
+    classDef flow fill:#ede7f6,stroke:#4527a0,color:#111
+    classDef step fill:#e8f5e9,stroke:#2e7d32,color:#111
+    classDef out fill:#fff8e1,stroke:#f9a825,color:#111
+    classDef human fill:#f3e5f5,stroke:#6a1b9a,color:#111
+    class G1,G2,G3,G4 trig
+    class W1,W2,W3,W4 flow
+    class C1,C2,C3,C4 step
+    class O1,O2a,O2b,O3a,O3b,O4 out
+    class H human
 ```
+
+Blue is what triggers a workflow, purple is the workflow itself, green is the chained jobs inside the
+weekly check, amber is what comes out, and the final purple node is where a human is required.
 
 The weekly check runs as four chained jobs rather than one long sequence. Evidence gathering
 fails for boring reasons more often than anything else — a dead link, a feed timing out, a
@@ -842,11 +933,13 @@ a twenty-step job. Files move between jobs as artifacts; the decision job keeps 
 together because applying stamps, rebuilding the PDF and opening the pull request all operate
 on the same checkout.
 
-### The three rules that hold it together
+### The four rules that hold it together
 
 - **The model verdict is advisory.** No version bump without a substantive diff *and* green checks.
 - **`artifacts.yml` triggers on sources only**, never on what it writes — so it cannot retrigger itself.
 - **Staleness comes from git history**, not file mtimes, which are meaningless after a clone.
+- **Nothing reaches `main` without a pull request**, including the bot's own artifact refreshes, which is
+  why verification runs in the job that proposes them rather than on the pull request itself.
 
 ---
 
