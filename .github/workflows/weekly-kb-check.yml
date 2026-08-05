@@ -133,7 +133,7 @@ jobs:
           node-version: '24'
 
       - name: Download evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: weekly-evidence
 
@@ -191,12 +191,12 @@ jobs:
           node-version: '24'
 
       - name: Download evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: weekly-evidence
 
       - name: Download review
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: weekly-review
 
