@@ -94,6 +94,14 @@ function currentKbVersion() {
   return m ? m[1] : null;
 }
 
+// The month a document quotes alongside the version drifts independently of the version itself.
+// A v1.9 released in August was still described as "v1.9, July 2026" until this was checked.
+function currentKbMonth() {
+  const m = fs.readFileSync(path.join(ROOT, 'docs', 'sql-server-to-azure-migration.md'), 'utf8')
+    .match(/\*\*Version\.\*\*\s*v\d+\.\d+\s*[—-]\s*\d{1,2}\s+(\w+)\s+(\d{4})/);
+  return m ? `${m[1]} ${m[2]}` : null;
+}
+
 const problems = [];
 const notes = [];
 
@@ -133,24 +141,32 @@ for (const { artifact, sources, rebuild } of DERIVED) {
   const actual = pdfPageCount(pdfRel);
 
   // e.g. "(22 pages,\nv1.7, July 2026)"
-  const shape = /(sql-server-to-azure-migration\.pdf\)\s*\()~?(\d+)(\s*pages,\s*)(v\d+\.\d+)/;
+  const shape = /(sql-server-to-azure-migration\.pdf\)\s*\()~?(\d+)(\s*pages,\s*)(v\d+\.\d+)(,\s*)(\w+ \d{4})/;
   const claim = readme.match(shape);
+  const month = currentKbMonth();
   if (!claim) {
     notes.push('README does not quote the PDF page count and version in the expected shape; skipped');
   } else if (fixProse && version && actual != null) {
-    const fixed = readme.replace(shape, `$1${actual}$3${version}`);
+    const fixed = readme.replace(shape, `$1${actual}$3${version}$5${month || '$6'}`);
     if (fixed !== readme) {
       fs.writeFileSync(readmePath, fixed);
       readme = fixed;
-      notes.push(`README PDF sentence rewritten to ${actual} pages, ${version}`);
+      notes.push(`README PDF sentence rewritten to ${actual} pages, ${version}, ${month || 'unchanged month'}`);
     }
   } else {
-    const [, , claimedPages, , claimedVersion] = claim;
+    const [, , claimedPages, , claimedVersion, , claimedMonth] = claim;
     if (version && claimedVersion !== version) {
       problems.push({
         kind: 'prose-version-mismatch', artifact: 'README.md', source: pdfRel,
         fix: `node tools/artifacts/check-artifacts.mjs --fix-prose`,
         detail: `README says ${claimedVersion}, knowledge base is ${version}`,
+      });
+    }
+    if (month && claimedMonth !== month) {
+      problems.push({
+        kind: 'prose-month-mismatch', artifact: 'README.md', source: pdfRel,
+        fix: `node tools/artifacts/check-artifacts.mjs --fix-prose`,
+        detail: `README says ${claimedMonth}, knowledge base is dated ${month}`,
       });
     }
     if (actual == null) {

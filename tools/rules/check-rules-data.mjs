@@ -6,8 +6,10 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const rel = (...p) => path.join(root, ...p);
 const dataPath = rel('reference', 'decision-rules.data.json');
 const markdownPath = rel('reference', 'decision-rules.md');
+const kbPath = rel('docs', 'sql-server-to-azure-migration.md');
 const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
 const markdown = fs.readFileSync(markdownPath, 'utf8');
+const knowledgeBase = fs.readFileSync(kbPath, 'utf8');
 const normalizedMarkdown = normalize(markdown);
 const failures = [];
 const warnings = [];
@@ -141,6 +143,22 @@ for (const tool of data.retiredTooling) {
   warnIfMissing(`retiredTooling.${tool.name}.name`, tool.name.replace('Azure DMS classic — SQL scenarios', 'Azure DMS *classic* — SQL scenarios'));
   warnIfMissing(`retiredTooling.${tool.name}.date`, tool.date);
   warnIfMissingAny(`retiredTooling.${tool.name}.useInstead`, [tool.useInstead, tool.useInstead.replace(/\s*\([^)]*\)/g, '')]);
+}
+
+// A guard the knowledge base states must also exist as a rule. Two v1.8 findings came back a
+// cycle later because the knowledge base was corrected and the decision tree was not, and
+// nothing checked the pair. This closes that gap.
+for (const guard of data.kbGuardsMirroredInRules || []) {
+  checked += 1;
+  const inKb = new RegExp(guard.knowledgeBase, 'u').test(knowledgeBase);
+  const inRules = new RegExp(guard.rules, 'u').test(markdown);
+  if (inKb && !inRules) {
+    failures.push(`kbGuardsMirroredInRules.${guard.name}: stated in the knowledge base but missing from reference\\decision-rules.md — ${guard.why}`);
+  } else if (!inKb && inRules) {
+    warnings.push(`kbGuardsMirroredInRules.${guard.name}: present in the rules but no longer found in the knowledge base; confirm the guard is still sourced`);
+  } else if (!inKb && !inRules) {
+    warnings.push(`kbGuardsMirroredInRules.${guard.name}: found in neither document; the entry may be stale`);
+  }
 }
 
 for (const warning of warnings) console.warn(`WARN ${warning}`);

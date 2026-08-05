@@ -1869,7 +1869,7 @@
     },
     "assertRulePresent": [
       "If \\*\\*5022\\*\\* or \\*\\*11000–11999\\*\\* cannot be opened[\\s\\S]*?MI Link `unsupported`",
-      "fall back to LRS"
+      "LRS only when LRS itself qualifies"
     ],
     "auditRef": "audit-11000-blocked"
   },
@@ -2243,7 +2243,7 @@
     },
     "assertRulePresent": [
       "Standalone LRS[\\s\\S]*?SQL Server \\*\\*2008–2022\\*\\*",
-      "If \\*\\*5022\\*\\* or \\*\\*11000–11999\\*\\* cannot be opened[\\s\\S]*?fall back to LRS",
+      "never fall through to LRS unconditionally",
       "publisher SQL Server \\*\\*2016 and later\\*\\*, including SQL Server 2022 and 2025"
     ],
     "auditRef": "P1-1"

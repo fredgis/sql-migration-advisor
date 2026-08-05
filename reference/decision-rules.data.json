@@ -1,18 +1,20 @@
 {
   "schema": "sql-migration-advisor.decision-rules-data/v1",
-  "version": "v1.8",
+  "version": "v1.9",
   "source": {
     "markdown": "reference/decision-rules.md",
-    "description": "Machine-checkable constants and gates extracted from decision-rules.md v1.8."
+    "description": "Machine-checkable constants and gates extracted from decision-rules.md v1.9."
   },
   "sourceVersionFloors": {
     "miLink": {
       "sqlServerMin": 2016,
-      "windowsServerMin": 2016
+      "windowsServerMin": 2016,
+      "editions": ["Enterprise", "Standard", "Developer"]
     },
     "standaloneLrs": {
       "sqlServerMin": 2008,
-      "sqlServerMax": 2022
+      "sqlServerMax": 2022,
+      "maxMigrationWindowDays": 30
     },
     "nativeRestoreToMi": {
       "sqlServerMin": 2008
@@ -327,6 +329,32 @@
     "hyperscaleMaxSizeTb": 128,
     "generalPurposeSmallDatabaseSignalGb": 150
   },
+  "kbGuardsMirroredInRules": [
+    {
+      "name": "mi-link-windows-server-floor",
+      "why": "The knowledge base carried the Windows Server 2016+ gate while the decision tree did not, so the engine could select MI Link for an unsupported OS. The rules pattern is anchored to the MI Link method row: the floor appearing elsewhere in the file does not satisfy the guard.",
+      "knowledgeBase": "Windows Server 2016\\+",
+      "rules": "\\*\\*MI Link\\*\\* \\|[^\\n]*Windows Server 2016\\+"
+    },
+    {
+      "name": "mi-link-edition-gate",
+      "why": "Same drift as the OS floor: the knowledge base named the supported editions and the tree did not gate on them.",
+      "knowledgeBase": "Ent/Std/Dev",
+      "rules": "\\*\\*MI Link\\*\\* \\|[^\\n]*Enterprise / Standard / Developer"
+    },
+    {
+      "name": "lrs-30-day-window",
+      "why": "The knowledge base stated the 30-day maximum window; the tree allowed LRS with no duration gate.",
+      "knowledgeBase": "30-day max window",
+      "rules": "\\*\\*Log Replay Service \\(LRS\\)\\*\\* standalone \\|[^\\n]*30-day maximum window"
+    },
+    {
+      "name": "lrs-source-range-excludes-2025",
+      "why": "LRS supports SQL Server 2008 to 2022. Without this in the tree, a blocked-ports fallback could select LRS for a 2025 source.",
+      "knowledgeBase": "Standalone LRS: SQL Server 2008[–-]2022",
+      "rules": "\\*\\*Log Replay Service \\(LRS\\)\\*\\* standalone \\|[^\\n]*not 2025"
+    }
+  ],
   "markdownAssertionExclusions": {
     "validatedEvidence.dependenciesToolConfirmed": "Internal validated-evidence boolean used by the executable test oracle; decision-rules.md asserts the evidence/validation contract generically rather than naming this boolean.",
     "validatedEvidence.performanceMeasured": "Internal validated-evidence boolean used by the executable test oracle; decision-rules.md asserts the evidence/validation contract generically rather than naming this boolean.",

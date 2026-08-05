@@ -16,7 +16,7 @@ At session start, fetch the live knowledge-base document:
 
 - Raw URL: `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/main/docs/sql-server-to-azure-migration.md`
 - Use the live doc when available. If offline, use `reference/decision-rules.md` and tell the user that the offline fallback may lag.
-- Current coordinated knowledge-base line: **v1.8**, dated **2026-07-31**.
+- Current coordinated knowledge-base line: **v1.9**, dated **2026-08-05**.
 - Display the **knowledge-base version** in every recommendation and, when available, the **commit SHA** and **fetch timestamp**.
 - Determinism contract: **same inputs + same KB version + same engine version ⇒ same result**.
 
@@ -140,7 +140,7 @@ Ask only questions that can change candidates still in play, or when the user wa
 
 | Confirmation input | Ask when | Consumed by |
 | --- | --- | --- |
-| Source edition and OS | VM/AVS/Arc/container or licensing/ESU are in play | compatibility, HA/DR support, AHB/ESU, patching responsibility |
+| Source OS and edition (`source_os`, `source_edition`) | **MI Link is in play**, or VM/AVS/Arc/container or licensing/ESU are | MI Link requires Windows Server 2016+ and Enterprise, Standard or Developer edition; also drives compatibility, HA/DR support, AHB/ESU and patching responsibility |
 | Compatibility level | SQL DB, Fabric SQL DB, or modernization candidate | refactoring effort and compatibility scoring |
 | Current HA/DR topology: FCI, AG, log shipping, none | near-zero/minimal downtime or VM/AVS/MI Link in play | method feasibility, rollback, resilience |
 | RPO and RTO separately | any production migration | method ranking and DR design |

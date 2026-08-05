@@ -70,6 +70,19 @@ function portsKnownBlockedForMiLink(inputs) {
   return portPattern(MI_LINK.ports.sqlServerEndpoint).test(ports)
     || rangePattern(MI_LINK.ports.managedInstanceHadrRange).test(ports);
 }
+// MI Link needs a supported host OS and SQL Server edition, not just a supported SQL version.
+// Returns 'ok', 'unsupported' or 'unknown'; unknown must not be read as a pass.
+function miLinkHostSupport(inputs) {
+  const floors = SOURCE_FLOORS.miLink;
+  const os = String(inputs.source_os || '').toLowerCase();
+  const edition = String(inputs.source_edition || '').toLowerCase();
+  if (!os || !edition || /not sure|unknown/.test(os) || /not sure|unknown/.test(edition)) return 'unknown';
+  if (/linux/.test(os)) return 'unsupported';
+  const yr = os.match(/(\d{4})/);
+  if (yr && Number(yr[1]) < floors.windowsServerMin) return 'unsupported';
+  if (!floors.editions.some(e => edition.includes(e.toLowerCase()))) return 'unsupported';
+  return 'ok';
+}
 function hasValidatedEvidence(inputs) {
   const evidence = inputs.evidence;
   return !!evidence
@@ -306,7 +319,7 @@ function chooseMiMethod(inputs, out) {
   }
   applyArcWizardBatchLimit(inputs, out);
   if (has(inputs.downtime, 'near-zero') || has(inputs.downtime, 'minimal')) {
-    if (!isManagedCloudSqlSource(inputs) && v >= SOURCE_FLOORS.miLink.sqlServerMin && portsOpenForMiLink(inputs) && (!dbCount || (cap && dbCount <= cap) || (!cap && dbCount <= MI_LINK.capacityLinks.generalPurpose) || out.capacityEligibility === E.UNKNOWN)) return 'MI Link';
+    if (!isManagedCloudSqlSource(inputs) && v >= SOURCE_FLOORS.miLink.sqlServerMin && miLinkHostSupport(inputs) !== 'unsupported' && portsOpenForMiLink(inputs) && (!dbCount || (cap && dbCount <= cap) || (!cap && dbCount <= MI_LINK.capacityLinks.generalPurpose) || out.capacityEligibility === E.UNKNOWN)) return 'MI Link';
     return 'LRS';
   }
   if (has(inputs.downtime, 'offline')) return dep(inputs, 'TDE') ? 'Native backup/restore' : 'LRS';
@@ -342,6 +355,7 @@ function methodGateFailure(inputs, target, method, out = {}) {
     if (method === 'MI Link') {
       if (isManagedCloudSqlSource(inputs)) return 'MI Link is impossible from AWS RDS/GCP Cloud SQL because sysadmin/AG endpoints are unavailable.';
       if (v && v < SOURCE_FLOORS.miLink.sqlServerMin) return `MI Link requires SQL Server ${SOURCE_FLOORS.miLink.sqlServerMin}+.`;
+      if (miLinkHostSupport(inputs) === 'unsupported') return `MI Link requires Windows Server ${SOURCE_FLOORS.miLink.windowsServerMin}+ and ${SOURCE_FLOORS.miLink.editions.join(', ')} edition.`;
       if (!portsOpenForMiLink(inputs)) {
         const p = MI_LINK.ports;
         return `MI Link requires ${p.sqlServerEndpoint} and ${p.managedInstanceHadrRange.start}-${p.managedInstanceHadrRange.end} in the documented directions.`;
