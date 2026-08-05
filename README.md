@@ -304,6 +304,13 @@ Full detail in [`docs/sql-server-to-azure-migration.md` §17](docs/sql-server-to
 This skill was extracted from the [FY27 SQL Motion](https://github.com/fredgis/FY27SQLMotion)
 ("SQL in a Day") into this dedicated repository.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to run the four checks, add a golden
+scenario, and update a tracked claim.
+
 ## License
 
-[MIT](LICENSE).
+[MIT](LICENSE). Attribution is recorded in [NOTICE](NOTICE) and must be preserved if this
+work is redistributed or vendored into another repository.
+

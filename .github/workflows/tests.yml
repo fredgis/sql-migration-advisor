@@ -15,6 +15,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
+      - name: Lint workflow files
+        uses: raven-actions/actionlint@v2
       - name: Check canonical rules data
         run: node tools/rules/check-rules-data.mjs --strict
       - name: Run deterministic regression tests
