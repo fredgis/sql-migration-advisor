@@ -111,7 +111,7 @@ jobs:
       - name: Setup Chrome
         id: chrome
         if: steps.detect.outputs.stale == 'true'
-        uses: browser-actions/setup-chrome@v1
+        uses: browser-actions/setup-chrome@v2
         with:
           install-dependencies: true
 

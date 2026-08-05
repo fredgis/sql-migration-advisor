@@ -248,7 +248,7 @@ jobs:
         id: chrome
         if: steps.decide.outputs.pr_required == 'true' || github.event.inputs.force_pr == 'true'
         continue-on-error: true
-        uses: browser-actions/setup-chrome@v1
+        uses: browser-actions/setup-chrome@v2
         with:
           install-dependencies: true
 
