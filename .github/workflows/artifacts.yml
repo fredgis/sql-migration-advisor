@@ -44,6 +44,11 @@ on:
       - 'tools/artifacts/**'
       - '.github/workflows/artifacts.yml'
   workflow_dispatch:
+    inputs:
+      force:
+        description: 'Rebuild and propose even when nothing looks stale, to exercise the pull-request path on demand'
+        type: boolean
+        default: false
 
 concurrency:
   group: artifacts-${{ github.ref }}
@@ -92,9 +97,16 @@ jobs:
 
       - name: Detect what is stale
         id: detect
+        env:
+          FORCE: ${{ inputs.force }}
         run: |
           if node tools/artifacts/check-artifacts.mjs --json > artifacts-report.json; then
-            echo "stale=false" >> "$GITHUB_OUTPUT"
+            if [ "$FORCE" = "true" ]; then
+              echo "Nothing is stale, but the run was dispatched with force=true."
+              echo "stale=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "stale=false" >> "$GITHUB_OUTPUT"
+            fi
           else
             echo "stale=true" >> "$GITHUB_OUTPUT"
           fi
