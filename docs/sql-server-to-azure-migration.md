@@ -6,7 +6,7 @@
 >
 > **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of 5 August 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
 >
-> **Version.** v1.10 — 5 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
+> **Version.** v1.11 — 5 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**
@@ -233,7 +233,7 @@ Standardized columns (Microsoft Learn style): **Method · Min source · Target/m
 
 | Target | Method | Downtime | Notes |
 | --- | --- | --- | --- |
-| Arc-enabled SQL MI (AKS/ARO/…) | [Native backup/restore](https://learn.microsoft.com/en-us/azure/azure-arc/data/migrate-to-managed-instance), point-in-time restore | Offline | Requires Arc data controller; exposes a SQL MI endpoint → logical vehicles of [§5.2](#52-to-azure-sql-managed-instance-managed-lift-and-shift) apply. |
+| Arc-enabled SQL MI (AKS/ARO/…) | [Native backup/restore](https://learn.microsoft.com/en-us/azure/azure-arc/data/migrate-to-managed-instance), point-in-time restore | Offline | Requires Arc data controller. Use native backup/restore; use another method only where explicitly supported for Azure Arc-enabled SQL MI. **Managed Instance link is not supported for this target** — it is scoped to Azure SQL Managed Instance, and exposing a SQL endpoint does not change that (see the §8 footnote). |
 | SQL Server container (mcr image) | [Backup/Restore via mounted volume](https://learn.microsoft.com/en-us/sql/relational-databases/backup-restore/back-up-and-restore-of-sql-server-databases), detach/attach, BACPAC, bcp, ADF | Offline / Online (repl.) | Persist on Azure Disk (AKS/ARO) / Azure Files (ACI/ACA); HA via scheduler. |
 
 > [!WARNING]
@@ -445,6 +445,7 @@ Microsoft describes LRS as an online migration with expected downtime during cut
 - **MI Link ports**: MI subnet NSG needs inbound 5022 and 11000–11999 from SQL Server plus outbound 5022; SQL Server host/corporate firewalls need inbound 5022 from the MI subnet and outbound 5022 and 11000–11999 to MI. The 11000–11999 range is always required for MI-side HADR data replication and is frequently missed in locked-down networks.
 - **Other methods need network too**: DMS / LRS / transactional replication require outbound HTTPS (443) to Azure Storage/Blob, SQL 1433 (and 1434/UDP SQL Browser for named instances) — anticipate firewall/NSG blocks in locked-down environments.
 - **DAG**: requires AD Domain Services (or workgroup AG + certs) — an infra blocker architects forget.
+- **Retained server name via DNS redirect to MI**: a common pattern is to keep the old server name and repoint DNS at Managed Instance. Clients that validate the TLS hostname, or that set `HostNameInCertificate`, can break at cutover because the certificate presented by MI is not the one they expect — and Microsoft is changing the instance certificate used for exactly this pattern. Inventory those clients, test them against the target MI certificate **before** the DNS change, and update client settings for the new behaviour. Do not assume the retained name will validate. [HostNameInCertificate changes in Azure SQL MI](https://techcommunity.microsoft.com/t5/azure-sql-blog/hostnameincertificate-changes-in-azure-sql-managed-instance/ba-p/4544254)
 - **Transactional replication → SQL DB / Fabric SQL DB / MI**: Azure SQL Database subscribers require SQL Server 2016+ publishers; Fabric SQL database subscribers require SQL Server 2022 RTM CU12+ publishers and do not support Private Link for replication; Azure SQL MI subscribers require SQL Server 2016+ publishers, with exact combinations dependent on MI update policy. Snapshot and one-way transactional replication are supported for SQL DB/Fabric; peer-to-peer and merge are not; replicated tables require primary keys; distribution DB and agents cannot live in Azure SQL Database.
 - **Hyperscale**: the only viable SQL DB choice above 4 TB or with heavy concurrent write I/O — and it stops at **128 TB**. A single database beyond that cannot be rehosted as one database: Azure SQL MI tops out far below that ceiling, so it is **not** an as-is destination. Shard across databases or instances, or use SQL Server on Azure VM subject to its own storage design and limits.
 - **Fabric SQL DB**: the *target* is GA; only the Migration Assistant is Preview, with a 20 MB DACPAC cap, on-prem gateway only and no Private Link. Those tool limits are not target-wide limits, because T-SQL, transactional replication, Fabric pipelines / Data Factory copy jobs, Dataflow Gen2 and TDS-capable tools can also ingest data — so don't eliminate the target because the assistant does not fit. Do assess the database surface: it is a subset of the SQL Server surface.
@@ -613,13 +614,14 @@ flowchart LR
 
 ## 17. Document version & changelog
 
-Current version: **v1.10** (2026-08-05).
+Current version: **v1.11** (2026-08-05).
 
 <details>
-<summary><b>Version history</b> (current: v1.10)</summary>
+<summary><b>Version history</b> (current: v1.11)</summary>
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v1.11 | 2026-08-05 | §5.5 no longer implies the §5.2 methods apply to Arc-enabled SQL MI: MI Link is scoped to Azure SQL Managed Instance, and exposing a SQL endpoint does not change that. New: the **retained server name / DNS redirect** pitfall — clients validating the TLS hostname or setting `HostNameInCertificate` can break at cutover because Microsoft is changing the MI instance certificate, so inventory and test them before the DNS change. A forbidden-pattern gate now fails whenever the Arc target is described as inheriting the MI methods. |
 | v1.10 | 2026-08-05 | Removed the last two unqualified LRS-fallback statements. v1.9 corrected the MI Link prerequisites paragraph and left the §C2 cutover-blockers row and the `SKILL.md` gate table standing, so the engine could still route a SQL Server 2025 source or an over-long migration to a method that does not support it. A forbidden-pattern gate now fails whenever LRS is offered without its 2008–2022 range and 30-day window attached, which is what found the third occurrence. |
 | v1.9 | 2026-08-05 | MI Link gated on **Windows Server 2016+** and **Enterprise / Standard / Developer** edition in the decision tree (the knowledge base already said so); LRS gated on its **30-day maximum window** and its **2008–2022** source range, so a blocked MI Link path can no longer fall through to LRS for SQL Server 2025; **SQL MI removed as an as-is destination for a single database above 128 TB** (its storage ceiling is far below that); MI Link marked not-applicable for **Arc-enabled SQL MI** in the §8 matrix; **Service Broker split** into intra-instance (MI-eligible), required cross-instance routing (unsupported) and unknown scope. |
 | v1.8 | 2026-07-31 | Fabric SQL database re-scoped Preview → **GA** (only the Migration Assistant stays Preview); Backup to URL floor corrected 2014 → **2012 SP1 CU2** with the page-blob/block-blob split; SSMS 22 assessment roadmap note removed (assess + migrate is available today); SQL VM downtime row corrected to near-zero with AG/DAG; Always On AG floor **2012+** split from distributed AG **2016+**; Hyperscale bounded at its **128 TB** maximum; MI **Next-gen General Purpose** added as a selectable tier; retirement-date claim repointed to maintained sources. |

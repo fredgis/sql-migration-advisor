@@ -5,7 +5,7 @@ Apply Steps **A → D** in order. Steps map to the two engine phases:
 - **Phase B — Ranking and plan:** Steps B → D. Rank only surviving targets, then choose method, tier, blockers, cost, and assessment.
 
 Determinism contract: **same inputs + same KB version + same engine version ⇒ same result**. Every recommendation must carry the KB version, engine version, and, when available, the source commit SHA and fetch timestamp.
-Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v1.10**, verified August 2026.
+Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v1.11**, verified August 2026.
 
 Three layers, never mixed:
 - **Target** = where the DB ends up (runtime).
@@ -277,6 +277,7 @@ Rules:
 | **TDE encrypted DB** | Install the server-level TDE certificate in the destination `master` before native restore; restore fails unless the certificate is present first. |
 | **Windows logins** | DMS may skip them unless enabled; grant MI read to Entra ID where needed; script/recreate logins and users. |
 | **MI Link ports** | Open required **5022** and **11000–11999** directions: MI NSG inbound 5022 + 11000–11999 from SQL Server IP; MI NSG outbound 5022 to SQL Server IP; SQL Server host/corporate firewall inbound 5022 from MI subnet /24; SQL Server host/corporate firewall outbound 5022 + 11000–11999 to MI subnet. If either port set cannot be opened, MI Link is `unsupported`. Choose LRS **only when LRS itself qualifies**: source SQL Server 2008–2022, storage and public-endpoint access available, and the migration able to finish inside the 30-day maximum window. Otherwise evaluate another supported method or target, or return a provisional shortlist. |
+| **Retained server name / DNS redirect to MI** | When the migration keeps the source server name and repoints DNS at Managed Instance, inventory clients that rely on TLS hostname validation or set `HostNameInCertificate`, and test them against the target MI certificate **before** the DNS cutover. Update client settings for the target certificate behaviour. Unknown client inventory ⇒ `unknown_requires_assessment` for the cutover, not a silent pass. |
 | **MI managed DTC ports** | For SQL↔SQL DTC on MI, validate port 135 and 14000–15000 inbound, 49152–65535 outbound. |
 | Other methods' network | DMS/LRS/replication need outbound **443** to Blob, **1433** (+ **1434/UDP** for named instances where applicable). |
 | **DAG / AG** | Requires AD Domain Services or workgroup AG + certificates; validate quorum and endpoint security. |

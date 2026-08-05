@@ -319,7 +319,11 @@ try {
     // LRS is not a universal fallback: it supports SQL Server 2008-2022 and has a 30-day
     // window. This was corrected in one place in v1.9 and left standing in another, so the
     // weekly review reported it again. The qualifier must travel with the recommendation.
-    { id: 'unconditional LRS fallback', re: /(?:choose|use|fall back to|falls back to|fallback to)\s+LRS/iu, allow: /only when|only if|qualifies|2008[–-]2022|30-day|not a legal fallback|gates? pass/iu }
+    { id: 'unconditional LRS fallback', re: /(?:choose|use|fall back to|falls back to|fallback to)\s+LRS/iu, allow: /only when|only if|qualifies|2008[–-]2022|30-day|not a legal fallback|gates? pass/iu },
+    // Same shape, second offender: MI Link is scoped to Azure SQL Managed Instance. Saying an
+    // Arc-enabled SQL MI endpoint makes the MI methods apply pulls MI Link in by implication,
+    // which is how this survived the v1.9 fix to the section 8 matrix.
+    { id: 'MI Link implied for Arc-enabled SQL MI', re: /Arc-enabled SQL M(?:I|anaged Instance)[^\n]*(?:MI Link|vehicles of|methods of §?5\.2)/iu, allow: /not supported|not applicable|does not|never/iu }
   ];
   for (const file of files) {
     const text = fs.readFileSync(file, 'utf8');

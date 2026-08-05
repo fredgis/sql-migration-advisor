@@ -440,8 +440,8 @@ It compares:
 #### Example failure
 
 ```text
-KB version:              v1.10
-decision-rules version:  v1.10
+KB version:              v1.11
+decision-rules version:  v1.11
 README badge:            v1.6
 ```
 
