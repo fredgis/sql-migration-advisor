@@ -80,7 +80,7 @@ rect.c-bg-rect { fill: var(--bg); }
         <rect x="40" y="160" width="225" height="60" rx="6" class="c-mask"/>
         <rect x="40" y="160" width="225" height="60" rx="6" class="c-security" stroke-width="1.5"/>
         <text x="152.5" y="188" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">check-rules-data.mjs</text>
-        <text x="152.5" y="204" class="t-muted" font-size="9" text-anchor="middle">174 constants · strict</text>
+        <text x="152.5" y="204" class="t-muted" font-size="9" text-anchor="middle">187 constants · strict</text>
         <text x="152.5" y="212" class="t-security" font-size="7" text-anchor="middle">blocking</text>
 
         <rect x="325" y="160" width="210" height="60" rx="6" class="c-mask"/>
@@ -101,7 +101,7 @@ rect.c-bg-rect { fill: var(--bg); }
         <rect x="595" y="340" width="200" height="60" rx="6" class="c-mask"/>
         <rect x="595" y="340" width="200" height="60" rx="6" class="c-backend" stroke-width="1.5"/>
         <text x="695" y="368" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Golden scenarios</text>
-        <text x="695" y="384" class="t-muted" font-size="9" text-anchor="middle">66 profiles replayed</text>
+        <text x="695" y="384" class="t-muted" font-size="9" text-anchor="middle">78 profiles replayed</text>
 
         <rect x="855" y="340" width="185" height="60" rx="6" class="c-mask"/>
         <rect x="855" y="340" width="185" height="60" rx="6" class="c-cloud" stroke-width="1.5"/>

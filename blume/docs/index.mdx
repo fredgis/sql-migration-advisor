@@ -201,11 +201,11 @@ scrutiny makes the advisor stronger, not weaker.
 This one is not a runtime path — it is the **quality gate**, and it runs on **every push and every pull
 request**. (It is separate from the weekly knowledge-base check above, which runs Mondays at 05:00 UTC.)
 
-<img src={`${import.meta.env.BASE_URL}/quality-gate.svg`} alt="Quality gate: decision-rules.data.json is the single source of constants; it feeds evaluate.mjs, which replays 66 golden scenarios into a blocking CI gate, while check-rules-data.mjs verifies the same 174 constants against the decision-rules markdown in strict mode." />
+<img src={`${import.meta.env.BASE_URL}/quality-gate.svg`} alt="Quality gate: decision-rules.data.json is the single source of constants; it feeds evaluate.mjs, which replays 78 golden scenarios into a blocking CI gate, while check-rules-data.mjs verifies the same 187 constants against the decision-rules markdown in strict mode." />
 
 - **One source of constants.** Ports, capacities, version floors and thresholds live in
   `decision-rules.data.json`. The engine holds no hard-coded numbers.
-- **Drift is caught.** `check-rules-data.mjs` verifies 174 constants against the markdown prose, in strict
+- **Drift is caught.** `check-rules-data.mjs` verifies 187 constants against the markdown prose, in strict
   mode — a warning fails the build.
 - **Decisions are tested.** 78 golden scenarios are replayed through the engine and compared field by
   field. Break a rule and the suite fails, naming the scenario.
