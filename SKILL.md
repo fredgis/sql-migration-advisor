@@ -16,7 +16,7 @@ At session start, fetch the live knowledge-base document:
 
 - Raw URL: `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/main/docs/sql-server-to-azure-migration.md`
 - Use the live doc when available. If offline, use `reference/decision-rules.md` and tell the user that the offline fallback may lag.
-- Current coordinated knowledge-base line: **v1.11**, dated **2026-08-05**.
+- Current coordinated knowledge-base line: **v1.12**, dated **2026-08-05**.
 - Display the **knowledge-base version** in every recommendation and, when available, the **commit SHA** and **fetch timestamp**.
 - Determinism contract: **same inputs + same KB version + same engine version ⇒ same result**.
 
@@ -42,7 +42,7 @@ Apply `reference/decision-rules.md` by name:
 | --- | --- |
 | Transactional replication → Azure SQL Database | Source **SQL Server 2016 and later** (includes 2022 and 2025); **push subscriber only**; snapshot + one-way transactional only; replicated tables need a **primary key**. |
 | Log Replay Service (standalone) | Supports source **SQL Server 2008 through 2022** for Azure SQL MI migration. Target is **unavailable** during sync (RESTORING/NORECOVERY); business cutover is typically **minutes** on GP with a small final backup, but can be **hours** on Business Critical while replicas seed. |
-| Azure Arc migration floors | Overall Arc migration experience for SQL MI and SQL VM targets: **SQL Server 2014 (12.x)+**. Arc → Azure SQL MI via **MI Link**: **2016+** and Windows Server 2016+. Arc → Azure SQL MI via **LRS**: Microsoft documents a **2012+** method floor but the same Arc page states **2014+** overall; treat this as a documented Microsoft inconsistency and apply the conservative **2014+** Arc floor. Arc → **SQL Server on Azure VM**: **2014+**. Standalone LRS outside Arc remains **2008–2022**. |
+| Azure Arc migration floors | Overall Arc migration experience for SQL MI and SQL VM targets: **SQL Server 2014 (12.x)+**. Arc → Azure SQL MI via **MI Link**: SQL Server **2016+**, and this Arc-driven path is documented as **Windows Server only**. Arc → Azure SQL MI via **LRS**: Microsoft documents a **2012+** method floor but the same Arc page states **2014+** overall; treat this as a documented Microsoft inconsistency and apply the conservative **2014+** Arc floor. Arc → **SQL Server on Azure VM**: **2014+**. Standalone LRS outside Arc remains **2008–2022**. |
 | MI Link | Source **2016+**; needs source **sysadmin**, distributed AGs, AG endpoint permission, and VNet connectivity. Ports are mandatory for all tiers/update policies/VPN/ExpressRoute/peering and MI-side ports are not customisable: MI subnet NSG inbound **5022** + **11000–11999** from SQL Server IP and outbound **5022**; SQL host/corporate firewall inbound **5022** from MI subnet /24 and outbound **5022 and 11000–11999** to MI. **11000–11999** is the dynamic MI-side distributed-AG HADR data channel. If **5022 or 11000–11999** cannot be opened in required directions, MI Link is `unsupported`; use LRS **only when LRS itself qualifies** (source 2008–2022, storage access, migration finishing inside the 30-day window), otherwise evaluate another method or target. [MI Link preparation](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-preparation). Links: **100** on GP/BC, **500** on Next-gen GP, one link/database; Arc portal's **10 databases per batch** is only a wizard selection limit. AWS RDS/GCP Cloud SQL cannot use MI Link because they lack sysadmin/custom AG endpoints. |
 | Managed cloud sources | AWS RDS / GCP Cloud SQL: **MI Link and transactional replication are out**. LRS/DMS work by backup upload to Blob. Native restore is indirect: export/S3/backup → Blob → restore. |
 | Backup to URL | Source **SQL Server 2012 SP1 CU2+**. SQL Server 2012/2014 use a page blob with a storage-account credential (1 TB cap); SQL Server 2016+ use a block blob with a SAS credential (12.8 TB striped). Below that build, back up locally and upload. |
@@ -140,7 +140,7 @@ Ask only questions that can change candidates still in play, or when the user wa
 
 | Confirmation input | Ask when | Consumed by |
 | --- | --- | --- |
-| Source OS and edition (`source_os`, `source_edition`) | **MI Link is in play**, or VM/AVS/Arc/container or licensing/ESU are | MI Link requires Windows Server 2016+ and Enterprise, Standard or Developer edition; also drives compatibility, HA/DR support, AHB/ESU and patching responsibility |
+| Source OS and edition (`source_os`, `source_edition`) | **MI Link is in play**, or VM/AVS/Arc/container or licensing/ESU are | MI Link requires Enterprise, Standard or Developer edition and a host OS supported by that SQL Server version: Windows Server throughout, Linux from SQL Server 2017 onwards, SQL Server 2016 being Windows Server only. Also drives compatibility, HA/DR support, AHB/ESU and patching responsibility |
 | Compatibility level | SQL DB, Fabric SQL DB, or modernization candidate | refactoring effort and compatibility scoring |
 | Current HA/DR topology: FCI, AG, log shipping, none | near-zero/minimal downtime or VM/AVS/MI Link in play | method feasibility, rollback, resilience |
 | RPO and RTO separately | any production migration | method ranking and DR design |
@@ -219,7 +219,7 @@ If any checklist item is missing, keep `recommendationStatus: provisional`.
    - SQL MI **General Purpose**: default managed lift-and-shift when latency/IOPS are moderate and no BC-only HA/latency/read-scale requirement is known.
    - SQL MI **Business Critical**: low-latency storage, high IOPS/log throughput, strict HA/SLA posture, readable secondary needs, or memory/IO-sensitive OLTP.
    - SQL MI **Next-gen General Purpose** *(GA)*: 101–500 databases or links on one instance, up to 128 vCores, up to 32 TB, or configurable IOPS/memory — when BC-only features and its latency floor are not required. Beyond 500 databases/links, plan multiple instances.
-   - SQL DB **Hyperscale**: >4 TB up to its **128 TB** maximum, high scale-out/read needs, or heavy write/HTAP pattern. A single database above 128 TB must be partitioned/sharded or moved to SQL MI / SQL VM.
+   - SQL DB **Hyperscale**: >4 TB up to its **128 TB** maximum for a single database (100 TB per database inside a Hyperscale elastic pool), high scale-out/read needs, or heavy write/HTAP pattern. A single database above 128 TB must be partitioned/sharded, or moved to SQL Server on Azure VM subject to its storage design: SQL MI is **not** an as-is destination at that size because its storage ceiling is far below 128 TB.
    - SQL DB **Serverless**: intermittent/dev/workload with acceptable cold-start/auto-pause behavior.
    - SQL DB **Elastic Pool**: many tenants/databases with variable aggregate demand.
    - SQL DB **Business Critical**: low-latency/high-availability single DB requirements.

@@ -323,7 +323,19 @@ try {
     // Same shape, second offender: MI Link is scoped to Azure SQL Managed Instance. Saying an
     // Arc-enabled SQL MI endpoint makes the MI methods apply pulls MI Link in by implication,
     // which is how this survived the v1.9 fix to the section 8 matrix.
-    { id: 'MI Link implied for Arc-enabled SQL MI', re: /Arc-enabled SQL M(?:I|anaged Instance)[^\n]*(?:MI Link|vehicles of|methods of §?5\.2)/iu, allow: /not supported|not applicable|does not|never/iu }
+    { id: 'MI Link implied for Arc-enabled SQL MI', re: /Arc-enabled SQL M(?:I|anaged Instance)[^\n]*(?:MI Link|vehicles of|methods of §?5\.2)/iu, allow: /not supported|not applicable|does not|never|Windows Server only/iu },
+    // Microsoft requires port 135 in BOTH directions for MI managed DTC. Grouping it with the
+    // inbound-only set is how the rules read until v1.12, and a team following that literally
+    // opens 135 inbound only, so MI-initiated calls to the participant's RPC endpoint mapper
+    // fail after cutover.
+    { id: 'DTC port 135 without its outbound direction', re: /135[^\n]*14000[–-]15000\s+inbound|ports?\s+135\s+(?:and|,)[^\n]*inbound/iu, allow: /both inbound and outbound|inbound and outbound/iu },
+    // AHB on Hyperscale is a creation-date cohort, not an "existing database" rule. Without the
+    // 15 December 2023 qualifier the engine flags newer Hyperscale databases as AHB-eligible
+    // and mis-prices the migration, which is the permissive direction.
+    { id: 'AHB Hyperscale without its creation-date qualifier', re: /Hyperscale[^\n]*(?:can continue|continue to)\s+us(?:e|ing)\s+(?:Azure Hybrid Benefit|AHB)|(?:existing|older)\s+Hyperscale[^\n]*AHB/iu, allow: /15 Dec(?:ember)? 2023|December 15, 2023/iu },
+    // SQL MI tops out far below 128 TB, so it is not an as-is destination for a single database
+    // above the Hyperscale ceiling. v1.9 fixed the knowledge base and left SKILL.md standing.
+    { id: 'SQL MI offered as an as-is destination above 128 TB', re: /above 128 TB[^\n]*(?:SQL MI|Managed Instance)|128 TB[^\n]*moved to SQL MI/iu, allow: /not\b[^\n]*as-is|is \*\*not\*\*|far below|shard/iu }
   ];
   for (const file of files) {
     const text = fs.readFileSync(file, 'utf8');

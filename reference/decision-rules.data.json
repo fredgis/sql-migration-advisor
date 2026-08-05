@@ -1,14 +1,14 @@
 {
   "schema": "sql-migration-advisor.decision-rules-data/v1",
-  "version": "v1.11",
+  "version": "v1.12",
   "source": {
     "markdown": "reference/decision-rules.md",
-    "description": "Machine-checkable constants and gates extracted from decision-rules.md v1.11."
+    "description": "Machine-checkable constants and gates extracted from decision-rules.md v1.12."
   },
   "sourceVersionFloors": {
     "miLink": {
       "sqlServerMin": 2016,
-      "windowsServerMin": 2016,
+      "linuxSqlServerMin": 2017,
       "editions": ["Enterprise", "Standard", "Developer"]
     },
     "standaloneLrs": {
@@ -40,7 +40,7 @@
     },
     "miLinkToManagedInstance": {
       "sqlServerMin": 2016,
-      "windowsServerMin": 2016
+      "windowsServerOnly": true
     },
     "lrsToManagedInstanceConservative": {
       "sqlServerMin": 2014,
@@ -327,14 +327,15 @@
   "sqlDatabaseTiers": {
     "hyperscaleSizeThresholdTb": 4,
     "hyperscaleMaxSizeTb": 128,
+    "hyperscaleElasticPoolMaxSizeTb": 100,
     "generalPurposeSmallDatabaseSignalGb": 150
   },
   "kbGuardsMirroredInRules": [
     {
-      "name": "mi-link-windows-server-floor",
-      "why": "The knowledge base carried the Windows Server 2016+ gate while the decision tree did not, so the engine could select MI Link for an unsupported OS. The rules pattern is anchored to the MI Link method row: the floor appearing elsewhere in the file does not satisfy the guard.",
-      "knowledgeBase": "Windows Server 2016\\+",
-      "rules": "\\*\\*MI Link\\*\\* \\|[^\\n]*Windows Server 2016\\+"
+      "name": "mi-link-linux-floor",
+      "why": "Microsoft supports MI Link from Linux hosts starting with SQL Server 2017; only SQL Server 2016 is Windows Server only. v1.11 and earlier blocked every Linux source, which pushed a supported host to LRS and a far worse cutover. The rules pattern is anchored to the MI Link method row so the version appearing elsewhere does not satisfy the guard.",
+      "knowledgeBase": "Linux from SQL Server 2017",
+      "rules": "\\*\\*MI Link\\*\\* \\|[^\\n]*Linux from SQL Server 2017"
     },
     {
       "name": "mi-link-edition-gate",

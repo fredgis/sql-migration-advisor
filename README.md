@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Knowledge base v1.11" src="https://img.shields.io/badge/knowledge%20base-v1.11-2b8a3e">
+  <img alt="Knowledge base v1.12" src="https://img.shields.io/badge/knowledge%20base-v1.12-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml/badge.svg"></a>
 </p>
@@ -56,7 +56,7 @@ knowledge-base version, commit SHA and fetch timestamp so the advice is traceabl
 
 ## Why it is trustworthy
 
-- **Verified knowledge** — the v1.11 knowledge base is source-backed and corrected against Microsoft Learn.
+- **Verified knowledge** — the v1.12 knowledge base is source-backed and corrected against Microsoft Learn.
 - **Deterministic engine** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers.
 - **Explicit uncertainty** — recommendations carry confidence, provisional/validated status, assumptions, unknowns, blockers and evidence required.
 - **Freshness gates** — version bumps require substantive diffs; link checks classify bot-blocked pages; high-risk claims are tracked in [`reference/claims-registry.json`](reference/claims-registry.json).
@@ -218,8 +218,8 @@ Mermaid decision diagrams. The `SKILL.md` mirrors its AI Migration Agent I/O con
 ## The knowledge base as a PDF
 
 The same knowledge base ships as a polished, branded PDF —
-[`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (22 pages,
-v1.11, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
+[`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (23 pages,
+v1.12, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
 
@@ -281,10 +281,11 @@ base and this README on the same version. Last verified: August 2026.
 
 <!-- CHANGELOG:START -->
 <details>
-<summary><b>📓 Changelog</b> — current: <b>v1.11</b> (August 2026)</summary>
+<summary><b>📓 Changelog</b> — current: <b>v1.12</b> (August 2026)</summary>
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| v1.12 | 2026-08-05 | Applied a two-model adversarial review of the decision rules after verifying every finding against Microsoft Learn: MI Link no longer excludes Linux hosts (supported from SQL Server 2017), the unsourced Windows Server 2016+ floor is removed, DTC port 135 carries both directions, Azure Hybrid Benefit on Hyperscale is qualified by the 15 December 2023 cohort, Service Broker cross-instance becomes a preview-gated capability instead of a hard blocker, and ESU scope narrows to SQL Server 2014 and 2016. Three new forbidden-pattern gates guard the corrections. |
 | v1.11 | 2026-08-05 | Arc-enabled SQL MI no longer described as inheriting the Managed Instance methods, since MI Link is not supported for that target; added the retained-server-name / DNS-redirect TLS pitfall; gated both against return. |
 | v1.10 | 2026-08-05 | Removed the last two unqualified LRS-fallback statements that v1.9 left standing, and added a forbidden-pattern gate that fails whenever LRS is offered without its source range and window attached. The gate found a third occurrence neither the review nor the author had spotted. |
 | v1.9 | 2026-08-05 | MI Link gated on Windows Server 2016+ and Enterprise/Standard/Developer edition in the decision tree, LRS gated on its 30-day window and 2008–2022 source range, SQL MI removed as an as-is destination above 128 TB, MI Link marked not-applicable for Arc-enabled SQL MI, and Service Broker split by instance scope. |

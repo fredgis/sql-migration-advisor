@@ -2726,9 +2726,9 @@
     "auditRef": "distribution-11"
   },
   {
-    "id": "mi-link-linux-source-not-eligible",
-    "title": "MI Link is not available from a Linux source",
-    "why": "MI Link requires Windows Server. A Linux host must not be offered MI Link even when every other gate is met.",
+    "id": "mi-link-linux-sql2019-eligible",
+    "title": "MI Link is available from a Linux host on SQL Server 2019",
+    "why": "Microsoft supports MI Link on Linux from SQL Server 2017 onwards. v1.11 and earlier blocked every Linux source, which pushed a supported host to LRS and a far worse cutover.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -2754,35 +2754,33 @@
         "arc_in_place": "unsupported"
       },
       "primary_target": "Azure SQL Managed Instance",
-      "method": "LRS",
-      "targetAvailabilityDuringSync": "unavailable",
-      "businessCutoverDowntime": "minutes",
+      "method": "MI Link",
+      "targetAvailabilityDuringSync": "read-only",
+      "businessCutoverDowntime": "<1min",
       "recommendationStatus": "provisional",
       "confidence": "medium",
-      "mustNotRecommend": [
-        "MI Link"
-      ]
+      "mustNotRecommend": []
     },
     "assertRulePresent": [
-      "Enterprise / Standard / Developer edition"
+      "Linux from SQL Server 2017"
     ],
-    "auditRef": "audit-mi-link-os-gate"
+    "auditRef": "audit-mi-link-linux-supported"
   },
   {
-    "id": "mi-link-windows-2012r2-below-os-floor",
-    "title": "MI Link is not available below Windows Server 2016",
-    "why": "The knowledge base carries the Windows Server 2016+ floor; v1.8 corrected the KB and left the tree open, so this pins the gate.",
+    "id": "mi-link-linux-sql2016-windows-only",
+    "title": "MI Link is not available from a Linux host on SQL Server 2016",
+    "why": "SQL Server 2016 is the one version Microsoft documents as Windows Server only for MI Link, so a Linux 2016 host must fall back rather than be offered the method.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
-      "source_version": "2019",
+      "source_version": "2016",
       "management_model": "fully managed PaaS",
       "feature_dependencies": [
         "SQL Agent"
       ],
       "downtime": "near-zero",
       "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
-      "source_os": "Windows Server 2012 R2",
+      "source_os": "Linux",
       "source_edition": "Standard"
     },
     "expect": {
@@ -2807,9 +2805,9 @@
       ]
     },
     "assertRulePresent": [
-      "Enterprise / Standard / Developer edition"
+      "Windows Server only"
     ],
-    "auditRef": "audit-mi-link-os-floor"
+    "auditRef": "audit-mi-link-linux-sql2016-windows-only"
   },
   {
     "id": "mi-link-express-edition-not-eligible",
