@@ -315,7 +315,11 @@ try {
     { id: 'unsourced dependency statistic', re: /~60%/u },
     { id: 'unsourced landing-zone statistic', re: /~4x|4x\s+faster/iu },
     { id: 'undocumented sql_variant claim', re: /sql_variant/iu },
-    { id: 'old MI Link 10 database capacity', re: /MI Link[^\n]*(?:up to\s*)?10\s+(?:simultaneous\s+)?(?:databases|dbs|links)|(?:up to\s*)?10\s+(?:simultaneous\s+)?(?:databases|dbs|links)[^\n]*MI Link/iu, allow: /wizard|portal|batch|selection limit|not MI Link capacity/iu }
+    { id: 'old MI Link 10 database capacity', re: /MI Link[^\n]*(?:up to\s*)?10\s+(?:simultaneous\s+)?(?:databases|dbs|links)|(?:up to\s*)?10\s+(?:simultaneous\s+)?(?:databases|dbs|links)[^\n]*MI Link/iu, allow: /wizard|portal|batch|selection limit|not MI Link capacity/iu },
+    // LRS is not a universal fallback: it supports SQL Server 2008-2022 and has a 30-day
+    // window. This was corrected in one place in v1.9 and left standing in another, so the
+    // weekly review reported it again. The qualifier must travel with the recommendation.
+    { id: 'unconditional LRS fallback', re: /(?:choose|use|fall back to|falls back to|fallback to)\s+LRS/iu, allow: /only when|only if|qualifies|2008[–-]2022|30-day|not a legal fallback|gates? pass/iu }
   ];
   for (const file of files) {
     const text = fs.readFileSync(file, 'utf8');
