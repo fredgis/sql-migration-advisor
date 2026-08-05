@@ -1,31 +1,63 @@
 version: 2
 
+# Grouped on purpose. Dependabot catches up on everything at once the first time it runs,
+# and ungrouped that meant eight pull requests in one go. Grouping keeps a monthly run to a
+# couple of reviewable changes.
+#
+# Read the green checks on these carefully. tests.yml exercises the decision engine, not the
+# PDF toolchain and not the artifact plumbing in weekly-kb-check.yml, whose jobs are skipped
+# on pull requests. A bump to upload-artifact, download-artifact or create-pull-request can
+# therefore show all-green and still break the Monday run: validate those with a dispatched
+# weekly run before merging.
+
 updates:
-  # The PDF and diagram toolchain. These are build-time only and never reach a
-  # consumer of the skill, but a stale puppeteer or sharp breaks the artifacts
-  # workflow, which is how the poster and the knowledge-base PDF stay current.
+  # The PDF and diagram toolchain. Build-time only, never reaching a consumer of the skill,
+  # but a stale puppeteer or sharp breaks the artifacts workflow, which is how the poster and
+  # the knowledge-base PDF stay current.
   - package-ecosystem: npm
     directory: /tools/pdf
     schedule:
       interval: monthly
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 2
     commit-message:
       prefix: "deps(pdf)"
+    groups:
+      pdf-toolchain:
+        patterns:
+          - "*"
 
   - package-ecosystem: npm
     directory: /blume
     schedule:
       interval: monthly
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 2
     commit-message:
       prefix: "deps(blume)"
+    groups:
+      site:
+        patterns:
+          - "*"
 
-  # Actions drift silently: a runtime deprecation shows up as a warning in the
-  # logs long before it becomes a failure, and nobody reads passing logs.
+  # Actions drift silently: a runtime deprecation shows up as a warning in the logs long
+  # before it becomes a failure, and nobody reads passing logs. Split so that the actions
+  # carrying files between the weekly jobs land on their own and can be validated together.
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     commit-message:
       prefix: "ci(actions)"
+    groups:
+      artifact-plumbing:
+        patterns:
+          - "actions/upload-artifact"
+          - "actions/download-artifact"
+          - "actions/upload-pages-artifact"
+      actions:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "actions/upload-artifact"
+          - "actions/download-artifact"
+          - "actions/upload-pages-artifact"
