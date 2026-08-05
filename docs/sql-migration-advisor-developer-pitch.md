@@ -625,11 +625,14 @@ The tests also make sure that the engine does not collapse into always recommend
 
 The suite requires:
 
-- no single primary target to represent more than 32% of the golden scenarios;
+- no single primary target to represent more than 34% of the golden scenarios;
 - at least 18 different migration methods across the suite;
 - at least 5 different target-availability values.
 
-This catches a broad logic regression even when individual examples still pass.
+This catches a broad logic regression even when individual examples still pass. The target
+share is a tripwire against collapse, not a law about the corpus: it was re-baselined from
+32% to 34% when three MI Link host-gate scenarios were added deliberately. Raising it is
+allowed, but only alongside the scenarios that justify it.
 
 #### Forbidden-pattern checks
 
@@ -801,20 +804,22 @@ SVGs themselves. Changing a diagram therefore remains an explicit, human action.
 ```text
                     ┌──────────────────────────────────────────────┐
    any push/PR ────►│ Tests                    tests.yml           │
-                    │ rules data --strict · 14 golden checks       │
+                    │ actionlint · rules data --strict             │
+                    │ 15 golden checks · engine coverage ≥ 85%     │
                     └──────────────────────────────────────────────┘
 
                     ┌──────────────────────────────────────────────┐
    Monday 05:00 UTC │ Weekly KB freshness check                    │
    PR on KB/rules/  │        weekly-kb-check.yml                   │
-   claims/README ──►│ links → news → claims → prompt               │
-   dispatch (days=) │      → Foundry gpt-5.6-sol (xhigh)           │
-                    │      → decide                                │
-                    │         ├─ edits already there ─► PR + bump  │
-                    │         └─ otherwise ──────────► report-only │
-                    │                                    issue     │
+   claims/README ──►│ consistency                                  │
+   dispatch (days=) │   └─► evidence   links · news · claims       │
+                    │        └─► review   Foundry gpt-5.6-sol      │
+                    │             └─► decide                       │
+                    │                  ├─ edits there ─► PR + bump │
+                    │                  └─ otherwise ──► report-only│
+                    │                                     issue    │
                     └──────────────────────────────────────────────┘
-                                     │ a human applies them
+                                     │ a human ticks the checklist
                                      ▼
                     ┌──────────────────────────────────────────────┐
    push to main on  │ Artifacts coherence      artifacts.yml       │
@@ -829,6 +834,13 @@ SVGs themselves. Changing a diagram therefore remains an explicit, human action.
    blume/ or     ──►│ sync howto/*.svg → public → build → Pages    │
    howto/           └──────────────────────────────────────────────┘
 ```
+
+The weekly check runs as four chained jobs rather than one long sequence. Evidence gathering
+fails for boring reasons more often than anything else — a dead link, a feed timing out, a
+source page moving — and isolating it means the failure names itself instead of hiding inside
+a twenty-step job. Files move between jobs as artifacts; the decision job keeps its steps
+together because applying stamps, rebuilding the PDF and opening the pull request all operate
+on the same checkout.
 
 ### The three rules that hold it together
 
@@ -880,11 +892,13 @@ sql-migration-advisor/
 ├── lab/
 │   └── Hands-on migration lab
 │
-└── .github/workflows/
-    ├── tests.yml
-    ├── weekly-kb-check.yml
-    ├── artifacts.yml
-    └── deploy-docs.yml
+└── .github/
+    ├── dependabot.yml
+    └── workflows/
+        ├── tests.yml
+        ├── weekly-kb-check.yml
+        ├── artifacts.yml
+        └── deploy-docs.yml
 ```
 
 ---

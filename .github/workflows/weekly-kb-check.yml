@@ -53,15 +53,19 @@ jobs:
       - name: Check KB / decision-rules consistency
         run: node tools/weekly-check/check-consistency.mjs
 
-  check:
+  # Evidence gathering. Independent of the model, and the part most likely to fail for
+  # boring reasons: a dead link, a feed timing out, a source page moving. Isolated so a
+  # failure here names itself instead of hiding inside a twenty-step job.
+  evidence:
     if: github.event_name != 'pull_request'
     needs: consistency
     runs-on: ubuntu-latest
+    outputs:
+      news_count: ${{ steps.news.outputs.count }}
+      lychee_exit: ${{ steps.lychee.outputs.exit_code }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v5
@@ -95,9 +99,43 @@ jobs:
           echo "count=${COUNT}" >> "$GITHUB_OUTPUT"
 
       - name: Verify claims/source hashes
-        id: claims
         continue-on-error: true
         run: node tools/weekly-check/verify-claims.mjs
+
+      - name: Upload evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-evidence
+          path: |
+            lychee-report.md
+            link-summary.md
+            link-summary.json
+            news.md
+            news.json
+            claims-report.md
+            claims-report.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  # The model review. Advisory by design, so every failure path here is tolerated and the
+  # run continues with an empty verdict rather than losing the deterministic evidence.
+  review:
+    if: github.event_name != 'pull_request'
+    needs: evidence
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Download evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: weekly-evidence
 
       - name: Build review prompt
         run: node tools/weekly-check/build-prompt.mjs > prompt.txt
@@ -112,7 +150,6 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: AI review (Azure AI Foundry)
-        id: ai
         if: steps.azlogin.outcome == 'success'
         continue-on-error: true
         env:
@@ -127,10 +164,46 @@ jobs:
         if: always()
         run: test -f response.txt || touch response.txt
 
+      - name: Upload review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-review
+          path: response.txt
+          if-no-files-found: warn
+          retention-days: 14
+
+  # Decision and delivery. These steps share the working tree deliberately: applying stamps,
+  # rebuilding artifacts and opening the pull request all operate on the same checkout.
+  decide:
+    if: github.event_name != 'pull_request'
+    needs: [evidence, review]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Download evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: weekly-evidence
+
+      - name: Download review
+        uses: actions/download-artifact@v4
+        with:
+          name: weekly-review
+
       - name: Decide
         id: decide
         env:
-          NEWS_COUNT: ${{ steps.news.outputs.count }}
+          NEWS_COUNT: ${{ needs.evidence.outputs.news_count }}
         run: node tools/weekly-check/decide.mjs
 
       - name: Write job summary
@@ -138,8 +211,8 @@ jobs:
         run: |
           {
             echo "## 🔄 Weekly KB check"
-            echo "- Link check exit code: \`${{ steps.lychee.outputs.exit_code }}\`"
-            echo "- News items: \`${{ steps.news.outputs.count }}\`"
+            echo "- Link check exit code: \`${{ needs.evidence.outputs.lychee_exit }}\`"
+            echo "- News items: \`${{ needs.evidence.outputs.news_count }}\`"
             echo "- PR required: \`${{ steps.decide.outputs.pr_required }}\`"
             echo "- Issue required: \`${{ steps.decide.outputs.issue_required }}\`"
             echo "- Apply mode: \`${{ steps.decide.outputs.apply_mode }}\`"
@@ -219,4 +292,3 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh issue create --title "Weekly KB report: human review required" --body-file issue-body.md --label automated --label knowledge-base
-

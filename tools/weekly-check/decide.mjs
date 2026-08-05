@@ -20,17 +20,26 @@ const bump = ai.bump === 'major' ? 'major' : 'minor';
 
 // The model returns structured findings; render them as review-ready markdown.
 // A plain "suggestions" string is still accepted so an older response shape keeps working.
+//
+// Each finding renders as a checklist item rather than a paragraph. Two findings from the
+// v1.8 issue were believed applied, were not, and reappeared a cycle later; prose gives a
+// reader nothing to tick, so nothing records what was actually done. The sub-boxes name the
+// two places a correction has to land, because correcting only the knowledge base and
+// leaving the decision tree alone is exactly how those two findings came back.
 function renderFindings(a) {
   if (Array.isArray(a.findings) && a.findings.length) {
     return a.findings.map((f, i) => {
-      const head = `${i + 1}. **${f.file || 'unknown file'}**${f.locator ? ` — ${f.locator}` : ''}`;
+      const head = `- [ ] **${i + 1}. ${f.file || 'unknown file'}**${f.locator ? ` — ${f.locator}` : ''}`;
       const rows = [
-        f.current ? `   - current: ${String(f.current).trim()}` : null,
-        f.correction ? `   - correction: ${String(f.correction).trim()}` : null,
-        f.why ? `   - why: ${String(f.why).trim()}` : null,
-        f.source ? `   - source: ${String(f.source).trim()}` : '   - source: _none given — treat as unverified_',
-        f.claim_id ? `   - affected: \`${String(f.claim_id).trim()}\`` : null,
-        f.confidence ? `   - confidence: ${String(f.confidence).trim()}` : null,
+        f.current ? `      - current: ${String(f.current).trim()}` : null,
+        f.correction ? `      - correction: ${String(f.correction).trim()}` : null,
+        f.why ? `      - why: ${String(f.why).trim()}` : null,
+        f.source ? `      - source: ${String(f.source).trim()}` : '      - source: _none given — treat as unverified_',
+        f.claim_id ? `      - affected claim/rule: \`${String(f.claim_id).trim()}\`` : null,
+        f.confidence ? `      - confidence: ${String(f.confidence).trim()}` : null,
+        '      - [ ] knowledge base updated',
+        '      - [ ] decision rules updated, or explicitly not applicable',
+        '      - [ ] scenario or gate added so this cannot regress',
       ].filter(Boolean);
       return [head, ...rows].join('\n');
     }).join('\n\n');
@@ -185,6 +194,10 @@ ${applied}
 ${reported}
 
 ### Suggested substantive edits (not applied automatically)
+
+Tick each box as it lands. An unticked finding is an open finding, whatever the issue's state
+suggests. Close this issue only when every box is ticked or explicitly declined in a comment.
+
 ${aiSuggestions || '_None proposed by the automated review. Confirm the news and reports below do not require content changes._'}
 
 ### 🧾 Claims/source drift report

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { evaluate } from './engine/evaluate.mjs';
+import { validateGoldenScenarios } from './validate-scenarios.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const rel = (...p) => path.join(root, ...p);
@@ -11,7 +12,13 @@ const results = [];
 
 // Deliberate anti-degeneracy gates. If future rules legitimately change the
 // scenario distribution, consciously re-baseline these rather than drifting.
-const MAX_TARGET_SHARE = 0.32;
+//
+// MAX_TARGET_SHARE is a tripwire against the engine collapsing to one answer, not a law
+// about the corpus. Re-baselined from 0.32 to 0.34 in v1.9 when three MI Link host-gate
+// scenarios were added (Linux source, Windows Server below the floor, Express edition),
+// taking Azure SQL Managed Instance from 23/75 to 26/78. Raise it only with the scenarios
+// that justify it named here; raising it to make a build pass is how the guard dies.
+const MAX_TARGET_SHARE = 0.34;
 const MIN_DISTINCT_METHODS = 18;
 const MIN_DISTINCT_AVAILABILITY_VALUES = 5;
 const ELIGIBLE_STATES = new Set(['eligible', 'eligible_with_remediation']);
@@ -195,6 +202,17 @@ try {
   add('golden-scenarios-json', Array.isArray(scenarios) && scenarios.length >= 48, [`${Array.isArray(scenarios) ? scenarios.length : 0} scenarios loaded`]);
 } catch (err) {
   add('golden-scenarios-json', false, [String(err)]);
+}
+
+{
+  // Shape validation, separate from the count check above. A mistyped key would otherwise
+  // leave a scenario in the file but out of the run, so it would look covered and never be.
+  const { errors, unsupported, count } = validateGoldenScenarios();
+  const details = errors.length
+    ? errors
+    : [`${count} scenarios match tests\\golden-scenarios.schema.json.`];
+  for (const u of unsupported) details.push(`note: schema keyword not implemented by the validator: ${u}`);
+  add('golden-scenarios-schema', errors.length === 0, details);
 }
 
 {

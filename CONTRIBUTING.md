@@ -29,10 +29,18 @@ Chrome binary, but you only need those if you are changing `docs/` output or `to
 Run all four before opening a pull request. They are the same four CI runs.
 
 ```bash
-node tests/run-tests.mjs                        # 14 gates over 75 scenarios
+node tests/run-tests.mjs                        # 15 gates over 78 scenarios
 node tools/rules/check-rules-data.mjs --strict  # constants agree between JSON and markdown
 node tools/weekly-check/check-consistency.mjs   # versions and freshness stamps agree
 node tools/artifacts/check-artifacts.mjs        # derived artifacts are not stale
+```
+
+CI additionally measures branch coverage of the decision engine and fails below 85%, because
+every scenario can pass while a branch is never exercised:
+
+```bash
+node --experimental-test-coverage --test-coverage-include='tests/engine/**' \
+     --test-coverage-branches=85 --test tests/run-tests.mjs
 ```
 
 `check-artifacts.mjs --fix-prose` repairs sentences that quote an artifact, such as the
@@ -46,6 +54,8 @@ Scenarios live in `tests/golden-scenarios.json`. Each one is inputs plus the exp
    and the `expect` block: `eligibility`, `primary_target`, `method`, `tier`,
    `targetAvailabilityDuringSync`, `businessCutoverDowntime`, `recommendationStatus`,
    `confidence`, and `mustNotRecommend` where a wrong answer must be named explicitly.
+   `tests/golden-scenarios.schema.json` describes the exact shape and is enforced in CI, so a
+   mistyped key fails the build instead of quietly dropping your scenario from the run.
 2. Add `assertRulePresent` entries quoting the sentence in `reference/decision-rules.md` that
    justifies the outcome. Prefer plain text over regular expressions: escaping mistakes are the
    most common way to make an anchor silently match nothing.

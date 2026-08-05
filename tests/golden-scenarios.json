@@ -2724,5 +2724,134 @@
       "SQL VM, AVS, or full DIY container"
     ],
     "auditRef": "distribution-11"
+  },
+  {
+    "id": "mi-link-linux-source-not-eligible",
+    "title": "MI Link is not available from a Linux source",
+    "why": "MI Link requires Windows Server. A Linux host must not be offered MI Link even when every other gate is met.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2019",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "SQL Agent"
+      ],
+      "downtime": "near-zero",
+      "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
+      "source_os": "Linux",
+      "source_edition": "Enterprise"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_vm": "eligible",
+        "avs": "unsupported",
+        "sql_mi": "eligible",
+        "sql_db": "eligible_with_remediation",
+        "fabric_sql_db": "eligible",
+        "arc_sql_mi": "unsupported",
+        "container": "unsupported",
+        "arc_in_place": "unsupported"
+      },
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "LRS",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": [
+        "MI Link"
+      ]
+    },
+    "assertRulePresent": [
+      "Enterprise / Standard / Developer edition"
+    ],
+    "auditRef": "audit-mi-link-os-gate"
+  },
+  {
+    "id": "mi-link-windows-2012r2-below-os-floor",
+    "title": "MI Link is not available below Windows Server 2016",
+    "why": "The knowledge base carries the Windows Server 2016+ floor; v1.8 corrected the KB and left the tree open, so this pins the gate.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2019",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "SQL Agent"
+      ],
+      "downtime": "near-zero",
+      "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
+      "source_os": "Windows Server 2012 R2",
+      "source_edition": "Standard"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_vm": "eligible",
+        "avs": "unsupported",
+        "sql_mi": "eligible",
+        "sql_db": "eligible_with_remediation",
+        "fabric_sql_db": "eligible",
+        "arc_sql_mi": "unsupported",
+        "container": "unsupported",
+        "arc_in_place": "unsupported"
+      },
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "LRS",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": [
+        "MI Link"
+      ]
+    },
+    "assertRulePresent": [
+      "Enterprise / Standard / Developer edition"
+    ],
+    "auditRef": "audit-mi-link-os-floor"
+  },
+  {
+    "id": "mi-link-express-edition-not-eligible",
+    "title": "MI Link is not available on Express edition",
+    "why": "MI Link needs Enterprise, Standard or Developer. Express must fall back rather than be offered a method it cannot run.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2019",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "SQL Agent"
+      ],
+      "downtime": "near-zero",
+      "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
+      "source_os": "Windows Server 2019",
+      "source_edition": "Express"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_vm": "eligible",
+        "avs": "unsupported",
+        "sql_mi": "eligible",
+        "sql_db": "eligible_with_remediation",
+        "fabric_sql_db": "eligible",
+        "arc_sql_mi": "unsupported",
+        "container": "unsupported",
+        "arc_in_place": "unsupported"
+      },
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "LRS",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": [
+        "MI Link"
+      ]
+    },
+    "assertRulePresent": [
+      "Enterprise / Standard / Developer edition"
+    ],
+    "auditRef": "audit-mi-link-edition-gate"
   }
 ]

@@ -1,0 +1,31 @@
+version: 2
+
+updates:
+  # The PDF and diagram toolchain. These are build-time only and never reach a
+  # consumer of the skill, but a stale puppeteer or sharp breaks the artifacts
+  # workflow, which is how the poster and the knowledge-base PDF stay current.
+  - package-ecosystem: npm
+    directory: /tools/pdf
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "deps(pdf)"
+
+  - package-ecosystem: npm
+    directory: /blume
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "deps(blume)"
+
+  # Actions drift silently: a runtime deprecation shows up as a warning in the
+  # logs long before it becomes a failure, and nobody reads passing logs.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci(actions)"

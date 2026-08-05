@@ -21,3 +21,11 @@ jobs:
         run: node tools/rules/check-rules-data.mjs --strict
       - name: Run deterministic regression tests
         run: node tests/run-tests.mjs
+      - name: Engine branch coverage
+        # Scoped to the decision engine. The scenarios can all pass while a branch of the
+        # engine is never exercised, which is how a gate can exist and protect nothing.
+        run: >-
+          node --experimental-test-coverage
+          --test-coverage-include='tests/engine/**'
+          --test-coverage-branches=85
+          --test tests/run-tests.mjs

@@ -207,7 +207,7 @@ request**. (It is separate from the weekly knowledge-base check above, which run
   `decision-rules.data.json`. The engine holds no hard-coded numbers.
 - **Drift is caught.** `check-rules-data.mjs` verifies 174 constants against the markdown prose, in strict
   mode — a warning fails the build.
-- **Decisions are tested.** 66 golden scenarios are replayed through the engine and compared field by
+- **Decisions are tested.** 78 golden scenarios are replayed through the engine and compared field by
   field. Break a rule and the suite fails, naming the scenario.
 - **Honest limit.** Constants are single-sourced, but rule *logic* still exists twice: prose for the agent,
   JavaScript for the tests.
