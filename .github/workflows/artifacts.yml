@@ -6,11 +6,23 @@ name: Artifacts coherence
 # source without refreshing the PDF/poster is reported, not silently accepted.
 #
 # On a push to main (that is, once a PR has been merged): regenerate whatever the
-# merge made stale and commit it back, so main is never left with a knowledge base
-# and a PDF that disagree.
+# merge made stale and propose it as a pull request, so main is never left with a
+# knowledge base and a PDF that disagree.
+#
+# It proposes rather than pushes because the protectmain ruleset requires every change
+# to main to go through a pull request, and github-actions[bot] holds no bypass. Granting
+# it one would let any workflow running on main write to main, which is not a trade this
+# public repository wants to make for derived files.
+#
+# One consequence has to be handled rather than ignored: GitHub deliberately does not
+# start workflow runs for pull requests opened with GITHUB_TOKEN, so the artifacts PR
+# carries no checks of its own. The verification therefore runs inside this job, on the
+# exact tree being proposed, and its result is recorded in the pull request body. A tree
+# that fails verification is never proposed at all.
 #
 # The regeneration job only reacts to source paths, never to the artifacts it writes,
-# so it cannot retrigger itself.
+# so it cannot retrigger itself. It reuses a single chore/artifacts branch, so at most
+# one artifact pull request is open at any time.
 
 on:
   pull_request:
@@ -60,11 +72,12 @@ jobs:
         run: node tools/artifacts/check-artifacts.mjs
 
   regenerate:
-    name: Regenerate stale artifacts
+    name: Regenerate stale artifacts and propose them
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -137,23 +150,82 @@ jobs:
         if: steps.detect.outputs.stale == 'true'
         run: node tools/artifacts/check-artifacts.mjs --fix-prose || true
 
-      - name: Commit the refreshed artifacts
+      # The pull request below is opened with GITHUB_TOKEN, and GitHub does not start
+      # workflow runs for those, so it will show no checks of its own. Verification runs
+      # here instead, on the exact tree about to be proposed, and the outcome is written
+      # into the pull request body. --fix-prose can touch README.md and poster.html, both
+      # of which the test suite scans, so the suite runs too and not only the artifact check.
+      - name: Verify the regenerated tree
+        id: verify
         if: steps.detect.outputs.stale == 'true'
+        continue-on-error: true
         run: |
           rm -f artifacts-report.json
-          if git diff --quiet; then
+          node tools/artifacts/check-artifacts.mjs
+          node tools/rules/check-rules-data.mjs --strict
+          node tests/run-tests.mjs
+
+      - name: Open or update the artifacts pull request
+        if: steps.detect.outputs.stale == 'true' && steps.verify.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -f artifacts-report.json
+          if git diff --quiet && git diff --cached --quiet; then
             echo "Nothing changed after regeneration."
             exit 0
           fi
+
+          branch=chore/artifacts
+          source_sha=$(git rev-parse --short HEAD)
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$branch"
           git add -A
-          git commit -m "chore(artifacts): regenerate artifacts after $(git rev-parse --short HEAD)
+          git commit -m "chore(artifacts): regenerate artifacts after ${source_sha}" \
+                     -m "Rebuilt by .github/workflows/artifacts.yml because a source changed." \
+                     -m "Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+          git push --force origin "$branch"
 
-          Rebuilt by .github/workflows/artifacts.yml because a source changed.
-          Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
-          git push
+          {
+            echo "Generated artifacts drifted from their sources at \`${source_sha}\` and were rebuilt automatically."
+            echo
+            echo "### Files in this pull request"
+            echo
+            echo '```'
+            git show --stat --oneline HEAD | tail -n +2
+            echo '```'
+            echo
+            echo "### Verification"
+            echo
+            echo "GitHub does not run workflows on pull requests opened with \`GITHUB_TOKEN\`, so this PR shows no checks."
+            echo "The following ran in [the job that produced it](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}), on this exact tree, and all passed:"
+            echo
+            echo "- \`node tools/artifacts/check-artifacts.mjs\`"
+            echo "- \`node tools/rules/check-rules-data.mjs --strict\`"
+            echo "- \`node tests/run-tests.mjs\`"
+            echo
+            echo "A tree failing any of them is never proposed: the job fails instead and opens nothing."
+            echo
+            echo "### Why a pull request and not a direct push"
+            echo
+            echo "The \`protectmain\` ruleset requires every change to \`main\` to go through a pull request, and \`github-actions[bot]\` holds no bypass."
+            echo "Review the diff, then merge. The branch is reused, so at most one artifacts pull request is open at a time."
+          } > pr-body.md
 
-      - name: Re-verify
-        if: steps.detect.outputs.stale == 'true'
-        run: node tools/artifacts/check-artifacts.mjs
+          existing=$(gh pr list --head "$branch" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh pr edit "$existing" --body-file pr-body.md
+            echo "Updated existing pull request #${existing}."
+          else
+            gh pr create --base main --head "$branch" \
+              --title "chore(artifacts): refresh generated artifacts" \
+              --body-file pr-body.md
+          fi
+          rm -f pr-body.md
+
+      - name: Fail if the rebuild did not restore coherence
+        if: steps.detect.outputs.stale == 'true' && steps.verify.outcome != 'success'
+        run: |
+          echo "::error::Artifacts were stale and the automatic rebuild did not restore coherence, so no pull request was opened. Rebuild locally with: node tools/pdf/build.mjs && node tools/pdf/patchwork.mjs && node tools/diagram/build.mjs poster && node tools/artifacts/check-artifacts.mjs --fix-prose"
+          exit 1
