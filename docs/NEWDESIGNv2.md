@@ -324,8 +324,10 @@ Every lot below is complete unless marked otherwise. Commits are on `main`.
 ### Unplanned, and necessary
 
 - [x] Gate `confidence-vocabulary`, the twenty-first — see §11
-- [x] `.claude-plugin/plugin.json`: the repository installs with `copilot plugin install`
+- [x] `.claude-plugin/plugin.json`: the repository installs as a Copilot CLI plugin
+- [x] `.claude-plugin/marketplace.json`: the repository is its own marketplace, so the deprecated repo-install form is no longer the only route
 - [x] Six mixed path references in `SKILL.md` corrected, which is what made the installed copy work
+- [x] `ci(artifacts)`: the job rebuilt the poster and then failed verification on it, because `--fix-prose` rewrote `poster.html` after the PNG was rendered
 
 ### Lot F — B2 runtime eval
 
@@ -354,5 +356,6 @@ This is the audit's own charge appearing inside the response to it: a claim was 
 - [x] Approve the six-step sequence
 - [x] Decide whether the developer pitch is deferred until after v2.0.0 — deferred
 - [x] Go for step 1
-- [ ] Release `v2.0.0`, then dispatch the weekly check and confirm four green jobs
+- [x] Release `v2.0.0`, then dispatch the weekly check and confirm four green jobs — **4/4 green**
+- [ ] E4 developer pitch and E6 diagrams, deferred from lot E
 - [ ] Lot F, when there is appetite to measure
