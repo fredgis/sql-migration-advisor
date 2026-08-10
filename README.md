@@ -37,7 +37,7 @@ preliminary recommendation for assessment and validation:
 - **Primary path** — target and method to assess first: SQL VM · AVS · SQL MI · SQL DB · Fabric SQL DB · Arc SQL MI · container · Arc in-place
 - **Best alternative** — the strongest fallback path when trade-offs or unknowns remain
 - **Exclusions** — why other targets were ruled out, including hard blockers and remediation options
-- **Confidence** — provisional or validated status, assumptions, unknowns, and evidence required
+- **Confidence** — provisional or validated status, assumptions, unknowns, and evidence required ([what the levels mean](#how-it-works))
 - **Downtime class** — near-zero · minimal · offline
 - **Cost levers** — Azure Hybrid Benefit · ESU; not a sizing or pricing estimate
 - **Microsoft program** — Cloud Accelerate Factory · SQL in a Day
@@ -58,9 +58,9 @@ knowledge-base version, commit SHA and fetch timestamp so the advice is traceabl
 
 - **Verified knowledge** — the v1.16 knowledge base is source-backed and corrected against Microsoft Learn.
 - **Deterministic engine** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers.
-- **Explicit uncertainty** — recommendations carry confidence, provisional/validated status, assumptions, unknowns, blockers and evidence required.
+- **Explicit uncertainty** — recommendations carry confidence, provisional/validated status, assumptions, unknowns, blockers and evidence required. `high` confidence is unreachable from the interview alone: it requires measured evidence.
 - **Freshness gates** — version bumps require substantive diffs; link checks classify bot-blocked pages; high-risk claims are tracked in [`reference/claims-registry.json`](reference/claims-registry.json).
-- **Regression protection** — [`tests/`](tests/) contains golden scenarios and consistency checks wired into CI.
+- **Regression protection** — [`tests/`](tests/) holds 80 golden scenarios and 15 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
 
 ## Audit response
 
@@ -172,6 +172,66 @@ It should match the knowledge-base badge at the top of this README.
    (DMA, the Azure Data Studio extension, DMS *classic*).
 
 See [`examples/sample-recommendation.md`](examples/sample-recommendation.md) for a full example.
+
+<details>
+<summary><b>🎚️ Reading the confidence level</b> — why <code>low</code> is a feature, not a failure</summary>
+
+<br />
+
+Confidence answers one question: **how much of this rests on something nobody has measured?**
+
+| Level | What it means | How you get there |
+| --- | --- | --- |
+| 🔴 **low** | At least one decision-driving unknown remains, or two answers conflict | The default whenever something that would change the outcome is missing |
+| 🟡 **medium** | Triage is complete and internally consistent, but nothing is tool-confirmed yet | Answer every question without a "not sure" |
+| 🟢 **high** | Dependencies, sizing, regional availability and cutover feasibility are all measured | **Not reachable from the interview.** It needs the four evidence booleans |
+
+`high` is deliberately out of reach of a conversation. It requires
+`dependenciesToolConfirmed`, `performanceMeasured`, `regionAvailabilityConfirmed` and
+`architectSignedOff` as typed values. Prose that mentions those phrases never substitutes for them,
+so an assessment nobody ran cannot be talked into existence.
+
+**To move from low to medium**, read the *Blockers & required evidence* section of your card. Every
+unknown holding the score down is named there, with the assessment that would close it.
+
+A `low` score is the skill telling you what it does not know. The dangerous output is the opposite:
+a confident answer resting on evidence nobody supplied. Three defects fixed in v1.15 and v1.16 were
+exactly that, so the engine now resolves a blank answer to `unknown_requires_assessment` rather than
+to a pass.
+
+</details>
+
+<details>
+<summary><b>🧪 Reading the coverage number</b> — what "engine branch coverage 87.96%" measures</summary>
+
+<br />
+
+It is **branch coverage over the decision engine only**, not over the whole repository. A branch is
+each way an `if` can go. Take a real line from `tests/engine/evaluate.mjs`:
+
+```js
+if (perfStatedUnknown || smallDatabase) return 'General Purpose';
+```
+
+That single line holds four paths. If no scenario ever arrives with `perfStatedUnknown` true, that
+path is **never executed by the suite**. It can contain anything at all and every test still passes.
+
+So the number reads: **88 branches out of 100 are actually walked by at least one of the 80 golden
+scenarios.** The remaining 12% is engine code nobody exercises.
+
+This is not academic. The `150 gb` defect fixed in v1.16, where the small-database signal also
+matched the `150 GB – 4 TB` range and outranked an explicit "not sure", lived in an uncovered
+branch. The gate existed, the suite was green, and the bug was in the part the suite never reached.
+
+CI enforces a floor of **85%**, so a change that adds logic without adding a scenario to reach it
+fails the build:
+
+```powershell
+node --experimental-test-coverage --test-coverage-include='tests/engine/**' `
+     --test-coverage-branches=85 --test tests/run-tests.mjs
+```
+
+</details>
 
 ---
 
