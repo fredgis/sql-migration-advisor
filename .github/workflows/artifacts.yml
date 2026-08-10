@@ -162,41 +162,55 @@ jobs:
         if: steps.detect.outputs.stale == 'true'
         run: node tools/artifacts/check-artifacts.mjs --fix-prose || true
 
-      # The pull request below is opened with GITHUB_TOKEN, and GitHub does not start
-      # workflow runs for those, so it will show no checks of its own. Verification runs
-      # here instead, on the exact tree about to be proposed, and the outcome is written
-      # into the pull request body. --fix-prose can touch README.md and poster.html, both
-      # of which the test suite scans, so the suite runs too and not only the artifact check.
-      - name: Verify the regenerated tree
-        id: verify
+      # Order matters here, and the first version of this job got it wrong. check-artifacts decides
+      # staleness from git history, not file contents, so it cannot pass while the rebuilt files are
+      # still uncommitted: the artifact's last commit is by definition older than the source's. The
+      # commit therefore happens first, on a local branch and without pushing, and verification runs
+      # against that commit. Nothing leaves the runner until every check has passed.
+      #
+      # This is also why the force-dispatch test of this path passed while the first real drift
+      # failed: with nothing genuinely stale, the pre-commit check had nothing to complain about.
+      - name: Commit the rebuilt artifacts to a local branch
+        id: stage
         if: steps.detect.outputs.stale == 'true'
-        continue-on-error: true
-        run: |
-          rm -f artifacts-report.json
-          node tools/artifacts/check-artifacts.mjs
-          node tools/rules/check-rules-data.mjs --strict
-          node tests/run-tests.mjs
-
-      - name: Open or update the artifacts pull request
-        if: steps.detect.outputs.stale == 'true' && steps.verify.outcome == 'success'
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           rm -f artifacts-report.json
           if git diff --quiet && git diff --cached --quiet; then
             echo "Nothing changed after regeneration."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
-          branch=chore/artifacts
-          source_sha=$(git rev-parse --short HEAD)
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "source_sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -B "$branch"
+          git checkout -B chore/artifacts
           git add -A
-          git commit -m "chore(artifacts): regenerate artifacts after ${source_sha}" \
+          git commit -m "chore(artifacts): regenerate artifacts after $(git rev-parse --short HEAD)" \
                      -m "Rebuilt by .github/workflows/artifacts.yml because a source changed." \
                      -m "Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+
+      # The pull request below is opened with GITHUB_TOKEN, and GitHub does not start
+      # workflow runs for those, so it will show no checks of its own. Verification runs
+      # here instead, against the exact commit about to be proposed, and the outcome is
+      # written into the pull request body. --fix-prose can touch README.md and poster.html,
+      # both of which the test suite scans, so the suite runs too and not only the artifact check.
+      - name: Verify the staged commit
+        id: verify
+        if: steps.stage.outputs.changed == 'true'
+        continue-on-error: true
+        run: |
+          node tools/artifacts/check-artifacts.mjs
+          node tools/rules/check-rules-data.mjs --strict
+          node tests/run-tests.mjs
+
+      - name: Push and open or update the artifacts pull request
+        if: steps.stage.outputs.changed == 'true' && steps.verify.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          branch=chore/artifacts
+          source_sha=${{ steps.stage.outputs.source_sha }}
           git push --force origin "$branch"
 
           {
@@ -211,13 +225,13 @@ jobs:
             echo "### Verification"
             echo
             echo "GitHub does not run workflows on pull requests opened with \`GITHUB_TOKEN\`, so this PR shows no checks."
-            echo "The following ran in [the job that produced it](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}), on this exact tree, and all passed:"
+            echo "The following ran in [the job that produced it](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}), against this exact commit, and all passed:"
             echo
             echo "- \`node tools/artifacts/check-artifacts.mjs\`"
             echo "- \`node tools/rules/check-rules-data.mjs --strict\`"
             echo "- \`node tests/run-tests.mjs\`"
             echo
-            echo "A tree failing any of them is never proposed: the job fails instead and opens nothing."
+            echo "A commit failing any of them is never pushed: the job fails instead and opens nothing."
             echo
             echo "### Why a pull request and not a direct push"
             echo
@@ -237,7 +251,7 @@ jobs:
           rm -f pr-body.md
 
       - name: Fail if the rebuild did not restore coherence
-        if: steps.detect.outputs.stale == 'true' && steps.verify.outcome != 'success'
+        if: steps.stage.outputs.changed == 'true' && steps.verify.outcome != 'success'
         run: |
-          echo "::error::Artifacts were stale and the automatic rebuild did not restore coherence, so no pull request was opened. Rebuild locally with: node tools/pdf/build.mjs && node tools/pdf/patchwork.mjs && node tools/diagram/build.mjs poster && node tools/artifacts/check-artifacts.mjs --fix-prose"
+          echo "::error::Artifacts were stale and the rebuilt commit did not pass verification, so nothing was pushed and no pull request was opened. Rebuild locally with: node tools/pdf/build.mjs && node tools/pdf/patchwork.mjs && node tools/diagram/build.mjs poster && node tools/artifacts/check-artifacts.mjs --fix-prose"
           exit 1
