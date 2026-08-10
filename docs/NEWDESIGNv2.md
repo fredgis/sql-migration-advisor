@@ -3,7 +3,7 @@
 > **Status: implemented, released as `v2.0.0`.** Baseline at approval: `v1.18.0`, commit `fbd72f6`, 18 gates, 90 golden scenarios.
 > Delivered: **21 gates**, 90 golden scenarios. Progress is tracked in §10; departures from the plan are recorded in §11 with the reason.
 >
-> **A second audit of `v2.0.0` has been received and verified. Its plan is §13, awaiting approval. Nothing in it is implemented.**
+> **A second audit of `v2.0.0` has been received and verified. Its findings and plan are in §13; delivery status is §13.5. Released as `v2.1.0`.**
 
 ---
 
@@ -382,8 +382,8 @@ Minor, from the same run: `Target availability during sync` rendered as *not pre
 
 ## 13. Second audit, of `v2.0.0` — verified findings and plan
 
-> **Status: proposal, awaiting approval. Nothing here is implemented.**
-> Audited at commit `2157c97`. The auditor scores the skill **8/10**: credible for an assisted
+> **Status: implemented, released as `v2.1.0`.** Waves 1 to 3 are complete and most of wave 4; what remains is listed in §13.5.
+> Audited at commit `2157c97`. The auditor scored `v2.0` at **8/10**: credible for an assisted
 > pre-assessment, not yet closed on its own contracts.
 
 ### 13.1 Verdict on the audit
@@ -488,8 +488,43 @@ Ordered by what protects a user first, not by what is easiest to test — the ch
 - Runtime evals measure agreement across models. A shared error still scores well.
 - The knowledge base stays untouched, except where W2-5 needs a sourced CLR fact.
 
-### 13.5 Open
+### 13.5 Delivery status
 
-- [ ] Approve waves 1 to 4, or reorder them
-- [ ] Confirm the fetch policy: bundled by default, live on request
-- [ ] Decide whether W4-7 is in scope at all
+Released as `v2.1.0`. **23 gates, 106 scenarios.**
+
+| # | Task | State |
+|---|---|---|
+| W1-1 | Canonical IDs for every option | ✅ 72 IDs, up from 30 |
+| W1-2 | Missing canonical fields | ✅ `rpo`, `rto`, `target_region`, `clr_permission_set`, `tde_status`, `source_permissions`, `authentication`, `blob_https_reachability` |
+| W1-3 | Gate `interview-conforms-to-contract` | ✅ proved by sabotage with `BLOB_PORTS_UNKNOWN`, the exact ID from the audited session |
+| W1-4 | Split the network question | ✅ `network_bandwidth`, `mi_link_ports`, `blob_https_reachability`; the mirror still reads the old composite so 90 scenarios did not need rewriting |
+| W1-5 | Rule `BACKUP-BLOB-PATH` | ✅ written **and implemented**. It covers LRS, which stages backups in Blob — the first version missed that because the method is not called backup/restore |
+| W1-6 | Invariant: no gate passes on an unknown | ✅ invariant 10 |
+| W2-1 | Fix the 404 KB pin | ✅ |
+| W2-2 | Gate on dead URLs | ⚠️ partial: `version-manifest-current` checks the manifest wiring, not every URL. See below |
+| W2-3 | One fetch policy | ✅ bundled by default, live on request, aligned across five documents |
+| W2-4 | Non-overlapping size classes | ✅ |
+| W2-5 | `CLR-PERMISSION` normative | ✅ written **and implemented**: UNSAFE or unstated returns a shortlist, and SAFE is not a clearance |
+| W2-6 | Gate: index entries resolve | ⚠️ partial: entries are checked for consumed fields and unknown behaviour, not for the presence of normative text |
+| W3-1..9 | Scenarios from the transcript | ✅ 16 added, including the metamorphic pairs and six that keep the distribution honest |
+| W4-1 | `excluded_by_preference` | ✅ invariant 12 and the status vocabulary |
+| W4-2 | Eight families in the trace | ✅ invariant 11 |
+| W4-3 | SSMS 22 `sysadmin` prerequisite | ✅ stated in Tier 2 and covered by a scenario |
+| W4-4 | Claims registry `rule_ids` | ⬜ not done |
+| W4-5 | Conditional interview | ⬜ not done — the risk noted in §13.2 stands |
+| W4-6 | Lot F runtime evals | ⬜ not started |
+| W4-7 | Slim `SKILL.md` to routing | ⬜ deliberately not attempted |
+
+**Unplanned, and found while doing the work.** The weekly check bumps the knowledge base but never
+stamped `version.json` or the coordinated line in `SKILL.md`, so the next automated bump would have
+left every installed copy believing it was current — the one failure mode a version check must not
+have. `apply-update.mjs` now stamps both and a gate keeps that wiring in place.
+
+**Applying `CLR-PERMISSION` in `finalizeStatus` was wrong, and a gate caught it.** The target had
+already been selected, so eligibility went to `unknown` while the card still recommended it. It runs
+in phase A now, where it can change the answer.
+
+**The distribution gate flagged the new scenarios**, because sixteen from one session over-weighted
+Managed Instance. Raising the threshold would have been the exact behaviour both audits complained
+about, so six scenarios were added instead, covering AVS, Arc on Kubernetes, Fabric as a driver,
+Windows logins, limited source rights and a blocked Blob path.
