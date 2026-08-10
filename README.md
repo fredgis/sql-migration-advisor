@@ -105,19 +105,43 @@ The skill is prompt-driven markdown — no build step, no dependencies.
 ## Install as a Copilot CLI plugin
 
 ```bash
-copilot plugin install fredgis/sql-migration-advisor
+copilot plugin marketplace add fredgis/sql-migration-advisor
+copilot plugin install sql-migration-advisor@fredgis
 ```
 
 Then restart Copilot CLI (skills load at startup), run `/skills`, and confirm
 **`get-migration-assessment`** is listed. Ask *"I want to migrate a SQL Server environment to
 Azure"* and the interview starts.
 
-To load it from a local clone instead:
+Installing from a marketplace opens an interactive picker, so run the second command from a real
+terminal or from `/plugin` inside a session. A single-command install also works today:
+
+```bash
+copilot plugin install fredgis/sql-migration-advisor
+```
+
+Copilot CLI marks that form as deprecated and will eventually accept marketplace installs only,
+which is why the two-command version is listed first.
+
+To load it from a local clone instead, without installing anything:
 
 ```bash
 git clone https://github.com/fredgis/sql-migration-advisor.git
 copilot --plugin-dir ./sql-migration-advisor
 ```
+
+### Three names, and why they differ
+
+| Level | Name |
+| --- | --- |
+| Repository, and the marketplace it hosts | `sql-migration-advisor`, published under the marketplace `fredgis` |
+| Plugin — the unit you install | `sql-migration-advisor` |
+| **Skill — what actually triggers** | **`get-migration-assessment`** |
+
+The skill was renamed in v2.0.0. `assessment-advisor` said what it was; `get-migration-assessment`
+says what it does, and it produces an assessment rather than a decision. It also had to stop
+colliding with the agent in `microsoft/sql-migration-agent`, the repository this is meant to be
+contributed to.
 
 > **Copying `SKILL.md` on its own no longer works.** The skill reads
 > `../../reference/input-contract.md`, `../../reference/decision-rules.md` and
