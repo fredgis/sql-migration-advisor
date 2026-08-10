@@ -1,17 +1,13 @@
 sql-migration-advisor
 
-Copyright (c) 2026 Frédéric Gisbert
+Copyright (c) Microsoft Corporation.
 
 Licensed under the MIT License. See LICENSE for the full text.
 
-This project includes a SQL Server to Azure migration knowledge base, a distilled
-decision tree, an executable decision oracle and its golden scenarios, and the
-freshness automation that keeps them current. Those materials were authored by
-Frédéric Gisbert.
-
-If this work is redistributed, vendored into another repository, or published as a
-package, this attribution must be preserved alongside the MIT licence text.
+This project contains a SQL Server to Azure migration knowledge base, a distilled
+decision tree, an executable decision oracle with its golden scenarios, and the
+freshness automation that keeps them current.
 
 Microsoft, Azure, SQL Server and Microsoft Fabric are trademarks of the Microsoft
-group of companies. This project references Microsoft Learn documentation as source
-material and is not endorsed by Microsoft.
+group of companies. This project cites Microsoft Learn documentation as source
+material.

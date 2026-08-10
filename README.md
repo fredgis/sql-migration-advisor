@@ -315,6 +315,5 @@ scenario, and update a tracked claim.
 
 ## License
 
-[MIT](LICENSE). Attribution is recorded in [NOTICE](NOTICE) and must be preserved if this
-work is redistributed or vendored into another repository.
+[MIT](LICENSE), Copyright (c) Microsoft Corporation. See [NOTICE](NOTICE).
 
