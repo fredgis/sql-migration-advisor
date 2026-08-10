@@ -757,6 +757,21 @@ try {
     const applyUpdate = readText(path.join('tools', 'weekly-check', 'apply-update.mjs'));
     if (!/version\.json/u.test(applyUpdate)) failures.push('apply-update.mjs does not stamp version.json, so an automated bump would leave installed copies believing they are current');
     if (!/knowledge-base line/u.test(applyUpdate)) failures.push('apply-update.mjs does not stamp the coordinated line in SKILL.md');
+
+    // The plugin manifests carry the version Copilot CLI displays. They were left at 2.0.0 while
+    // everything else moved to v2.1, so `plugin update` installed the new files and still reported
+    // the old version -- the update looked broken when it had in fact worked.
+    const expected = String(manifest.latest).replace(/^v/u, '');
+    for (const file of [path.join('.claude-plugin', 'plugin.json'), path.join('.claude-plugin', 'marketplace.json')]) {
+      let doc = null;
+      try { doc = JSON.parse(readText(file)); }
+      catch { failures.push(`${file} is missing or is not valid JSON`); continue; }
+      const versions = [doc.version, doc.metadata?.version, ...(doc.plugins ?? []).map(p => p.version)].filter(Boolean);
+      if (versions.length === 0) failures.push(`${file} declares no version`);
+      for (const v of versions) {
+        if (v !== expected) failures.push(`${file} declares version ${v}; version.json advertises ${manifest.latest}`);
+      }
+    }
   }
 
   add('version-manifest-current', failures.length === 0,
