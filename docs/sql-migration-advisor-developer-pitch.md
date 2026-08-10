@@ -22,53 +22,54 @@ Its role is to:
 
 ```mermaid
 flowchart TD
-    A[User asks to migrate SQL Server] --> B[SKILL.md is activated]
+    A[User asks to migrate SQL Server] --> B[Skill activates]
 
-    B --> C[Load bundled decision-rules.md]
-    B --> D{Can the live knowledge base be fetched?}
+    B --> C[Load bundled policy:<br/>input-contract · decision-rules · output-contract · knowledge base]
+    C --> D{version.json on main:<br/>newer release published?}
+    D -- Yes --> E[Tell the user to update the plugin]
+    D -- No, or unreachable --> F[Continue silently]
+    E --> G[Announce versions and source]
+    F --> G
 
-    D -- Yes --> E[Load live knowledge base]
-    E --> F[Use the KB as the current source of truth]
-    C --> F
+    G --> H[Tier 1 triage]
+    H --> I[Tier 2, only what can still change the answer]
+    I --> J[Phase A: eligibility for all eight target families]
+    J --> K[Phase B: ten ordered ranking steps]
+    K --> L[Draft recommendation, each verdict citing a rule ID]
 
-    D -- No --> G[Use decision-rules.md as the offline fallback]
-    G --> H[Warn that offline information may be older]
-
-    F --> I[Run guided interview]
-    H --> I
-
-    I --> J[Phase A: Eligibility filter]
-    J --> K[Phase B: Rank valid options]
-    K --> L[Create preliminary recommendation]
-    L --> M[Assessment tools and architect validation]
+    L --> M{Self-check:<br/>13 invariants}
+    M -- An invariant fails --> N[Expose the inconsistency,<br/>never repair it silently]
+    M -- All pass --> O[Render the card]
+    N --> O
+    O --> P[Assessment tools and architect validation]
 
     classDef entry fill:#e3f2fd,stroke:#1565c0,color:#111
     classDef ask fill:#fff8e1,stroke:#f9a825,color:#111
-    classDef online fill:#e8f5e9,stroke:#2e7d32,color:#111
-    classDef offline fill:#ffebee,stroke:#c62828,color:#111
+    classDef flow fill:#e8f5e9,stroke:#2e7d32,color:#111
+    classDef guard fill:#ffebee,stroke:#c62828,color:#111
     classDef human fill:#f3e5f5,stroke:#6a1b9a,color:#111
     class A,B entry
-    class D ask
-    class C,E,F,I,J,K,L online
-    class G,H offline
-    class M human
+    class D,M ask
+    class C,F,G,H,I,J,K,L,O flow
+    class E,N guard
+    class P human
 ```
 
-Green is the online path, red is the offline fallback with its explicit staleness warning, and purple is
-the human validation that no recommendation skips.
+Green is the normal path, red is where the skill interrupts itself — an available update, or its own
+answer failing a check — and purple is the human validation no recommendation skips.
 
-The runtime process is simple:
+The runtime process:
 
 1. The user asks a SQL Server migration question.
 2. Copilot activates the skill.
-3. The skill always loads the bundled decision rules, which ship at the same commit as the skill.
-4. When online, it also fetches the live knowledge base and uses both.
-5. When offline, it uses the bundled decision rules as a fallback and warns that the information may be older.
-6. The agent asks structured questions.
-7. The rules remove unsupported options.
-8. The remaining options are ranked.
-9. The skill returns a preliminary recommendation.
-10. A human validates the result before execution.
+3. It loads the bundled policy: both contracts, the decision rules and the knowledge base, all shipped at the same commit so facts and rules cannot drift apart. The live knowledge base is fetched only when the user asks for it.
+4. It checks `version.json` on `main` once, and mentions an available update only if there is one. This never blocks and never changes the advice.
+5. It announces which versions loaded and from where, before asking anything.
+6. Tier 1 triage collects what every path needs; Tier 2 asks only what can still change a surviving candidate.
+7. Phase A removes technically impossible targets, and records all eight families so none disappears silently.
+8. Phase B ranks the survivors through ten ordered steps, returning a shortlist rather than inventing a winner.
+9. The skill re-reads its own draft against the output contract's invariants, and exposes any inconsistency instead of repairing it.
+10. A human validates the result before anything is executed.
 
 ---
 
@@ -197,7 +198,7 @@ The interview has two levels.
 
 ### Tier 1 — Triage
 
-Tier 1 collects the main facts:
+Tier 1 collects the main facts, each as a stable ID from the input contract rather than as prose:
 
 - migration scope;
 - source location;
@@ -205,10 +206,10 @@ Tier 1 collects the main facts:
 - migration objective;
 - business driver;
 - control requirements;
-- feature dependencies;
-- database size;
+- feature dependencies, asked as intent first so *none* and *not checked* cannot collapse;
+- database size, in classes that do not overlap;
 - downtime tolerance;
-- network conditions;
+- bandwidth, MI Link ports and Blob reachability, asked separately because they gate different things;
 - sovereignty constraints;
 - related services;
 - tier requirements.
@@ -219,21 +220,23 @@ This is enough to create a **provisional recommendation**.
 
 Tier 2 is only used when more information can change the result.
 
-Examples:
+Examples, all now declared as canonical fields rather than asked ad hoc:
 
-- operating system and SQL edition;
+- `source_os` and `source_edition`;
 - compatibility level;
 - current HA and DR design;
-- RPO and RTO;
-- CPU, memory, IOPS and latency;
-- authentication model;
-- SQL CLR permissions;
-- backup requirements;
-- Azure region availability;
+- `rpo` and `rto`, separately;
+- `performance`: CPU, memory, IOPS and latency;
+- `authentication`;
+- `clr_permission_set`, where SAFE is not a clearance;
+- `tde_status`;
+- `source_permissions`, which decides whether SSMS 22 can be recommended at all;
+- `target_region` and its actual feature availability;
 - rollback plan;
 - Azure Hybrid Benefit eligibility.
 
-This avoids asking unnecessary questions.
+This avoids asking unnecessary questions. Until v2.1 these were asked in prose and declared nowhere,
+so a session collected answers no contract knew about and no gate could check.
 
 ---
 
@@ -247,8 +250,13 @@ Each target receives one status:
 
 - `eligible`;
 - `eligible_with_remediation`;
-- `unsupported`;
+- `unsupported` — technically incompatible;
+- `excluded_by_preference` — the customer ruled it out, and can rule it back in;
 - `unknown_requires_assessment`.
+
+The last two exist because both were once collapsed into `unsupported`. A run marked containers
+*unsupported* for conflicting with a stated preference for managed PaaS, which tells a reader three
+months later that Arc cannot work, when nothing had ever said so.
 
 Example:
 
@@ -259,6 +267,9 @@ Azure SQL Database: unsupported
 Azure SQL Managed Instance: unsupported
 SQL Server on Azure VM: eligible
 ```
+
+All eight target families are recorded, not only the interesting ones. A family that disappears from
+the trace cannot be argued with, and one run quietly dropped AVS, Fabric and Arc in-place.
 
 Phase A removes impossible paths before any ranking happens.
 
@@ -480,7 +491,8 @@ flowchart TD
     F --> I
     I -- No --> H
     I -- Yes --> J[Merge into main]
-    J --> K[The live skill uses the new KB version]
+    J --> K[Cut a release, bump version.json]
+    K --> L[Installed skills report an update is available]
 
     classDef entry fill:#e3f2fd,stroke:#1565c0,color:#111
     classDef auto fill:#e8f5e9,stroke:#2e7d32,color:#111
@@ -496,6 +508,11 @@ flowchart TD
 
 Three of the four gates are automated, but the fourth is not: a change can pass every machine check and
 still be rejected because the evidence behind it does not hold up.
+
+Merging is not delivery. The bundled copy is what a session reads, so a fact only reaches users when a
+release is cut and they update the plugin. That is why `version.json` exists and why the skill checks
+it: without that line, an install from three months ago would keep answering from three-month-old
+facts and never say so.
 
 ### 9.1 Document consistency checks
 
@@ -647,9 +664,9 @@ A simplified scenario looks like this:
 {
   "id": "mi-link-11000-blocked-falls-to-lrs",
   "inputs": {
-    "source_version": "2019",
-    "network_ports": "5022 open, 11000-11999 blocked",
-    "downtime": "minimal"
+    "source_version": "SQL2017_2019",
+    "mi_link_ports": "PORTS_BLOCKED",
+    "downtime": "MINIMAL"
   },
   "expect": {
     "method": "LRS",
@@ -657,6 +674,10 @@ A simplified scenario looks like this:
   }
 }
 ```
+
+Inputs are written as contract IDs. Scenarios predating v2.1 still use prose and the composite
+`network_ports` field, which the mirror keeps reading, so the split did not force a rewrite of ninety
+files.
 
 #### Examples of protected behaviours
 
@@ -968,7 +989,7 @@ flowchart LR
     G3([Push to main on the KB, tools/pdf,<br/>tools/diagram, tools/artifacts, howto SVGs]) --> W3[Artifacts coherence<br/>artifacts.yml]
     G4([Push to main on blume/ or howto/]) --> W4[Deploy docs<br/>deploy-docs.yml]
 
-    W1 --> O1[actionlint · rules data --strict<br/>21 gates · 90 golden scenarios<br/>engine branch coverage >= 85%]
+    W1 --> O1[actionlint · rules data --strict<br/>23 gates · 90 golden scenarios<br/>engine branch coverage >= 85%]
 
     W2 --> C1[consistency] --> C2[evidence<br/>links · news · claims] --> C3[review<br/>Foundry gpt-5.6-sol] --> C4[decide]
     C4 --> O2a[Substantive edits:<br/>pull request + version bump]

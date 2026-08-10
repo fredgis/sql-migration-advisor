@@ -699,8 +699,21 @@ try {
     }
   }
 
+  // The gate count is quoted in five documents and has been wrong in three of them at least twice.
+  // Counting it here is cheaper than remembering. Count distinct names, not add() calls: one gate
+  // is registered twice, in a try and its catch, and only ever runs once.
+  const gateCount = new Set([...readText(path.join('tests', 'run-tests.mjs')).matchAll(/^\s*add\('([a-z0-9-]+)'/gmu)].map(m => m[1])).size;
+  for (const doc of ['README.md', path.join('CONTRIBUTING.md'), path.join('howto', 'how-the-skill-works.md'), path.join('blume', 'docs', 'index.mdx'), path.join('docs', 'sql-migration-advisor-developer-pitch.md')]) {
+    const text = readText(doc);
+    for (const m of text.matchAll(/(\d+) gates/giu)) {
+      const line = text.slice(text.lastIndexOf('\n', m.index) + 1, text.indexOf('\n', m.index));
+      if (/^\| v[0-9]/u.test(line)) continue;
+      if (Number(m[1]) !== gateCount) failures.push(`${doc} claims ${m[1]} gates; the suite defines ${gateCount}`);
+    }
+  }
+
   add('interview-conforms-to-contract', failures.length === 0,
-    failures.length ? failures : [`${offered.size} option IDs and ${named.size} field names offered by the interview are defined in the input contract, and ${invariantCount} invariants are quoted consistently.`]);
+    failures.length ? failures : [`${offered.size} option IDs and ${named.size} field names offered by the interview are defined in the input contract, and ${invariantCount} invariants and ${gateCount} gates are quoted consistently.`]);
 }
 
 {
