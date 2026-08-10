@@ -611,6 +611,53 @@ try {
 }
 
 {
+  // The contracts are only worth having if the skill and the rules actually defer to them.
+  // A contract nobody references is a fourth copy of the vocabulary, which is the problem it
+  // was created to solve.
+  const inputContract = readText(path.join('reference', 'input-contract.md'));
+  const outputContract = readText(path.join('reference', 'output-contract.md'));
+  const failures = [];
+
+  // 1. The skill points at both contracts rather than restating them.
+  if (!/input-contract\.md/.test(skill)) failures.push('SKILL.md does not reference reference/input-contract.md');
+  if (!/output-contract\.md/.test(skill)) failures.push('SKILL.md does not reference reference/output-contract.md');
+
+  // 2. Every option ID the engine knows is documented in the input contract, and vice versa.
+  for (const id of Object.keys(guards.OPTION_IDS)) {
+    if (!new RegExp(`\\b${id}\\b`).test(inputContract)) failures.push(`input-contract.md does not document option ID ${id}`);
+  }
+  // Option IDs use an underscore or a digit, which separates them from product names written
+  // in capitals such as FILESTREAM, DTC or TDE. Those are feature names, not option IDs.
+  const contractIds = new Set([...inputContract.matchAll(/`([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+)`/g)].map(m => m[1]));
+  const vocabulary = new Set(['NONE_CONFIRMED', 'UNKNOWN', 'NOT_APPLICABLE', 'UPPER_SNAKE_CASE']);
+  for (const id of contractIds) {
+    if (vocabulary.has(id) || id in guards.OPTION_IDS) continue;
+    failures.push(`input-contract.md documents option ID ${id}, which the engine does not know`);
+  }
+
+  // 3. Every field the engine reads is documented, with its unknown behaviour.
+  const engineSource = readText(path.join('tests', 'engine', 'evaluate.mjs'));
+  const engineFields = [...new Set([...engineSource.matchAll(/inputs\.([a-z_][A-Za-z0-9_]*)/g)].map(m => m[1]))];
+  for (const f of engineFields) {
+    if (!new RegExp(`\`${f}\``).test(inputContract)) failures.push(`input-contract.md does not document the field ${f}, which the engine reads`);
+  }
+
+  // 4. The three answer states are defined and distinguished.
+  for (const state of ['NONE_CONFIRMED', 'UNKNOWN', 'NOT_APPLICABLE']) {
+    if (!inputContract.includes(state)) failures.push(`input-contract.md does not define ${state}`);
+  }
+
+  // 5. The output contract forbids what the skill can no longer claim, and requires the self-check.
+  if (!/`provisional`\s*—\s*\*\*the only value/.test(outputContract)) failures.push('output-contract.md does not state that provisional is the only status');
+  if (!/Self-check, before rendering/.test(outputContract)) failures.push('output-contract.md does not define the pre-render self-check');
+  if (!/do not repair the output silently/i.test(outputContract)) failures.push('output-contract.md does not forbid silently repairing a failed invariant');
+  if (!/Self-check/i.test(skill)) failures.push('SKILL.md Operations does not include the self-check step');
+
+  add('contracts-wired', failures.length === 0,
+    failures.length ? failures : [`${Object.keys(guards.OPTION_IDS).length} option IDs and ${engineFields.length} engine fields are documented in the input contract; the skill defers to both contracts and runs the self-check.`]);
+}
+
+{
   const retired = (rules.match(/## Retired — never recommend \(use the replacement\)[\s\S]*?(?:\n---|\n## Reverse path)/u) || [''])[0];
   const checks = [
     { name: 'retired table heading', re: /Retired — never recommend/u },

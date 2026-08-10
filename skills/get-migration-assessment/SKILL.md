@@ -29,21 +29,27 @@ Use a different skill when:
 
 ## User Inputs
 
-**Asking rules — how to call `ask_user`. These apply to every question in this skill, Tier 1, Tier 2 and the structured inputs alike, and they exist because each one records a failure seen in a real session:**
+**The field and option catalogue lives in [`../../reference/input-contract.md`](../../reference/input-contract.md).** It owns the canonical fields, their allowed values, the stable IDs, which rules consume each field, and what happens when a field is unknown. Do not restate it here: two copies of a vocabulary drift, and this one already did.
 
-- **Never use a multi-select.** Use single-selects, free text and typed values only. Every multi-select this interview has shipped came back empty in real sessions, including one where the user had just chosen “let me select them” and afterwards said which item they had picked, while every single-select in those same sessions returned its value. Whichever layer drops the selection, an interview must not depend on a control that discards the answer without saying so. Capture list answers as free text and normalise them into the fields in section A0 of the decision rules.
-- **Never let an empty answer carry meaning.** “I have none of these” and “I have not checked” are opposite answers: one clears a blocker, the other raises one. Ask a single-select that names the intent (`None, confirmed` / `Let me list them` / `Not checked yet`) before asking for the list itself, so the two can never collapse into the same gesture.
-- **Ask each question at most once.** If the answer comes back empty, or the user declines or cancels, **do not re-ask it, and never re-ask it in a stricter form.** Re-prompting a question the user already answered is a bug.
-- **If an answer still arrives empty**, because the user declined, cancelled or submitted nothing, resolve it to `Not sure` and never to `None`: record the field as an **unknown**, carry it into `unknowns[]` / `evidenceRequired[]`, keep the recommendation `provisional`, and continue without re-asking.
-- **A free-text list that matches nothing is not `None`.** If the user commits to listing items and the answer contains no recognisable value, record `Not sure`, say so once in the output, and continue.
-- If the user explicitly answers `None`, that is a definite answer meaning “no such dependencies” — record `None` and move on.
-- If a decision-driving field ends up unknown, say so once in the output (“feature dependencies not confirmed — run a dependency discovery”), rather than blocking the interview to chase it.
+**Asking rules — how to call `ask_user`. These apply to every question, Tier 1, Tier 2 and structured inputs alike, and each one records a failure seen in a real session:**
+
+- **Never use a multi-select.** Use single-selects, free text and typed values only. Every multi-select this interview has shipped came back empty in real sessions, including one where the user had just chosen “let me select them” and afterwards said which item they had picked, while every single-select in those same sessions returned its value. Whichever layer drops the selection, an interview must not depend on a control that discards the answer without saying so.
+- **Never let an empty answer carry meaning.** “I have none of these” and “I have not checked” are opposite answers: one clears a blocker, the other raises one. Ask a single-select that names the intent (`None, confirmed` / `Let me list them` / `Not checked yet`) before asking for the list itself.
+- **Ask each question at most once.** If the answer comes back empty, or the user declines or cancels, **do not re-ask it, and never re-ask it in a stricter form.**
+- **If an answer still arrives empty**, resolve it to `UNKNOWN` and never to `NONE_CONFIRMED`: record the unknown, carry it into `unknowns[]` and `evidenceRequired[]`, keep the recommendation `provisional`, and continue without re-asking.
+- **A free-text list that matches nothing is `UNKNOWN`, not `NONE_CONFIRMED`.** The user committed to listing; failing to recognise their words is our problem, not evidence of absence.
+- If the user explicitly answers `None, confirmed`, that is a definite answer — record `NONE_CONFIRMED` and move on.
+- If a decision-driving field ends up unknown, say so once in the output rather than blocking the interview to chase it.
+
+### Compact profile first
+
+Before asking anything, check what the user has already given. If they can supply a profile in prose or structured form, take it, normalise it against the input contract, **show the normalised profile back**, and then ask only for the fields that are both missing and capable of changing a surviving candidate.
+
+A full interview runs to twenty turns or more. Most users who already know their estate should not have to walk it.
 
 ### Tier 1 — Triage (provisional recommendation)
 
-Ask one at a time. “Not sure” is allowed, but decision-driving unknowns must be surfaced; do not silently default them.
-
-Every option below carries a **stable ID in `UPPER_SNAKE_CASE`**. Show the human label, record the ID. The rules and the mirror match on IDs only, never on the displayed wording: a label can be translated or reworded, an ID cannot drift. If an answer arrives as free text, map it to an ID before applying any rule, and if it maps to none, treat the field as `Not sure`.
+Ask one at a time. Show the human label, record the **stable ID**. The rules match on IDs only, never on displayed wording: a label can be translated or reworded, an ID cannot drift. If an answer arrives as free text, map it to an ID before applying any rule; if it maps to none, the field is `UNKNOWN`.
 
 1. **Scope** — “How big is this migration?”
    - `Single database` **`SINGLE_DB`** · `A few databases (2–10)` **`FEW_DATABASES`** · `Large estate (10+ servers/DBs)` **`LARGE_ESTATE`**
@@ -87,13 +93,15 @@ Every option below carries a **stable ID in `UPPER_SNAKE_CASE`**. Show the human
    - `SQL-to-SQL only (MI↔MI or MI↔SQL Server)` · `Heterogeneous / third-party RDBMS` · `Not sure`
 
 8. **Largest DB size** — “How large is the biggest database?”
-   - `< 150 GB` · `150 GB – 4 TB` · `> 4 TB` · `Not sure`
+   - `< 150 GB` · `150 GB – 4 TB` · `> 4 TB` · `> 128 TB` · `Not sure`
+   - `> 128 TB` is above the Hyperscale ceiling: no Azure SQL target holds it as a single database, so it forces sharding or SQL Server on Azure VM. Without this option the rule could never fire.
 
 9. **Downtime tolerance** — “How much cutover downtime can the business accept?”
    - `Near-zero (minutes)` · `Minimal (tens of minutes to a couple of hours)` · `Offline planned window` · `Not sure`
 
 10. **Network path and ports** — “What is the network path to Azure, and can MI Link ports 5022 and 11000–11999 be opened in the required directions?”
-    - `Good ExpressRoute/high bandwidth` · `Limited WAN` · `Very large multi-TB move` · `5022 or 11000–11999 blocked` · `1433/443 blocked or unknown` · `Not sure`
+    - `Good ExpressRoute/high bandwidth` · `Ports confirmed open in both directions` · `Limited WAN` · `Very large multi-TB move` · `5022 or 11000–11999 blocked` · `1433/443 blocked or unknown` · `Not sure`
+    - `Ports confirmed open in both directions` (5022 and 11000–11999) is the only answer that lets MI Link be **confirmed**. Without it a user could declare them blocked but never declare them open, so MI Link could only ever be un-refuted.
 
 11. **Compliance / sovereignty** — “Any data residency, sovereign, or edge constraints?”
     - `Standard commercial` · `EU data boundary` · `Government / sovereign` · `Edge / air-gapped` · `Not sure`
@@ -199,13 +207,18 @@ Apply `reference/decision-rules.md` by name:
 
 ## Operations
 
-1. **Load KB** and record `knowledgeBase.version`, optional `commit`, `verifiedAt` / fetch timestamp.
-2. **Frame honestly**: “I’ll ask a short triage set, then produce a provisional disposition and the assessment evidence needed to validate it.”
-3. **Tier 1 triage**: ask the short interview. Pre-fill from user context; skip irrelevant branches.
-4. **Tier 2 confirmation**: ask only the questions that can change the answer for candidate targets still in play, or that the architect will need for their own sign-off.
-5. **Apply Phase A then Phase B**, tier-selection rules, and confidence model.
-6. **Output** the Markdown card and, on request or alongside it, the JSON object.
-7. **Offer follow-ups**: estate table, validation checklist, runbook, or one-slide summary.
+Follow every phase in order. Do not jump from interview answers to a recommendation.
+
+1. **Load the policy.** Read the bundled [`../../reference/input-contract.md`](../../reference/input-contract.md), [`../../reference/decision-rules.md`](../../reference/decision-rules.md) and [`../../reference/output-contract.md`](../../reference/output-contract.md), plus the knowledge base. Record `knowledgeBaseVersion`, `decisionRulesVersion`, optional `commit` and `evaluatedAt`. If a required file cannot be read or the versions disagree, **stop before selecting a target** and return a policy-integrity warning. Never compensate by inventing a rule.
+2. **Frame honestly**: “I'll ask a short triage set, then produce a provisional disposition and the assessment evidence needed to validate it.”
+3. **Normalise the profile.** Take what the user already supplied, convert labels and prose into the IDs of the input contract, preserve the `UNKNOWN` / `NONE_CONFIRMED` / `NOT_APPLICABLE` distinction, and render the normalised profile so a misreading is visible.
+4. **Tier 1 triage**: ask only the missing questions that can change a surviving candidate.
+5. **Tier 2 confirmation**: ask only what can still change the answer, or what the architect will need for their own sign-off.
+6. **Phase A — eligibility**, evaluated per target independently, recording the rule ID and the reason for each.
+7. **Phase B — ranking**, then the tier rules and the method gates. A method must pass its own gate before it is selected; if it fails, try another method for the same target before changing target.
+8. 🔴 **Self-check.** Run every invariant in §3 of the output contract **before** rendering. If one fails, do not repair the card silently: expose the inconsistency, name the invariant that broke, and return a provisional shortlist or the missing evidence. If all pass, say nothing about the check and render normally.
+9. **Output** the Markdown card, and the JSON object on request.
+10. **Offer follow-ups**: estate table, validation checklist, runbook, or one-slide summary.
 
 ### Scoring and ranking
 
@@ -245,13 +258,15 @@ The recommended target and method must agree with the eligibility table produced
 
 ## Output Presentation
 
-Render readable Markdown, not a code block. The Markdown card is a rendering of the JSON object below.
+**[`../../reference/output-contract.md`](../../reference/output-contract.md) is authoritative** for the fields, the status vocabulary and the self-check invariants. What follows is the rendering.
+
+Render readable Markdown, not a code block.
 
 ---
 
 > **Preliminary recommendation — `<profile>`**
 > **`<PRIMARY TARGET>`** via **`<METHOD>`** · status **`provisional`** · confidence **`<medium|low>`**
-> KB **`<version>`** · commit **`<sha or n/a>`** · fetched **`<timestamp or n/a>`**
+> KB **`<version>`** · rules **`<version>`** · commit **`<sha or n/a>`** · evaluated **`<timestamp>`**
 
 One sentence explaining why this is the recommended assessment path.
 
@@ -268,10 +283,14 @@ One sentence explaining why this is the recommended assessment path.
 
 **🥈 Best alternative** — `<target/method>`; wins if `<condition>`.
 
-**🚫 Excluded or constrained targets (Phase A eligibility)**
-- **SQL DB** — `<unsupported / eligible_with_remediation / unknown_requires_assessment>: <reason>`
-- **SQL MI** — `<status>: <reason>`
-- **SQL VM / AVS / Arc / container / Fabric SQL DB** — include only meaningful lines.
+**🚫 Phase A eligibility**
+- **SQL DB** — `<unsupported / eligible_with_remediation / unknown_requires_assessment>: <reason>` `[RULE-ID]`
+- **SQL MI** — `<status>: <reason>` `[RULE-ID]`
+- **SQL VM / AVS / Arc / container / Fabric SQL DB** — include only meaningful lines, each with its rule ID.
+
+Each line carries the ID of the rule that decided it, in brackets. One short token, so a reader can look it up in the decision rules and challenge it. The full reasoning stays on request.
+
+**🔁 Method gate** — `<method>`: `passed` or `refused (<reason>)`.
 
 **🚧 Blockers & required evidence**
 - **`<blocker or unknown>`** → `<remediation or assessment>`

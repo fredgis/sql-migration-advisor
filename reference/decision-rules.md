@@ -43,7 +43,8 @@ If a selected feature lacks a subtype needed for a hard rule (for example `PolyB
 For `ahbEligible`, derive the flag in Step D from the selected target, SQL DB purchasing model, compute tier, and whether Hyperscale is a new database or the documented qualifying existing provisioned-compute exception; do not treat every vCore SQL DB as eligible.
 
 **Output consistency rule (must always hold).** The recommended target and method must never contradict the
-eligibility table the engine just produced:
+eligibility table the engine just produced. The full set of invariants, and the requirement to run them
+**before rendering**, lives in [`output-contract.md`](output-contract.md) §3. The four that matter most:
 - The `primaryTarget` must be `eligible` or `eligible_with_remediation`. Never recommend a target that the
   same run marked `unsupported`.
 - The chosen `method` must be viable for that target *and* satisfy its own gates (source version range,
