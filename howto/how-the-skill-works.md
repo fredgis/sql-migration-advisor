@@ -170,7 +170,7 @@ there are **two layers**, and only the inner one is rigid:
 
 | Layer | What it does | Behaviour |
 | --- | --- | --- |
-| **Deterministic core** (`decision-rules.md`, Phase A + Phase B) | The *what*: which paths are eligible, which candidate ranks highest, and which tier to assess. | Rigid **by design** — reproducible, auditable, no invented paths or retired tools. |
+| **Regression-tested core** (`decision-rules.md`, Phase A + Phase B) | The *what*: which paths are eligible, which candidate ranks highest, and which tier to assess. | Rigid **by design** — reproducible, auditable, no invented paths or retired tools. |
 | **Adaptive agent layer** (the LLM around the core) | The *how*: run the interview, handle an estate, sequence a plan, resolve contradictions. | Context-aware — pre-fills known answers, runs one recommendation **per profile**, surfaces trade-offs, builds runbooks. |
 
 So the determinism is a **guardrail, not a straitjacket**: it keeps every building block grounded, while
@@ -191,7 +191,7 @@ Why wrap this in a skill instead of just asking a model to "plan a SQL migration
 - **Built-in guardrails reduce hallucination.** Hard rules — never recommend retired tooling (DMA, the
   Azure Data Studio extension, DMS *classic*); always separate **target / control plane / method**; be
   honest about previews, source constraints and size caps.
-- **Deterministic and auditable.** The same profile always yields the same eligibility/ranking result, so a
+- **Regression-tested and auditable.** The same profile replayed through the rules mirror yields the same eligibility/ranking result, so a
   partner can reproduce and defend the preliminary disposition.
 - **A structured interview, not a guess.** `ask_user`, one question at a time, multiple-choice — reliable
   input instead of the model assuming missing facts.
@@ -316,7 +316,7 @@ knowledge-base PRs).
 ### Golden test suite
 
 <p align="center">
-  <img src="./quality-gate.svg" alt="Quality gate: decision-rules.data.json is the single source of constants; it feeds evaluate.mjs, which replays 86 golden scenarios into a blocking CI gate, while check-rules-data.mjs verifies the same 187 constants against the decision-rules markdown in strict mode." width="960">
+  <img src="./quality-gate.svg" alt="Quality gate: decision-rules.data.json is the single source of constants; it feeds evaluate.mjs, which replays 90 golden scenarios into a blocking CI gate, while check-rules-data.mjs verifies the same 187 constants against the decision-rules markdown in strict mode." width="960">
 </p>
 
 <sub>Runs on **every push and pull request** — separate from the weekly knowledge-base check (Mondays 05:00 UTC). Diagram source: [`quality-gate.architecture.json`](./quality-gate.architecture.json) · interactive: [`quality-gate.html`](./quality-gate.html).</sub>

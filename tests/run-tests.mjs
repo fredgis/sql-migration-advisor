@@ -335,12 +335,14 @@ try {
     // SQL MI tops out far below 128 TB, so it is not an as-is destination for a single database
     // above the Hyperscale ceiling. v1.9 fixed the knowledge base and left SKILL.md standing.
     { id: 'SQL MI offered as an as-is destination above 128 TB', re: /above 128 TB[^\n]*(?:SQL MI|Managed Instance)|128 TB[^\n]*moved to SQL MI/iu, allow: /not\b[^\n]*as-is|is \*\*not\*\*|far below|shard/iu },
-    // Microsoft publishes no Windows Server version floor for MI Link: the host OS only has to be
-    // supported by that SQL Server version, and Linux qualifies from SQL Server 2017. v1.12 removed
-    // the floor everywhere it was spelled out in full and missed the abbreviated "Win Server 2016+"
-    // in the section 5.2 method table, which the next weekly review reported. Both spellings are
-    // matched here so the abbreviation cannot hide the claim again.
-    { id: 'MI Link gated on a Windows Server version floor', re: /Win(?:dows)?\s*(?:Server|Srv)\s*20\d\d\s*\+/iu, allow: /Windows Server only|no separate|not a floor|does not|Arc-driven|Arc portal/iu },
+    // v1.12 removed a "Windows Server 2016+" floor as unsourced and concluded there is no floor at
+    // all. The premise was right, the conclusion wrong: Microsoft's link Limitations state "You must
+    // host SQL Server instances on Windows Server 2012 or later", because Windows 10 and 11 clients
+    // cannot enable Always On availability groups. Worse, v1.13 added a gate forbidding any floor,
+    // so the repository protected its own error for five versions. This gate is inverted: the wrong
+    // floors are forbidden, and a separate check below requires the correct one to be stated.
+    { id: 'MI Link gated on the wrong Windows Server floor', re: /Win(?:dows)?\s*(?:Server|Srv)\s*20(?:1[4-9]|2\d)\s*\+/iu, allow: /Windows Server only|Arc-driven|Arc portal|SQL Server/iu },
+    { id: 'claims Microsoft publishes no Windows Server floor for MI Link', re: /(?:publishes|states|documents) no (?:separate )?Windows Server (?:version )?floor|do not invent one/iu },
     // The ESU programme covers SQL Server 2014 and 2016 only. "2014 and earlier" implies a free
     // Azure ESU for 2012 and 2008 that ended in July 2023, which is the permissive direction: it
     // tells a customer they are covered when they are not. v1.12 fixed Step D1 and the knowledge
@@ -375,7 +377,18 @@ try {
       if ((recommendsDea || recommendsReplay) && !retiredContext) failures.push(`${fileLine(file, i + 1)} retired validation tool recommended: ${line.trim()}`);
     });
   }
-  add('forbidden-patterns', failures.length === 0, failures.length ? failures : ['No forbidden anti-regression patterns found.']);
+  // A forbidden-pattern list can only prove an error is absent. This proves the correction is
+  // present: Microsoft requires Windows Server 2012 or later to host the link, and the repository
+  // spent five versions claiming no floor exists at all. Silence here is exactly what let that
+  // survive, so the floor must be stated in each authoritative document.
+  {
+    const floor = rulesData.sourceVersionFloors.miLink.windowsServerMin;
+    const re = new RegExp(`Windows Server ${floor}(?: or later|\\+)`, 'iu');
+    for (const [label, text] of [['reference\\decision-rules.md', rules], ['SKILL.md', skill], ['docs\\sql-server-to-azure-migration.md', readText(path.join('docs', 'sql-server-to-azure-migration.md'))]]) {
+      if (!re.test(text)) failures.push(`${label} does not state the MI Link host floor Windows Server ${floor} or later`);
+    }
+  }
+  add('forbidden-patterns', failures.length === 0, failures.length ? failures : ['No forbidden anti-regression patterns found; the MI Link Windows Server floor is stated in all three rule documents.']);
 }
 
 {
@@ -459,7 +472,7 @@ try {
   // directly, so removing a guard fails the suite instead of quietly widening the engine.
   const { methodGateFailure, chooseConsistentFallback, chooseTarget, TARGET_LABELS, E, MI_LINK } = guards;
   const fresh = () => ({ hardBlockers: [], unknowns: [], evidenceRequired: [], exclusions: {} });
-  const onPrem = { source_location: 'on-prem / Azure VM', source_version: '2019' };
+  const onPrem = { source_location: 'on-prem / Azure VM', source_version: '2019', source_os: 'Windows Server 2019', source_edition: 'Enterprise' };
   const failures = [];
   const expect = (label, actual, predicate) => { if (!predicate(actual)) failures.push(`${label}: got ${JSON.stringify(actual)}`); };
 
@@ -475,6 +488,12 @@ try {
   expect('an unhandled target is not rejected',
     methodGateFailure(onPrem, 'Some target the rules do not model', 'any method', fresh()),
     v => v === null);
+  // Defence in depth on the availability-group floor. chooseVmMethod no longer selects AG below
+  // SQL Server 2012, so this rejection is unreachable through evaluate(); it is the second lock,
+  // and the one that would catch a future selector that forgets the floor.
+  expect('the AG floor is refused even when a method chooser proposes it',
+    methodGateFailure({ ...onPrem, source_version: '2008/2008 R2' }, TARGET_LABELS.sql_vm, 'Distributed AG or Always On AG', fresh()),
+    v => typeof v === 'string' && v.includes('Always On availability groups require SQL Server'));
 
   // sql_vm unsupported forces the loop past its first candidate, which is the branch a
   // normal run can never take.
@@ -512,7 +531,83 @@ try {
     v => Array.isArray(v) && v[0] === TARGET_LABELS.sql_db && typeof v[1] === 'string' && v[1].length > 0);
 
   add('engine-guard-checks', failures.length === 0,
-    failures.length ? failures : ['9 unreachable-by-design guards exercised directly: method rejections, port message, unhandled target, the fallback skip, exhaustion and exclusion paths, and the chooseTarget terminal return.']);
+    failures.length ? failures : ['10 unreachable-by-design guards exercised directly: method rejections, port message, unhandled target, the fallback skip, exhaustion and exclusion paths, and the chooseTarget terminal return.']);
+}
+
+{
+  // Round-trip gate: every option SKILL.md displays must reach a rule. The suite used to speak
+  // the mirror's own dialect ("assessment-only", "analytics/Fabric") while the interview showed
+  // "Assessment only" and "Analytics / Fabric unification", so 86 green scenarios coexisted with
+  // an interview whose answers the engine did not recognise. This walks the displayed labels.
+  const { OPTION_IDS, LABEL_TO_ID, normalizeInputs } = guards;
+  const failures = [];
+
+  // 1. Every ID in SKILL.md is known to the engine, and every engine ID is documented.
+  const declaredInSkill = new Set([...skill.matchAll(/\*\*`([A-Z][A-Z0-9_]+)`\*\*/g)].map(m => m[1]));
+  for (const id of declaredInSkill) if (!(id in OPTION_IDS)) failures.push(`SKILL.md offers option ID ${id}, which the engine does not know`);
+  for (const id of Object.keys(OPTION_IDS)) if (!declaredInSkill.has(id)) failures.push(`the engine knows option ID ${id}, which SKILL.md never offers`);
+
+  // 2. Every mapped label expands to the same normalized text as its ID, so the label a user
+  //    sees and the ID a script sends cannot diverge.
+  for (const [label, id] of Object.entries(LABEL_TO_ID)) {
+    const viaLabel = normalizeInputs({ intent: label }).intent;
+    const viaId = normalizeInputs({ intent: id }).intent;
+    if (String(viaLabel).toLowerCase().includes(OPTION_IDS[id].toLowerCase()) === false) failures.push(`label "${label}" does not expand to the ${id} rule vocabulary`);
+    if (String(viaId).includes(OPTION_IDS[id]) === false) failures.push(`ID ${id} does not expand to its own rule vocabulary`);
+  }
+
+  // 3. The four options the external audit found unconsumed must now change the answer.
+  const base = { source_location: 'On-prem', source_version: '2017/2019', management_model: 'Fully managed PaaS', feature_dependencies: ['None'], downtime: 'offline' };
+  const decides = [
+    ['Large estate (10+ servers/DBs)', { ...base, intent: 'Move to Azure now', scope: 'Large estate (10+ servers/DBs)' }, /Azure Migrate/],
+    ['Assessment only', { ...base, intent: 'Assessment only' }, /Arc best-practices assessment/],
+    ['Analytics / Fabric unification', { ...base, intent: 'Move to Azure now', driver: 'Analytics / Fabric unification' }, /Fabric/],
+    ['LARGE_ESTATE', { ...base, intent: 'MIGRATE_NOW', scope: 'LARGE_ESTATE' }, /Azure Migrate/],
+    ['ASSESSMENT_ONLY', { ...base, intent: 'ASSESSMENT_ONLY' }, /Arc best-practices assessment/],
+    ['FABRIC_ANALYTICS', { ...base, intent: 'MIGRATE_NOW', driver: 'FABRIC_ANALYTICS' }, /Fabric/]
+  ];
+  for (const [label, inputs, expected] of decides) {
+    const r = evaluate(inputs);
+    const seen = `${r.primary_target} ${r.method}`;
+    if (!expected.test(seen)) failures.push(`the displayed option "${label}" does not reach its rule: got "${seen}"`);
+  }
+
+  add('interview-round-trip', failures.length === 0,
+    failures.length ? failures : [`${declaredInSkill.size} option IDs are declared in SKILL.md, known to the engine, and every mapped label reaches the same rule as its ID.`]);
+}
+
+{
+  // The cross-cloud matrix is 25 of the 61 leaf constants the engine never reads: it implements
+  // those rules in code instead. Editing the data would therefore change nothing and no test
+  // would fail, which is the quiet kind of drift. Until the engine reads the matrix directly,
+  // this replays it: for every source and method the data marks unsupported, the engine must
+  // refuse it, and for every one marked eligible it must not refuse it outright.
+  const matrix = rulesData.crossCloudEligibility;
+  const methodLabels = {
+    miLink: ['Azure SQL Managed Instance', 'MI Link'],
+    lrs: ['Azure SQL Managed Instance', 'LRS'],
+    transactionalReplication: ['Azure SQL Database', 'Transactional replication']
+  };
+  const failures = [];
+  let checked = 0;
+  for (const [source, methods] of Object.entries(matrix)) {
+    for (const [method, verdict] of Object.entries(methods)) {
+      const pair = methodLabels[method];
+      if (!pair) continue;
+      const inputs = {
+        source_location: source, source_version: '2019',
+        source_os: 'Windows Server 2019', source_edition: 'Enterprise',
+        network_ports: '5022 open and 11000-11999 open'
+      };
+      const reason = guards.methodGateFailure(inputs, pair[0], pair[1], { exclusions: {}, unknowns: [], evidenceRequired: [] });
+      const dataSaysUnsupported = /^unsupported/.test(String(verdict));
+      checked += 1;
+      if (dataSaysUnsupported && !reason) failures.push(`${source} / ${method}: the rules data says "${verdict}" but the engine accepts it`);
+      if (!dataSaysUnsupported && reason) failures.push(`${source} / ${method}: the rules data says "${verdict}" but the engine refuses it — ${reason}`);
+    }
+  }
+  add('cross-cloud-matrix-honoured', failures.length === 0,
+    failures.length ? failures : [`${checked} source/method combinations from crossCloudEligibility replayed against the engine.`]);
 }
 
 {

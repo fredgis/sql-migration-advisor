@@ -388,7 +388,7 @@
     },
     "assertRulePresent": [
       "Source of truth: `docs/sql-server-to-azure-migration.md`",
-      "same inputs \\+ same KB version \\+ same engine version ⇒ same result"
+      "Replaying the same inputs through the rules mirror in `tests/` gives the same result"
     ],
     "auditRef": "P0-7"
   },
@@ -429,7 +429,7 @@
     },
     "assertRulePresent": [
       "Every recommendation must carry the KB version, engine version",
-      "same inputs \\+ same KB version \\+ same engine version ⇒ same result"
+      "Replaying the same inputs through the rules mirror in `tests/` gives the same result"
     ],
     "auditRef": "P0-8"
   },
@@ -1382,6 +1382,71 @@
     "auditRef": "P1-28"
   },
   {
+    "id": "sql2008-near-zero-must-not-be-offered-availability-groups",
+    "title": "SQL Server 2008 with a near-zero tolerance cannot be offered availability groups",
+    "why": "External audit counter-example. Always On requires SQL Server 2012+ and distributed AGs require 2016+. Both floors were declared in decision-rules.data.json and never applied, so a 2008 source was handed a method its engine cannot run. Log shipping is the honest answer.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2008/2008 R2",
+      "management_model": "need OS / file-system / engine control",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "near-zero"
+    },
+    "expect": {
+      "primary_target": "SQL Server on Azure VM",
+      "method": "Log shipping",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minimal",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": [
+        "Distributed AG or Always On AG"
+      ]
+    },
+    "assertRulePresent": [
+      "Always On AG"
+    ],
+    "auditRef": "P0-3"
+  },
+  {
+    "id": "mi-link-refused-below-the-windows-server-floor",
+    "title": "A Windows Server host below 2012 cannot run MI Link",
+    "why": "Microsoft states in the link Limitations that SQL Server must be hosted on Windows Server 2012 or later, because Windows 10 and 11 clients cannot enable Always On availability groups. v1.12 removed a 2016+ floor as unsourced and wrongly concluded no floor exists; v1.13 then added a gate forbidding any floor, so the repository protected its own error. LRS is the correct fallback here.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2019",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "SQL Agent"
+      ],
+      "downtime": "near-zero",
+      "network_ports": "5022 open and 11000-11999 open",
+      "performance": "general purpose",
+      "source_os": "Windows Server 2008 R2",
+      "source_edition": "Enterprise"
+    },
+    "expect": {
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "LRS",
+      "tier": "MI General Purpose",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": [
+        "MI Link"
+      ]
+    },
+    "assertRulePresent": [
+      "Windows Server 2012"
+    ],
+    "auditRef": "P0-5"
+  },
+  {
     "id": "sql2014-no-mi-link-lrs-restore",
     "title": "SQL 2014 falls to LRS/restore, not MI Link",
     "why": "SQL 2014 is below MI Link floor.",
@@ -1782,6 +1847,81 @@
     "auditRef": "P1-39"
   },
   {
+    "id": "fabric-large-database-with-a-small-dacpac-stays-eligible",
+    "title": "A large database does not imply an oversized DACPAC",
+    "why": "External audit finding. The database size was concatenated into the text the DACPAC gate tests, so a 4 TB database triggered \"DACPAC > 20 MB\" even when the DACPAC was declared under the limit. A DACPAC holds schema, not data; the two quantities are unrelated and are now read from separate inputs.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2022",
+      "driver": "analytics/Fabric",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "offline",
+      "size": "> 4 TB",
+      "fabric_constraints": "DACPAC <= 20 MB; preview accepted; gateway acceptable; no private link"
+    },
+    "expect": {
+      "eligibility": {
+        "fabric_sql_db": "eligible"
+      },
+      "primary_target": "SQL database in Fabric",
+      "method": "Fabric Migration Assistant",
+      "tier": "Fabric SQL database (GA)",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-load-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": [
+        "validated recommendation"
+      ]
+    },
+    "assertRulePresent": [
+      "Fabric SQL database"
+    ],
+    "auditRef": "P0-4"
+  },
+  {
+    "id": "fabric-small-database-with-an-oversized-dacpac-needs-another-path",
+    "title": "A small database can still exceed the DACPAC limit",
+    "why": "The mirror image of the previous scenario, proving the separation holds in both directions: the assistant gate fires on the declared DACPAC size alone, whatever the database size.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2022",
+      "driver": "analytics/Fabric",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "offline",
+      "size": "< 150 GB",
+      "fabric_constraints": "DACPAC > 20 MB; preview accepted; gateway acceptable; no private link"
+    },
+    "expect": {
+      "eligibility": {
+        "fabric_sql_db": "eligible_with_remediation"
+      },
+      "primary_target": "Azure SQL Database",
+      "method": "BACPAC/SqlPackage",
+      "tier": "General Purpose",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-load-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "exclusions.fabric_sql_db": "The Fabric Migration Assistant requires DACPAC <= 20 MB; use another ingestion path for the GA target.",
+      "mustNotRecommend": [
+        "Fabric Migration Assistant"
+      ]
+    },
+    "assertRulePresent": [
+      "Fabric SQL database"
+    ],
+    "auditRef": "P0-4"
+  },
+  {
     "id": "modern-dms-not-dms-classic",
     "title": "SQL DB offline uses modern DMS, not classic",
     "why": "Guards current DMS wording.",
@@ -1818,7 +1958,7 @@
   {
     "id": "fabric-driver-preview-gates-met-validated",
     "title": "Fabric driver with all Preview gates and validation evidence",
-    "why": "Covers the positive Fabric path only when mandatory Preview gates and validation evidence are supplied. Expectations corrected in v1.17: the engine read \"no Private Link required\" as \"Private Link required\", so this scenario had been recorded as Azure SQL Database with a Private Link remediation it never asked for.",
+    "why": "Covers the positive Fabric path only when mandatory Preview gates and validation evidence are supplied. Expectations corrected in v1.17: the engine read \"no Private Link required\" as \"Private Link required\", so this scenario had been recorded as Azure SQL Database with a Private Link remediation it never asked for. From v1.18 the four evidence booleans no longer promote the recommendation: this skill reads no artefact, so it records the claim and leaves the status provisional.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -1857,9 +1997,11 @@
       "tier": "Fabric SQL database (GA)",
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-load-time",
-      "recommendationStatus": "validated",
-      "confidence": "high",
-      "mustNotRecommend": []
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": [
+        "validated recommendation"
+      ]
     },
     "assertRulePresent": [
       "Fabric analytics branch before generic SQL DB",
@@ -1947,7 +2089,7 @@
   {
     "id": "validated-mi-link-evidence-complete",
     "title": "MI Link reaches validated only with complete evidence",
-    "why": "Exercises validated/high confidence status with tool evidence, measured sizing, region confirmation, and architect sign-off.",
+    "why": "Exercises validated/high confidence status with tool evidence, measured sizing, region confirmation, and architect sign-off. MI Link host prerequisites stated explicitly in v1.18: the method is now fail-closed, so a scenario that omits the OS and edition no longer receives it. From v1.18 the four evidence booleans no longer promote the recommendation: this skill reads no artefact, so it records the claim and leaves the status provisional.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -1966,7 +2108,9 @@
         "performanceMeasured": true,
         "regionAvailabilityConfirmed": true,
         "architectSignedOff": true
-      }
+      },
+      "source_os": "Windows Server 2019",
+      "source_edition": "Enterprise"
     },
     "expect": {
       "eligibility": {
@@ -1984,9 +2128,11 @@
       "tier": "MI General Purpose",
       "targetAvailabilityDuringSync": "read-only",
       "businessCutoverDowntime": "<1min",
-      "recommendationStatus": "validated",
-      "confidence": "high",
-      "mustNotRecommend": []
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": [
+        "validated recommendation"
+      ]
     },
     "assertRulePresent": [
       "MI Link prerequisites: SQL Server 2016\\+",
@@ -1998,7 +2144,7 @@
   {
     "id": "validated-sql-db-dms-evidence-complete",
     "title": "SQL DB offline reaches validated with complete evidence",
-    "why": "Exercises a validated SQL DB recommendation without relying on declarative interview answers alone.",
+    "why": "Exercises a validated SQL DB recommendation without relying on declarative interview answers alone. From v1.18 the four evidence booleans no longer promote the recommendation: this skill reads no artefact, so it records the claim and leaves the status provisional.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -2036,9 +2182,11 @@
       "tier": "General Purpose",
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "total-migration-time",
-      "recommendationStatus": "validated",
-      "confidence": "high",
-      "mustNotRecommend": []
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": [
+        "validated recommendation"
+      ]
     },
     "assertRulePresent": [
       "Offline[\\s\\S]*?\\*\\*modern DMS \\(offline\\)\\*\\*",
@@ -2093,7 +2241,7 @@
   {
     "id": "mi-link-capacity-nextgen-200-databases-ok",
     "title": "MI Link 200-database estate fits Next-gen GP capacity",
-    "why": "Regression for MI Link capacity: Next-gen GP supports up to 500 links.",
+    "why": "Regression for MI Link capacity: Next-gen GP supports up to 500 links. MI Link host prerequisites stated explicitly in v1.18: the method is now fail-closed, so a scenario that omits the OS and edition no longer receives it.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -2106,7 +2254,9 @@
       "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
       "size": "Next-gen General Purpose estate",
       "performance": "moderate latency/IO; cost-sensitive; Next-gen General Purpose",
-      "database_count": 200
+      "database_count": 200,
+      "source_os": "Windows Server 2019",
+      "source_edition": "Enterprise"
     },
     "expect": {
       "eligibility": {
@@ -2266,7 +2416,7 @@
   {
     "id": "mi-link-ranked-above-lrs-bc-when-gates-met",
     "title": "MI Link outranks LRS for MI BC when gates are met",
-    "why": "Regression for ranking MI Link above hours-long LRS cutover when prerequisites are satisfiable.",
+    "why": "Regression for ranking MI Link above hours-long LRS cutover when prerequisites are satisfiable. MI Link host prerequisites stated explicitly in v1.18: the method is now fail-closed, so a scenario that omits the OS and edition no longer receives it.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -2277,7 +2427,9 @@
       ],
       "downtime": "near-zero",
       "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
-      "performance": "low-latency writes; high IOPS/log throughput; read-scale replicas"
+      "performance": "low-latency writes; high IOPS/log throughput; read-scale replicas",
+      "source_os": "Windows Server 2019",
+      "source_edition": "Enterprise"
     },
     "expect": {
       "eligibility": {
@@ -2468,7 +2620,7 @@
   {
     "id": "unknown-mi-tier-120-databases-capacity-assessment",
     "title": "Unknown MI tier with 120 databases requires MI Link capacity assessment",
-    "why": "Audit P1: unknown MI tier must not default to General Purpose capacity and rule out MI Link.",
+    "why": "Audit P1: unknown MI tier must not default to General Purpose capacity and rule out MI Link. MI Link host prerequisites stated explicitly in v1.18: the method is now fail-closed, so a scenario that omits the OS and edition no longer receives it.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -2480,7 +2632,9 @@
       "downtime": "minimal",
       "network_ports": "5022 open and 11000-11999 open",
       "database_count": 120,
-      "performance": null
+      "performance": null,
+      "source_os": "Windows Server 2019",
+      "source_edition": "Enterprise"
     },
     "expect": {
       "primary_target": "Azure SQL Managed Instance",
@@ -2542,7 +2696,7 @@
   {
     "id": "missing-arc-extension-version-batch-size-requires-verification",
     "title": "Missing Arc extension version with multi-database batch requires verification",
-    "why": "Audit P1: absent arc_extension_version must not silently assume the modern ten-database portal wizard limit.",
+    "why": "Audit P1: absent arc_extension_version must not silently assume the modern ten-database portal wizard limit. MI Link host prerequisites stated explicitly in v1.18: the method is now fail-closed, so a scenario that omits the OS and edition no longer receives it.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -2554,7 +2708,9 @@
       "downtime": "minimal",
       "network_ports": "5022 open and 11000-11999 open",
       "migration_batch_size": 5,
-      "performance": "general purpose"
+      "performance": "general purpose",
+      "source_os": "Windows Server 2019",
+      "source_edition": "Enterprise"
     },
     "expect": {
       "primary_target": "Azure SQL Managed Instance",
@@ -2578,7 +2734,7 @@
   {
     "id": "arc-extension-current-raises-the-wizard-batch-limit",
     "title": "A current Azure Extension for SQL Server raises the Arc wizard batch limit to 10",
-    "why": "The batch-limit rule had only ever been exercised through its unknown branch: no scenario supplied arc_extension_version, so the version comparison and the raised limit never executed. This covers the satisfied case.",
+    "why": "The batch-limit rule had only ever been exercised through its unknown branch: no scenario supplied arc_extension_version, so the version comparison and the raised limit never executed. This covers the satisfied case. MI Link host prerequisites stated explicitly in v1.18: the method is now fail-closed, so a scenario that omits the OS and edition no longer receives it.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -2591,7 +2747,9 @@
       "network_ports": "5022 open and 11000-11999 open",
       "performance": "general purpose",
       "arc_extension_version": "1.1.3348.364",
-      "migration_batch_size": 8
+      "migration_batch_size": 8,
+      "source_os": "Windows Server 2019",
+      "source_edition": "Enterprise"
     },
     "expect": {
       "targetAvailabilityDuringSync": "read-only",
@@ -2614,7 +2772,7 @@
   {
     "id": "arc-extension-below-floor-keeps-the-single-database-batch-limit",
     "title": "An extension below the documented version keeps the batch limit at 1",
-    "why": "Covers the other side of the version comparison: an extension older than 1.1.3348.364 leaves the limit at one database per batch, so a batch of five is excluded.",
+    "why": "Covers the other side of the version comparison: an extension older than 1.1.3348.364 leaves the limit at one database per batch, so a batch of five is excluded. MI Link host prerequisites stated explicitly in v1.18: the method is now fail-closed, so a scenario that omits the OS and edition no longer receives it.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -2627,7 +2785,9 @@
       "network_ports": "5022 open and 11000-11999 open",
       "performance": "general purpose",
       "arc_extension_version": "1.1.3200.100",
-      "migration_batch_size": 5
+      "migration_batch_size": 5,
+      "source_os": "Windows Server 2019",
+      "source_edition": "Enterprise"
     },
     "expect": {
       "targetAvailabilityDuringSync": "read-only",

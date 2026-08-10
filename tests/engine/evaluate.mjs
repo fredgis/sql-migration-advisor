@@ -79,6 +79,10 @@ function portsKnownBlockedForMiLink(inputs) {
 }
 // MI Link needs a supported host OS and SQL Server edition, not just a supported SQL version.
 // Linux hosts are supported from SQL Server 2017 onwards; SQL Server 2016 is Windows Server only.
+// Windows hosts must be Windows Server 2012 or later: Microsoft states this in the link
+// Limitations, because Windows 10 and 11 clients cannot enable the Always On availability group
+// feature the link depends on. v1.12 removed a 2016+ floor as unsourced, which was right about
+// 2016 and wrong to conclude there is no floor at all.
 // Returns 'ok', 'unsupported' or 'unknown'; unknown must not be read as a pass.
 function miLinkHostSupport(inputs) {
   const floors = SOURCE_FLOORS.miLink;
@@ -90,7 +94,15 @@ function miLinkHostSupport(inputs) {
     const version = versionNumber(inputs.source_version);
     if (!version) return 'unknown';
     if (version < floors.linuxSqlServerMin) return 'unsupported';
+    return 'ok';
   }
+  // A Windows client OS can never host the link, whatever its version number.
+  if (/windows (?:10|11)\b|\bwin\s?(?:10|11)\b|windows client/.test(os)) return 'unsupported';
+  const winYear = versionNumber(os);
+  // "Windows Server" with no version is not evidence of a supported version.
+  if (/windows/.test(os) && !winYear) return 'unknown';
+  if (winYear && winYear < floors.windowsServerMin) return 'unsupported';
+  if (!/windows/.test(os)) return 'unknown';
   return 'ok';
 }
 function hasValidatedEvidence(inputs) {
@@ -170,8 +182,13 @@ function applyFabric(inputs, eligibility, out) {
     out.rankingNotes.fabric_sql_db = 'GA target, but not indicated without an analytics/Fabric driver; ranked below SQL DB/MI.';
     return;
   }
-  const fabricText = `${textOf(inputs.fabric_constraints)} ${textOf(inputs.compliance)} ${textOf(inputs.size)} ${textOf(inputs.feature_dependencies)}`.toLowerCase();
-  const mentionsGate = /dacpac|preview|gateway|private link/.test(fabricText);
+  // The database size was concatenated into the text the DACPAC gate tests, so a 4 TB database
+  // triggered "DACPAC > 20 MB" even when the DACPAC was declared under the limit. They are
+  // different quantities: a DACPAC holds schema, not data. Only the constraints answer and the
+  // compliance context describe the assistant's gates.
+  const assistantText = `${textOf(inputs.fabric_constraints)} ${textOf(inputs.compliance)}`.toLowerCase();
+  const fabricText = `${assistantText} ${textOf(inputs.feature_dependencies)}`.toLowerCase();
+  const mentionsGate = /dacpac|preview|gateway|private link/.test(assistantText);
   if (!mentionsGate) {
     eligibility.fabric_sql_db = E.UNKNOWN;
     addUnique(out.unknowns, 'Fabric ingestion path, then Migration Assistant gates: DACPAC size, Private Link, gateway, preview acceptance');
@@ -188,7 +205,9 @@ function applyFabric(inputs, eligibility, out) {
     out.exclusions.fabric_sql_db = 'The Fabric Migration Assistant has no Private Link/VNet gateway path; the GA target itself remains available through another ingestion path.';
     return;
   }
-  if (new RegExp(`dacpac\\s*>\\s*${FABRIC_MIGRATION.maxDacpacMb}|>\\s*${FABRIC_MIGRATION.maxDacpacMb}\\s*mb|over ${FABRIC_MIGRATION.maxDacpacMb}\\s*mb|>\\s*${SQL_DB_TIERS.hyperscaleSizeThresholdTb}\\s*tb`).test(fabricText)) {
+  // The "> 4 TB" alternative belonged to the database size, not to the DACPAC. Keeping it here
+  // made a large database look like an oversized DACPAC, which is a different limit entirely.
+  if (new RegExp(`dacpac\\s*>\\s*${FABRIC_MIGRATION.maxDacpacMb}|>\\s*${FABRIC_MIGRATION.maxDacpacMb}\\s*mb|over ${FABRIC_MIGRATION.maxDacpacMb}\\s*mb`).test(assistantText)) {
     eligibility.fabric_sql_db = E.REMEDIATE;
     out.exclusions.fabric_sql_db = `The Fabric Migration Assistant requires DACPAC <= ${FABRIC_MIGRATION.maxDacpacMb} MB; use another ingestion path for the GA target.`;
     return;
@@ -289,8 +308,12 @@ function chooseTarget(inputs, eligibility, out) {
   return ['Azure SQL Database', chooseSqlDbMethod(inputs)];
 }
 function chooseVmMethod(inputs) {
-  if (has(inputs.downtime, 'near-zero')) return 'Distributed AG or Always On AG';
-  if (has(inputs.downtime, 'minimal')) return 'Log shipping';
+  const v = versionNumber(inputs.source_version);
+  const agFloor = SOURCE_FLOORS.alwaysOnAvailabilityGroupToVm.sqlServerMin;
+  // Selecting a method the source cannot run, then rejecting it at the gate, produces a
+  // provisional shortlist where a working answer existed. The floor belongs here too.
+  if (has(inputs.downtime, 'near-zero') && (!v || v >= agFloor)) return 'Distributed AG or Always On AG';
+  if (has(inputs.downtime, 'minimal') || has(inputs.downtime, 'near-zero')) return 'Log shipping';
   return 'Native backup/restore';
 }
 function chooseSqlDbMethod(inputs) {
@@ -387,7 +410,12 @@ function methodGateFailure(inputs, target, method, out = {}) {
     if (method === 'MI Link') {
       if (isManagedCloudSqlSource(inputs)) return 'MI Link is impossible from AWS RDS/GCP Cloud SQL because sysadmin/AG endpoints are unavailable.';
       if (v && v < SOURCE_FLOORS.miLink.sqlServerMin) return `MI Link requires SQL Server ${SOURCE_FLOORS.miLink.sqlServerMin}+.`;
-      if (miLinkHostSupport(inputs) === 'unsupported') return `MI Link requires ${SOURCE_FLOORS.miLink.editions.join(', ')} edition, and on Linux hosts SQL Server ${SOURCE_FLOORS.miLink.linuxSqlServerMin}+.`;
+      // Fail closed. Testing only for 'unsupported' let 'unknown' through, so a source whose OS
+      // and edition nobody had stated was handed the one method that depends on them most. An
+      // unverified prerequisite is not a satisfied prerequisite.
+      const host = miLinkHostSupport(inputs);
+      if (host === 'unsupported') return `MI Link requires ${SOURCE_FLOORS.miLink.editions.join(', ')} edition, a Windows Server ${SOURCE_FLOORS.miLink.windowsServerMin} or later host, and on Linux hosts SQL Server ${SOURCE_FLOORS.miLink.linuxSqlServerMin}+.`;
+      if (host === 'unknown') return `MI Link prerequisites are unverified: confirm the source edition (${SOURCE_FLOORS.miLink.editions.join(', ')}) and the host OS, which must be Windows Server ${SOURCE_FLOORS.miLink.windowsServerMin} or later, or Linux with SQL Server ${SOURCE_FLOORS.miLink.linuxSqlServerMin}+.`;
       if (!portsOpenForMiLink(inputs)) {
         const p = MI_LINK.ports;
         return `MI Link requires ${p.sqlServerEndpoint} and ${p.managedInstanceHadrRange.start}-${p.managedInstanceHadrRange.end} in the documented directions.`;
@@ -413,7 +441,16 @@ function methodGateFailure(inputs, target, method, out = {}) {
     if (method === 'BACPAC/SqlPackage' || method === 'modern DMS (offline)' || method === 'Data Box seed → sync delta') return null;
     return `${method} is not a supported Azure SQL Database migration method in this rules mirror.`;
   }
-  if (target === 'SQL Server on Azure VM') return ['Distributed AG or Always On AG', 'Log shipping', 'Native backup/restore', 'Standalone assessment / native backup/restore'].includes(method) ? null : `${method} is not a SQL VM migration method.`;
+  if (target === 'SQL Server on Azure VM') {
+    if (!['Distributed AG or Always On AG', 'Log shipping', 'Native backup/restore', 'Standalone assessment / native backup/restore'].includes(method)) return `${method} is not a SQL VM migration method.`;
+    // The floors existed in the rules data and were never applied, so SQL Server 2008 with a
+    // near-zero tolerance was handed "Distributed AG or Always On AG": Always On needs 2012+ and
+    // distributed AGs need 2016+. A method a source cannot run is worse than a slower one.
+    if (method === 'Distributed AG or Always On AG' && v && v < SOURCE_FLOORS.alwaysOnAvailabilityGroupToVm.sqlServerMin) {
+      return `Always On availability groups require SQL Server ${SOURCE_FLOORS.alwaysOnAvailabilityGroupToVm.sqlServerMin}+, and distributed availability groups require SQL Server ${SOURCE_FLOORS.distributedAvailabilityGroupToVm.sqlServerMin}+.`;
+    }
+    return null;
+  }
   if (target === 'Azure VMware Solution') return method === 'VMware HCX / vMotion' ? null : `${method} is not an AVS migration method.`;
   if (target === 'SQL database in Fabric') return method === 'Fabric Migration Assistant' ? null : `${method} is not a Fabric SQL database migration method.`;
   if (target === 'Arc-enabled SQL Managed Instance') return /^Native backup\/restore/.test(method) ? null : `${method} is not an Arc-enabled SQL MI migration method.`;
@@ -459,16 +496,94 @@ function enforceOutputConsistency(inputs, eligibility, out) {
 }
 function finalizeStatus(inputs, out, eligibility) {
   const hasUnknown = Object.values(eligibility).includes(E.UNKNOWN) || out.unknowns.length > 0 || out.tier === E.UNKNOWN;
-  if (hasValidatedEvidence(inputs) && !hasUnknown && out.hardBlockers.length === 0) {
-    out.recommendationStatus = 'validated';
-    out.confidence = 'high';
-  } else {
-    out.recommendationStatus = 'provisional';
-    out.confidence = hasUnknown ? 'low' : 'medium';
+  // No validated status. Four self-declared booleans used to promote a recommendation to
+  // validated/high while the skill reads no artefact, which turned an unverified claim into an
+  // assurance. Those booleans are now recorded as claims to verify elsewhere.
+  out.recommendationStatus = 'provisional';
+  out.confidence = hasUnknown ? 'low' : 'medium';
+  if (hasValidatedEvidence(inputs)) {
+    out.evidenceClaimed = true;
+    addUnique(out.evidenceRequired, 'Attach the assessment artefacts to the architect sign-off: type, URI or hash, tool and version, date, target region and approver. This skill records the claim, it does not verify it.');
   }
 }
 
-export function evaluate(inputs = {}) {
+// Stable option IDs, as declared in SKILL.md. The interview shows a human label and records an
+// ID; the rules match on IDs. Before this existed, the mirror recognised its own dialect
+// ("assessment-only", "analytics/Fabric") while the interview displayed "Assessment only" and
+// "Analytics / Fabric unification", so the suite stayed green on vocabulary no user ever sends.
+// Each ID expands to the phrasing the rules already understand, and the displayed label maps to
+// the same ID, so both spellings now reach the same rule.
+const OPTION_IDS = {
+  SINGLE_DB: 'single database',
+  FEW_DATABASES: 'a few databases (2-10)',
+  LARGE_ESTATE: 'large estate / estate scale / business case / dependency map',
+  ON_PREM: 'on-prem / Azure VM',
+  AWS_EC2: 'AWS EC2',
+  AWS_RDS: 'AWS RDS for SQL Server',
+  GCP_COMPUTE: 'GCP Compute Engine',
+  GCP_CLOUD_SQL: 'GCP Cloud SQL for SQL Server',
+  SQL2008: '2008/2008 R2',
+  SQL2012: '2012',
+  SQL2014: '2014',
+  SQL2016: '2016',
+  SQL2017_2019: '2017/2019',
+  SQL2022: '2022',
+  SQL2025: '2025',
+  MIGRATE_NOW: 'migrate now',
+  MODERNIZE_IN_PLACE: 'modernize in place / not ready',
+  ASSESSMENT_ONLY: 'assessment-only',
+  REHOST_FIRST: 'rehost first, modernize later',
+  EOS_ESU: 'end-of-support/ESU',
+  COST: 'cost',
+  APP_MODERNIZATION: 'app modernization',
+  DATACENTER_EXIT: 'data-center exit',
+  FABRIC_ANALYTICS: 'analytics/Fabric',
+  SOVEREIGNTY_EDGE: 'sovereignty/edge',
+  MANAGED_PAAS: 'fully managed PaaS',
+  OS_CONTROL: 'need OS / file-system / engine control',
+  KUBERNETES: 'kubernetes on-prem/edge/multicloud',
+  ARC_MANAGED_ENGINE: 'managed engine via Arc data controller',
+  DIY_CONTAINER: 'full DIY container'
+};
+// Displayed labels that do not contain the phrasing the rules match on. A label the rules
+// already recognise needs no entry here.
+const LABEL_TO_ID = {
+  'large estate (10+ servers/dbs)': 'LARGE_ESTATE',
+  'on-prem': 'ON_PREM',
+  'gcp cloud sql': 'GCP_CLOUD_SQL',
+  'move to azure now': 'MIGRATE_NOW',
+  'modernize in place / not ready to move yet (assess first)': 'MODERNIZE_IN_PLACE',
+  'assessment only': 'ASSESSMENT_ONLY',
+  'rehost first, modernize later': 'REHOST_FIRST',
+  'end-of-support / esu pressure': 'EOS_ESU',
+  'cost optimization': 'COST',
+  'data-center exit (vmware estate)': 'DATACENTER_EXIT',
+  'analytics / fabric unification': 'FABRIC_ANALYTICS',
+  'sovereignty / edge': 'SOVEREIGNTY_EDGE',
+  'need kubernetes on-prem / edge / multi-cloud': 'KUBERNETES',
+  'managed engine (arc data controller: auto patch/backup/ha)': 'ARC_MANAGED_ENGINE',
+  'full diy container (we own ha/patch/backup)': 'DIY_CONTAINER'
+};
+function expandOption(value) {
+  if (Array.isArray(value)) return value.map(expandOption);
+  const raw = String(value ?? '').trim();
+  if (!raw) return value;
+  if (OPTION_IDS[raw]) return `${raw} ${OPTION_IDS[raw]}`;
+  const id = LABEL_TO_ID[raw.toLowerCase()];
+  return id ? `${raw} ${OPTION_IDS[id]}` : value;
+}
+function normalizeInputs(inputs) {
+  const out = { ...inputs };
+  for (const key of ['scope', 'source_location', 'source_version', 'intent', 'driver', 'management_model', 'kubernetes_model', 'feature_dependencies']) {
+    if (key in out) out[key] = expandOption(out[key]);
+  }
+  // Scope is a real input: a large estate goes to discovery, not to a target. It was displayed,
+  // never declared and never consumed, so the answer was silently discarded.
+  if (!out.size && /large estate/i.test(String(out.scope ?? ''))) out.size = 'estate scale / business case / dependency map';
+  return out;
+}
+export function evaluate(rawInputs = {}) {
+  const inputs = normalizeInputs(rawInputs);
   const eligibility = {
     sql_vm: E.ELIGIBLE,
     avs: E.UNSUPPORTED,
@@ -524,4 +639,4 @@ export function evaluate(inputs = {}) {
 // unsupported, so the per-target method guards and the fallback's later candidates
 // never fire in a normal run. Deleting them would remove the net that catches a future
 // rule change; exporting them lets the suite prove they still work.
-export const __guards = { methodGateFailure, chooseConsistentFallback, chooseTarget, TARGET_LABELS, E, MI_LINK };
+export const __guards = { methodGateFailure, chooseConsistentFallback, chooseTarget, normalizeInputs, OPTION_IDS, LABEL_TO_ID, TARGET_LABELS, E, MI_LINK };

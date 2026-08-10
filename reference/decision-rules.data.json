@@ -1,14 +1,15 @@
 {
   "schema": "sql-migration-advisor.decision-rules-data/v1",
-  "version": "v1.17",
+  "version": "v1.18",
   "source": {
     "markdown": "reference/decision-rules.md",
-    "description": "Machine-checkable constants and gates extracted from decision-rules.md v1.17."
+    "description": "Machine-checkable constants and gates extracted from decision-rules.md v1.18."
   },
   "sourceVersionFloors": {
     "miLink": {
       "sqlServerMin": 2016,
       "linuxSqlServerMin": 2017,
+      "windowsServerMin": 2012,
       "editions": ["Enterprise", "Standard", "Developer"]
     },
     "standaloneLrs": {

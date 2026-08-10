@@ -62,7 +62,7 @@ SQL MI ranks first because it preserves instance-level compatibility with much l
 
 > **Preliminary recommendation — `Finance DB group (3 DBs)`**
 > **Azure SQL Managed Instance — General Purpose** via **Log Replay Service** · status **provisional** · confidence **medium**
-> KB **v1.17** · commit **abc1234** · fetched **2026-07-27T10:45:00Z**
+> KB **v1.18** · commit **abc1234** · fetched **2026-07-27T10:45:00Z**
 
 SQL MI is the recommended assessment path because the workload needs SQL Agent, cross-database queries, and linked servers, while the team wants managed PaaS; SQL Server 2014 and blocked MI Link ports 5022/11000–11999 make MI Link unavailable, so LRS is the practical online method with planned cutover downtime.
 
@@ -164,7 +164,7 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
     }
   },
   "recommendation": {
-    "status": "provisional",
+    "recommendationStatus": "provisional",
     "primary": {
       "target": "Azure SQL Managed Instance",
       "tier": "General Purpose",
@@ -192,7 +192,7 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
     "hardBlockers": [
       "MI Link unavailable because source version is 2014 and required ports 5022 plus 11000–11999 are blocked"
     ],
-    "requiredAssessments": [
+    "evidenceRequired": [
       "SSMS 22 Migration Component assessment",
       "Dependency discovery for linked servers, jobs, and SSIS",
       "Test restore with TDE certificate installed first",
@@ -200,11 +200,11 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
     ],
     "evidence": [
       "Tier 1 and Tier 2 interview answers",
-      "SQL migration knowledge base v1.17"
+      "SQL migration knowledge base v1.18"
     ]
   },
   "knowledgeBase": {
-    "version": "1.14",
+    "version": "v1.18",
     "commit": "abc1234",
     "verifiedAt": "2026-07-27T10:45:00Z"
   }

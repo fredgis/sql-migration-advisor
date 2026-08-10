@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Knowledge base v1.17" src="https://img.shields.io/badge/knowledge%20base-v1.17-2b8a3e">
+  <img alt="Knowledge base v1.18" src="https://img.shields.io/badge/knowledge%20base-v1.18-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml/badge.svg"></a>
 </p>
@@ -31,7 +31,7 @@ A short screen recording of the skill at work: you ask in plain language, answer
 ---
 
 Ask Copilot *"migrate a SQL Server environment to Azure"* (or *"migrer SQL Server vers Azure"*).
-The skill runs a short, structured interview, then returns a grounded, deterministic
+The skill runs a short, structured interview, then returns a grounded, regression-tested
 preliminary recommendation for assessment and validation:
 
 - **Primary path** — target and method to assess first: SQL VM · AVS · SQL MI · SQL DB · Fabric SQL DB · Arc SQL MI · container · Arc in-place
@@ -56,11 +56,11 @@ knowledge-base version, commit SHA and fetch timestamp so the advice is traceabl
 
 ## Why it is trustworthy
 
-- **Verified knowledge** — the v1.17 knowledge base is source-backed and corrected against Microsoft Learn.
-- **Deterministic engine** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers.
+- **Verified knowledge** — the v1.18 knowledge base is source-backed and corrected against Microsoft Learn.
+- **Rules under regression test** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers. An executable mirror in `tests/` replays 90 scenarios through those rules on every commit. The mirror is not what runs in your session: an agent reads the rules and applies them, so this is a tested policy rather than a byte-identical guarantee.
 - **Explicit uncertainty** — recommendations carry confidence, provisional/validated status, assumptions, unknowns, blockers and evidence required. `high` confidence is unreachable from the interview alone: it requires measured evidence.
 - **Freshness gates** — version bumps require substantive diffs; link checks classify bot-blocked pages; high-risk claims are tracked in [`reference/claims-registry.json`](reference/claims-registry.json).
-- **Regression protection** — [`tests/`](tests/) holds 86 golden scenarios and 16 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
+- **Regression protection** — [`tests/`](tests/) holds 90 golden scenarios and 18 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
 
 ## Audit response
 
@@ -195,7 +195,7 @@ so an assessment nobody ran cannot be talked into existence.
 unknown holding the score down is named there, with the assessment that would close it.
 
 A `low` score is the skill telling you what it does not know. The dangerous output is the opposite:
-a confident answer resting on evidence nobody supplied. Four defects fixed between v1.15 and v1.17
+a confident answer resting on evidence nobody supplied. Four defects fixed between v1.15 and v1.18
 were exactly that, so a blank or unsure answer now resolves to `unknown_requires_assessment` rather
 than to a pass.
 
@@ -216,7 +216,7 @@ if (perfStatedUnknown || smallDatabase) return 'General Purpose';
 That single line holds four paths. If no scenario ever arrives with `perfStatedUnknown` true, that
 path is **never executed by the suite**. It can contain anything at all and every test still passes.
 
-So the number reads: **92 branches out of 100 are walked by at least one of the 86 golden
+So the number reads: **92 branches out of 100 are walked by at least one of the 90 golden
 scenarios**, with every line and every function reached. The remaining 8% is combinations of
 conditions no profile produces.
 
@@ -284,7 +284,7 @@ Mermaid decision diagrams. The `SKILL.md` mirrors its AI Migration Agent I/O con
 
 The same knowledge base ships as a polished, branded PDF —
 [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (25 pages,
-v1.17, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
+v1.18, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
 
@@ -346,10 +346,11 @@ base and this README on the same version. Last verified: August 2026.
 
 <!-- CHANGELOG:START -->
 <details>
-<summary><b>📓 Changelog</b> — current: <b>v1.17</b> (August 2026)</summary>
+<summary><b>📓 Changelog</b> — current: <b>v1.18</b> (August 2026)</summary>
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| v1.18 | 2026-08-10 | External audit response, waves 0 to 2. MI Link's Windows Server 2012 floor is restored (Microsoft states it in the link Limitations; v1.12 removed it and v1.13 added a gate protecting the error). Every interview option gains a stable ID, because the displayed labels were not the vocabulary the rules recognised. MI Link and the availability-group floors are fail-closed. `validated` and `high` are removed: the skill reads no artefact, so it cannot certify one. The Fabric DACPAC limit no longer fires on database size. All 29 Actions references are pinned to SHAs, the KB fetch is pinned to a release tag, and privacy absolutes become a minimisation policy. 18 gates, 90 scenarios. |
 | v1.17 | 2026-08-10 | Dead-code audit across the repository: two unreferenced functions and an undeclared `inputs.tier` branch removed, leaving none. Two defects found while covering the rest. `no private link required` was read as `private link required`, so three of four Fabric scenarios carried a blocker they had ruled out and the DACPAC and preview gates had never run. An unanswered downtime tolerance produced a stated cutover of "minutes" at medium confidence; it now yields `unknown_requires_assessment`, and the decision rules gain the entry `SKILL.md` already had. Guards unreachable by construction are exercised by a new sixteenth gate instead of deleted. Coverage: 100% lines, 92.27% branches, 100% functions, 86 scenarios. |
 | v1.16 | 2026-08-10 | Fabric SQL database's minimum downtime in the §12 matrix now reflects transactional replication as an online path, instead of contradicting §5.2 with an hours-only rating. Azure Migrate's Arc-based agentless discovery is marked **Preview** in the decision rules. Both are locked by new gates. The interview drops multi-selects, which never returned a value in real sessions, and captures list answers as free text. Two engine defects fixed: the `150 gb` small-database signal matched the `150 GB – 4 TB` range, and it outranked an explicit "not sure" on tier drivers, so an unknown became General Purpose. |
 | v1.15 | 2026-08-10 | Interview and engine fix: an unanswered multi-select no longer reads as an explicit "none". Ticking nothing meant both "I have none of these" and "I have not checked", and the engine resolved that ambiguity the dangerous way by clearing the SQL MI and Azure SQL Database feature blockers. Multi-selects are now gated behind a single-select that names the intent, and a blank dependency list resolves to `unknown_requires_assessment`. No knowledge-base fact changed. |
