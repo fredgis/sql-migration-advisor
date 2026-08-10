@@ -1,70 +1,33 @@
 ---
-name: sql-migration-advisor
-description: "Preliminary SQL Server to Azure migration disposition and recommended assessment path. Runs a short guided interview, then applies the FY27 SQL knowledge base to pre-select candidate targets (SQL VM, AVS, SQL MI, SQL DB, Fabric SQL DB, Arc SQL MI, container or Arc in-place), migration methods (MI Link, LRS, backup/restore, DAG/AG, modern DMS, transactional replication, BACPAC, Fabric Migration Assistant), blockers, evidence gaps, cost levers and Microsoft program fit. Trigger when the user wants to migrate or modernize SQL Server to Azure, asks for the best or recommended migration path, target or tool, or says 'migrer SQL Server', 'migrate SQL Server', 'SQL to Azure' or 'SQL in a Day'."
-license: MIT
+name: assessment-advisor
+description: "Preliminary SQL Server to Azure migration disposition and recommended assessment path. Runs a short guided interview, then applies a source-verified knowledge base to pre-select candidate targets (SQL VM, AVS, SQL MI, SQL DB, Fabric SQL DB, Arc SQL MI, container or Arc in-place), migration methods (MI Link, LRS, backup/restore, DAG/AG, modern DMS, transactional replication, BACPAC, Fabric Migration Assistant), blockers, evidence gaps, cost levers and Microsoft program fit. Trigger when the user wants to migrate or modernize SQL Server to Azure, asks for the best or recommended migration path, target or tool, or says 'migrer SQL Server', 'migrate SQL Server' or 'SQL to Azure'."
+allowed-tools: ask_user
 ---
 
-# SQL Migration Advisor — preliminary disposition for SQL Server → Azure
+# Skill: Assessment Advisor
+
+## Description
 
 Help the user get a **preliminary recommendation / recommended assessment path** for a SQL Server migration to Azure. This skill is a **discovery and pre-selection assistant**, not a final architecture decision. Every recommendation remains **provisional** until validated by assessment tooling and an architect.
 
 The skill is sourced from the knowledge base [`docs/sql-server-to-azure-migration.md`](https://github.com/fredgis/sql-migration-advisor/blob/main/docs/sql-server-to-azure-migration.md) and the bundled `reference/decision-rules.md`.
 
-## Source of truth and determinism
+## When to Use
 
-At session start, fetch the live knowledge-base document:
+Invoke this skill when the user:
 
-- Raw URL: `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/main/docs/sql-server-to-azure-migration.md`
-- Use the live doc when available. If offline, use `reference/decision-rules.md` and tell the user that the offline fallback may lag.
-- Current coordinated knowledge-base line: **v1.13**, dated **2026-08-05**.
-- Display the **knowledge-base version** in every recommendation and, when available, the **commit SHA** and **fetch timestamp**.
-- Determinism contract: **same inputs + same KB version + same engine version ⇒ same result**.
+- wants to migrate or modernize a SQL Server estate to Azure and no assessment data exists yet;
+- asks which Azure target, migration method or tool fits their workload;
+- needs the blockers and the evidence to collect before committing to a path;
+- asks in any language for a SQL Server to Azure migration recommendation.
 
-Apply `reference/decision-rules.md` by name:
+Use a different skill when:
 
-1. **Phase A — Eligibility**: classify each target as `eligible`, `eligible_with_remediation`, `unsupported`, or `unknown_requires_assessment`.
-2. **Phase B — Ranking**: rank remaining targets by refactoring effort, downtime, operational burden, compatibility, resilience, cost, reversibility, and sovereignty.
-3. Apply the explicit **tier-selection rules** and **confidence model**.
+- **the instance is already Arc-connected with an assessment uploaded** — read that assessment instead of running the interview;
+- the user wants to execute a migration rather than choose one;
+- the question is about a database engine other than SQL Server.
 
-## Core principles
-
-- **Interview first, recommend second.** Ask one question at a time with `ask_user`, multiple-choice where possible.
-- **Ask in the user's language.** If the user writes in French, ask in French.
-- **Separate three layers**: target/runtime, control plane/assessment, and migration method.
-- **Do not overstate certainty.** Say “preliminary recommendation”, “recommended assessment path”, or “migration disposition”; do not promise the “best path” before assessment.
-- **No retired tools.** Do not recommend DMA, Azure Data Studio SQL Migration extension, DMS classic SQL scenarios, or SQL Data Sync. Use SSMS 22 Migration Component, SQL Server migration in Azure Arc, modern Azure DMS, Azure Migrate, and `Az.DataMigration` as appropriate.
-- **Do not emit a cost estimate unless explicitly sized/priced.** By default the skill emits **cost levers, not an estimate**. Sizing/pricing requires assessment data and Azure pricing assumptions.
-- **One recommendation per distinct profile.** For estates, group similar servers/databases, lead with discovery, then expand the non-obvious profiles.
-
-## Correct factual gates to enforce
-
-| Topic | Gate / consequence |
-| --- | --- |
-| Transactional replication → Azure SQL Database | Source **SQL Server 2016 and later** (includes 2022 and 2025); **push subscriber only**; snapshot + one-way transactional only; replicated tables need a **primary key**. |
-| Log Replay Service (standalone) | Supports source **SQL Server 2008 through 2022** for Azure SQL MI migration. Target is **unavailable** during sync (RESTORING/NORECOVERY); business cutover is typically **minutes** on GP with a small final backup, but can be **hours** on Business Critical while replicas seed. |
-| Azure Arc migration floors | Overall Arc migration experience for SQL MI and SQL VM targets: **SQL Server 2014 (12.x)+**. Arc → Azure SQL MI via **MI Link**: SQL Server **2016+**, and this Arc-driven path is documented as **Windows Server only**. Arc → Azure SQL MI via **LRS**: Microsoft documents a **2012+** method floor but the same Arc page states **2014+** overall; treat this as a documented Microsoft inconsistency and apply the conservative **2014+** Arc floor. Arc → **SQL Server on Azure VM**: **2014+**. Standalone LRS outside Arc remains **2008–2022**. |
-| MI Link | Source **2016+**; needs source **sysadmin**, distributed AGs, AG endpoint permission, and VNet connectivity. Ports are mandatory for all tiers/update policies/VPN/ExpressRoute/peering and MI-side ports are not customisable: MI subnet NSG inbound **5022** + **11000–11999** from SQL Server IP and outbound **5022**; SQL host/corporate firewall inbound **5022** from MI subnet /24 and outbound **5022 and 11000–11999** to MI. **11000–11999** is the dynamic MI-side distributed-AG HADR data channel. If **5022 or 11000–11999** cannot be opened in required directions, MI Link is `unsupported`; use LRS **only when LRS itself qualifies** (source 2008–2022, storage access, migration finishing inside the 30-day window), otherwise evaluate another method or target. [MI Link preparation](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-preparation). Links: **100** on GP/BC, **500** on Next-gen GP, one link/database; Arc portal's **10 databases per batch** is only a wizard selection limit. AWS RDS/GCP Cloud SQL cannot use MI Link because they lack sysadmin/custom AG endpoints. |
-| Managed cloud sources | AWS RDS / GCP Cloud SQL: **MI Link and transactional replication are out**. LRS/DMS work by backup upload to Blob. Native restore is indirect: export/S3/backup → Blob → restore. |
-| Backup to URL | Source **SQL Server 2012 SP1 CU2+**. SQL Server 2012/2014 use a page blob with a storage-account credential (1 TB cap); SQL Server 2016+ use a block blob with a SAS credential (12.8 TB striped). Below that build, back up locally and upload. |
-| Availability groups → SQL VM | **Always On AG: source 2012+.** **Distributed AG: source 2016+.** Both need AD DS (or workgroup AG + certificates), AG endpoints, open ports, and a planned failover window. |
-| SQL database in Fabric | The **target is GA**; only the **Fabric Migration Assistant** is Preview (DACPAC ≤ 20 MB, on-prem gateway only, no Private Link). Preview refusal disqualifies the assistant, never the target — evaluate T-SQL, transactional replication, Fabric pipelines / Data Factory copy jobs, Dataflow Gen2 and TDS-capable tools before excluding Fabric. |
-| FILESTREAM / FileTable | Hard block on Azure SQL MI and Azure SQL Database → SQL VM, AVS, or container. |
-| PolyBase | Ask which kind. MI supports data virtualization over Blob/ADLS Gen2 for Parquet/CSV, with no Delta Lake, no pushdown, and no S3. MI does **not** support PolyBase connectors to external RDBMS such as Oracle, Teradata, MongoDB, or another SQL Server. |
-| DTC | Ask which kind. MI supports T-SQL distributed transactions **MI↔MI** and **MI↔SQL Server**. MI does **not** support distributed transactions to third-party RDBMS or linked servers to third-party RDBMS. |
-| TDE restore | Migrate/install the TDE server certificate in destination `master` before restoring encrypted databases. |
-| Performance validation | Capture workload with **Extended Events**; replay with **RML Utilities / OStress**; analyse with **Query Store** and DMVs. Distributed Replay is unavailable in SQL Server 2022+. |
-
-## Workflow
-
-1. **Load KB** and record `knowledgeBase.version`, optional `commit`, `verifiedAt` / fetch timestamp.
-2. **Frame honestly**: “I’ll ask a short triage set, then produce a provisional disposition and the assessment evidence needed to validate it.”
-3. **Tier 1 triage**: ask the short interview. Pre-fill from user context; skip irrelevant branches.
-4. **Tier 2 confirmation**: ask only the questions that can change the answer for candidate targets still in play, or when the user wants a validated recommendation.
-5. **Apply Phase A then Phase B**, tier-selection rules, and confidence model.
-6. **Output** the Markdown card and, on request or alongside it, the JSON object.
-7. **Offer follow-ups**: estate table, validation checklist, runbook, or one-slide summary.
-
-## Interview structure
+## User Inputs
 
 ### Tier 1 — Triage (provisional recommendation)
 
@@ -140,7 +103,7 @@ Ask only questions that can change candidates still in play, or when the user wa
 
 | Confirmation input | Ask when | Consumed by |
 | --- | --- | --- |
-| Source OS and edition (`source_os`, `source_edition`) | **MI Link is in play**, or VM/AVS/Arc/container or licensing/ESU are | MI Link requires Enterprise, Standard or Developer edition and a host OS supported by that SQL Server version: Windows Server throughout, Linux from SQL Server 2017 onwards, SQL Server 2016 being Windows Server only. Also drives compatibility, HA/DR support, AHB/ESU and patching responsibility |
+| Source OS and edition (`source_os`, `source_edition`) | **MI Link is in play**, or VM/AVS/Arc/container or licensing/ESU are | MI Link requires Enterprise, Standard or Developer edition and a host OS supported by that SQL Server version: SQL Server 2016 is Windows Server only, and Linux is supported from SQL Server 2017 onwards. Also drives compatibility, HA/DR support, AHB/ESU and patching responsibility |
 | Compatibility level | SQL DB, Fabric SQL DB, or modernization candidate | refactoring effort and compatibility scoring |
 | Current HA/DR topology: FCI, AG, log shipping, none | near-zero/minimal downtime or VM/AVS/MI Link in play | method feasibility, rollback, resilience |
 | RPO and RTO separately | any production migration | method ranking and DR design |
@@ -167,50 +130,53 @@ a wrong guess silently changes the recommendation.
 | `arc_extension_version` | the Azure Arc portal migration is being used | version string, e.g. `1.1.3348.364` | Gates the Arc wizard batch limit. **Unknown is not treated as recent** — it yields `unknown_requires_assessment`. |
 | `evidence` | the user wants a **validated** (not provisional) recommendation | four booleans: `dependenciesToolConfirmed`, `performanceMeasured`, `regionAvailabilityConfirmed`, `architectSignedOff` | `recommendationStatus` and `confidence`. All four must be `true` for `validated`; free text mentioning these phrases never substitutes for the typed values. |
 
-### Never contradict your own eligibility result
+## Authentication
 
-The recommended target and method must agree with the eligibility table produced in the same run:
+None. This skill runs entirely inside the Copilot session. It does not sign in to Azure, does not hold or read credentials, tokens or connection strings, and never touches customer data. Nothing is printed, persisted or logged.
 
-- The primary target must be `eligible` or `eligible_with_remediation` — **never** one just marked `unsupported`.
-- The method must be viable for that target and pass its own gates (source-version range, ports, source type, capacity).
-- If nothing survives with a viable method, return a **provisional shortlist** with the exclusion reasons and the assessment to run next. Do not invent a fallback.
-- Worked case: a SQL Server **2025** source with MI Link blocked and Azure SQL Database incompatible ⇒ LRS is **not** legal (standalone LRS covers 2008–2022), so answer **SQL Server on Azure VM** or a provisional shortlist — never "SQL MI via LRS".
+### Required Permissions
 
-## Uncertainty and confidence model
+None to obtain a recommendation.
 
-Decision-driving unknowns are: linked servers, SQL Agent, FILESTREAM/FileTable, PolyBase kind, DTC kind, CLR permission set, TDE, largest DB size, downtime tolerance, source location, source version, and source permissions for MI Link.
+The assessments that a recommendation points to have their own requirements, and the skill states them rather than assuming them:
 
-If any decision-driving input is unknown, do **not** use a silent “safe default”. The output must include:
+| Next step recommended | Requires |
+| --- | --- |
+| Azure Migrate discovery / business case | Appliance or import-based access to the source estate |
+| Arc best-practices assessment | Instance Arc-connected with the SQL Server extension installed |
+| SSMS 22 Migration Component | `sysadmin` on the source and the relevant roles on the target subscription |
+| Modern Azure DMS | `sysadmin` on the source, Blob access, and contributor rights on the target |
+| MI Link | `sysadmin` on the source and the ability to create availability-group endpoints |
 
-- `recommendationStatus: provisional`
-- `Blocking evidence: <missing input>`
-- `Next action: run assessment and dependency discovery`
+## API Details
 
-Every recommendation carries:
+None. This skill calls no API, runs no command and queries no service.
 
-- `confidence: high | medium | low`
-- `recommendationStatus: provisional | validated`
-- `assumptions[]`
-- `unknowns[]`
-- `hardBlockers[]`
-- `evidenceRequired[]`
+At session start, fetch the live knowledge-base document:
 
-Confidence rules:
+- Raw URL: `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/main/docs/sql-server-to-azure-migration.md`
+- Use the live doc when available. If offline, use `reference/decision-rules.md` and tell the user that the offline fallback may lag.
+- Current coordinated knowledge-base line: **v1.14**, dated **2026-08-05**.
+- Display the **knowledge-base version** in every recommendation and, when available, the **commit SHA** and **fetch timestamp**.
+- Determinism contract: **same inputs + same KB version + same engine version ⇒ same result**.
 
-- **High**: measured/tool-confirmed evidence is present for dependencies, performance/sizing, regional features, and cutover feasibility; interview-only answers can never exceed **medium**.
-- **Medium**: triage answers are complete and internally consistent, but dependency/performance evidence is not yet tool-confirmed.
-- **Low**: one or more decision-driving unknowns remain, answers conflict, or a candidate depends on unverified remediation.
+Apply `reference/decision-rules.md` by name:
 
-`provisional` is the default and the only possible `recommendationStatus` from interview answers alone. `validated` requires **all** of:
+1. **Phase A — Eligibility**: classify each target as `eligible`, `eligible_with_remediation`, `unsupported`, or `unknown_requires_assessment`.
+2. **Phase B — Ranking**: rank remaining targets by refactoring effort, downtime, operational burden, compatibility, resilience, cost, reversibility, and sovereignty.
+3. Apply the explicit **tier-selection rules** and **confidence model**.
 
-- tool-confirmed dependency inventory / assessment run;
-- measured performance and sizing data;
-- confirmed target-region feature availability;
-- explicit architect sign-off.
+## Operations
 
-If any checklist item is missing, keep `recommendationStatus: provisional`.
+1. **Load KB** and record `knowledgeBase.version`, optional `commit`, `verifiedAt` / fetch timestamp.
+2. **Frame honestly**: “I’ll ask a short triage set, then produce a provisional disposition and the assessment evidence needed to validate it.”
+3. **Tier 1 triage**: ask the short interview. Pre-fill from user context; skip irrelevant branches.
+4. **Tier 2 confirmation**: ask only the questions that can change the answer for candidate targets still in play, or when the user wants a validated recommendation.
+5. **Apply Phase A then Phase B**, tier-selection rules, and confidence model.
+6. **Output** the Markdown card and, on request or alongside it, the JSON object.
+7. **Offer follow-ups**: estate table, validation checklist, runbook, or one-slide summary.
 
-## Scoring and ranking
+### Scoring and ranking
 
 1. **Phase A — Eligibility trace**: list target status and one-line reason.
    - SQL VM, AVS, SQL MI, SQL DB, Fabric SQL DB, Arc-enabled SQL MI, SQL Server container, Arc in-place/control plane.
@@ -237,7 +203,16 @@ Migration method availability semantics:
 
 Do not call LRS “offline”; call it online migration with expected cutover downtime. Reserve “minimal downtime” for MI Link. For SQL MI Business Critical + LRS, warn that cutover can take hours and prefer MI Link when its prerequisites are satisfiable.
 
-## Output contract — Markdown card
+### Never contradict your own eligibility result
+
+The recommended target and method must agree with the eligibility table produced in the same run:
+
+- The primary target must be `eligible` or `eligible_with_remediation` — **never** one just marked `unsupported`.
+- The method must be viable for that target and pass its own gates (source-version range, ports, source type, capacity).
+- If nothing survives with a viable method, return a **provisional shortlist** with the exclusion reasons and the assessment to run next. Do not invent a fallback.
+- Worked case: a SQL Server **2025** source with MI Link blocked and Azure SQL Database incompatible ⇒ LRS is **not** legal (standalone LRS covers 2008–2022), so answer **SQL Server on Azure VM** or a provisional shortlist — never "SQL MI via LRS".
+
+## Output Presentation
 
 Render readable Markdown, not a code block. The Markdown card is a rendering of the JSON object below.
 
@@ -286,7 +261,7 @@ One sentence explaining why this is the recommended assessment path.
 
 For an **estate**, lead with “Estate strategy”, then a compact table: `Profile · Primary · Alternative · Status/confidence · Key evidence gap`, and expand only the non-obvious profiles.
 
-## Machine-readable JSON contract
+### Machine-readable JSON contract
 
 Emit this object on request or alongside the card. Unknown values are `null` or arrays in `unknowns`; do not invent data.
 
@@ -336,7 +311,37 @@ Field definitions:
 - `recommendation.evidence`: KB rules, Microsoft Learn links, assessment artifacts, measured baselines.
 - `knowledgeBase`: version, commit SHA if known, and fetch/verification timestamp.
 
-## Guardrails
+## Guidelines
+
+### Core principles
+
+- **Interview first, recommend second.** Ask one question at a time with `ask_user`, multiple-choice where possible.
+- **Ask in the user's language.** If the user writes in French, ask in French.
+- **Separate three layers**: target/runtime, control plane/assessment, and migration method.
+- **Do not overstate certainty.** Say “preliminary recommendation”, “recommended assessment path”, or “migration disposition”; do not promise the “best path” before assessment.
+- **No retired tools.** Do not recommend DMA, Azure Data Studio SQL Migration extension, DMS classic SQL scenarios, or SQL Data Sync. Use SSMS 22 Migration Component, SQL Server migration in Azure Arc, modern Azure DMS, Azure Migrate, and `Az.DataMigration` as appropriate.
+- **Do not emit a cost estimate unless explicitly sized/priced.** By default the skill emits **cost levers, not an estimate**. Sizing/pricing requires assessment data and Azure pricing assumptions.
+- **One recommendation per distinct profile.** For estates, group similar servers/databases, lead with discovery, then expand the non-obvious profiles.
+
+### Correct factual gates to enforce
+
+| Topic | Gate / consequence |
+| --- | --- |
+| Transactional replication → Azure SQL Database | Source **SQL Server 2016 and later** (includes 2022 and 2025); **push subscriber only**; snapshot + one-way transactional only; replicated tables need a **primary key**. |
+| Log Replay Service (standalone) | Supports source **SQL Server 2008 through 2022** for Azure SQL MI migration. Target is **unavailable** during sync (RESTORING/NORECOVERY); business cutover is typically **minutes** on GP with a small final backup, but can be **hours** on Business Critical while replicas seed. |
+| Azure Arc migration floors | Overall Arc migration experience for SQL MI and SQL VM targets: **SQL Server 2014 (12.x)+**. Arc → Azure SQL MI via **MI Link**: SQL Server **2016+**, and this Arc-driven path is documented as **Windows Server only**. Arc → Azure SQL MI via **LRS**: Microsoft documents a **2012+** method floor but the same Arc page states **2014+** overall; treat this as a documented Microsoft inconsistency and apply the conservative **2014+** Arc floor. Arc → **SQL Server on Azure VM**: **2014+**. Standalone LRS outside Arc remains **2008–2022**. |
+| MI Link | Source **2016+**; needs source **sysadmin**, distributed AGs, AG endpoint permission, and VNet connectivity. Ports are mandatory for all tiers/update policies/VPN/ExpressRoute/peering and MI-side ports are not customisable: MI subnet NSG inbound **5022** + **11000–11999** from SQL Server IP and outbound **5022**; SQL host/corporate firewall inbound **5022** from MI subnet /24 and outbound **5022 and 11000–11999** to MI. **11000–11999** is the dynamic MI-side distributed-AG HADR data channel. If **5022 or 11000–11999** cannot be opened in required directions, MI Link is `unsupported`; use LRS **only when LRS itself qualifies** (source 2008–2022, storage access, migration finishing inside the 30-day window), otherwise evaluate another method or target. [MI Link preparation](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-preparation). Links: **100** on GP/BC, **500** on Next-gen GP, one link/database; Arc portal's **10 databases per batch** is only a wizard selection limit. AWS RDS/GCP Cloud SQL cannot use MI Link because they lack sysadmin/custom AG endpoints. |
+| Managed cloud sources | AWS RDS / GCP Cloud SQL: **MI Link and transactional replication are out**. LRS/DMS work by backup upload to Blob. Native restore is indirect: export/S3/backup → Blob → restore. |
+| Backup to URL | Source **SQL Server 2012 SP1 CU2+**. SQL Server 2012/2014 use a page blob with a storage-account credential (1 TB cap); SQL Server 2016+ use a block blob with a SAS credential (12.8 TB striped). Below that build, back up locally and upload. |
+| Availability groups → SQL VM | **Always On AG: source 2012+.** **Distributed AG: source 2016+.** Both need AD DS (or workgroup AG + certificates), AG endpoints, open ports, and a planned failover window. |
+| SQL database in Fabric | The **target is GA**; only the **Fabric Migration Assistant** is Preview (DACPAC ≤ 20 MB, on-prem gateway only, no Private Link). Preview refusal disqualifies the assistant, never the target — evaluate T-SQL, transactional replication, Fabric pipelines / Data Factory copy jobs, Dataflow Gen2 and TDS-capable tools before excluding Fabric. |
+| FILESTREAM / FileTable | Hard block on Azure SQL MI and Azure SQL Database → SQL VM, AVS, or container. |
+| PolyBase | Ask which kind. MI supports data virtualization over Blob/ADLS Gen2 for Parquet/CSV, with no Delta Lake, no pushdown, and no S3. MI does **not** support PolyBase connectors to external RDBMS such as Oracle, Teradata, MongoDB, or another SQL Server. |
+| DTC | Ask which kind. MI supports T-SQL distributed transactions **MI↔MI** and **MI↔SQL Server**. MI does **not** support distributed transactions to third-party RDBMS or linked servers to third-party RDBMS. |
+| TDE restore | Migrate/install the TDE server certificate in destination `master` before restoring encrypted databases. |
+| Performance validation | Capture workload with **Extended Events**; replay with **RML Utilities / OStress**; analyse with **Query Store** and DMVs. Distributed Replay is unavailable in SQL Server 2022+. |
+
+### Guardrails
 
 - State the honest positioning: this skill is a **discovery and pre-selection assistant** for SQL Server → Azure migration paths and requires mandatory validation by assessment tooling and an architect.
 - If answers conflict, show the conflict and the trade-off instead of forcing a target.
@@ -345,3 +350,83 @@ Field definitions:
 - Always state the biggest risk, commonly ports, TDE certificate order, network throughput, Business Critical LRS replica-seeding cutover duration, or dependency-map gaps. Keep the risk; do not cite unsupported statistics.
 - Use Microsoft Learn evidence links where possible.
 - For performance-sensitive workloads, recommend capture with Extended Events, replay with RML Utilities / OStress, and analysis with Query Store + DMVs.
+
+## Error Handling
+
+Decision-driving unknowns are: linked servers, SQL Agent, FILESTREAM/FileTable, PolyBase kind, DTC kind, CLR permission set, TDE, largest DB size, downtime tolerance, source location, source version, and source permissions for MI Link.
+
+If any decision-driving input is unknown, do **not** use a silent “safe default”. The output must include:
+
+- `recommendationStatus: provisional`
+- `Blocking evidence: <missing input>`
+- `Next action: run assessment and dependency discovery`
+
+Every recommendation carries:
+
+- `confidence: high | medium | low`
+- `recommendationStatus: provisional | validated`
+- `assumptions[]`
+- `unknowns[]`
+- `hardBlockers[]`
+- `evidenceRequired[]`
+
+Confidence rules:
+
+- **High**: measured/tool-confirmed evidence is present for dependencies, performance/sizing, regional features, and cutover feasibility; interview-only answers can never exceed **medium**.
+- **Medium**: triage answers are complete and internally consistent, but dependency/performance evidence is not yet tool-confirmed.
+- **Low**: one or more decision-driving unknowns remain, answers conflict, or a candidate depends on unverified remediation.
+
+`provisional` is the default and the only possible `recommendationStatus` from interview answers alone. `validated` requires **all** of:
+
+- tool-confirmed dependency inventory / assessment run;
+- measured performance and sizing data;
+- confirmed target-region feature availability;
+- explicit architect sign-off.
+
+If any checklist item is missing, keep `recommendationStatus: provisional`.
+
+### Handling the cases that have no happy path
+
+| Situation | Behaviour |
+| --- | --- |
+| A required input is missing or ambiguous | Record it as an unknown, continue the interview, carry it into `unknowns[]` and `evidenceRequired[]`, and keep the recommendation `provisional`. Never re-ask a question the user already declined |
+| No target survives Phase A with a viable method | Return a **provisional shortlist** with the exclusion reason per candidate and the assessment to run next. Never invent a fallback |
+| The interview produces conflicting answers | Show the conflict and the trade-off rather than picking a side silently |
+| A tier-driving input is unknown | Emit `unknown_requires_assessment` for the tier and name the baseline to capture. Do not default to General Purpose |
+| The knowledge base cannot be read | Fall back to the bundled decision rules and say so, including that the offline copy may lag |
+| The user asks for a cost figure | Emit cost levers, never an estimate, until sizing and pricing data exist |
+| Authentication or permission failure | Not applicable: this skill authenticates to nothing |
+| Paginated or partial service results | Not applicable: this skill calls no service |
+| Destructive or long-running operation | Not applicable: this skill recommends, it never executes. No confirmation prompt is required because no action is taken |
+
+## Examples
+
+**Prompt**
+
+> We run SQL Server 2019 Enterprise on-premises, about 40 databases, the biggest is 900 GB. We can accept a few minutes of downtime. We use SQL Agent jobs heavily and a couple of linked servers to another SQL Server.
+
+**What the skill does**
+
+Asks the remaining triage questions one at a time (source location, migration intent, management model, feature dependency detail, network path and ports), then returns a card.
+
+**Representative output**
+
+> **Preliminary recommendation — 40-database OLTP estate**
+> **Azure SQL Managed Instance** via **MI Link** · status **provisional** · confidence **medium**
+> KB **v1.14** · commit **n/a** · fetched **n/a**
+>
+> SQL Agent and linked-server dependencies point at instance-scoped PaaS rather than a database-scoped target, and the downtime tolerance is met by an online method.
+>
+> | | Recommendation |
+> | --- | --- |
+> | Target / tier | Azure SQL Managed Instance, General Purpose |
+> | Migration method | MI Link |
+> | Target availability during sync | read-only |
+> | Business cutover downtime | < 1 minute |
+> | Assess / orchestrate | SSMS 22 Migration Component |
+> | Cost view | Cost levers only: AHB if Software Assurance applies; no estimate until sizing |
+>
+> **Blocking evidence** — MI Link needs ports 5022 and 11000–11999 open in the documented directions, and `sysadmin` on the source. Not yet confirmed.
+> **Next action** — run a dependency discovery and confirm the port path, then re-evaluate.
+
+Examples use sanitised placeholders. The skill never echoes customer names, tenant details, server names or subscription identifiers into its output.
