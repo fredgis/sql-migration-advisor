@@ -243,7 +243,7 @@ The consequence is `compareAcrossDocs` reporting *"could not find gate in KB, de
 - [x] `check-consistency.mjs` reads the new `SKILL.md` path — fixed in the same commit as the move (`4f26c41`)
 - [x] The four Arc gates, MI Link ports, MI Link capacity and the Arc batch limit are still extracted
 - [x] **Sabotage test:** introduce a deliberate divergence and confirm the weekly check sees it
-- [ ] Manual dispatch: all four jobs green — after the release tag
+- [x] Manual dispatch: all four jobs green — dispatched after the tag: `consistency`, `evidence`, `review`, `decide` all green
 - [x] `decide.mjs` still detects a substantive diff
 - [x] `apply-update.mjs` still writes the version stamp
 
@@ -359,3 +359,17 @@ This is the audit's own charge appearing inside the response to it: a claim was 
 - [x] Release `v2.0.0`, then dispatch the weekly check and confirm four green jobs — **4/4 green**
 - [ ] E4 developer pitch and E6 diagrams, deferred from lot E
 - [ ] Lot F, when there is appetite to measure
+
+### Found by using v2.0.0, awaiting a decision
+
+The first real session run on a non-standard profile — a single SQL Server 2016 on AWS EC2, SQL CLR, offline cutover, unknown Blob path — behaved well where v2 changed things. It refused to pick an MI tier and said so, surfaced the unverified Blob path instead of assuming it open, held confidence at `low`, and asked the fail-closed follow-ups for OS, edition and CLR permission set. It also exposed two defects that v2 does not cover.
+
+**The eligibility trace was incomplete, and no invariant catches that.** `SKILL.md` requires all eight target families in the Phase A trace. The run listed four, merged containers with Arc-enabled MI, and dropped AVS, Fabric SQL DB and Arc in-place without a word. A reader cannot see why Fabric was ruled out because Fabric never appears. The 9 invariants check that the *chosen* target is eligible; none checks that every family was *considered*. Options disappearing silently is the audit's own complaint pattern, reappearing one layer up.
+
+Proposed: a tenth invariant requiring all eight families in the trace.
+
+**`unsupported` was used for a preference rather than an incompatibility.** The run marked containers and Arc-enabled MI `unsupported` because they "conflict with the fully managed PaaS preference". Nothing is technically incompatible; the user stated a preference. `unsupported` is a hard eligibility status, and `MANAGEMENT-MODEL` is a family-split rule. A reader returning to this card in three months would believe Arc was technically excluded when it never was.
+
+Proposed: a distinct status for *excluded by stated preference*, so a preference can be revisited without re-litigating feasibility.
+
+Minor, from the same run: `Target availability during sync` rendered as *not present* where *not applicable* is meant, an offline method having no sync phase; and the **Microsoft program** row the README advertises was absent from the card.
