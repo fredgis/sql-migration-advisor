@@ -5,7 +5,7 @@ Apply Steps **A → D** in order. Steps map to the two engine phases:
 - **Phase B — Ranking and plan:** Steps B → D. Rank only surviving targets, then choose method, tier, blockers, cost, and assessment.
 
 Determinism contract: **same inputs + same KB version + same engine version ⇒ same result**. Every recommendation must carry the KB version, engine version, and, when available, the source commit SHA and fetch timestamp.
-Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v1.15**, verified August 2026.
+Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v1.16**, verified August 2026.
 
 Three layers, never mixed:
 - **Target** = where the DB ends up (runtime).
@@ -332,7 +332,7 @@ Rules:
 | --- | --- |
 | DBA-first, Windows, single/few DBs | **SSMS 22 Migration Component** |
 | Arc-enabled source or assess-first/in-place | **SQL Server migration in Azure Arc** and Arc best-practices assessment |
-| Estate scale / business case / dependency map | **Azure Migrate** appliance/import/Arc discovery |
+| Estate scale / business case / dependency map | **Azure Migrate** appliance or import (GA); Arc-based agentless discovery is **Preview**, so select it only when the customer accepts preview services |
 | Orchestrate at scale / CI-CD | **modern Azure DMS** + **`Az.DataMigration`** |
 | Heterogeneous source modernization | **SSMA** for Oracle/Sybase/DB2/MySQL/Access; not for homogeneous SQL→SQL |
 | Tier uncertainty | Perfmon/DMVs, Query Store, storage latency, log-rate baseline |

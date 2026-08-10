@@ -346,7 +346,16 @@ try {
     // Azure ESU for 2012 and 2008 that ended in July 2023, which is the permissive direction: it
     // tells a customer they are covered when they are not. v1.12 fixed Step D1 and the knowledge
     // base and left the Step A1 eligibility row standing.
-    { id: 'ESU described as covering 2014 and earlier', re: /ESU[^\n]*2014 (?:and|or) earlier|2014 (?:and|or) earlier[^\n]*ESU/iu }
+    { id: 'ESU described as covering 2014 and earlier', re: /ESU[^\n]*2014 (?:and|or) earlier|2014 (?:and|or) earlier[^\n]*ESU/iu },
+    // The knowledge base records transactional replication as an Online path to Fabric SQL
+    // database, yet the section 12 summary matrix still rated its minimum downtime as hours.
+    // A summary that contradicts the detail row silently eliminates Fabric for low-downtime
+    // migrations, and the summary is what a reader skims.
+    { id: 'Fabric SQL DB minimum downtime summarised as hours-only', re: /Min\.\s*downtime achievable[^\n]*\|\s*~?h\s*\|/iu, allow: /transactional replication/iu },
+    // Azure Migrate is GA, but its Arc-based agentless discovery is Preview. Offering the three
+    // discovery paths as interchangeable recommends a preview service to customers who forbid
+    // them, which is the permissive direction.
+    { id: 'Azure Migrate Arc discovery offered without its Preview status', re: /Azure Migrate\**\s*appliance[/ ]?(?:or )?import\/?Arc(?:-based)? (?:agentless )?discovery/iu, allow: /Preview/iu }
   ];
   for (const file of files) {
     const text = fs.readFileSync(file, 'utf8');

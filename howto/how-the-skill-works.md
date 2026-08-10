@@ -85,18 +85,18 @@ The middle column is the question **as the agent actually asks it**.
 | 5 | *"What is the main reason to migrate now?"* | End-of-support / ESU pressure · Cost optimization · App modernization · Data-center exit (VMware) · Analytics / Fabric unification · Sovereignty / edge | Target bias and the Fabric branch |
 | 6 | *"How much control do you need over the engine and OS?"* | Fully managed PaaS · Need OS / file-system / engine control · Need Kubernetes on-prem / edge / multi-cloud | PaaS vs IaaS vs Kubernetes family |
 | 6a | ↳ *"Do you want Microsoft to run the engine on your cluster, or do you want to own it end to end?"* *(only if Q6 = Kubernetes)* | Managed engine (Arc data controller: auto patch/backup/HA) · Full DIY container (we own HA/patch/backup) | **Arc-enabled SQL MI vs container** |
-| 7 | *"Do you know which SQL Server features the workload uses?"* | None of them, confirmed · Let me select them · Not checked yet | Gates the multi-select, so ticking nothing can never be misread as "none" |
-| 7a | ↳ *"Select every one that applies."* *(multi-select, only after "Let me select them")* | FILESTREAM / FileTable · PolyBase · DTC / distributed transactions · Cross-DB queries · SQL CLR · Linked servers · SQL Agent jobs · Service Broker | Phase A eligibility |
+| 7 | *"Do you know which SQL Server features the workload uses?"* | None of them, confirmed · Let me list them · Not checked yet | Names the intent before asking for the list, so "none" and "not checked" can never collapse |
+| 7a | ↳ *"List the ones it uses, separated by commas."* *(free text, only after "Let me list them")* | FILESTREAM / FileTable · PolyBase · DTC / distributed transactions · Cross-DB queries · SQL CLR · Linked servers · SQL Agent jobs · Service Broker | Phase A eligibility |
 | 7b | ↳ *"What does PolyBase actually query — files in Azure/cloud storage, or an external database like Oracle or Teradata?"* *(only if PolyBase)* | Cloud files only (Blob/ADLS Gen2, Parquet/CSV) · External RDBMS connector · S3 / Delta / pushdown required · Not sure | Cloud files ⇒ **SQL MI stays eligible**; external RDBMS ⇒ MI out |
 | 7c | ↳ *"Are those distributed transactions only between SQL Servers, or do they span a non-SQL database?"* *(only if DTC)* | SQL-to-SQL only (MI↔MI or MI↔SQL Server) · Heterogeneous / third-party RDBMS · Not sure | SQL-to-SQL ⇒ **SQL MI stays eligible**; heterogeneous ⇒ MI out |
 | 8 | *"How large is the biggest database?"* | < 150 GB · 150 GB – 4 TB · > 4 TB · Not sure | Hyperscale gate, backup size caps, seed-then-sync |
 | 9 | *"How much cutover downtime can the business accept?"* | Near-zero (minutes) · Minimal (tens of minutes to a couple of hours) · Offline planned window · Not sure | Method selection and downtime class |
 | 10 | *"What is the network path to Azure, and can MI Link ports 5022 and 11000–11999 be opened in the required directions?"* | Good ExpressRoute / high bandwidth · Limited WAN · Very large multi-TB move · 5022 or 11000–11999 blocked · 1433/443 blocked or unknown · Not sure | MI Link viability, Data Box seeding |
 | 11 | *"Any data residency, sovereign, or edge constraints?"* | Standard commercial · EU data boundary · Government / sovereign · Edge / air-gapped · Not sure | Biases SQL VM, AVS, Arc-enabled SQL MI |
-| 12 | *"Anything around the database to bring along?"* | Nothing, confirmed · Let me select them · Not sure | Gates the multi-select |
-| 12a | ↳ *"Select every one that applies."* *(multi-select)* | SSIS packages · SSRS reports · SSAS models · TDE-encrypted DBs · Many SQL Agent jobs · Windows logins | Blockers and remediations |
-| 13 | *"Any tier drivers?"* *(asked when SQL MI or SQL DB is still eligible)* | No particular driver, confirmed · Let me select them · Not sure | "Not sure" holds the tier at `unknown_requires_assessment` instead of defaulting to General Purpose |
-| 13a | ↳ *"Select every one that applies."* *(multi-select)* | Low-latency writes · High IOPS / log throughput · Strict SLA / zone redundancy · Read-scale replicas · Intermittent usage · Many tenants / variable demand | GP vs Business Critical vs Hyperscale vs Serverless vs Elastic Pool |
+| 12 | *"Anything around the database to bring along?"* | Nothing, confirmed · Let me list them · Not sure | Names the intent before asking for the list |
+| 12a | ↳ *"List them, separated by commas."* *(free text)* | SSIS packages · SSRS reports · SSAS models · TDE-encrypted DBs · Many SQL Agent jobs · Windows logins | Blockers and remediations |
+| 13 | *"Any tier drivers?"* *(asked when SQL MI or SQL DB is still eligible)* | No particular driver, confirmed · Let me list them · Not sure | "Not sure" holds the tier at `unknown_requires_assessment` instead of defaulting to General Purpose |
+| 13a | ↳ *"List them, separated by commas."* *(free text)* | Low-latency writes · High IOPS / log throughput · Strict SLA / zone redundancy · Read-scale replicas · Intermittent usage · Many tenants / variable demand | GP vs Business Critical vs Hyperscale vs Serverless vs Elastic Pool |
 
 <details>
 <summary><b>What a real exchange looks like</b></summary>
@@ -113,9 +113,9 @@ The middle column is the question **as the agent actually asks it**.
 > **User** — 2019.
 >
 > **Agent** — Do you know which SQL Server features the workload uses: FILESTREAM/FileTable, PolyBase, DTC, cross-DB queries, SQL CLR, linked servers, SQL Agent jobs, Service Broker?<br />
-> **User** — Yes, let me select them.
+> **User** — Let me list them.
 >
-> **Agent** — Select every one that applies.<br />
+> **Agent** — List the ones it uses, separated by commas.<br />
 > **User** — SQL Agent jobs, and we do use distributed transactions.
 >
 > **Agent** — Are those distributed transactions only between SQL Servers, or do they span a non-SQL database?<br />
@@ -316,7 +316,7 @@ knowledge-base PRs).
 ### Golden test suite
 
 <p align="center">
-  <img src="./quality-gate.svg" alt="Quality gate: decision-rules.data.json is the single source of constants; it feeds evaluate.mjs, which replays 79 golden scenarios into a blocking CI gate, while check-rules-data.mjs verifies the same 187 constants against the decision-rules markdown in strict mode." width="960">
+  <img src="./quality-gate.svg" alt="Quality gate: decision-rules.data.json is the single source of constants; it feeds evaluate.mjs, which replays 80 golden scenarios into a blocking CI gate, while check-rules-data.mjs verifies the same 187 constants against the decision-rules markdown in strict mode." width="960">
 </p>
 
 <sub>Runs on **every push and pull request** — separate from the weekly knowledge-base check (Mondays 05:00 UTC). Diagram source: [`quality-gate.architecture.json`](./quality-gate.architecture.json) · interactive: [`quality-gate.html`](./quality-gate.html).</sub>

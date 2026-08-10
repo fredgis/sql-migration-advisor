@@ -136,8 +136,19 @@ function chooseSqlDbTier(inputs, out) {
   if (/intermittent|seasonal|idle|auto-pause|dev\/test/.test(p)) return 'Serverless';
   if (/many tenants|multi-tenant|variable demand|elastic/.test(tenants)) return 'Elastic Pool';
   if (/business critical|low-latency|low latency|high transaction log|strict sla|zone redundancy|read-scale|in-memory/.test(p)) return 'Business Critical';
-  if (/general purpose|moderate|cost-sensitive|steady/.test(p) || new RegExp(`${SQL_DB_TIERS.generalPurposeSmallDatabaseSignalGb} gb|<\\s*${SQL_DB_TIERS.generalPurposeSmallDatabaseSignalGb} gb`).test(size)) return 'General Purpose';
-  if (/none\/unknown|not sure|unknown/.test(p) || /not sure|unknown/.test(size) || /not sure|unknown/.test(tenants)) {
+  const perfStatedUnknown = /none\/unknown|not sure|unknown/.test(p);
+  // The small-database signal means "under 150 GB". Unanchored it also matched the
+  // "150 GB - 4 TB" range, which is not small, and it was tested before the unknown
+  // branch below, so an explicit "not sure" on tier drivers still returned General
+  // Purpose. Two ways to reach a tier nobody had evidence for.
+  //
+  // An absent performance answer is deliberately not treated as an unknown here: the
+  // tier question is only asked when a tier is in play, so absence usually means the
+  // interview never needed it. The engine claims no tier instead, which is silence
+  // rather than a false claim.
+  const smallDatabase = new RegExp(`(?:<|under|below|up to)\\s*${SQL_DB_TIERS.generalPurposeSmallDatabaseSignalGb}\\s*gb`).test(size);
+  if (/general purpose|moderate|cost-sensitive|steady/.test(p) || (!perfStatedUnknown && smallDatabase)) return 'General Purpose';
+  if (perfStatedUnknown || /not sure|unknown/.test(size) || /not sure|unknown/.test(tenants)) {
     addUnique(out.unknowns, 'SQL DB tier-driving size/performance/tenancy inputs');
     addUnique(out.evidenceRequired, 'Performance baseline and tenancy profile');
     return E.UNKNOWN;

@@ -6,7 +6,7 @@
 >
 > **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of 10 August 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
 >
-> **Version.** v1.15 — 10 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
+> **Version.** v1.16 — 10 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**
@@ -416,7 +416,7 @@ Microsoft describes LRS as an online migration with expected downtime during cut
 | Service Broker | ✅ | ✅ | ✅³ | ❌ | ❌ | ✅ |
 | SQL CLR / linked servers | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
 | SQL Agent | ✅ | ✅ | ✅ | ❌ (Elastic Jobs) | ❌ | ✅ |
-| Min. downtime achievable | near-zero (AG / DAG, planned failover) | ~h (vMotion) | ~min (MI Link) | min–h | h | depends |
+| Min. downtime achievable | near-zero (AG / DAG, planned failover) | ~h (vMotion) | ~min (MI Link) | min–h | ~min with transactional replication (SQL Server 2022 RTM CU12+ publisher, primary keys on replicated tables); otherwise h | depends |
 | Managed patch / upgrade | Auto-patch | ❌ | ✅ Evergreen | ✅ Evergreen | ✅ Evergreen | ❌ |
 | Azure Hybrid Benefit | ✅ | ✅ | ✅ | ✅ GP/BC vCore provisioned; ❌ DTU/serverless/Fabric SQL DB; ⚠️ Hyperscale single DBs with provisioned compute **created before 15 Dec 2023** only, and only until Dec 2026 | n/a | ✅ |
 | Sovereignty / edge | ✅ | ✅ | limited regions | limited regions | limited regions | ✅ (Arc) |
@@ -614,13 +614,14 @@ flowchart LR
 
 ## 17. Document version & changelog
 
-Current version: **v1.15** (2026-08-10).
+Current version: **v1.16** (2026-08-10).
 
 <details>
-<summary><b>Version history</b> (current: v1.15)</summary>
+<summary><b>Version history</b> (current: v1.16)</summary>
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v1.16 | 2026-08-10 | **Two knowledge-base corrections and one interview rebuild.** §12's summary matrix rated Fabric SQL database's minimum achievable downtime as hours, contradicting §5.2 of this same document, which records transactional replication as an **Online** path to a Fabric SQL database push subscriber. A summary that contradicts its own detail row is what a reader skims, and this one silently eliminated Fabric from every low-downtime shortlist; the cell now carries the replication path and its SQL Server 2022 RTM CU12+ and primary-key conditions. Separately, the decision rules offered Azure Migrate appliance, import and Arc discovery as interchangeable, while §6 of this document records **Arc-based agentless discovery as Preview**: the rules now mark it and select it only when the customer accepts preview services. Both corrections are locked by new forbidden-pattern gates, each verified against the exact wording it replaces. The interview drops multi-selects entirely, because every one it has ever shipped came back empty in real sessions while every single-select returned its value; list answers are captured as free text. Two engine defects found while testing that: the small-database signal `150 gb` was unanchored and matched the `150 GB – 4 TB` range, which is not small, and it was evaluated **before** the unknown branch, so a user who answered "not sure" on tier drivers was still given General Purpose. |
 | v1.15 | 2026-08-10 | No knowledge-base fact changed. Fixed a defect where an unanswered multi-select was indistinguishable from an explicit "none". Ticking nothing is the natural gesture both for *the workload uses none of these features* and for *I have not checked*, so the two collapsed into a single answer the interview could not tell apart. The two layers then disagreed about what that answer meant: `SKILL.md` read an empty list as **unknown**, while the engine's `dep()` helper returned `false` for every probe and read it as **no dependencies**, silently clearing the SQL MI and Azure SQL Database feature blockers. The engine's reading was the dangerous one, because it upgraded a recommendation on evidence nobody had given. Every multi-select is now gated behind a single-select that names the intent (`None, confirmed` / `Let me select them` / `Not checked yet`), so a blank answer can no longer carry meaning, and the engine resolves a blank `feature_dependencies` list to `unknown_requires_assessment` rather than to a pass. Question 13's conflated `none/unknown` option is split for the same reason: those are opposite answers and only one of them supports a tier choice. Golden scenario `empty-dependency-answer-is-not-none` locks the behaviour, and the example recommendation's stale `knowledgeBase.version` of `1.6` is corrected. |
 | v1.14 | 2026-08-10 | No knowledge-base fact changed. `SKILL.md` was restructured onto the ten-section template used by `microsoft/sql-migration-agent` (Description, When to Use, User Inputs, Authentication, API Details, Operations, Output Presentation, Guidelines, Error Handling, Examples), the skill renamed **assessment-advisor** to clear the collision with that repository's agent, `allowed-tools` declared and `license` dropped, and the internal `FY27` and `SQL in a Day` wording removed from the description including as an activation trigger. Four sections that did not exist were written: When to Use, Authentication with its permissions table, API Details, and a worked Example. The knowledge base and the decision rules keep their content unchanged; only the version stamp moved. |
 | v1.13 | 2026-08-10 | Applied the weekly review's two sourced findings, both of which were **surviving occurrences of v1.12 corrections**. §5.2's MI Link method row still carried the Windows Server 2016+ floor, spelled **`Win Server 2016+`**: the abbreviation is why the v1.12 sweep missed it. Step A1's SQL Server on Azure VM row still described free ESU as covering "SQL Server 2014 and earlier", which tells a customer running 2012 or 2008 that they are covered when that programme ended in July 2023. Two new forbidden-pattern gates close both, matching every spelling of the OS floor rather than the one that happened to be searched for, and they immediately found **two further occurrences in the poster** that neither the weekly review nor the two-model audit had reported — the printed artefact handed to partners was quoting the stale ESU boundary. Changelog rows are now exempt from the forbidden-pattern check: a version history has to be able to quote the wording later versions forbid, and rewording history to satisfy a gate would falsify the record. |

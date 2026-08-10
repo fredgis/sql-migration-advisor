@@ -248,6 +248,43 @@
     "auditRef": "P0-6"
   },
   {
+    "id": "tier-drivers-not-sure-must-not-become-general-purpose",
+    "title": "An explicit \"not sure\" on tier drivers outranks the size heuristic",
+    "why": "The small-database signal was unanchored, so \"150 GB - 4 TB\" matched it, and it was tested before the unknown branch. A user who said they did not know their tier drivers still got General Purpose.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2017/2019",
+      "driver": "app modernization",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "None"
+      ],
+      "size": "150 GB – 4 TB",
+      "downtime": "offline",
+      "performance": "Not sure"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_db": "eligible"
+      },
+      "primary_target": "Azure SQL Database",
+      "method": "modern DMS (offline)",
+      "tier": "unknown_requires_assessment",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time",
+      "recommendationStatus": "provisional",
+      "confidence": "low",
+      "mustNotRecommend": [
+        "General Purpose"
+      ]
+    },
+    "assertRulePresent": [
+      "Never turn an unknown into a silent safe default"
+    ],
+    "auditRef": "P0-6"
+  },
+  {
     "id": "kb-rules-readme-version-mismatch-blocks",
     "title": "KB v1.5 versus rules/README version mismatch blocks",
     "why": "Audit P0: version drift must fail CI.",
@@ -1402,7 +1439,7 @@
   {
     "id": "sql-db-simple-db-scoped-cloud-native",
     "title": "Simple DB-scoped workload can target Azure SQL DB",
-    "why": "Positive SQL DB control.",
+    "why": "Positive SQL DB control. No tier is claimed: the size is 150 GB - 4 TB and no performance answer was given, so the engine stays silent on the tier rather than inferring General Purpose.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -1421,7 +1458,6 @@
       },
       "primary_target": "Azure SQL Database",
       "method": "modern DMS (offline)",
-      "tier": "General Purpose",
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "total-migration-time",
       "recommendationStatus": "provisional",
