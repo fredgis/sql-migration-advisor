@@ -455,7 +455,7 @@ try {
   const required = [
     /unknown_requires_assessment/u,
     /do \*\*not\*\* silently pick the safer target/iu,
-    /Unknown on a decision-driving dependency ⇒ `recommendationStatus: provisional`/u,
+    /`recommendationStatus` is always `provisional`/u,
     /Never turn an unknown into a silent safe default/u,
     /If a tier-driving input is missing, emit `unknown_requires_assessment`/u
   ];
@@ -655,6 +655,43 @@ try {
 
   add('contracts-wired', failures.length === 0,
     failures.length ? failures : [`${Object.keys(guards.OPTION_IDS).length} option IDs and ${engineFields.length} engine fields are documented in the input contract; the skill defers to both contracts and runs the self-check.`]);
+}
+
+{
+  // v1.18 removed `high` and `validated`, and both survived in three documents until a docs pass
+  // found them by hand. Nothing was watching the vocabulary, so this gate watches it.
+  const files = [
+    ['skills\\get-migration-assessment\\SKILL.md', skill],
+    ['reference\\decision-rules.md', rules],
+    ['reference\\output-contract.md', readText(path.join('reference', 'output-contract.md'))],
+    ['reference\\input-contract.md', readText(path.join('reference', 'input-contract.md'))],
+  ];
+  const failures = [];
+  // Only the recommendation vocabulary is in scope: `high IOPS`, `high bandwidth` and
+  // `highest HA` are ordinary English and must stay allowed.
+  const banned = [
+    [/confidence\s*[:=]\s*`?high/iu, 'confidence: high'],
+    [/\bhigh\s+confidence\b/iu, 'high confidence'],
+    [/recommendationStatus\s*[:=]\s*`?validated/iu, 'recommendationStatus: validated'],
+    [/\bvalidated\s+recommendation\b/iu, 'validated recommendation'],
+    [/provisional\s*\|\s*validated/iu, 'a validated alternative in a value list'],
+  ];
+
+  for (const [name, text] of files) {
+    text.split(/\r?\n/u).forEach((line, i) => {
+      for (const [re, label] of banned) {
+        if (re.test(line)) failures.push(`${name}:${i + 1} still offers ${label} — removed in v1.18: "${line.trim().slice(0, 80)}"`);
+      }
+    });
+  }
+
+  // The ceiling must be stated, not merely implied by the absence of `high`.
+  if (!/medium[^.]{0,60}(ceiling|highest confidence)/iu.test(`${skill}\n${rules}`)) {
+    failures.push('no policy document states that `medium` is the confidence ceiling');
+  }
+
+  add('confidence-vocabulary', failures.length === 0,
+    failures.length ? failures : ['`high` and `validated` appear in no recommendation vocabulary across the 4 policy documents, and `medium` is stated as the ceiling.']);
 }
 
 {

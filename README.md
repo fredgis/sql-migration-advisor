@@ -37,7 +37,7 @@ preliminary recommendation for assessment and validation:
 - **Primary path** — target and method to assess first: SQL VM · AVS · SQL MI · SQL DB · Fabric SQL DB · Arc SQL MI · container · Arc in-place
 - **Best alternative** — the strongest fallback path when trade-offs or unknowns remain
 - **Exclusions** — why other targets were ruled out, including hard blockers and remediation options
-- **Confidence** — provisional or validated status, assumptions, unknowns, and evidence required ([what the levels mean](#how-it-works))
+- **Confidence** — status, assumptions, unknowns, and evidence required ([what the levels mean](#how-it-works))
 - **Downtime class** — near-zero · minimal · offline
 - **Cost levers** — Azure Hybrid Benefit · ESU; not a sizing or pricing estimate
 - **Microsoft program** — Cloud Accelerate Factory · SQL in a Day
@@ -58,9 +58,11 @@ knowledge-base version, commit SHA and fetch timestamp so the advice is traceabl
 
 - **Verified knowledge** — the v1.18 knowledge base is source-backed and corrected against Microsoft Learn.
 - **Rules under regression test** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers. An executable mirror in `tests/` replays 90 scenarios through those rules on every commit. The mirror is not what runs in your session: an agent reads the rules and applies them, so this is a tested policy rather than a byte-identical guarantee.
-- **Explicit uncertainty** — recommendations carry confidence, provisional/validated status, assumptions, unknowns, blockers and evidence required. `high` confidence is unreachable from the interview alone: it requires measured evidence.
+- **Every decision is addressable** — the card cites a rule ID for each verdict, and [`reference/decision-rules.md`](reference/decision-rules.md) ends with an index of all 26. Look one up, read what it consumes and how it treats an unknown, and argue with it.
+- **Explicit uncertainty** — every recommendation is `provisional`, and `medium` is the confidence ceiling. Nothing higher is reachable from an interview, because the skill reads no artefact from your estate. It carries assumptions, unknowns, blockers and the evidence a tool would have to produce.
+- **It checks its own answer** — before the card is shown, the skill re-reads its draft against the 9 invariants in [`reference/output-contract.md`](reference/output-contract.md). One of them: no eligibility claim may rest on a field you never answered. A failed invariant is shown to you, never silently repaired.
 - **Freshness gates** — version bumps require substantive diffs; link checks classify bot-blocked pages; high-risk claims are tracked in [`reference/claims-registry.json`](reference/claims-registry.json).
-- **Regression protection** — [`tests/`](tests/) holds 90 golden scenarios and 18 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
+- **Regression protection** — [`tests/`](tests/) holds 90 golden scenarios and 20 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
 
 ## Audit response
 
@@ -70,9 +72,11 @@ An external audit deliberately challenged the advisor before wider use. It found
 | --- | --- |
 | Over-confident final-advice framing | Repositioned as a discovery and pre-selection assistant with mandatory assessment-tool and architect validation. |
 | Factual inaccuracies in hard gates | Knowledge base v1.5 corrects PolyBase, DTC, LRS, replication and cross-cloud method constraints. |
-| Hidden uncertainty | Outputs now include confidence, provisional/validated status, assumptions, unknowns, hard blockers and evidence required. |
+| Hidden uncertainty | Outputs carry confidence, assumptions, unknowns, hard blockers and evidence required. `validated` and `high` were later removed outright: the skill reads no artefact, so it cannot certify one. |
 | Weak freshness governance | Version-gated automation, consistency checks and a claims registry prevent unearned version bumps and catch source drift. |
-| Limited regression coverage | Golden scenarios and deterministic anti-regression tests now run in CI. |
+| Limited regression coverage | Golden scenarios and anti-regression gates now run in CI. |
+
+A second external audit, in v2.0.0, went after the design rather than the facts. Its charge was that the repository tested what was easy to test rather than what made the decision. The response is [`docs/NEWDESIGNv2.md`](docs/NEWDESIGNv2.md): input and output contracts, a self-check the skill runs before it answers, an ordered ranking in place of an unweighted table, and a rule index that makes every verdict addressable.
 
 ---
 
@@ -80,8 +84,10 @@ An external audit deliberately challenged the advisor before wider use. It found
 
 | Path | Purpose |
 | --- | --- |
-| [`SKILL.md`](skills/get-migration-assessment/SKILL.md) | The skill — trigger description, principles, the two-tier interview (triage, then confirmation), and the output-card template. |
-| [`reference/decision-rules.md`](reference/decision-rules.md) | The deterministic decision engine: Phase A eligibility filter, then Phase B ranking and tier selection — used as the offline fallback. |
+| [`skills/get-migration-assessment/SKILL.md`](skills/get-migration-assessment/SKILL.md) | The skill — trigger description, principles, the two-tier interview (triage, then confirmation), and the output-card template. |
+| [`reference/input-contract.md`](reference/input-contract.md) | What the interview may produce: 30 stable option IDs, 20 canonical field names, and the difference between *confirmed none* and *nobody checked*. |
+| [`reference/output-contract.md`](reference/output-contract.md) | What an answer must look like, and the 9 invariants the skill checks against its own draft before showing it. |
+| [`reference/decision-rules.md`](reference/decision-rules.md) | The decision policy: Phase A eligibility filter, Phase B ordered ranking and tier selection, and the index of all 26 addressable rules. |
 | [`examples/sample-recommendation.md`](examples/sample-recommendation.md) | A worked end-to-end example (SQL 2014 → Azure SQL MI via LRS). |
 | [`docs/sql-server-to-azure-migration.md`](docs/sql-server-to-azure-migration.md) | The knowledge base — every target family, method, tool, and commercial lever, with Microsoft Learn links. |
 | [`reference/claims-registry.json`](reference/claims-registry.json) | Hashes and source pointers for high-risk claims, used by weekly drift detection. |
@@ -90,67 +96,60 @@ An external audit deliberately challenged the advisor before wider use. It found
 | [`howto/how-the-skill-works.md`](howto/how-the-skill-works.md) | Implementer's guide: how the skill works, how an agent uses it, and how the weekly Action keeps the knowledge base fresh (with architecture diagrams). |
 | [`docs/sql-migration-advisor-developer-pitch.md`](docs/sql-migration-advisor-developer-pitch.md) | Developer pitch: runtime architecture, the decision process, the CI and pull-request gates, and how the knowledge base stays current. |
 | [`blume/`](blume/) | Source for the online docs page — [fredgis.github.io/sql-migration-advisor](https://fredgis.github.io/sql-migration-advisor/) — a friendly overview of how the skill works and stays up to date. |
-| [`tests/`](tests/) | Golden scenarios and anti-regression checks that keep the decision engine deterministic. |
+| [`tests/`](tests/) | Golden scenarios and anti-regression gates that keep the decision policy honest. |
 
 The skill is prompt-driven markdown — no build step, no dependencies.
 
 ---
 
-## Install as a Copilot CLI skill
+## Install as a Copilot CLI plugin
 
-Copilot CLI loads personal skills from subfolders of `~/.copilot/skills/`, each containing a
-`SKILL.md`. This repository *is* the skill (its `SKILL.md` sits at the root), so the simplest
-install is to clone it straight into the skills folder.
+```bash
+copilot plugin install fredgis/sql-migration-advisor
+```
+
+Then restart Copilot CLI (skills load at startup), run `/skills`, and confirm
+**`get-migration-assessment`** is listed. Ask *"I want to migrate a SQL Server environment to
+Azure"* and the interview starts.
+
+To load it from a local clone instead:
+
+```bash
+git clone https://github.com/fredgis/sql-migration-advisor.git
+copilot --plugin-dir ./sql-migration-advisor
+```
+
+> **Copying `SKILL.md` on its own no longer works.** The skill reads
+> `../../reference/input-contract.md`, `../../reference/decision-rules.md` and
+> `../../reference/output-contract.md`, which sit above it in the repository. Installing the whole
+> plugin is what keeps the rules and the skill at the same commit — that pairing is the point, since
+> a skill running against rules from a different version is exactly the drift this project exists to
+> prevent.
+
+Before v2.0.0 the skill was called `assessment-advisor` and was cloned directly into
+`~/.copilot/skills/`. If you installed it that way, delete the old folder: two copies will both
+match the trigger and you will not know which one answered.
 
 ```bash
 # macOS / Linux
-git clone https://github.com/fredgis/sql-migration-advisor.git ~/.copilot/skills/assessment-advisor
+rm -rf ~/.copilot/skills/assessment-advisor
 ```
 
 ```powershell
 # Windows (PowerShell)
-git clone https://github.com/fredgis/sql-migration-advisor.git "$env:USERPROFILE\.copilot\skills\assessment-advisor"
+Remove-Item -Recurse -Force "$env:USERPROFILE\.copilot\skills\assessment-advisor"
 ```
-
-Then:
-
-1. Restart Copilot CLI (skills load at startup).
-2. Run `/skills` and confirm **`assessment-advisor`** is listed. The repository is named `sql-migration-advisor`; the skill inside it is `assessment-advisor`, which is the name it will carry when contributed to `microsoft/sql-migration-agent`.
-3. Ask, e.g. *"I want to migrate a SQL Server environment to Azure"* — the skill takes over
-   and starts the interview.
-
-> The bundled `docs/` folder (knowledge base + PDF) rides along harmlessly; Copilot only reads
-> `SKILL.md` plus `reference/` and `examples/`. To keep the skills folder lean, copy just
-> `SKILL.md`, `reference/` and `examples/` instead of cloning the whole repo.
 
 ### 🔄 Already installed? Update it
 
 The decision rules and the interview change over time (see [Keep it up to date](#keep-it-up-to-date)),
 so refresh your copy now and then.
 
-If you cloned the repo:
-
 ```bash
-# macOS / Linux
-cd ~/.copilot/skills/assessment-advisor && git pull
+copilot plugin update sql-migration-advisor
 ```
-
-```powershell
-# Windows (PowerShell)
-cd "$env:USERPROFILE\.copilot\skills\assessment-advisor"; git pull
-```
-
-If you copied only the three files, copy them again from the latest repo:
-`SKILL.md`, `reference/decision-rules.md`, `examples/sample-recommendation.md`.
 
 Then **restart Copilot CLI** — skills load at startup, so an update isn't picked up until you do.
-To check which version you're running:
-
-```powershell
-Select-String -Path "$env:USERPROFILE\.copilot\skills\assessment-advisor\SKILL.md" -Pattern "knowledge-base line"
-```
-
-It should match the knowledge-base badge at the top of this README.
 
 > Not urgent if you skip it: the skill **fetches the knowledge base live** on every run, so the
 > facts stay current even on an older copy. Updating refreshes the *interview and the decision

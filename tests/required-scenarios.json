@@ -16,7 +16,7 @@
   { "id": "missing-arc-extension-version-batch-size-requires-verification", "reason": "Audit regression: missing Arc extension version with multi-database batch requires verification." },
   { "id": "lrs-business-critical-hours-warning", "reason": "Audit regression: LRS to MI Business Critical can have hours-long cutover while replicas seed." },
   { "id": "mi-link-ranked-above-lrs-bc-when-gates-met", "reason": "Audit regression: MI Link outranks LRS for BC when gates are met." },
-  { "id": "validated-free-text-keywords-without-evidence-provisional", "reason": "Typed-evidence negative: validation keywords in prose must not validate the result." },
-  { "id": "validated-three-evidence-booleans-provisional", "reason": "Typed-evidence negative: all four structured evidence booleans are required for validated/high." },
+  { "id": "no-promotion-from-free-text-keywords", "reason": "Nothing in prose may raise the status: validation keywords typed by the user are not evidence." },
+  { "id": "no-promotion-from-self-declared-booleans", "reason": "Nothing self-declared may raise the status: the booleans that once produced `validated` were never checked by anyone." },
   { "id": "sql2025-mi-link-and-sql-db-blocked-no-lrs-fallback", "reason": "Final audit regression: blocked MI Link plus SQL DB blocker on SQL Server 2025 must not invent MI LRS fallback." }
 ]

@@ -1,13 +1,14 @@
 ---
 title: SQL Migration Advisor
-description: A GitHub Copilot skill that turns any agent into a SQL Server to Azure migration pre-selection assistant, grounded in a verified, version-gated knowledge base.
+description: A GitHub Copilot skill that helps an agent produce a provisional SQL Server to Azure migration assessment, grounded in a tested prompt policy and version-gated knowledge base.
 ---
 
-A GitHub Copilot **skill** that turns any Copilot agent into a SQL Server → Azure migration pre-selection
-assistant. It runs a guided interview, applies a regression-tested two-phase rule set, and returns a
-preliminary recommendation for assessment — primary path, best alternative, exclusions, confidence, evidence
-required, downtime, blockers, cost levers, and the right Microsoft program. It is backed by a verified
-knowledge base and version-gated freshness automation.
+A GitHub Copilot **skill** named `get-migration-assessment` that helps a Copilot agent produce a
+provisional SQL Server → Azure migration assessment. It runs a guided interview, applies a prompt policy
+under regression test, checks its own draft before rendering, and returns a preliminary recommendation for
+assessment: primary path, best alternative, exclusions, confidence, evidence required, downtime, blockers,
+cost levers, and the right Microsoft program. It is backed by a verified knowledge base and
+version-gated freshness automation.
 
 <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", margin: "1.5rem 0" }}>
   <a href="https://github.com/fredgis/sql-migration-advisor/blob/main/howto/how-the-skill-works.md">📘 Read the full guide</a>
@@ -19,16 +20,18 @@ knowledge base and version-gated freshness automation.
 
 ## What it is
 
-The advisor is a self-contained skill (`SKILL.md` + a knowledge base + a deterministic rules file). Drop it
-into a Copilot-enabled environment and any agent can act as a SQL migration pre-selection assistant — no
-fine-tuning, no external service. It is:
+The advisor is a self-contained skill at `skills/get-migration-assessment/SKILL.md`. It travels with
+reference documents that define the accepted inputs, the output shape and the rule set. Clone the whole
+repository into a Copilot skills location; installing only `SKILL.md` breaks the relative links to
+`reference/input-contract.md`, `reference/decision-rules.md` and `reference/output-contract.md`. No
+fine-tuning or external service sits in the decision path. It is:
 
 - **Grounded** — every recommendation is traceable to a verified knowledge base, not model memory.
-- **Regression-tested rules** — Phase A filters hard eligibility, then Phase B ranks viable paths and tiers. An executable mirror replays 90 scenarios through those rules on every commit; the agent reading them in a session is not that mirror.
-- **Explicit about uncertainty** — outputs carry confidence, provisional or validated status, assumptions, unknowns, blockers and evidence required.
+- **Prompt policy under regression test** — Phase A filters hard eligibility, then Phase B ranks viable paths and tiers. A JavaScript mirror replays 90 scenarios through those rules on every commit; the agent reading them in a session is not that mirror.
+- **Explicit about uncertainty** — outputs carry `provisional` status, `low` or `medium` confidence, assumptions, unknowns, blockers and evidence required.
 - **Freshness-gated** — consistency checks, link classification and a claims registry prevent unearned version bumps.
-- **Regression-tested** — golden scenarios in CI guard determinism and corrected facts.
-- **Honest about limits** — it is a discovery and pre-selection assistant; assessment tooling and architect validation remain mandatory.
+- **Self-checked before display** — the skill rereads its draft against the output contract, so contradictions are exposed instead of hidden.
+- **Honest about limits** — it is a discovery and pre-selection assistant. Assessment tooling and architect sign-off remain mandatory.
 
 <video
   src="https://github.com/user-attachments/assets/c6108b23-af0b-45d6-9dd8-feb5bad9d679"
@@ -39,24 +42,41 @@ fine-tuning, no external service. It is:
 
 ---
 
+## Install
+
+Clone the repository, not a single file, because the skill reads reference documents beside it. The skill
+name is `get-migration-assessment` and its entry point is
+`skills\get-migration-assessment\SKILL.md`.
+
+```powershell
+git clone https://github.com/fredgis/sql-migration-advisor.git $env:USERPROFILE\.copilot\skills\sql-migration-advisor
+```
+
+Do not clone into an `assessment-advisor` folder for v2. That was the old skill name, and it hides the fact
+that the new skill depends on `reference\input-contract.md`, `reference\decision-rules.md` and
+`reference\output-contract.md` at the repository root.
+
+---
+
 ## Architecture
 
 <img src={`${import.meta.env.BASE_URL}/skill-architecture.svg`} alt="Repository architecture of the SQL Migration Advisor skill" />
 
-The skill is just files in a repo: a contract (`SKILL.md`), a knowledge base, a deterministic decision-rules
-engine, worked examples, a claims registry, golden tests, and a weekly freshness Action. The agent reads them at runtime.
+The skill is just files in a repo: `skills/get-migration-assessment/SKILL.md`, a knowledge base, two
+contracts, decision rules, worked examples, a claims registry, golden tests, and a weekly freshness Action.
+The agent reads them at runtime.
 
 ---
 
 ## How the agent uses it
 
-<img src={`${import.meta.env.BASE_URL}/runtime-loop.svg`} alt="Runtime loop: user request to skill, guided interview, deterministic scoring against the knowledge base, and a grounded recommendation card" />
+<img src={`${import.meta.env.BASE_URL}/runtime-loop.svg`} alt="Runtime loop: user request to skill, guided interview, scoring against the knowledge base, and a grounded recommendation card" />
 
-When a user asks for a migration recommendation, the agent loads the skill, runs Tier 1 triage and Tier 2
-confirmation questions, applies Phase A eligibility and Phase B ranking, and produces a grounded preliminary
-recommendation. The card includes the primary path, best alternative, exclusions, confidence, assumptions,
-unknowns and evidence required. The agent can still build a context-aware plan, but every factual claim is
-anchored to the knowledge base rather than invented.
+When a user asks for a migration recommendation, the agent loads `get-migration-assessment`, runs Tier 1
+triage and Tier 2 confirmation questions, applies Phase A eligibility and Phase B ranking, runs the
+self-check, and produces a grounded preliminary recommendation. The card includes the primary path, best
+alternative, exclusions, confidence, assumptions, unknowns and evidence required. The agent can still build
+a context-aware plan, but every factual claim is anchored to the knowledge base rather than invented.
 
 ### How a recommendation is decided
 
@@ -68,11 +88,16 @@ the user asks, the interview runs, and the decision is made in two distinct phas
 - **Phase A — eligibility** applies only *hard* constraints and labels each target `eligible`,
   `eligible_with_remediation`, `unsupported` or `unknown_requires_assessment`. A decision-driving
   unknown never silently defaults.
-- **Phase B — ranking** orders the survivors on eight named criteria: refactoring effort, downtime,
-  operational burden, compatibility, resilience, cost, reversibility and sovereignty.
-- The card carries the primary path, the best alternative, why the others were excluded, the
-  confidence level and what evidence is still missing. It stays **provisional** until an assessment
-  confirms it.
+- **Phase B — ranking** applies ten ordered steps. It respects the requested management model, then compares
+  refactoring effort, downtime fit, operational burden, reversibility, sovereignty, cost levers only when the
+  inputs exist, and unresolved assumptions. If candidates still tie, the card returns a provisional shortlist
+  instead of inventing a winner.
+- **The self-check** rereads the draft against nine invariants before the user sees it. A method must be
+  available for the target, unsupported targets cannot appear as recommendations, unknown hard gates must be
+  visible, and status must remain `provisional` with confidence no higher than `medium`. If an invariant
+  fails, the skill must expose the inconsistency rather than silently repair it.
+- **Rule IDs** appear in the eligibility trace, such as `MI-LINK-HOST` or `FILESTREAM-PAAS`. They point to
+  the rule index in `reference/decision-rules.md`, so a reader can look up the exact rule and challenge it.
 
 ---
 
@@ -92,7 +117,7 @@ The middle column is the question **as the agent actually asks it**.
 | 1 | *"How big is this migration?"* | Single database · A few (2–10) · Large estate (10+) | Large estate ⇒ Azure Migrate discovery first |
 | 2 | *"Where does the source SQL Server run today?"* | On-prem · AWS EC2 · AWS RDS · GCP Compute Engine · GCP Cloud SQL | Managed sources ⇒ MI Link and replication are out |
 | 3 | *"Which SQL Server version is the source?"* | 2008/R2 · 2012 · 2014 · 2016 · 2017/2019 · 2022 · 2025 | MI Link, LRS, native restore, replication, ESU |
-| 4 | *"What outcome do you need now?"* | Move now · Modernize in place (assess first) · Assessment only · Rehost first | Unlocks the Arc in-place path |
+| 4 | *"What outcome do you need now?"* | Move now · Modernize in place (assess first) · Assessment only · Rehost first | Opens the Arc in-place path |
 | 5 | *"What is the main reason to migrate now?"* | End-of-support/ESU · Cost · App modernization · Data-center exit · Analytics/Fabric · Sovereignty | Target bias and the Fabric branch |
 | 6 | *"How much control do you need over the engine and OS?"* | Fully managed PaaS · OS/engine control · Kubernetes on-prem/edge | PaaS vs IaaS vs Kubernetes |
 | 6a | ↳ *"Do you want Microsoft to run the engine on your cluster, or own it end to end?"* *(if Q6 = Kubernetes)* | Managed engine (Arc data controller) · Full DIY container | Arc-enabled SQL MI vs container |
@@ -100,9 +125,9 @@ The middle column is the question **as the agent actually asks it**.
 | 7a | ↳ *"List the ones it uses, separated by commas."* *(free text, after "Let me list them")* | FILESTREAM/FileTable · PolyBase · DTC · Cross-DB · SQL CLR · Linked servers · SQL Agent · Service Broker | Phase A eligibility |
 | 7b | ↳ *"What does PolyBase actually query — files in cloud storage, or an external database like Oracle?"* *(if PolyBase)* | Cloud files only (Blob/ADLS, Parquet/CSV) · External RDBMS connector · S3/Delta/pushdown · Not sure | Cloud files ⇒ SQL MI stays eligible |
 | 7c | ↳ *"Are those distributed transactions only between SQL Servers, or do they span a non-SQL database?"* *(if DTC)* | SQL-to-SQL only · Heterogeneous / third-party RDBMS · Not sure | SQL-to-SQL ⇒ SQL MI stays eligible |
-| 8 | *"How large is the biggest database?"* | &lt; 150 GB · 150 GB – 4 TB · &gt; 4 TB · Not sure | Hyperscale gate, backup caps, seeding |
+| 8 | *"How large is the biggest database?"* | &lt; 150 GB · 150 GB – 4 TB · &gt; 4 TB · &gt; 128 TB · Not sure | Hyperscale ceiling, backup caps, seeding |
 | 9 | *"How much cutover downtime can the business accept?"* | Near-zero (minutes) · Minimal (tens of minutes to hours) · Offline window · Not sure | Method selection, downtime class |
-| 10 | *"What is the network path to Azure, and can MI Link ports 5022 and 11000–11999 be opened in the required directions?"* | Good ExpressRoute · Limited WAN · Multi-TB · 5022 or 11000–11999 blocked · 1433/443 blocked · Not sure | MI Link viability, Data Box seeding |
+| 10 | *"What is the network path to Azure, and can MI Link ports 5022 and 11000–11999 be opened in the required directions?"* | Good ExpressRoute · Ports confirmed open in both directions · Limited WAN · Multi-TB · 5022 or 11000–11999 blocked · 1433/443 blocked · Not sure | MI Link viability, Data Box seeding |
 | 11 | *"Any data residency, sovereign, or edge constraints?"* | Standard · EU data boundary · Government/sovereign · Edge/air-gapped · Not sure | Biases SQL VM, AVS, Arc SQL MI |
 | 12 | *"Anything around the database to bring along?"* | Nothing, confirmed · Let me list them · Not sure | Names the intent before asking for the list |
 | 12a | ↳ *"List them, separated by commas."* *(free text)* | SSIS · SSRS · SSAS · TDE · Many SQL Agent jobs · Windows logins | Blockers and remediations |
@@ -160,17 +185,19 @@ Asked only when it can still change the answer:
 ### Structured inputs
 
 Four values are captured as *typed* data rather than prose, because the rules read them directly and a
-wrong guess silently changes the recommendation:
+wrong guess silently changes the recommendation. The stable fields and option IDs live in
+[`reference/input-contract.md`](https://github.com/fredgis/sql-migration-advisor/blob/main/reference/input-contract.md). That contract keeps `NONE_CONFIRMED`, `UNKNOWN` and `NOT_APPLICABLE` separate, because "there are none" and "nobody checked" lead to different assessments:
 
 | Field | Asked when | Consumed by |
 | --- | --- | --- |
 | `database_count` *(integer)* | more than one database is in scope | MI Link capacity (100 GP/BC, 500 Next-gen GP) and estate discovery — never inferred from a free-text size answer |
 | `migration_batch_size` *(integer)* | the Azure Arc portal migration is used | the Arc wizard per-batch limit — a different limit from MI Link capacity |
 | `arc_extension_version` | the Azure Arc portal migration is used | gates the Arc wizard batch limit; unknown is **not** treated as recent |
-| `evidence` *(4 booleans)* | the user wants a validated rather than provisional recommendation | status and confidence — all four must be true; free text never substitutes |
+| `evidence` *(4 booleans)* | the user reports that an assessment was run | recorded as claims to verify elsewhere; they never raise the status above `provisional` or confidence above `medium` |
 
-The canonical list lives in [`SKILL.md`](https://github.com/fredgis/sql-migration-advisor/blob/main/skills/get-migration-assessment/SKILL.md)
-under *Interview structure*.
+The canonical list lives in [`reference/input-contract.md`](https://github.com/fredgis/sql-migration-advisor/blob/main/reference/input-contract.md).
+The output fields, allowed status vocabulary and nine self-check invariants live in
+[`reference/output-contract.md`](https://github.com/fredgis/sql-migration-advisor/blob/main/reference/output-contract.md).
 
 ---
 
@@ -190,17 +217,17 @@ it is a whole-corpus pass over both the knowledge base and the decision tree. Th
 structured findings — file, locator, current text, correction, source, confidence — so a reviewer can check
 the cited page instead of guessing what was meant. Authentication is Entra ID through **GitHub OIDC**: no
 API key, no stored client secret, just a federated credential scoped to this repository. If the model is
-unavailable, the step is skipped and every deterministic check still runs: an advisory verdict can never,
+unavailable, the step is skipped and every scripted check still runs: an advisory verdict can never,
 on its own, change a version.
 
 ---
 
 ## Why the overhaul matters
 
-Four external audits found accuracy, determinism, traceability and freshness gaps. The response was
-concrete: the knowledge base corrected the hard facts, the decision engine now separates eligibility from
-ranking, recommendations expose uncertainty, and CI now runs consistency plus golden-scenario checks. That
-scrutiny makes the advisor stronger, not weaker.
+External audits found accuracy, traceability and freshness gaps. The response was concrete: the knowledge
+base corrected hard facts, the input contract stops labels drifting away from rules, the output contract
+limits status and confidence, ranking is ordered, and the card cites rule IDs. The result is easier to
+challenge, which is the point.
 
 ### How the rules are kept correct
 
@@ -215,6 +242,8 @@ request**. (It is separate from the weekly knowledge-base check above, which run
   mode — a warning fails the build.
 - **Decisions are tested.** 90 golden scenarios are replayed through the engine and compared field by
   field. Break a rule and the suite fails, naming the scenario.
+- **Twenty gates run.** The suite checks scenario shape, output consistency, contract wiring, the rule index,
+  retired tooling, forbidden regressions and the weekly consistency script.
 - **Honest limit.** Constants are single-sourced, but rule *logic* still exists twice: prose for the agent,
   JavaScript for the tests.
 
@@ -241,7 +270,7 @@ Colour code: green = shipped, amber = planned. HVE Core is green but only partia
 
 The intent is to contribute these building blocks to
 [HVE Core](https://github.com/microsoft/hve-core) — Microsoft's Hypervelocity Engineering library of Copilot
-agents, prompts, coding instructions, and validated skills. HVE Core ships as a VS Code extension and a
+agents, prompts, coding instructions, and reviewed skills. HVE Core ships as a VS Code extension and a
 Copilot CLI plugin, so a skill packaged its way becomes installable by any team in a single step. Integration
 is partial today — the advisor is furthest along; wiring all three in is the work ahead.
 
@@ -265,7 +294,7 @@ Squad-style team.
 
 - **Ship + document the advisor (done).** This repo, its knowledge base, the weekly freshness Action, and the implementer guide.
 - **Package the advisor for HVE Core.** A collection entry that follows HVE Core conventions and installs as a Copilot CLI plugin / VS Code extension.
-- **Design the Assessment skill.** Define its knowledge base, interview, and evidence outputs; reuse the deterministic-rules + freshness pattern.
+- **Design the Assessment skill.** Define its knowledge base, interview, and evidence outputs; reuse the prompt-policy + freshness pattern.
 - **Build the Assessment skill/agent.** Take the advisor's recommendation and produce a sized, blocker-aware plan grounded in the scanned estate.
 - **Design the Migration skill.** Orchestration steps, cutover gates, and validation checks — with explicit human approval at every gate.
 - **Build the Migration skill/agent.** Execute against the assessment output and validate the result.
@@ -281,6 +310,8 @@ proves the pattern works end to end.
 ## Learn more
 
 - [How the skill works](https://github.com/fredgis/sql-migration-advisor/blob/main/howto/how-the-skill-works.md) — the full implementer guide.
-- [`SKILL.md`](https://github.com/fredgis/sql-migration-advisor/blob/main/skills/get-migration-assessment/SKILL.md) — the skill contract and questionnaire.
-- [Decision rules](https://github.com/fredgis/sql-migration-advisor/blob/main/reference/decision-rules.md) — the deterministic engine.
+- [`SKILL.md`](https://github.com/fredgis/sql-migration-advisor/blob/main/skills/get-migration-assessment/SKILL.md) — the `get-migration-assessment` skill contract and questionnaire.
+- [Input contract](https://github.com/fredgis/sql-migration-advisor/blob/main/reference/input-contract.md) — stable option IDs, canonical fields and unknown handling.
+- [Output contract](https://github.com/fredgis/sql-migration-advisor/blob/main/reference/output-contract.md) — status vocabulary and self-check invariants.
+- [Decision rules](https://github.com/fredgis/sql-migration-advisor/blob/main/reference/decision-rules.md) — the rule policy and addressable rule index.
 - [Knowledge base](https://github.com/fredgis/sql-migration-advisor/blob/main/docs/sql-server-to-azure-migration.md) — the verified source of truth.

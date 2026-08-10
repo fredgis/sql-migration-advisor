@@ -15,13 +15,15 @@ It closes with implementation notes for porting the pattern to a Microsoft-owned
 
 ## 1. In one paragraph
 
-`sql-migration-advisor` is a **GitHub Copilot skill**: a small, prompt-driven markdown package
-([`SKILL.md`](../skills/get-migration-assessment/SKILL.md)) with **no build step and no runtime dependencies**. It turns a general
+`sql-migration-advisor` is a **GitHub Copilot skill** named `get-migration-assessment`: a small,
+prompt-driven markdown package ([`skills/get-migration-assessment/SKILL.md`](../skills/get-migration-assessment/SKILL.md))
+with **no build step and no runtime dependencies**. It turns a general
 agent into a focused **SQL Server → Azure migration consultant**. The skill is backed by a verified
 **knowledge base** ([`docs/sql-server-to-azure-migration.md`](../docs/sql-server-to-azure-migration.md))
-that acts as the single source of truth, and by a distilled **decision engine**
-([`reference/decision-rules.md`](../reference/decision-rules.md)) that makes the core recommendation
-deterministic. It produces a preliminary disposition for assessment, not an unsupervised final verdict. A
+that acts as the factual source, by two contracts for input and output
+([`reference/input-contract.md`](../reference/input-contract.md), [`reference/output-contract.md`](../reference/output-contract.md)),
+and by a distilled **decision policy**
+([`reference/decision-rules.md`](../reference/decision-rules.md)) kept under regression test. It produces a preliminary disposition for assessment, not an unsupervised final verdict. A
 gated weekly GitHub Action re-verifies versions, links, news and high-risk claims, then opens a pull request
 only when a substantive change was actually applied.
 
@@ -33,33 +35,46 @@ When a user asks something like *"migrate a SQL Server environment to Azure"* (o
 vers Azure"*), the agent loads the skill and runs this loop:
 
 <p align="center">
-  <img src="./runtime-loop.svg" alt="Runtime loop: the user's migration ask activates SKILL.md, which runs a guided interview grounded in the live knowledge base (decision-rules.md is the offline fallback), scores the answers deterministically with Steps A to D, and produces a recommendation card plus optional follow-ups." width="960">
+  <img src="./runtime-loop.svg" alt="Runtime loop: the user's migration ask activates skills/get-migration-assessment/SKILL.md, which runs a guided interview grounded in the bundled contracts, decision rules and knowledge base, applies Steps A to D, self-checks the draft, and produces a recommendation card plus optional follow-ups." width="960">
 </p>
 
 Step by step:
 
-1. **Trigger.** The agent matches the user's intent against the `description` in the `SKILL.md`
+1. **Trigger.** The agent matches the user's intent against the `description` in
+   [`skills/get-migration-assessment/SKILL.md`](../skills/get-migration-assessment/SKILL.md)
    front matter (keywords like *migrate SQL Server*, *SQL to Azure*, *SQL in a Day*) and activates the skill.
-2. **Load the source of truth.** It fetches the live knowledge base. If the network is unavailable it
-   falls back to the bundled `reference/decision-rules.md`, and *says so* (so the user knows it may lag).
+2. **Load the source of truth.** It reads the bundled input contract, decision rules, output contract and
+   knowledge base. The bundle is the default because the skill now lives below `skills/` and refers back to
+   `../../reference/...`; installing only one `SKILL.md` would leave the vocabulary and rules behind. If the
+   user explicitly asks for the tagged live knowledge base and it cannot be read, the skill says it is using
+   the bundled copy.
 3. **Interview first, recommend second.** It asks Tier 1 triage questions and Tier 2 confirmation
    questions **one at a time** (migration intent, source type, version, downtime tolerance, PolyBase/DTC
-   subtype, size, sovereignty, tier-selection inputs, …). It never guesses the path before asking, and skips
-   branches that don't apply.
+   subtype, size, sovereignty, tier-selection inputs, …). It records the stable IDs from
+   [`reference/input-contract.md`](../reference/input-contract.md), including the difference between
+   `NONE_CONFIRMED`, `UNKNOWN` and `NOT_APPLICABLE`, because "none checked and confirmed" is not the same
+   evidence as "nobody has checked".
 4. **Filter eligibility.** Phase A applies only hard constraints and returns `eligible`,
    `eligible_with_remediation`, `unsupported`, or `unknown_requires_assessment` for each target/method.
-5. **Rank viable paths.** Phase B ranks candidates by refactoring effort, downtime, operational burden,
-   compatibility, resilience, cost, reversibility and sovereignty, then applies tier-selection rules.
-6. **Output the contract.** The agent emits machine-readable JSON, then renders it as Markdown: primary
+   Each eligibility line cites the rule ID, such as `MI-LINK-HOST` or `FILESTREAM-PAAS`, so a reader can
+   challenge the rule in the index at the end of [`reference/decision-rules.md`](../reference/decision-rules.md).
+5. **Rank viable paths.** Phase B applies ten ordered steps. That order matters: cost no longer competes
+   vaguely with resilience, and a tie ends in a provisional shortlist rather than an invented winner.
+6. **Self-check the draft.** Before rendering, the skill re-reads the draft against the 9 invariants in
+   [`reference/output-contract.md`](../reference/output-contract.md): the primary target must be eligible,
+   the method must pass its own gate, hard-gate unknowns must be visible, status must stay `provisional`,
+   and confidence cannot exceed `medium`. If an invariant fails, the skill exposes the inconsistency instead
+   of silently repairing it.
+7. **Output the contract.** The agent emits machine-readable JSON on request, then renders Markdown: primary
    recommendation, best alternative, why other targets were excluded, confidence, `recommendationStatus`
-   (`provisional` or `validated`), assumptions, unknowns, hard blockers, evidence required, downtime class,
+   (`provisional` only), assumptions, unknowns, hard blockers, evidence required, downtime class,
    cost levers and program fit. See [`examples/sample-recommendation.md`](../examples/sample-recommendation.md)
    for a worked run.
-7. **Offer follow-ups.** A per-database table for an estate, a cutover runbook, or a one-slide summary
+8. **Offer follow-ups.** A per-database table for an estate, a cutover runbook, or a one-slide summary
    (handed off to another skill).
 
 <p align="center">
-  <img src="./decision-pipeline.svg" alt="Decision pipeline: a user ask feeds a guided interview, then Phase A filters eligibility against hard constraints, Phase B ranks the survivors, and a provisional recommendation card is produced. The knowledge base grounds Phase A; decision-rules.md is the offline fallback." width="960">
+  <img src="./decision-pipeline.svg" alt="Decision pipeline: a user ask feeds a guided interview, then Phase A filters eligibility against hard constraints, Phase B ranks the survivors, the output contract self-checks the draft, and a provisional recommendation card is produced." width="960">
 </p>
 
 <sub>Runs **per conversation** — there is no schedule. Diagram source: [`decision-pipeline.architecture.json`](./decision-pipeline.architecture.json) · interactive: [`decision-pipeline.html`](./decision-pipeline.html).</sub>
@@ -89,9 +104,9 @@ The middle column is the question **as the agent actually asks it**.
 | 7a | ↳ *"List the ones it uses, separated by commas."* *(free text, only after "Let me list them")* | FILESTREAM / FileTable · PolyBase · DTC / distributed transactions · Cross-DB queries · SQL CLR · Linked servers · SQL Agent jobs · Service Broker | Phase A eligibility |
 | 7b | ↳ *"What does PolyBase actually query — files in Azure/cloud storage, or an external database like Oracle or Teradata?"* *(only if PolyBase)* | Cloud files only (Blob/ADLS Gen2, Parquet/CSV) · External RDBMS connector · S3 / Delta / pushdown required · Not sure | Cloud files ⇒ **SQL MI stays eligible**; external RDBMS ⇒ MI out |
 | 7c | ↳ *"Are those distributed transactions only between SQL Servers, or do they span a non-SQL database?"* *(only if DTC)* | SQL-to-SQL only (MI↔MI or MI↔SQL Server) · Heterogeneous / third-party RDBMS · Not sure | SQL-to-SQL ⇒ **SQL MI stays eligible**; heterogeneous ⇒ MI out |
-| 8 | *"How large is the biggest database?"* | < 150 GB · 150 GB – 4 TB · > 4 TB · Not sure | Hyperscale gate, backup size caps, seed-then-sync |
+| 8 | *"How large is the biggest database?"* | < 150 GB · 150 GB – 4 TB · > 4 TB · > 128 TB · Not sure | Hyperscale ceiling, backup size caps, seed-then-sync |
 | 9 | *"How much cutover downtime can the business accept?"* | Near-zero (minutes) · Minimal (tens of minutes to a couple of hours) · Offline planned window · Not sure | Method selection and downtime class |
-| 10 | *"What is the network path to Azure, and can MI Link ports 5022 and 11000–11999 be opened in the required directions?"* | Good ExpressRoute / high bandwidth · Limited WAN · Very large multi-TB move · 5022 or 11000–11999 blocked · 1433/443 blocked or unknown · Not sure | MI Link viability, Data Box seeding |
+| 10 | *"What is the network path to Azure, and can MI Link ports 5022 and 11000–11999 be opened in the required directions?"* | Good ExpressRoute / high bandwidth · Ports confirmed open in both directions · Limited WAN · Very large multi-TB move · 5022 or 11000–11999 blocked · 1433/443 blocked or unknown · Not sure | MI Link viability, Data Box seeding |
 | 11 | *"Any data residency, sovereign, or edge constraints?"* | Standard commercial · EU data boundary · Government / sovereign · Edge / air-gapped · Not sure | Biases SQL VM, AVS, Arc-enabled SQL MI |
 | 12 | *"Anything around the database to bring along?"* | Nothing, confirmed · Let me list them · Not sure | Names the intent before asking for the list |
 | 12a | ↳ *"List them, separated by commas."* *(free text)* | SSIS packages · SSRS reports · SSAS models · TDE-encrypted DBs · Many SQL Agent jobs · Windows logins | Blockers and remediations |
@@ -158,24 +173,25 @@ directly and a wrong guess silently changes the recommendation:
 | `database_count` *(integer)* | more than one database is in scope | MI Link capacity (100 GP/BC, 500 Next-gen GP) and the estate-discovery branch — never inferred from a free-text size answer |
 | `migration_batch_size` *(integer)* | the Azure Arc portal migration is used | the Arc wizard per-batch limit, which is a different limit from MI Link capacity |
 | `arc_extension_version` *(e.g. `1.1.3348.364`)* | the Azure Arc portal migration is used | gates the Arc wizard batch limit — **unknown is not treated as recent**, it requires assessment |
-| `evidence` *(4 booleans)* | the user wants a **validated** rather than provisional recommendation | `recommendationStatus` and `confidence` — all four must be `true`; free text never substitutes |
+| `evidence` *(4 booleans)* | the user reports that an assessment was run | Recorded as claims to verify elsewhere. They do not raise status or confidence because this skill reads no artefact |
 
-The canonical list lives in [`SKILL.md`](../skills/get-migration-assessment/SKILL.md) under *Interview structure* — treat that as the
-source of truth if the two ever drift.
+The canonical field list lives in [`reference/input-contract.md`](../reference/input-contract.md). It fixes
+20 field names and 30 stable option IDs, so the interview and the rules do not drift when a label is
+translated or reworded.
 
-### Deterministic core, adaptive agent
+### Tested policy, adaptive agent
 
-A common question: *"if it's deterministic, can the agent still adapt to a complex situation?"* Yes —
-there are **two layers**, and only the inner one is rigid:
+A common question: *"if the rules are under test, can the agent still adapt to a complex situation?"* Yes.
+There are two layers:
 
 | Layer | What it does | Behaviour |
 | --- | --- | --- |
-| **Regression-tested core** (`decision-rules.md`, Phase A + Phase B) | The *what*: which paths are eligible, which candidate ranks highest, and which tier to assess. | Rigid **by design** — reproducible, auditable, no invented paths or retired tools. |
+| **Regression-tested policy** (`decision-rules.md`, Phase A + Phase B) | The *what*: which paths are eligible, how surviving candidates are ordered, and which tier to assess. | Constrained by design: no invented paths, no retired tools, and a shortlist when the evidence does not settle the order. |
 | **Adaptive agent layer** (the LLM around the core) | The *how*: run the interview, handle an estate, sequence a plan, resolve contradictions. | Context-aware — pre-fills known answers, runs one recommendation **per profile**, surfaces trade-offs, builds runbooks. |
 
-So the determinism is a **guardrail, not a straitjacket**: it keeps every building block grounded, while
-the agent composes those blocks into a plan as complex as the context demands (multi-profile estates,
-phased modernization, cutover sequencing).
+The tested policy is a guardrail, not a promise of identical wording between sessions. The agent composes
+the grounded blocks into a plan as complex as the context demands, while the output contract keeps the card
+honest about unknowns and confidence.
 
 ---
 
@@ -208,7 +224,7 @@ Why wrap this in a skill instead of just asking a model to "plan a SQL migration
 The repo separates the **prompt logic**, the **knowledge**, and the **freshness automation**:
 
 <p align="center">
-  <img src="./skill-architecture.svg" alt="Architecture of the sql-migration-advisor skill: a Copilot agent loads SKILL.md, which grounds every answer in the knowledge base and falls back to the deterministic decision rules offline, while a weekly GitHub Action re-verifies the knowledge base." width="960">
+  <img src="./skill-architecture.svg" alt="Architecture of the sql-migration-advisor skill: a Copilot agent loads skills/get-migration-assessment/SKILL.md, which grounds every answer in the contracts, knowledge base and decision rules, while a weekly GitHub Action re-verifies the knowledge base." width="960">
 </p>
 
 <sub>Diagram source: [`skill-architecture.architecture.json`](./skill-architecture.architecture.json) · interactive dark/light version with export menu: [`skill-architecture.html`](./skill-architecture.html) (open in a browser).</sub>
@@ -216,18 +232,21 @@ The repo separates the **prompt logic**, the **knowledge**, and the **freshness 
 
 | Path | Purpose |
 | --- | --- |
-| [`SKILL.md`](../skills/get-migration-assessment/SKILL.md) | The skill itself: trigger `description`, core principles, the two-tier interview (triage, then confirmation), the output-card template, and guardrails. |
-| [`reference/decision-rules.md`](../reference/decision-rules.md) | The deterministic engine: Phase A eligibility, Phase B ranking, tier selection and uncertainty handling. Distilled from the knowledge base; used as the **offline fallback**. |
+| [`skills/get-migration-assessment/SKILL.md`](../skills/get-migration-assessment/SKILL.md) | The skill itself: trigger `description`, core principles, the two-tier interview (triage, then confirmation), the output-card template, and guardrails. The skill name is `get-migration-assessment`, because it produces an assessment path rather than deciding for the user. |
+| [`reference/input-contract.md`](../reference/input-contract.md) | The interview contract: canonical fields, stable option IDs, answer states, consumers and unknown behaviour. |
+| [`reference/output-contract.md`](../reference/output-contract.md) | The output contract: status vocabulary, card shape and the 9 pre-render self-check invariants. |
+| [`reference/decision-rules.md`](../reference/decision-rules.md) | The tested policy: Phase A eligibility, the ordered Phase B ranking, tier selection, uncertainty handling and the rule index. Distilled from the knowledge base; bundled with the skill. |
 | [`docs/sql-server-to-azure-migration.md`](../docs/sql-server-to-azure-migration.md) | The **knowledge base** — every target family, method, tool and commercial lever, with Microsoft Learn links. The single source of truth. |
 | [`docs/sql-server-to-azure-migration.pdf`](../docs/sql-server-to-azure-migration.pdf) | The same knowledge base as a branded, partner-ready PDF (regenerated by the pipeline in `tools/pdf/`). |
 | [`examples/sample-recommendation.md`](../examples/sample-recommendation.md) | A worked end-to-end example that calibrates tone and the card format. |
 | [`lab/`](../lab/) | A self-contained hands-on lab (legacy SQL Server 2016 → SQL Server on Azure VM). |
 | `.github/workflows/weekly-kb-check.yml` + `tools/weekly-check/` | The weekly freshness automation and consistency gates (see §5). |
 | [`reference/claims-registry.json`](../reference/claims-registry.json) | High-risk claim hashes and source pointers for drift detection. |
-| [`tests/`](../tests/) | Golden scenarios and deterministic anti-regression checks. |
+| [`tests/`](../tests/) | Golden scenarios and anti-regression checks. The JavaScript engine here is only a test mirror of the prompt policy; it is not executed in production. |
 
-**Source-of-truth precedence:** the live knowledge base wins. `decision-rules.md` is a faithful
-distillation for offline use; if the two ever disagree, the skill prefers the live doc and says so.
+**Source-of-truth precedence:** the bundled contracts, rules and knowledge base ship together and are the
+default. The skill may read the tagged knowledge base when the user asks, but it does not replace the
+contracts with prose from the network.
 
 ---
 
@@ -310,7 +329,7 @@ knowledge-base PRs).
 > **Note for implementers:** the model is a swappable component. Any provider works as long as the step
 > writes the verdict JSON to `response.txt` — point `ai-review.mjs` at a different endpoint, or replace it
 > with a provider-specific call. The step is `continue-on-error` and the script exits 0 on any failure, so a
-> model outage degrades to "no AI verdict": the deterministic checks still run, and no AI-only version bump
+> model outage degrades to "no AI verdict": the scripted checks still run, and no AI-only version bump
 > is ever allowed.
 
 ### Golden test suite
@@ -324,7 +343,14 @@ knowledge-base PRs).
 The repo now includes [`tests/`](../tests/) with golden migration scenarios, consistency checks and
 anti-regression cases. The suite guards the behaviours that were easiest to over-claim: unknowns on
 decision-driving dependencies remain provisional, formerly unreachable branches stay reachable, retired tools
-stay excluded, README/KB/rules versions remain aligned, and the same inputs produce the same output contract.
+stay excluded, README/KB/rules versions remain aligned, and the output contract stays stable.
+
+The gate list currently has 20 entries: `golden-scenarios-json`, `golden-scenarios-schema`,
+`required-scenarios-registry`, `golden-decision-outcomes`, `output-consistency-invariant`,
+`decision-distribution-sanity`, `must-not-recommend-metadata`, `forbidden-patterns`,
+`rules-data-consistency`, `version-consistency`, `golden-rule-presence`, `branch-reachability`,
+`no-silent-defaults`, `engine-guard-checks`, `interview-round-trip`, `cross-cloud-matrix-honoured`,
+`contracts-wired`, `rule-index-consistent`, `retired-tooling-guard`, and `audit-scenario-coverage`.
 
 ### Audit response
 
@@ -347,7 +373,7 @@ turning them into gates rather than notes.
   `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AZURE_AI_ENDPOINT`, `AZURE_AI_DEPLOYMENT` — and, on the app
   registration, the **Cognitive Services OpenAI User** role on the AI resource plus a federated credential
   per trusted subject (`repo:<owner>/<repo>:ref:refs/heads/main` and `repo:<owner>/<repo>:pull_request`).
-  Without them the review step is skipped and every deterministic check still runs.
+  Without them the review step is skipped and every scripted check still runs.
 
 ---
 
@@ -371,10 +397,10 @@ turning them into gates rather than notes.
 
 A checklist to reuse the pattern for another domain (or to adopt this one):
 
-1. **Keep the split**: `SKILL.md` (thin prompt logic) + a knowledge base (source of truth) +
-   `decision-rules.md` (deterministic, offline fallback) + `examples/` (tone calibration).
-2. **Make the knowledge base the single source of truth** and have the skill fetch it live, with the
-   distilled rules as a documented fallback. State the precedence explicitly.
+1. **Keep the split**: `SKILL.md` (thin prompt logic) + input/output contracts + a knowledge base
+   (source of truth) + `decision-rules.md` (tested policy) + `examples/` (tone calibration).
+2. **Make the knowledge base the factual source** and ship the rules and contracts beside the skill. If the
+   skill supports a live fetch, pin it to a release tag and keep the bundled copy as the normal path.
 3. **Encode the guardrails in `SKILL.md`** (retired-tool list, layer separation, preview honesty) so the
    behaviour survives model changes.
 4. **Adopt the freshness automation** (`tools/weekly-check/` + the workflow). Re-point `keywords.json`
@@ -412,13 +438,13 @@ building blocks. The advisor tells you *where* to land and *how*; the next two a
   cutover, post-migration checks), keeping a human in control at every gate.
 
 Each new block inherits the same principles as the advisor: grounded in a verified knowledge base,
-deterministic where it can be, honest about limits, and human-in-the-loop.
+tested where it can be, honest about limits, and human-in-the-loop.
 
 ### Integrating into HVE Core
 
 The intent is to contribute these building blocks to
 [HVE Core](https://github.com/microsoft/hve-core) — Microsoft's **Hypervelocity Engineering** library of
-Copilot agents, prompts, coding instructions, and validated skills. HVE Core already ships as a VS Code
+Copilot agents, prompts, coding instructions, and skills. HVE Core already ships as a VS Code
 extension and a Copilot CLI plugin, so an advisor / assessment / migration skill packaged its way becomes
 installable by any team in a single step, with standards applied automatically.
 
@@ -445,7 +471,7 @@ Squad-style team.
 - **Package the advisor for HVE Core.** A collection entry that follows HVE Core conventions and installs
   as a Copilot CLI plugin / VS Code extension — the first real integration.
 - **Design the Assessment skill.** Define its knowledge base, its interview, and its evidence outputs;
-  reuse the same deterministic-rules + freshness-automation pattern.
+  reuse the same tested-rules + freshness-automation pattern.
 - **Build the Assessment skill/agent.** Take the advisor's recommendation as input and produce a sized,
   blocker-aware migration plan grounded in the scanned estate.
 - **Design the Migration skill.** Orchestration steps, cutover gates, and validation checks — with an
@@ -464,8 +490,10 @@ already proves the pattern works end to end.
 
 ### Related reading
 
-- [`SKILL.md`](../skills/get-migration-assessment/SKILL.md) — the skill contract and the full questionnaire.
-- [`reference/decision-rules.md`](../reference/decision-rules.md) — the deterministic engine.
+- [`skills/get-migration-assessment/SKILL.md`](../skills/get-migration-assessment/SKILL.md) — the skill contract and the full questionnaire.
+- [`reference/input-contract.md`](../reference/input-contract.md) — the canonical input fields, option IDs and answer states.
+- [`reference/output-contract.md`](../reference/output-contract.md) — the card shape, status vocabulary and self-check invariants.
+- [`reference/decision-rules.md`](../reference/decision-rules.md) — the tested policy and rule index.
 - [`examples/sample-recommendation.md`](../examples/sample-recommendation.md) — a worked run.
 - [`docs/sql-server-to-azure-migration.md`](../docs/sql-server-to-azure-migration.md) — the knowledge base.
 

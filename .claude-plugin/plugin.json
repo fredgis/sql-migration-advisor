@@ -1,0 +1,19 @@
+{
+  "name": "sql-migration-advisor",
+  "description": "Interview-driven SQL Server to Azure migration assessment, grounded in a source-backed knowledge base and a versioned rule set.",
+  "version": "2.0.0",
+  "author": {
+    "name": "fredgis"
+  },
+  "homepage": "https://fredgis.github.io/sql-migration-advisor/",
+  "repository": "https://github.com/fredgis/sql-migration-advisor",
+  "license": "MIT",
+  "keywords": [
+    "sql-server",
+    "azure",
+    "migration",
+    "assessment",
+    "azure-sql-managed-instance",
+    "azure-arc"
+  ]
+}

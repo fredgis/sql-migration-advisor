@@ -58,7 +58,7 @@ eligibility table the engine just produced. The full set of invariants, and the 
 
 ### A1. Candidate target eligibility states
 
-Classify each target independently. Only `eligible` and `eligible_with_remediation` survive to Phase B. `unknown_requires_assessment` may be shown as provisional but cannot be the final validated recommendation.
+Classify each target independently. Only `eligible` and `eligible_with_remediation` survive to Phase B. `unknown_requires_assessment` may be carried into the shortlist, flagged, but it can never be the primary recommendation.
 
 | Candidate target | `unsupported` hard blockers | `eligible_with_remediation` examples | Notes |
 | --- | --- | --- | --- |
@@ -307,20 +307,20 @@ For performance-sensitive workloads: capture with **Extended Events**, replay wi
 Every output must include:
 
 ```yaml
-confidence: high|medium|low
+confidence: medium|low
 assumptions: []
 unknowns: []
 hardBlockers: []
 evidenceRequired: []
-recommendationStatus: provisional|validated
+recommendationStatus: provisional
 ```
 
 Decision-driving unknowns are: linked servers/provider targets, SQL Agent job criticality, FILESTREAM/FileTable, DTC participants, PolyBase/external data source types, source platform privileges (sysadmin/AG endpoints), network ports for selected online method, TDE status/cert availability, database size, **cutover downtime tolerance**, tier-driving performance inputs, sovereignty/disconnected constraints, and Fabric preview/Private Link/gateway constraints.
 
 Rules:
-- Unknown on a decision-driving dependency ⇒ `recommendationStatus: provisional`, add `evidenceRequired`, and name the next assessment (Azure Migrate/Arc discovery/SSMS 22 assessment/scripts/Perfmon/DMVs).
-- `confidence = high` only when all hard blockers and tier-driving inputs are known and the chosen method gates are satisfied.
-- `confidence = medium` when only non-blocking remediation details remain.
+- Unknown on a decision-driving dependency ⇒ add `evidenceRequired` and name the next assessment (Azure Migrate/Arc discovery/SSMS 22 assessment/scripts/Perfmon/DMVs).
+- `recommendationStatus` is always `provisional`. There is no other value: the skill reads nothing from the estate, so it can never certify a target.
+- `confidence = medium` is the ceiling. It is reached only when all hard blockers and tier-driving inputs are known and the chosen method gates are satisfied. Nothing above it is available, because a confidence higher than that would have to rest on measured evidence and the interview produces none.
 - `confidence = low` when any candidate is `unknown_requires_assessment` on a decision-driving dependency.
 - Never turn an unknown into a silent safe default.
 - An unknown cutover downtime tolerance yields `businessCutoverDowntime: unknown_requires_assessment`. A downtime class is a promise made to the business, so it is never inferred from a method that was itself selected by defaulting the unanswered question.
