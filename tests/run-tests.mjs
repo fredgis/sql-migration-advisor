@@ -658,6 +658,38 @@ try {
 }
 
 {
+  // The direction nobody was checking. `rule-index-consistent` proves every rule consumes a
+  // documented field; `interview-round-trip` proves the engine and the skill agree. Neither
+  // proves the *interview* speaks the contract, so a real session answered in IDs the contract
+  // had never heard of -- six of ten sampled -- while every gate stayed green.
+  const inputContract = readText(path.join('reference', 'input-contract.md'));
+  const failures = [];
+
+  // Every option ID the interview offers must be defined in the contract.
+  const offered = new Set([...skill.matchAll(/\*\*`([A-Z][A-Z0-9_]{2,})`\*\*/gu)].map(m => m[1]));
+  for (const id of offered) {
+    if (!new RegExp(`\`${id}\``, 'u').test(inputContract)) failures.push(`the interview offers ${id}, which input-contract.md does not define`);
+  }
+
+  // Every canonical field the interview names must be defined too. Fields appear in the
+  // questions as `field_name`, which is how the contract writes them.
+  const RESERVED = new Set(['unknown_requires_assessment', 'none_confirmed', 'not_applicable', 'eligible_with_remediation',
+    'ask_user', 'web_fetch', 'allowed_tools']);
+  const named = new Set([...skill.matchAll(/`([a-z][a-z0-9]*_[a-z0-9_]+)`/gu)].map(m => m[1]).filter(f => !RESERVED.has(f)));
+  for (const field of named) {
+    if (!new RegExp(`\`${field}\``, 'u').test(inputContract)) failures.push(`the interview names field '${field}', which input-contract.md does not define`);
+  }
+
+  // The three questions that separate "none" from "not checked" must keep all three answers.
+  for (const intent of ['LIST_FEATURES', 'LIST_SERVICES', 'LIST_TIER_DRIVERS']) {
+    if (!offered.has(intent)) failures.push(`${intent} is no longer offered, so a list question can collapse "none" into "not checked" again`);
+  }
+
+  add('interview-conforms-to-contract', failures.length === 0,
+    failures.length ? failures : [`${offered.size} option IDs and ${named.size} field names offered by the interview are all defined in the input contract.`]);
+}
+
+{
   // A version manifest that nobody updates is worse than none: it tells every user they are current
   // while the repository moves on. This gate is the only thing standing between that and a lie.
   const failures = [];
@@ -749,7 +781,10 @@ try {
     // Every rule must say what it does when an input is unknown, and it must not be a pass.
     const u = unknown.trim();
     if (!u || u === '—') failures.push(`${id} does not define its unknown behaviour`);
-    if (/\beligible\b(?!_)/i.test(u) || /\bpass(es|ed)?\b/i.test(u)) failures.push(`${id} treats an unknown as a pass: "${u}"`);
+    // A negated mention is the opposite of a pass, and reading it as one is the same substring
+    // mistake that once made "no private link required" fire the Private Link blocker.
+    const negated = /\b(cannot|never|not|refused|no)\b/i.test(u);
+    if (!negated && (/\beligible\b(?!_)/i.test(u) || /\bpass(es|ed)?\b/i.test(u))) failures.push(`${id} treats an unknown as a pass: "${u}"`);
   }
 
   // The ordered ranking replaced an unordered criteria table. Ties must not invent a winner.

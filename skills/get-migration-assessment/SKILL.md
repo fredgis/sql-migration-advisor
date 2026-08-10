@@ -79,10 +79,10 @@ Ask one at a time. Show the human label, record the **stable ID**. The rules mat
    - Decides Arc-enabled SQL MI vs SQL Server container.
 
 7. **Feature dependencies** — “Do you know which SQL Server features the workload uses: FILESTREAM/FileTable, PolyBase, DTC, cross-DB queries, SQL CLR, linked servers, SQL Agent jobs, Service Broker?”
-   - Single-select: `None of them, confirmed` · `Let me list them` · `Not checked yet`
-   - `None of them` records `None` and clears the PaaS feature blockers. `Not checked yet` records `Not sure` and holds SQL MI and SQL DB at `unknown_requires_assessment` until a dependency discovery runs. Only `Let me list them` opens **7a**.
+   - Single-select: `None of them, confirmed` → **`NONE_CONFIRMED`** · `Let me list them` → **`LIST_FEATURES`** · `Not checked yet` → `Not sure`
+   - `NONE_CONFIRMED` records `None` and clears the PaaS feature blockers. `Not checked yet` records `Not sure` and holds SQL MI and SQL DB at `unknown_requires_assessment` until a dependency discovery runs. Only `LIST_FEATURES` opens **7a**.
 
-7a. **Which dependencies** (free text, only after `Let me list them`) — “List the ones it uses, separated by commas: FILESTREAM/FileTable, PolyBase, DTC, cross-DB queries, SQL CLR, linked servers, SQL Agent jobs, Service Broker.”
+7a. **Which dependencies** (free text, only after `LIST_FEATURES`) — “List the ones it uses, separated by commas: FILESTREAM/FileTable, PolyBase, DTC, cross-DB queries, SQL CLR, linked servers, SQL Agent jobs, Service Broker.”
    - Normalise the answer into `feature_dependencies`. If nothing in it matches a known dependency, record `Not sure` rather than `None`.
    - If PolyBase: ask **7b**. If DTC: ask **7c**. If CLR is listed or unknown and MI/SQL DB remain candidates, ask Tier 2 CLR permission set.
 
@@ -93,28 +93,36 @@ Ask one at a time. Show the human label, record the **stable ID**. The rules mat
    - `SQL-to-SQL only (MI↔MI or MI↔SQL Server)` · `Heterogeneous / third-party RDBMS` · `Not sure`
 
 8. **Largest DB size** — “How large is the biggest database?”
-   - `< 150 GB` · `150 GB – 4 TB` · `> 4 TB` · `> 128 TB` · `Not sure`
-   - `> 128 TB` is above the Hyperscale ceiling: no Azure SQL target holds it as a single database, so it forces sharding or SQL Server on Azure VM. Without this option the rule could never fire.
+   - **`UNDER_150_GB`** `< 150 GB` · **`FROM_150_GB_TO_4_TB`** `150 GB – 4 TB` · **`FROM_4_TB_TO_128_TB`** `> 4 TB – 128 TB` · **`OVER_128_TB`** `> 128 TB` · `Not sure`
+   - The classes do not overlap. Until v2.1 the question offered both `> 4 TB` and `> 128 TB`, so a 200 TB database matched two answers and the reader picked which one it meant.
+   - `OVER_128_TB` is above the Hyperscale ceiling: no Azure SQL target holds it as a single database, so it forces sharding or SQL Server on Azure VM. Without this option the rule could never fire.
 
 9. **Downtime tolerance** — “How much cutover downtime can the business accept?”
-   - `Near-zero (minutes)` · `Minimal (tens of minutes to a couple of hours)` · `Offline planned window` · `Not sure`
+   - **`NEAR_ZERO`** `Near-zero (minutes)` · **`MINIMAL`** `Minimal (tens of minutes to a couple of hours)` · **`OFFLINE`** `Offline planned window` · `Not sure`
 
-10. **Network path and ports** — “What is the network path to Azure, and can MI Link ports 5022 and 11000–11999 be opened in the required directions?”
-    - `Good ExpressRoute/high bandwidth` · `Ports confirmed open in both directions` · `Limited WAN` · `Very large multi-TB move` · `5022 or 11000–11999 blocked` · `1433/443 blocked or unknown` · `Not sure`
-    - `Ports confirmed open in both directions` (5022 and 11000–11999) is the only answer that lets MI Link be **confirmed**. Without it a user could declare them blocked but never declare them open, so MI Link could only ever be un-refuted.
+10. **Bandwidth** — “What is the network path to Azure?”
+    - **`GOOD_BANDWIDTH`** `Good ExpressRoute / high bandwidth` · **`LIMITED_WAN`** `Limited WAN` · **`VERY_LARGE_MULTI_TB`** `Very large multi-TB move` · `Not sure`
+
+10a. **MI Link ports** — ask only while MI Link is still a candidate: “Can ports 5022 and 11000–11999 be opened in both directions?”
+    - **`PORTS_CONFIRMED_OPEN`** `Confirmed open in both directions` · **`PORTS_BLOCKED`** `5022 or 11000–11999 blocked` · `Not sure`
+    - `PORTS_CONFIRMED_OPEN` is the only answer that lets MI Link be **confirmed**. Without it a user could declare them blocked but never declare them open, so MI Link could only ever be un-refuted.
+
+10b. **Blob reachability** — ask whenever a backup, BACPAC or Data Box path is a candidate: “Is HTTPS upload to Azure Blob confirmed and tested?”
+    - **`BLOB_HTTPS_CONFIRMED`** `Confirmed, upload tested` · **`BLOB_HTTPS_BLOCKED`** `Blocked by proxy, firewall or policy` · **`BLOB_HTTPS_UNKNOWN`** `Not verified`
+    - One question used to mix bandwidth, MI Link ports (5022 and 11000–11999) and Blob access. They gate different things, and a session once reported a backup/restore gate as `passed` while the Blob path was never verified. `BACKUP-BLOB-PATH` consumes this field.
 
 11. **Compliance / sovereignty** — “Any data residency, sovereign, or edge constraints?”
-    - `Standard commercial` · `EU data boundary` · `Government / sovereign` · `Edge / air-gapped` · `Not sure`
+    - **`STANDARD_COMMERCIAL`** `Standard commercial` · **`EU_DATA_BOUNDARY`** `EU data boundary` · **`GOVERNMENT_SOVEREIGN`** `Government / sovereign` · **`EDGE_AIR_GAPPED`** `Edge / air-gapped` · `Not sure`
 
 12. **Ancillary services and security** — “Anything around the database to bring along?”
-    - Single-select: `Nothing, confirmed` · `Let me list them` · `Not sure`
-    - Only `Let me list them` opens **12a**.
+    - Single-select: `Nothing, confirmed` → **`NONE_CONFIRMED`** · `Let me list them` → **`LIST_SERVICES`** · `Not sure`
+    - Only `LIST_SERVICES` opens **12a**.
 
 12a. **Which ancillary services** (free text) — “List them, separated by commas: SSIS packages, SSRS reports, SSAS models, TDE-encrypted DBs, many SQL Agent jobs, Windows logins.”
 
 13. **Tier-selection inputs** — ask compactly when SQL MI or SQL DB remains eligible:
-    - “Any tier drivers?” Single-select: `No particular driver, confirmed` · `Let me list them` · `Not sure`
-    - Only `Let me list them` opens **13a**.
+    - “Any tier drivers?” Single-select: `No particular driver, confirmed` → **`NONE_CONFIRMED`** · `Let me list them` → **`LIST_TIER_DRIVERS`** · `Not sure`
+    - Only `LIST_TIER_DRIVERS` opens **13a**.
     - `Not sure` holds the tier at `unknown_requires_assessment`; it must never fall back to General Purpose.
 
 13a. **Which tier drivers** (free text) — “List them, separated by commas: low-latency writes, high IOPS/log throughput, strict SLA / zone redundancy, read-scale replicas, intermittent usage, many tenants / variable demand.”
@@ -126,17 +134,20 @@ Ask only questions that can change candidates still in play, or that the archite
 
 | Confirmation input | Ask when | Consumed by |
 | --- | --- | --- |
-| Source OS and edition (`source_os`, `source_edition`) | **MI Link is in play**, or VM/AVS/Arc/container or licensing/ESU are | MI Link requires Enterprise, Standard or Developer edition and a host OS supported by that SQL Server version: SQL Server 2016 is Windows Server only, Linux is supported from SQL Server 2017 onwards, and Windows hosts must be Windows Server 2012 or later. Also drives compatibility, HA/DR support, AHB/ESU and patching responsibility |
+| Source OS (`source_os`): **`WINDOWS_SERVER_2012_OR_LATER`** · **`WINDOWS_SERVER_BELOW_2012`** · **`WINDOWS_CLIENT`** · **`LINUX`** | **MI Link is in play**, or VM/AVS/Arc/container or licensing/ESU are | MI Link requires a host OS supported by that SQL Server version: SQL Server 2016 is Windows Server only, Linux is supported from SQL Server 2017 onwards, and Windows hosts must be Windows Server 2012 or later. Windows client editions cannot host the availability groups the link depends on |
+| Source edition (`source_edition`): **`ENTERPRISE`** · **`STANDARD`** · **`DEVELOPER`** · **`EXPRESS`** · **`WEB`** | Same as above | MI Link requires Enterprise, Standard or Developer. Also drives compatibility, HA/DR support, AHB/ESU and patching responsibility |
 | Compatibility level | SQL DB, Fabric SQL DB, or modernization candidate | refactoring effort and compatibility scoring |
 | Current HA/DR topology: FCI, AG, log shipping, none | near-zero/minimal downtime or VM/AVS/MI Link in play | method feasibility, rollback, resilience |
-| RPO and RTO separately | any production migration | method ranking and DR design |
+| `rpo` and `rto`, separately and in the customer's own units | any production migration | method ranking and DR design. Never inferred from the chosen method |
 | Peak log generation / change rate | MI Link, LRS, replication, log shipping, Data Box seed | catch-up feasibility and downtime risk |
-| CPU, memory, IOPS, and latency peaks | any PaaS target or tier choice | sizing and tier-selection rules |
-| Authentication: Windows, Entra ID, SQL | SQL DB/MI or cross-domain source | login remediation, AD/Entra dependencies |
-| SQL CLR permission set: SAFE, EXTERNAL_ACCESS, UNSAFE | CLR present/unknown and PaaS remains possible | eligibility/remediation |
+| `performance`: CPU, memory, IOPS, latency peaks | any PaaS target or tier choice | sizing and tier-selection rules |
+| Authentication (`authentication`): **`SQL_LOGINS_ONLY`** · **`WINDOWS_LOGINS`** · **`ENTRA_ID`** · **`MIXED_AUTH`** | SQL DB/MI or cross-domain source | login remediation, AD/Entra dependencies |
+| CLR permission set (`clr_permission_set`): **`CLR_SAFE`** · **`CLR_EXTERNAL_ACCESS`** · **`CLR_UNSAFE`** | CLR present or unknown and PaaS remains possible | `CLR-PERMISSION`. **`CLR_SAFE` is not a clearance**: under `clr strict security` the engine treats SAFE and EXTERNAL_ACCESS as UNSAFE unless signed or hash-trusted |
+| TDE status (`tde_status`): **`TDE_ENABLED`** · **`TDE_NOT_ENABLED`** | a backup-based method is a candidate | the server certificate must exist in the target before a restore |
+| Source permissions (`source_permissions`): **`SYSADMIN_AVAILABLE`** · **`LIMITED_RIGHTS`** | an orchestrated method or the SSMS 22 Migration Component is recommended | tooling prerequisites and AG endpoints. SSMS 22 requires `sysadmin` on the source; say so when recommending it |
 | Network, DNS, Active Directory dependencies | MI Link, AG/DAG, linked servers, Windows auth, VM/AVS | connectivity, identity, failover feasibility |
 | Backup retention and restore requirements | native restore/LRS/SQL DB tiers | operational burden and compliance |
-| Target region and actual feature availability | any Azure target | regional eligibility and sovereignty |
+| `target_region` and its actual feature availability | any Azure target | regional eligibility and sovereignty |
 | DR architecture and rollback plan | any production cutover | reversibility and resilience scoring |
 | Software Assurance / AHB entitlement | SQL DB/MI/VM cost comparison | cost lever eligibility |
 | Maintenance/patching restrictions | VM/AVS/container vs managed PaaS | operational burden and target ranking |

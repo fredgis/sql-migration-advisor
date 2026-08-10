@@ -543,7 +543,55 @@ const OPTION_IDS = {
   OS_CONTROL: 'need OS / file-system / engine control',
   KUBERNETES: 'kubernetes on-prem/edge/multicloud',
   ARC_MANAGED_ENGINE: 'managed engine via Arc data controller',
-  DIY_CONTAINER: 'full DIY container'
+  DIY_CONTAINER: 'full DIY container',
+  // v2.1: the enums below were prose in the interview and IDs nowhere, so a session answered
+  // in a vocabulary neither this mirror nor the contract recognised. Each expands to the exact
+  // wording the rules already match on, so adding an ID changes no decision.
+  UNDER_150_GB: '< 150 GB',
+  FROM_150_GB_TO_4_TB: '150 GB - 4 TB',
+  FROM_4_TB_TO_128_TB: '> 4 TB up to 128 TB',
+  OVER_128_TB: '> 128 TB',
+  NEAR_ZERO: 'near-zero',
+  MINIMAL: 'minimal',
+  OFFLINE: 'offline',
+  GOOD_BANDWIDTH: 'good ExpressRoute / high bandwidth',
+  LIMITED_WAN: 'limited WAN',
+  VERY_LARGE_MULTI_TB: 'very large multi-TB move',
+  PORTS_CONFIRMED_OPEN: 'ports confirmed open in both directions 5022 and 11000-11999',
+  PORTS_BLOCKED: '5022 or 11000-11999 blocked',
+  BLOB_HTTPS_CONFIRMED: 'HTTPS to Azure Blob confirmed',
+  BLOB_HTTPS_BLOCKED: 'HTTPS to Azure Blob blocked',
+  BLOB_HTTPS_UNKNOWN: 'HTTPS to Azure Blob not verified',
+  STANDARD_COMMERCIAL: 'standard commercial',
+  EU_DATA_BOUNDARY: 'EU data boundary',
+  GOVERNMENT_SOVEREIGN: 'government / sovereign cloud',
+  EDGE_AIR_GAPPED: 'edge / air-gapped / disconnected',
+  LIST_FEATURES: 'let me list the feature dependencies',
+  LIST_SERVICES: 'let me list the ancillary services',
+  LIST_TIER_DRIVERS: 'let me list the tier drivers',
+  // "None, confirmed" is the answer that clears a blocker, so it has to be a first-class value
+  // rather than an empty field. Reading blank as "none" is the defect that shipped in v1.15.
+  NONE_CONFIRMED: 'None',
+  WINDOWS_SERVER_2012_OR_LATER: 'Windows Server 2012 or later',
+  WINDOWS_SERVER_BELOW_2012: 'Windows Server below 2012',
+  WINDOWS_CLIENT: 'Windows 10/11 client',
+  LINUX: 'Linux',
+  ENTERPRISE: 'Enterprise edition',
+  STANDARD: 'Standard edition',
+  DEVELOPER: 'Developer edition',
+  EXPRESS: 'Express edition',
+  WEB: 'Web edition',
+  TDE_ENABLED: 'TDE enabled',
+  TDE_NOT_ENABLED: 'TDE not enabled',
+  CLR_SAFE: 'CLR SAFE permission set',
+  CLR_EXTERNAL_ACCESS: 'CLR EXTERNAL_ACCESS permission set',
+  CLR_UNSAFE: 'CLR UNSAFE permission set',
+  SYSADMIN_AVAILABLE: 'sysadmin available on the source',
+  LIMITED_RIGHTS: 'limited rights on the source',
+  SQL_LOGINS_ONLY: 'SQL logins only',
+  WINDOWS_LOGINS: 'Windows / AD logins',
+  ENTRA_ID: 'Microsoft Entra ID',
+  MIXED_AUTH: 'mixed authentication'
 };
 // Displayed labels that do not contain the phrasing the rules match on. A label the rules
 // already recognise needs no entry here.
@@ -574,9 +622,17 @@ function expandOption(value) {
 }
 function normalizeInputs(inputs) {
   const out = { ...inputs };
-  for (const key of ['scope', 'source_location', 'source_version', 'intent', 'driver', 'management_model', 'kubernetes_model', 'feature_dependencies']) {
+  for (const key of ['scope', 'source_location', 'source_version', 'intent', 'driver', 'management_model', 'kubernetes_model', 'feature_dependencies',
+    'size', 'downtime', 'compliance', 'network_bandwidth', 'mi_link_ports', 'blob_https_reachability',
+    'source_os', 'source_edition', 'tde_status', 'clr_permission_set', 'source_permissions', 'authentication']) {
     if (key in out) out[key] = expandOption(out[key]);
   }
+  // v2.1 split one network question into bandwidth, MI Link ports and Blob reachability, because a
+  // single answer could satisfy one gate while leaving another unverified. The 90 scenarios written
+  // before the split still send network_ports, so the composite is read as the union of the parts.
+  const composite = [out.network_ports, out.network_bandwidth, out.mi_link_ports, out.blob_https_reachability]
+    .filter(v => v !== undefined && v !== null && String(v).length > 0).join(' · ');
+  if (composite) out.network_ports = composite;
   // Scope is a real input: a large estate goes to discovery, not to a target. It was displayed,
   // never declared and never consumed, so the answer was silently discarded.
   if (!out.size && /large estate/i.test(String(out.scope ?? ''))) out.size = 'estate scale / business case / dependency map';

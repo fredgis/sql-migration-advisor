@@ -388,7 +388,8 @@ The normative wording stays in the sections above. This index is the address boo
 | `MI-LINK-SOURCE` | hard method gate | `source_location` | Method `unknown_requires_assessment` | A4, B3 |
 | `MI-LINK-VERSION` | hard method gate | `source_version` | Method `unknown_requires_assessment` | B3 |
 | `MI-LINK-HOST` | hard method gate | `source_os`, `source_edition`, `source_version` | **Method refused**, fail-closed | A0, B3 |
-| `MI-LINK-PORTS` | hard method gate | `network_ports` | Method `unknown_requires_assessment` | B3 |
+| `MI-LINK-PORTS` | hard method gate | `mi_link_ports` | Method `unknown_requires_assessment` | B3 |
+| `BACKUP-BLOB-PATH` | hard method gate | `blob_https_reachability` | **Gate cannot report `passed`**; `unknown_requires_assessment` | B3 |
 | `MI-LINK-CAPACITY` | hard method gate | `database_count`, tier | Capacity `unknown_requires_assessment` | B3 |
 | `LRS-VERSION` | hard method gate | `source_version` | Method `unknown_requires_assessment` | B3 |
 | `LRS-WINDOW` | hard method gate | migration duration | Method `unknown_requires_assessment` | B3 |
