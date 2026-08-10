@@ -218,7 +218,7 @@ Mermaid decision diagrams. The `SKILL.md` mirrors its AI Migration Agent I/O con
 ## The knowledge base as a PDF
 
 The same knowledge base ships as a polished, branded PDF —
-[`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (23 pages,
+[`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (24 pages,
 v1.13, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
