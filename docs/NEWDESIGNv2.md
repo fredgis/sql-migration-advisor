@@ -318,8 +318,8 @@ Every lot below is complete unless marked otherwise. Commits are on `main`.
 - [x] E2 `howto/how-the-skill-works.md`
 - [x] E3 `blume/docs/index.mdx` — builds clean
 - [x] E5 `CONTRIBUTING.md`, `tests/README.md`
-- [ ] E4 `docs/…developer-pitch.md`, 789 lines — **deferred**, see §11
-- [ ] E6 the three diagram triples — deferred with E4
+- [x] E4 `docs/…developer-pitch.md` — a correction pass, not the rewrite it looked like: ~20 lines of 789 were false. §7 taught the removed `validated` promotion, four uses of "deterministic" including the strongest form of the claim, `18 gates`, the pre-move paths. §3 gains the contracts and §5 the ordered ranking, rule IDs and self-check
+- [ ] E6 the three diagram triples — deferred, cosmetic; regenerate only if the pitch diagrams change materially
 
 ### Unplanned, and necessary
 
@@ -347,7 +347,9 @@ This is the audit's own charge appearing inside the response to it: a claim was 
 
 **Installation was broken by the move, and only testing it revealed that.** `SKILL.md` mixed `reference/…` and `../../reference/…`. The installed copy placed `reference/` beside `SKILL.md`, so `../../reference/` pointed outside the skill folder and neither contract was reachable. The layout `skills/<name>/SKILL.md` beside a root `reference/` is the Copilot CLI plugin convention, so the repository now ships `.claude-plugin/plugin.json`, and `copilot skill list --plugin-dir .` was used to confirm the skill is discovered rather than assumed to be.
 
-**E4 and E6 deferred.** The developer pitch is 789 lines describing a runtime that v2 changed underneath it; a careful rewrite is a piece of work in its own right, and a half-corrected 789-line document is worse than one clearly marked as trailing. The diagrams depend on it.
+**E4 was deferred, then done, and the deferral was the wrong call.** It was postponed on the assumption that 789 lines describing a runtime v2 had changed underneath it needed a rewrite. Measuring instead of assuming showed roughly twenty false lines. The worst taught the `validated` promotion v1.18 had removed, and four used "deterministic" — one in its strongest form, *same inputs, same versions, same result*, which is simply not true of a prompt-driven skill. A public document contradicting the release it documents was never worth the deferral.
+
+**E6 remains open and is cosmetic.** The three diagram triples change only if the pitch diagrams change materially, which they did not.
 
 ---
 
@@ -357,7 +359,7 @@ This is the audit's own charge appearing inside the response to it: a claim was 
 - [x] Decide whether the developer pitch is deferred until after v2.0.0 — deferred
 - [x] Go for step 1
 - [x] Release `v2.0.0`, then dispatch the weekly check and confirm four green jobs — **4/4 green**
-- [ ] E4 developer pitch and E6 diagrams, deferred from lot E
+- [x] E4 developer pitch — done after the release; **E6 diagrams** remain, and are cosmetic
 - [ ] Lot F, when there is appetite to measure
 
 ### Found by using v2.0.0, awaiting a decision
