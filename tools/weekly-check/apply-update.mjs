@@ -14,6 +14,8 @@ const ROOT = path.resolve(HERE, '..', '..');
 const DOC = path.join(ROOT, 'docs', 'sql-server-to-azure-migration.md');
 const RULES = path.join(ROOT, 'reference', 'decision-rules.md');
 const README = path.join(ROOT, 'README.md');
+const SKILL = path.join(ROOT, 'skills', 'get-migration-assessment', 'SKILL.md');
+const MANIFEST = path.join(ROOT, 'version.json');
 const REL_DOC = 'docs/sql-server-to-azure-migration.md';
 
 function arg(name, def = '') {
@@ -86,6 +88,8 @@ function updateRulesStamp(text, version = null) {
 let newVer = oldVer;
 let rulesSynced = false;
 let readmeSynced = false;
+let skillSynced = false;
+let manifestSynced = false;
 
 if (HOUSEKEEPING) {
   const before = md;
@@ -140,8 +144,26 @@ if (HOUSEKEEPING) {
     rulesSynced = next !== rl;
     if (!DRY && rulesSynced) fs.writeFileSync(RULES, next);
   } catch (e) { console.error(`decision-rules sync skipped: ${e.message}`); }
+  // The skill states the coordinated line, and version.json advertises it to installed copies.
+  // Neither was synced here, so a weekly bump would have left the skill announcing the old line
+  // and every installed copy believing it was current.
+  try {
+    const sk = read(SKILL);
+    const next = sk.replace(/(knowledge-base line:\s*\*\*)v\d+\.\d+(\*\*)/, `$1${newVer}$2`);
+    skillSynced = next !== sk;
+    if (!DRY && skillSynced) fs.writeFileSync(SKILL, next);
+  } catch (e) { console.error(`SKILL.md sync skipped: ${e.message}`); }
+  try {
+    const manifest = JSON.parse(read(MANIFEST));
+    manifest.knowledgeBase = newVer;
+    manifest.latest = `${newVer}.0`;
+    manifest.released = ISO;
+    manifestSynced = true;
+    if (!DRY) fs.writeFileSync(MANIFEST, `${JSON.stringify(manifest, null, 2)}\n`);
+  } catch (e) { console.error(`version.json sync skipped: ${e.message}`); }
   if (!DRY) fs.writeFileSync(DOC, md);
-  console.log(`${DRY ? '[dry] ' : ''}${oldVer} -> ${newVer} (${MONTH_YEAR}); substantive content diff verified; changelog row added (${ISO}); README synced=${readmeSynced}; decision-rules stamp synced=${rulesSynced}.`);
+  console.log(`${DRY ? '[dry] ' : ''}${oldVer} -> ${newVer} (${MONTH_YEAR}); substantive content diff verified; changelog row added (${ISO}); README synced=${readmeSynced}; decision-rules stamp synced=${rulesSynced}; SKILL synced=${skillSynced}; version.json synced=${manifestSynced}.`);
+  if (manifestSynced) console.log(`version.json now advertises ${newVer}.0 — cut that release, or installed copies will point at a tag that does not exist.`);
 }
 
 if (process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, `new_version=${newVer}\nmode=${HOUSEKEEPING ? 'housekeeping' : 'substantive'}\n`);

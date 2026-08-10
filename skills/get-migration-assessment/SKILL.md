@@ -382,8 +382,8 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
     "evidenceRequired": [],
     "evidence": []
   },
-  "knowledgeBase": { "version": "v2.0", "commit": "…", "verifiedAt": "…" },
-  "engineVersion": "v2.0"
+  "knowledgeBase": { "version": "v2.1", "commit": "…", "verifiedAt": "…" },
+  "engineVersion": "v2.1"
 }
 ```
 
@@ -504,7 +504,7 @@ Asks the remaining triage questions one at a time (source location, migration in
 
 > **Preliminary recommendation — 40-database OLTP estate**
 > **Azure SQL Managed Instance** via **MI Link** · status **provisional** · confidence **medium**
-> KB **v2.0** · commit **n/a** · fetched **n/a**
+> KB **v2.1** · commit **n/a** · fetched **n/a**
 >
 > SQL Agent and linked-server dependencies point at instance-scoped PaaS rather than a database-scoped target, and the downtime tolerance is met by an online method.
 >

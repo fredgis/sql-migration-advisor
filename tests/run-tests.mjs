@@ -703,17 +703,23 @@ try {
   // Counting it here is cheaper than remembering. Count distinct names, not add() calls: one gate
   // is registered twice, in a try and its catch, and only ever runs once.
   const gateCount = new Set([...readText(path.join('tests', 'run-tests.mjs')).matchAll(/^\s*add\('([a-z0-9-]+)'/gmu)].map(m => m[1])).size;
-  for (const doc of ['README.md', path.join('CONTRIBUTING.md'), path.join('howto', 'how-the-skill-works.md'), path.join('blume', 'docs', 'index.mdx'), path.join('docs', 'sql-migration-advisor-developer-pitch.md')]) {
+  const scenarioCount = scenarios.length;
+  const QUOTED = ['README.md', 'CONTRIBUTING.md', path.join('howto', 'how-the-skill-works.md'), path.join('blume', 'docs', 'index.mdx'), path.join('docs', 'sql-migration-advisor-developer-pitch.md'), path.join('tests', 'README.md')];
+  for (const doc of QUOTED) {
     const text = readText(doc);
-    for (const m of text.matchAll(/(\d+) gates/giu)) {
-      const line = text.slice(text.lastIndexOf('\n', m.index) + 1, text.indexOf('\n', m.index));
-      if (/^\| v[0-9]/u.test(line)) continue;
-      if (Number(m[1]) !== gateCount) failures.push(`${doc} claims ${m[1]} gates; the suite defines ${gateCount}`);
-    }
+    const check = (re, actual, what) => {
+      for (const m of text.matchAll(re)) {
+        const line = text.slice(text.lastIndexOf('\n', m.index) + 1, text.indexOf('\n', m.index));
+        if (/^\| v[0-9]/u.test(line)) continue; // changelog rows record what was true then
+        if (Number(m[1]) !== actual) failures.push(`${doc} claims ${m[1]} ${what}; there are ${actual}`);
+      }
+    };
+    check(/(\d+) gates/giu, gateCount, 'gates');
+    check(/(\d+) (?:golden )?scenarios/giu, scenarioCount, 'scenarios');
   }
 
   add('interview-conforms-to-contract', failures.length === 0,
-    failures.length ? failures : [`${offered.size} option IDs and ${named.size} field names offered by the interview are defined in the input contract, and ${invariantCount} invariants and ${gateCount} gates are quoted consistently.`]);
+    failures.length ? failures : [`${offered.size} option IDs and ${named.size} field names offered by the interview are defined in the input contract, and ${invariantCount} invariants, ${gateCount} gates and ${scenarioCount} scenarios are quoted consistently.`]);
 }
 
 {
@@ -745,6 +751,12 @@ try {
     if (!/Update with: copilot plugin update/u.test(skill)) {
       failures.push('SKILL.md states no update command for the user to run');
     }
+    // The weekly check bumps the knowledge base. If it does not also stamp the manifest and the
+    // skill's coordinated line, the next automated bump leaves every installed copy believing it
+    // is current, which is the one failure mode a version check must not have.
+    const applyUpdate = readText(path.join('tools', 'weekly-check', 'apply-update.mjs'));
+    if (!/version\.json/u.test(applyUpdate)) failures.push('apply-update.mjs does not stamp version.json, so an automated bump would leave installed copies believing they are current');
+    if (!/knowledge-base line/u.test(applyUpdate)) failures.push('apply-update.mjs does not stamp the coordinated line in SKILL.md');
   }
 
   add('version-manifest-current', failures.length === 0,
