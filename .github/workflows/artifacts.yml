@@ -140,6 +140,14 @@ jobs:
         with:
           install-dependencies: true
 
+      # The version claim inside poster.html is prose, and --fix-prose rewrites it. Running that
+      # after the poster was rendered left the PNG older than the very file it is built from, so
+      # the job rebuilt an artifact and failed it in the same run. The prose pass therefore comes
+      # first: the sources are corrected, then the binaries are rendered from them.
+      - name: Refresh prose that the artifacts are built from
+        if: steps.detect.outputs.stale == 'true'
+        run: node tools/artifacts/check-artifacts.mjs --fix-prose || true
+
       - name: Regenerate the PDF and its preview
         if: steps.detect.outputs.stale == 'true'
         continue-on-error: true
@@ -158,6 +166,8 @@ jobs:
           CHROME: ${{ steps.chrome.outputs.chrome-path }}
         run: node tools/diagram/build.mjs poster radial hero social
 
+      # A second pass, for prose that quotes the rebuilt binaries rather than feeding them, such as
+      # the README. It must be a no-op on poster.html; if it is not, the verification below fails.
       - name: Refresh prose that quotes the artifacts
         if: steps.detect.outputs.stale == 'true'
         run: node tools/artifacts/check-artifacts.mjs --fix-prose || true
