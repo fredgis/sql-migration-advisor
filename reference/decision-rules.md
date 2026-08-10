@@ -137,20 +137,28 @@ MI Link prerequisites: SQL Server 2016+, Enterprise / Standard / Developer editi
 
 ### B1. Ranking criteria for surviving targets
 
-Score/rank only candidates whose Phase A state is `eligible` or `eligible_with_remediation`. Use named criteria; do not reintroduce hard blockers here.
+Score/rank only candidates whose Phase A state is `eligible` or `eligible_with_remediation`. Do not reintroduce hard blockers here.
 
-| Criterion | Prefer higher score when... |
-| --- | --- |
-| Refactoring effort | fewer app/schema/job/security changes are required |
-| Downtime fit | method output `businessCutoverDowntime` meets the requested window; `targetAvailabilityDuringSync` is acceptable |
-| Operational burden | managed service reduces patch/backup/HA work the customer does not want |
-| Compatibility | target preserves required features and version behavior |
-| Resilience | SLA, HA, zone redundancy, read-scale and DR needs are met |
-| Cost | AHB/reservations/ESU/sizing lower total cost without violating constraints |
-| Reversibility | rollback/failback path is practical, e.g., MI Link reverse failback |
-| Sovereignty constraints | target/control plane fits residency, disconnected, edge, or sovereign needs |
+**Apply these steps in order.** Each step either settles the ranking or hands an unchanged order to the next. An unordered list of criteria is not a rule: two readers weighing "cost" against "resilience" differently reach different answers, and that is the variability this ordering exists to remove.
 
-Soft preferences live here: prefer MI over SQL DB when SQL Agent/cross-DB/linked-server patterns exist; prefer SQL DB over MI for simple cloud-native DB-scoped apps; prefer VM/Arc for strict sovereignty or OS control.
+| # | Step | Settles the order when |
+| --- | --- | --- |
+| 1 | Keep only `eligible` and `eligible_with_remediation` | — |
+| 2 | Respect the requested management model (`MANAGED_PAAS`, `OS_CONTROL`, `KUBERNETES`) | A candidate contradicts what the user asked for |
+| 3 | Prefer the candidate needing the least mandatory application or database refactoring | Refactoring effort differs |
+| 4 | Prefer candidates meeting the confirmed downtime, RPO and RTO constraints | A candidate cannot meet a stated window |
+| 5 | Prefer lower operational burden when compatibility is comparable | Patch, backup and HA work differs materially |
+| 6 | Prefer stronger rollback and reversibility when cutover risk is comparable | One path can fail back and another cannot |
+| 7 | Apply sovereignty and regional-availability constraints | Residency, disconnected or edge needs exclude a region or target |
+| 8 | Consider cost levers **only** when the licensing and sizing inputs are known | AHB, ESU or reservations apply and the inputs exist |
+| 9 | Prefer the candidate with fewer unresolved assumptions | One path rests on more unverified claims |
+| 10 | Otherwise return a **provisional shortlist** | Candidates tie, or depend on different unknowns |
+
+**Never invent a winner at step 10.** A shortlist that names what would break the tie is more useful than a confident answer chosen arbitrarily.
+
+For every ordering decision, record which step and which input changed the order. That record is what the output trace renders.
+
+Soft preferences, applied inside step 3: prefer MI over SQL DB when SQL Agent, cross-DB or linked-server patterns exist; prefer SQL DB over MI for simple cloud-native DB-scoped apps; prefer VM or Arc for strict sovereignty or OS control.
 
 ### B2. Tier selection rules
 
@@ -364,3 +372,42 @@ Rules:
 - SQL DB exit usually requires BACPAC/scripts/data movement and validation; treat as higher effort.
 - MI can use MI Link reverse failback to SQL Server 2022/2025 where prerequisites are met; this improves reversibility ranking.
 - SQL VM/AVS/container retain the most traditional backup/restore portability but carry higher operational burden.
+
+---
+
+## Rule index
+
+Every hard gate is addressable. A recommendation cites the rule that decided each target, so a reader can look it up here and challenge it.
+
+Each entry names the fields it consumes, from [`input-contract.md`](input-contract.md), and what it does when one of them is unknown. **No hard gate may consume a field absent from the input contract**, and no gate may treat unknown as a pass: an unverified prerequisite is not a satisfied prerequisite.
+
+The normative wording stays in the sections above. This index is the address book, not a second copy.
+
+| Rule ID | Type | Consumes | Unknown behaviour | Defined in |
+| --- | --- | --- | --- | --- |
+| `MI-LINK-SOURCE` | hard method gate | `source_location` | Method `unknown_requires_assessment` | A4, B3 |
+| `MI-LINK-VERSION` | hard method gate | `source_version` | Method `unknown_requires_assessment` | B3 |
+| `MI-LINK-HOST` | hard method gate | `source_os`, `source_edition`, `source_version` | **Method refused**, fail-closed | A0, B3 |
+| `MI-LINK-PORTS` | hard method gate | `network_ports` | Method `unknown_requires_assessment` | B3 |
+| `MI-LINK-CAPACITY` | hard method gate | `database_count`, tier | Capacity `unknown_requires_assessment` | B3 |
+| `LRS-VERSION` | hard method gate | `source_version` | Method `unknown_requires_assessment` | B3 |
+| `LRS-WINDOW` | hard method gate | migration duration | Method `unknown_requires_assessment` | B3 |
+| `AG-VERSION` | hard method gate | `source_version` | Method not selected | B3 |
+| `REPL-PUBLISHER` | hard method gate | `source_version`, `source_location` | Method `unknown_requires_assessment` | A4, B3 |
+| `FILESTREAM-PAAS` | hard target gate | `feature_dependencies` | SQL MI and SQL DB `unknown_requires_assessment` | A2 |
+| `POLYBASE-KIND` | hard target gate | `feature_dependencies`, PolyBase kind | SQL MI and SQL DB `unknown_requires_assessment` | A2 |
+| `DTC-TOPOLOGY` | hard target gate | `feature_dependencies`, DTC topology | SQL MI and SQL DB `unknown_requires_assessment` | A2 |
+| `LINKED-SERVERS` | hard target gate | `feature_dependencies` | SQL DB `unknown_requires_assessment` | A2 |
+| `CLR-PERMISSION` | hard target gate | `feature_dependencies`, CLR permission set | SQL MI and SQL DB `unknown_requires_assessment` | A2 |
+| `DEPENDENCY-INVENTORY` | hard target gate | `feature_dependencies` | SQL MI and SQL DB `unknown_requires_assessment` | A2 |
+| `MANAGEMENT-MODEL` | hard target gate | `management_model`, `kubernetes_model` | Family split blocked; return a shortlist | A2 |
+| `ARC-IN-PLACE` | hard target gate | `intent`, `source_version` | Path not offered | A3 |
+| `ARC-WIZARD-BATCH` | hard method gate | `migration_batch_size`, `arc_extension_version` | **Not treated as recent**, `unknown_requires_assessment` | B3 |
+| `FABRIC-TARGET` | hard target gate | `driver` | Fabric ranked below, never eliminated | A2 |
+| `FABRIC-ASSISTANT` | hard method gate | `fabric_constraints` | Assistant `unknown_requires_assessment`; the GA target survives | A2 |
+| `HYPERSCALE-CEILING` | tier rule | `size` | Tier `unknown_requires_assessment` | B2 |
+| `MI-TIER` | tier rule | `performance`, `size`, `database_count` | Tier `unknown_requires_assessment`, never General Purpose by default | B2 |
+| `SQLDB-TIER` | tier rule | `performance`, `size`, `tenant_count` | Tier `unknown_requires_assessment` | B2 |
+| `DOWNTIME-CLASS` | consistency rule | `downtime` | `businessCutoverDowntime` `unknown_requires_assessment` | C1, C4 |
+| `RANK-ORDER` | ranking | all surviving candidates | Provisional shortlist at step 10 | B1 |
+| `OUTPUT-CONSISTENCY` | consistency rule | eligibility, method, tier | Expose the inconsistency, never repair silently | C4, output contract §3 |

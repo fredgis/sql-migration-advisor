@@ -1139,7 +1139,7 @@
       "mustNotRecommend": []
     },
     "assertRulePresent": [
-      "Sovereignty constraints[\\s\\S]*?disconnected, edge, or sovereign",
+      "Apply sovereignty and regional-availability constraints",
       "Kubernetes / edge / sovereign-multicloud"
     ],
     "auditRef": "P1-21"

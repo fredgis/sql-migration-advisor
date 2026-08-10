@@ -658,6 +658,37 @@ try {
 }
 
 {
+  // The rule index is only useful if every entry consumes fields that exist, and if no gate
+  // silently treats an unknown as a pass. An index nobody checks is decoration.
+  const inputContract = readText(path.join('reference', 'input-contract.md'));
+  const index = (rules.match(/## Rule index[\s\S]*$/u) || [''])[0];
+  const failures = [];
+
+  if (!index) failures.push('reference\\decision-rules.md has no Rule index section');
+
+  const rows = [...index.matchAll(/^\| `([A-Z][A-Z0-9-]+)` \| ([^|]+) \| ([^|]+) \| ([^|]+) \|/gmu)];
+  if (rows.length < 20) failures.push(`the rule index lists only ${rows.length} rules; the hard gates alone exceed that`);
+
+  for (const [, id, , consumes, unknown] of rows) {
+    // Every consumed field named in backticks must exist in the input contract.
+    for (const field of [...consumes.matchAll(/`([a-z_][a-z0-9_]*)`/g)].map(m => m[1])) {
+      if (!new RegExp(`\`${field}\``).test(inputContract)) failures.push(`${id} consumes '${field}', which the input contract does not define`);
+    }
+    // Every rule must say what it does when an input is unknown, and it must not be a pass.
+    const u = unknown.trim();
+    if (!u || u === '—') failures.push(`${id} does not define its unknown behaviour`);
+    if (/\beligible\b(?!_)/i.test(u) || /\bpass(es|ed)?\b/i.test(u)) failures.push(`${id} treats an unknown as a pass: "${u}"`);
+  }
+
+  // The ordered ranking replaced an unordered criteria table. Ties must not invent a winner.
+  if (!/Apply these steps in order/u.test(rules)) failures.push('B1 no longer states an explicit ranking order');
+  if (!/Never invent a winner/u.test(rules)) failures.push('B1 does not forbid inventing a winner when candidates tie');
+
+  add('rule-index-consistent', failures.length === 0,
+    failures.length ? failures : [`${rows.length} rules are addressable, consume only documented fields, and each declares an unknown behaviour that is not a pass.`]);
+}
+
+{
   const retired = (rules.match(/## Retired — never recommend \(use the replacement\)[\s\S]*?(?:\n---|\n## Reverse path)/u) || [''])[0];
   const checks = [
     { name: 'retired table heading', re: /Retired — never recommend/u },
