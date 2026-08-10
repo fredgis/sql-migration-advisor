@@ -210,6 +210,44 @@
     "auditRef": "P0-6"
   },
   {
+    "id": "empty-dependency-answer-is-not-none",
+    "title": "Unanswered dependency multi-select must not read as \"no dependencies\"",
+    "why": "UX defect: ticking nothing is the natural gesture for both \"I have none\" and \"I have not checked\". An empty list must resolve to unknown, never to None, or the PaaS feature blockers are silently cleared.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "AWS RDS for SQL Server",
+      "source_version": "2016",
+      "driver": "end-of-support/ESU",
+      "management_model": "fully managed PaaS",
+      "database_count": 5,
+      "feature_dependencies": [],
+      "size": "150 GB - 4 TB",
+      "downtime": "offline planned window",
+      "network_ports": "Good ExpressRoute/high bandwidth",
+      "compliance": "standard commercial"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_mi": "unknown_requires_assessment",
+        "sql_db": "unknown_requires_assessment"
+      },
+      "primary_target": "provisional shortlist only",
+      "method": "Assessment and dependency discovery first",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "recommendationStatus": "provisional",
+      "confidence": "low",
+      "mustNotRecommend": [
+        "validated recommendation"
+      ]
+    },
+    "assertRulePresent": [
+      "Unknown on a decision-driving dependency ⇒ `recommendationStatus: provisional`",
+      "Never turn an unknown into a silent safe default"
+    ],
+    "auditRef": "P0-6"
+  },
+  {
     "id": "kb-rules-readme-version-mismatch-blocks",
     "title": "KB v1.5 versus rules/README version mismatch blocks",
     "why": "Audit P0: version drift must fail CI.",

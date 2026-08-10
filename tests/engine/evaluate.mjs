@@ -47,6 +47,10 @@ function textOf(value) {
 function has(haystack, needle) { return textOf(haystack).toLowerCase().includes(String(needle).toLowerCase()); }
 function any(inputs, ...needles) { const t = textOf(inputs).toLowerCase(); return needles.some(n => t.includes(String(n).toLowerCase())); }
 function dep(inputs, needle) { return (inputs.feature_dependencies || []).some(d => has(d, needle)); }
+function isBlankAnswer(value) {
+  const items = Array.isArray(value) ? value : [value];
+  return items.every(v => textOf(v).trim() === '');
+}
 function versionNumber(v) {
   const m = textOf(v).match(/\b(?:19|20)\d{2}\b/);
   return m ? Number(m[0]) : undefined;
@@ -179,6 +183,12 @@ function applyFabric(inputs, eligibility, out) {
   else eligibility.fabric_sql_db = E.UNKNOWN;
 }
 function applyFeatureEligibility(inputs, eligibility, out) {
+  // A missing or empty dependency list is not evidence of absence: it is the shape an
+  // unanswered multi-select produces. Reading it as "no dependencies" would silently
+  // clear the MI/SQL DB blockers, so it resolves to unknown instead.
+  if (isBlankAnswer(inputs.feature_dependencies)) {
+    setUnknown(eligibility, ['sql_mi', 'sql_db'], 'Dependency inventory', out);
+  }
   if (dep(inputs, 'FILESTREAM') || dep(inputs, 'FileTable')) {
     eligibility.sql_mi = E.UNSUPPORTED; eligibility.sql_db = E.UNSUPPORTED;
     out.exclusions.sql_mi = 'FILESTREAM/FileTable is a hard MI incompatibility.';

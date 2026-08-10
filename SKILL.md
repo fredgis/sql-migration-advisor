@@ -37,8 +37,9 @@ Ask one at a time. “Not sure” is allowed, but decision-driving unknowns must
 
 - **Never require a minimum number of selections.** Do not set `minItems` on a multi-select and never render “Select at least 1 item”. The user must always be able to answer nothing.
 - **Ask each question at most once.** If the answer comes back empty, or the user declines or cancels, **do not re-ask it, and never re-ask it in a stricter form.** Re-prompting a question the user already answered is a bug.
-- **An empty multi-select is an answer, not a failure.** Treat it as `Not sure` for that field: record the field as an **unknown**, continue the interview, and carry it into `unknowns[]` / `evidenceRequired[]` so the recommendation stays `provisional`. Do not treat it as `None`, and do not treat it as a reason to interrogate the user again.
-- If the user explicitly selects `None`, that is a definite answer meaning “no such dependencies” — accept it and move on.
+- **Never let an empty answer carry meaning.** “I have none of these” and “I have not checked” are opposite answers: one clears a blocker, the other raises one. Ticking nothing is the natural gesture for **both**, so a bare multi-select cannot tell them apart and will misread one of them. Gate every multi-select behind a single-select that names the intent (`None, confirmed` / `Let me select them` / `Not checked yet`), and open the multi-select only when the user chose to select. A single-select always returns a value, so the intent is always explicit.
+- **If an answer still arrives empty**, because the user declined, cancelled, or ticked nothing, resolve it to `Not sure` and never to `None`: record the field as an **unknown**, carry it into `unknowns[]` / `evidenceRequired[]`, keep the recommendation `provisional`, and continue without re-asking.
+- If the user explicitly answers `None`, that is a definite answer meaning “no such dependencies” — record `None` and move on.
 - If a decision-driving field ends up unknown, say so once in the output (“feature dependencies not confirmed — run a dependency discovery”), rather than blocking the interview to chase it.
 
 1. **Scope** — “How big is this migration?”
@@ -68,14 +69,18 @@ Ask one at a time. “Not sure” is allowed, but decision-driving unknowns must
    - `Managed engine (Arc data controller: auto patch/backup/HA)` · `Full DIY container (we own HA/patch/backup)`
    - Decides Arc-enabled SQL MI vs SQL Server container.
 
-7. **Feature dependencies** (multi-select) — “Does the workload use any of these?”
-   - `FILESTREAM / FileTable` · `PolyBase` · `DTC / distributed transactions` · `Cross-DB queries` · `SQL CLR` · `Linked servers` · `SQL Agent jobs` · `Service Broker` · `None` · `Not sure`
-   - If PolyBase: ask **7a**. If DTC: ask **7b**. If CLR is selected or unknown and MI/SQL DB remain candidates, ask Tier 2 CLR permission set.
+7. **Feature dependencies** — “Do you know which SQL Server features the workload uses: FILESTREAM/FileTable, PolyBase, DTC, cross-DB queries, SQL CLR, linked servers, SQL Agent jobs, Service Broker?”
+   - Single-select: `None of them, confirmed` · `Let me select them` · `Not checked yet`
+   - `None of them` records `None` and clears the PaaS feature blockers. `Not checked yet` records `Not sure` and holds SQL MI and SQL DB at `unknown_requires_assessment` until a dependency discovery runs. Only `Let me select them` opens **7a**.
 
-7a. **PolyBase qualifier** — only if PolyBase is used — “What does PolyBase actually query — files in Azure/cloud storage, or an external database like Oracle or Teradata?”
+7a. **Which dependencies** (multi-select, only after `Let me select them`) — “Select every one that applies.”
+   - `FILESTREAM / FileTable` · `PolyBase` · `DTC / distributed transactions` · `Cross-DB queries` · `SQL CLR` · `Linked servers` · `SQL Agent jobs` · `Service Broker`
+   - If PolyBase: ask **7b**. If DTC: ask **7c**. If CLR is selected or unknown and MI/SQL DB remain candidates, ask Tier 2 CLR permission set.
+
+7b. **PolyBase qualifier** — only if PolyBase is used — “What does PolyBase actually query — files in Azure/cloud storage, or an external database like Oracle or Teradata?”
    - `Cloud files only (Blob/ADLS Gen2 Parquet/CSV)` · `External RDBMS connector` · `S3 / Delta / pushdown required` · `Not sure`
 
-7b. **DTC qualifier** — only if DTC/distributed transactions are used — “Are those distributed transactions only between SQL Servers, or do they span a non-SQL database?”
+7c. **DTC qualifier** — only if DTC/distributed transactions are used — “Are those distributed transactions only between SQL Servers, or do they span a non-SQL database?”
    - `SQL-to-SQL only (MI↔MI or MI↔SQL Server)` · `Heterogeneous / third-party RDBMS` · `Not sure`
 
 8. **Largest DB size** — “How large is the biggest database?”
@@ -90,11 +95,20 @@ Ask one at a time. “Not sure” is allowed, but decision-driving unknowns must
 11. **Compliance / sovereignty** — “Any data residency, sovereign, or edge constraints?”
     - `Standard commercial` · `EU data boundary` · `Government / sovereign` · `Edge / air-gapped` · `Not sure`
 
-12. **Ancillary services and security** (multi-select) — “Anything around the database to bring along?”
-    - `SSIS packages` · `SSRS reports` · `SSAS models` · `TDE-encrypted DBs` · `Many SQL Agent jobs` · `Windows logins` · `None` · `Not sure`
+12. **Ancillary services and security** — “Anything around the database to bring along?”
+    - Single-select: `Nothing, confirmed` · `Let me select them` · `Not sure`
+    - Only `Let me select them` opens **12a**.
+
+12a. **Which ancillary services** (multi-select) — “Select every one that applies.”
+    - `SSIS packages` · `SSRS reports` · `SSAS models` · `TDE-encrypted DBs` · `Many SQL Agent jobs` · `Windows logins`
 
 13. **Tier-selection inputs** — ask compactly when SQL MI or SQL DB remains eligible:
-    - “Any tier drivers: `low-latency writes`, `high IOPS/log throughput`, `strict SLA / zone redundancy`, `read-scale replicas`, `intermittent usage`, `many tenants / variable demand`, or `none/unknown`?”
+    - “Any tier drivers?” Single-select: `No particular driver, confirmed` · `Let me select them` · `Not sure`
+    - Only `Let me select them` opens **13a**.
+    - `Not sure` holds the tier at `unknown_requires_assessment`; it must never fall back to General Purpose.
+
+13a. **Which tier drivers** (multi-select) — “Select every one that applies.”
+    - `low-latency writes` · `high IOPS/log throughput` · `strict SLA / zone redundancy` · `read-scale replicas` · `intermittent usage` · `many tenants / variable demand`
     - Consumed by GP vs Business Critical vs Hyperscale vs Serverless vs Elastic Pool.
 
 ### Tier 2 — Confirmation (only when decision-driving)
@@ -156,7 +170,7 @@ At session start, fetch the live knowledge-base document:
 
 - Raw URL: `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/main/docs/sql-server-to-azure-migration.md`
 - Use the live doc when available. If offline, use `reference/decision-rules.md` and tell the user that the offline fallback may lag.
-- Current coordinated knowledge-base line: **v1.14**, dated **2026-08-05**.
+- Current coordinated knowledge-base line: **v1.15**, dated **2026-08-10**.
 - Display the **knowledge-base version** in every recommendation and, when available, the **commit SHA** and **fetch timestamp**.
 - Determinism contract: **same inputs + same KB version + same engine version ⇒ same result**.
 
@@ -413,7 +427,7 @@ Asks the remaining triage questions one at a time (source location, migration in
 
 > **Preliminary recommendation — 40-database OLTP estate**
 > **Azure SQL Managed Instance** via **MI Link** · status **provisional** · confidence **medium**
-> KB **v1.14** · commit **n/a** · fetched **n/a**
+> KB **v1.15** · commit **n/a** · fetched **n/a**
 >
 > SQL Agent and linked-server dependencies point at instance-scoped PaaS rather than a database-scoped target, and the downtime tolerance is met by an online method.
 >

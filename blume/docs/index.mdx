@@ -96,15 +96,18 @@ The middle column is the question **as the agent actually asks it**.
 | 5 | *"What is the main reason to migrate now?"* | End-of-support/ESU · Cost · App modernization · Data-center exit · Analytics/Fabric · Sovereignty | Target bias and the Fabric branch |
 | 6 | *"How much control do you need over the engine and OS?"* | Fully managed PaaS · OS/engine control · Kubernetes on-prem/edge | PaaS vs IaaS vs Kubernetes |
 | 6a | ↳ *"Do you want Microsoft to run the engine on your cluster, or own it end to end?"* *(if Q6 = Kubernetes)* | Managed engine (Arc data controller) · Full DIY container | Arc-enabled SQL MI vs container |
-| 7 | *"Does the workload use any of these?"* *(multi-select)* | FILESTREAM/FileTable · PolyBase · DTC · Cross-DB · SQL CLR · Linked servers · SQL Agent · Service Broker · None · Not sure | Phase A eligibility |
-| 7a | ↳ *"What does PolyBase actually query — files in cloud storage, or an external database like Oracle?"* *(if PolyBase)* | Cloud files only (Blob/ADLS, Parquet/CSV) · External RDBMS connector · S3/Delta/pushdown · Not sure | Cloud files ⇒ SQL MI stays eligible |
-| 7b | ↳ *"Are those distributed transactions only between SQL Servers, or do they span a non-SQL database?"* *(if DTC)* | SQL-to-SQL only · Heterogeneous / third-party RDBMS · Not sure | SQL-to-SQL ⇒ SQL MI stays eligible |
+| 7 | *"Do you know which SQL Server features the workload uses?"* | None of them, confirmed · Let me select them · Not checked yet | Gates the multi-select, so ticking nothing is never misread as "none" |
+| 7a | ↳ *"Select every one that applies."* *(multi-select, after "Let me select them")* | FILESTREAM/FileTable · PolyBase · DTC · Cross-DB · SQL CLR · Linked servers · SQL Agent · Service Broker | Phase A eligibility |
+| 7b | ↳ *"What does PolyBase actually query — files in cloud storage, or an external database like Oracle?"* *(if PolyBase)* | Cloud files only (Blob/ADLS, Parquet/CSV) · External RDBMS connector · S3/Delta/pushdown · Not sure | Cloud files ⇒ SQL MI stays eligible |
+| 7c | ↳ *"Are those distributed transactions only between SQL Servers, or do they span a non-SQL database?"* *(if DTC)* | SQL-to-SQL only · Heterogeneous / third-party RDBMS · Not sure | SQL-to-SQL ⇒ SQL MI stays eligible |
 | 8 | *"How large is the biggest database?"* | &lt; 150 GB · 150 GB – 4 TB · &gt; 4 TB · Not sure | Hyperscale gate, backup caps, seeding |
 | 9 | *"How much cutover downtime can the business accept?"* | Near-zero (minutes) · Minimal (tens of minutes to hours) · Offline window · Not sure | Method selection, downtime class |
 | 10 | *"What is the network path to Azure, and can MI Link ports 5022 and 11000–11999 be opened in the required directions?"* | Good ExpressRoute · Limited WAN · Multi-TB · 5022 or 11000–11999 blocked · 1433/443 blocked · Not sure | MI Link viability, Data Box seeding |
 | 11 | *"Any data residency, sovereign, or edge constraints?"* | Standard · EU data boundary · Government/sovereign · Edge/air-gapped · Not sure | Biases SQL VM, AVS, Arc SQL MI |
-| 12 | *"Anything around the database to bring along?"* *(multi-select)* | SSIS · SSRS · SSAS · TDE · Many SQL Agent jobs · Windows logins · None · Not sure | Blockers and remediations |
-| 13 | *"Any tier drivers?"* *(when SQL MI or SQL DB is still eligible)* | Low-latency writes · High IOPS/log throughput · Strict SLA · Read-scale replicas · Intermittent usage · Many tenants · None | GP vs Business Critical vs Hyperscale vs Serverless vs Elastic Pool |
+| 12 | *"Anything around the database to bring along?"* | Nothing, confirmed · Let me select them · Not sure | Gates the multi-select |
+| 12a | ↳ *"Select every one that applies."* *(multi-select)* | SSIS · SSRS · SSAS · TDE · Many SQL Agent jobs · Windows logins | Blockers and remediations |
+| 13 | *"Any tier drivers?"* *(when SQL MI or SQL DB is still eligible)* | No particular driver, confirmed · Let me select them · Not sure | "Not sure" holds the tier at `unknown_requires_assessment` instead of defaulting to GP |
+| 13a | ↳ *"Select every one that applies."* *(multi-select)* | Low-latency writes · High IOPS/log throughput · Strict SLA · Read-scale replicas · Intermittent usage · Many tenants | GP vs Business Critical vs Hyperscale vs Serverless vs Elastic Pool |
 
 ### What a real exchange looks like
 
@@ -119,7 +122,10 @@ The middle column is the question **as the agent actually asks it**.
 > **Agent** — Which SQL Server version is the source?<br />
 > **User** — 2019.
 >
-> **Agent** — Does the workload use any of these? FILESTREAM/FileTable, PolyBase, DTC, cross-DB queries, SQL CLR, linked servers, SQL Agent jobs, Service Broker…<br />
+> **Agent** — Do you know which SQL Server features the workload uses: FILESTREAM/FileTable, PolyBase, DTC, cross-DB queries, SQL CLR, linked servers, SQL Agent jobs, Service Broker?<br />
+> **User** — Yes, let me select them.
+>
+> **Agent** — Select every one that applies.<br />
 > **User** — SQL Agent jobs, and we do use distributed transactions.
 >
 > **Agent** — Are those distributed transactions only between SQL Servers, or do they span a non-SQL database?<br />
@@ -201,13 +207,13 @@ scrutiny makes the advisor stronger, not weaker.
 This one is not a runtime path — it is the **quality gate**, and it runs on **every push and every pull
 request**. (It is separate from the weekly knowledge-base check above, which runs Mondays at 05:00 UTC.)
 
-<img src={`${import.meta.env.BASE_URL}/quality-gate.svg`} alt="Quality gate: decision-rules.data.json is the single source of constants; it feeds evaluate.mjs, which replays 78 golden scenarios into a blocking CI gate, while check-rules-data.mjs verifies the same 187 constants against the decision-rules markdown in strict mode." />
+<img src={`${import.meta.env.BASE_URL}/quality-gate.svg`} alt="Quality gate: decision-rules.data.json is the single source of constants; it feeds evaluate.mjs, which replays 79 golden scenarios into a blocking CI gate, while check-rules-data.mjs verifies the same 187 constants against the decision-rules markdown in strict mode." />
 
 - **One source of constants.** Ports, capacities, version floors and thresholds live in
   `decision-rules.data.json`. The engine holds no hard-coded numbers.
 - **Drift is caught.** `check-rules-data.mjs` verifies 187 constants against the markdown prose, in strict
   mode — a warning fails the build.
-- **Decisions are tested.** 78 golden scenarios are replayed through the engine and compared field by
+- **Decisions are tested.** 79 golden scenarios are replayed through the engine and compared field by
   field. Break a rule and the suite fails, naming the scenario.
 - **Honest limit.** Constants are single-sourced, but rule *logic* still exists twice: prose for the agent,
   JavaScript for the tests.
