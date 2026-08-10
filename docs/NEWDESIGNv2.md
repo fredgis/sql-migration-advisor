@@ -2,6 +2,8 @@
 
 > **Status: implemented, released as `v2.0.0`.** Baseline at approval: `v1.18.0`, commit `fbd72f6`, 18 gates, 90 golden scenarios.
 > Delivered: **21 gates**, 90 golden scenarios. Progress is tracked in §10; departures from the plan are recorded in §11 with the reason.
+>
+> **A second audit of `v2.0.0` has been received and verified. Its plan is §13, awaiting approval. Nothing in it is implemented.**
 
 ---
 
@@ -375,3 +377,119 @@ Proposed: a tenth invariant requiring all eight families in the trace.
 Proposed: a distinct status for *excluded by stated preference*, so a preference can be revisited without re-litigating feasibility.
 
 Minor, from the same run: `Target availability during sync` rendered as *not present* where *not applicable* is meant, an offline method having no sync phase; and the **Microsoft program** row the README advertises was absent from the card.
+
+---
+
+## 13. Second audit, of `v2.0.0` — verified findings and plan
+
+> **Status: proposal, awaiting approval. Nothing here is implemented.**
+> Audited at commit `2157c97`. The auditor scores the skill **8/10**: credible for an assisted
+> pre-assessment, not yet closed on its own contracts.
+
+### 13.1 Verdict on the audit
+
+It is right on every finding I was able to check, and I checked the load-bearing ones rather than
+taking them on trust. Two of the defects are mine, introduced by v2 itself.
+
+Its central charge is sharper than the first audit's and worth stating in its own words: **v2 wrote
+the contracts but never proved the interview obeys them.** The gate I added checks that every *rule*
+consumes a documented field. Nothing checks the reverse — that every field the *interview collects*
+is documented, or that every option it displays exists. So the contract could be perfectly consistent
+with the rules while the live interview spoke a different language entirely. It does.
+
+| Finding | Verified | Evidence |
+|---|---|---|
+| Option IDs are not canonical | ✅ confirmed | `BLOB_PORTS_UNKNOWN`, `UNDER_150_GB`, `EU_DATA_BOUNDARY`, `WINDOWS_SERVER_2012_OR_LATER`, `LIST_FEATURES`, `TDE_NOT_ENABLED` exist in neither `input-contract.md` nor the engine. Six of ten IDs sampled from the session are unknown to the contract |
+| Tier 2 fields are not canonical | ✅ confirmed | `rpo`, `rto`, `clr_permission_set`, `tde_status`, `source_permissions`, `authentication`, `target_region` — none in `input-contract.md`. 8 of 11 sampled fields absent |
+| Method gate declared `passed` on an unknown | ✅ confirmed | Blob path unknown, gate reported passed. Invariant 3 lists version, ports, source type, capacity, permissions — blob reachability is in none of them, so the self-check had nothing to fail on |
+| `CLR-PERMISSION` has no normative logic | ✅ confirmed | The rule index points at §A2, which says only *"SQL CLR/cross-DB usually compatible but assess"*. No SAFE/EXTERNAL_ACCESS/UNSAFE rule exists. **The index I added in v2 advertises a rule that is not written** |
+| Size classes overlap | ✅ confirmed | Q8 offers `> 4 TB` and `> 128 TB`; a 200 TB database matches both. **Introduced by me in v2 step 2** |
+| Raw KB link is invalid | ✅ confirmed, worse than reported | `raw.githubusercontent.com/.../blob/v2.0.0/...` returns **404**; without `/blob/` it returns 200. **The live knowledge-base fetch has never worked at this pin** |
+| README and skill disagree on fetch policy | ✅ confirmed | README: *"fetches the knowledge base live on every run"*. `SKILL.md`: *"The bundled copy is the default"* |
+| No CLR or Windows-logins scenario | ✅ confirmed | 0 occurrences of either across the 90 golden scenarios |
+| `normalizedProfile` absent from output | ✅ confirmed | Required by `output-contract.md`; the session card does not show it |
+
+### 13.2 Where I would nuance it
+
+**Shortening the interview is not simply pruning.** The audit is right that MI Link and LRS
+prerequisites stopped mattering once an offline cutover was chosen. But questions must be skipped on
+the *current* provisional path and re-asked when the path changes, otherwise the first answer quietly
+locks the estate out of near-zero options. Conditional, not deleted.
+
+**`SAFE` deserves stronger wording than the audit gives it.** It says SAFE is not sufficient. Under
+`clr strict security`, introduced in SQL Server 2017 and on by default, the engine treats SAFE and
+EXTERNAL_ACCESS assemblies **as if they were UNSAFE**: they need a signature or a trusted hash.
+So SAFE is not merely weak evidence, it is close to no evidence at all, and the card called it
+*favorable*.
+
+**Runtime evals still measure agreement, not correctness.** Worth doing, and it is lot F. But the
+Windows Server 2012 error would have scored 100% for five versions. What changes my view is that we
+now have a real transcript to replay, which is a better seed than invented profiles.
+
+**Slimming `SKILL.md` to routing is the atomic-rewrite trap again.** Correct in direction, high risk
+in one pass, and it touches the file the weekly check parses. It goes last, or not at all.
+
+### 13.3 Plan
+
+Ordered by what protects a user first, not by what is easiest to test — the charge both audits made.
+
+#### Wave 1 — close the interview-to-contract gap (the P0s)
+
+| # | Task | Files | Difficulty |
+|---|---|---|---|
+| W1-1 | Give every displayed option a canonical ID, not only the 30 already there | `input-contract.md`, `SKILL.md` | 🟠 |
+| W1-2 | Add the missing canonical fields: `rpo`, `rto`, `clr_permission_set`, `tde_status`, `source_permissions`, `authentication`, `target_region` | `input-contract.md` | 🟠 |
+| W1-3 | **Gate `interview-conforms-to-contract`**: every option and field the interview collects must exist in the contract, and CI fails otherwise. This is the missing direction of the check | `run-tests.mjs` | 🔴 |
+| W1-4 | Split the network question into `network_bandwidth`, `mi_link_ports`, `blob_https_reachability` | `SKILL.md`, `input-contract.md` | 🟠 |
+| W1-5 | Rule `BACKUP-BLOB-PATH` consuming `blob_https_reachability`, with `unknown_requires_assessment` | `decision-rules.md`, rule index | 🟠 |
+| W1-6 | Invariant 10: a method gate may not report `passed` while any input it consumes is unknown | `output-contract.md`, `SKILL.md` | 🟠 |
+
+#### Wave 2 — the defects v2 introduced
+
+| # | Task | Files | Difficulty |
+|---|---|---|---|
+| W2-1 | Fix the raw KB URL, drop `/blob/`. **The live fetch is currently 404** | `SKILL.md` | 🟢 |
+| W2-2 | Gate: every URL in the policy documents resolves, so a dead pin cannot ship again | `run-tests.mjs` | 🟠 |
+| W2-3 | Settle one fetch policy — recommendation: **bundled copy by default**, live fetch on request — and align README, skill, howto and site | 5 files | 🟠 |
+| W2-4 | Non-overlapping size classes: `< 150 GB`, `150 GB – 4 TB`, `> 4 TB – 128 TB`, `> 128 TB` | `SKILL.md`, rules, engine | 🟠 |
+| W2-5 | Write `CLR-PERMISSION` normatively, with the `clr strict security` behaviour and a Microsoft source. **Never treat SAFE as validation** | `decision-rules.md`, KB § if needed | 🟠 |
+| W2-6 | Gate: every rule-index entry resolves to normative text in the section it names | `run-tests.mjs` | 🟠 |
+
+#### Wave 3 — cover what the transcript exposed
+
+| # | Task | Difficulty |
+|---|---|---|
+| W3-1 | The session as a golden scenario, with its exact answers | 🟢 |
+| W3-2 | Metamorphic pairs: blob unknown → gate unknown; blob confirmed → gate passed | 🟠 |
+| W3-3 | SAFE → EXTERNAL_ACCESS → UNSAFE: remediation must escalate | 🟠 |
+| W3-4 | `MANAGED_PAAS` → `OS_CONTROL`: SQL VM becomes primary | 🟢 |
+| W3-5 | offline → near-zero: MI Link and LRS re-enter, and only then are their prerequisites asked | 🟠 |
+| W3-6 | TDE off → on: certificate added, target unchanged | 🟢 |
+| W3-7 | ID, English label and French label produce the same decision | 🟠 |
+| W3-8 | Same profile with IOPS and latency supplied: a tier becomes selectable | 🟢 |
+| W3-9 | Negative: output without `normalizedProfile` fails; method `passed` with an unknown fails | 🟠 |
+
+#### Wave 4 — the remaining P1/P2, in order
+
+| # | Task | Difficulty |
+|---|---|---|
+| W4-1 | `unsupported` split: technically ineligible vs excluded by stated preference (from the previous run) | 🟠 |
+| W4-2 | Invariant: all eight target families appear in the Phase A trace (from the previous run) | 🟠 |
+| W4-3 | SSMS 22 recommendation states the `sysadmin` prerequisite on the source | 🟢 |
+| W4-4 | Claims registry: add CLR, SSMS 22, Windows logins, MI tier; add `rule_ids` checked by CI | 🟠 |
+| W4-5 | Conditional interview: skip questions the current path cannot use, re-ask when the path changes | 🔴 |
+| W4-6 | Lot F runtime evals, seeded with the real transcript, across two models | 🔴 |
+| W4-7 | Slim `SKILL.md` to routing and interaction rules — **last, and only if the rest is stable** | 🔴 |
+
+### 13.4 What this will not fix
+
+- It closes the gap between the interview, the contract and the gates. It does not make the skill
+  correct; it makes it consistent with itself and honest about what it has not checked.
+- Runtime evals measure agreement across models. A shared error still scores well.
+- The knowledge base stays untouched, except where W2-5 needs a sourced CLR fact.
+
+### 13.5 Open
+
+- [ ] Approve waves 1 to 4, or reorder them
+- [ ] Confirm the fetch policy: bundled by default, live on request
+- [ ] Decide whether W4-7 is in scope at all
