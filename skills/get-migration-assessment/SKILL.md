@@ -100,14 +100,14 @@ Ask one at a time. Show the human label, record the **stable ID**. The rules mat
 9. **Downtime tolerance** — “How much cutover downtime can the business accept?”
    - **`NEAR_ZERO`** `Near-zero (minutes)` · **`MINIMAL`** `Minimal (tens of minutes to a couple of hours)` · **`OFFLINE`** `Offline planned window` · `Not sure`
 
-10. **Bandwidth** — “What is the network path to Azure?”
+10. **Bandwidth** (`network_bandwidth`) — “What is the network path to Azure?”
     - **`GOOD_BANDWIDTH`** `Good ExpressRoute / high bandwidth` · **`LIMITED_WAN`** `Limited WAN` · **`VERY_LARGE_MULTI_TB`** `Very large multi-TB move` · `Not sure`
 
-10a. **MI Link ports** — ask only while MI Link is still a candidate: “Can ports 5022 and 11000–11999 be opened in both directions?”
+10a. **MI Link ports** (`mi_link_ports`) — ask only while MI Link is still a candidate: “Can ports 5022 and 11000–11999 be opened in both directions?”
     - **`PORTS_CONFIRMED_OPEN`** `Confirmed open in both directions` · **`PORTS_BLOCKED`** `5022 or 11000–11999 blocked` · `Not sure`
     - `PORTS_CONFIRMED_OPEN` is the only answer that lets MI Link be **confirmed**. Without it a user could declare them blocked but never declare them open, so MI Link could only ever be un-refuted.
 
-10b. **Blob reachability** — ask whenever a backup, BACPAC or Data Box path is a candidate: “Is HTTPS upload to Azure Blob confirmed and tested?”
+10b. **Blob reachability** (`blob_https_reachability`) — ask whenever a backup, BACPAC or Data Box path is a candidate: “Is HTTPS upload to Azure Blob confirmed and tested?”
     - **`BLOB_HTTPS_CONFIRMED`** `Confirmed, upload tested` · **`BLOB_HTTPS_BLOCKED`** `Blocked by proxy, firewall or policy` · **`BLOB_HTTPS_UNKNOWN`** `Not verified`
     - One question used to mix bandwidth, MI Link ports (5022 and 11000–11999) and Blob access. They gate different things, and a session once reported a backup/restore gate as `passed` while the Blob path was never verified. `BACKUP-BLOB-PATH` consumes this field.
 

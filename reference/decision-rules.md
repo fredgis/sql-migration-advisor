@@ -31,6 +31,19 @@ Normalize questionnaire/free-form answers into these fields before filtering:
 | `management_model` | fully managed PaaS · need OS/file-system/engine control · Kubernetes on-prem/edge/multicloud |
 | `kubernetes_model` | managed engine via Arc data controller · full DIY container · unknown |
 | `feature_dependencies` | FILESTREAM/FileTable · PolyBase/cloud files · PolyBase/external RDBMS · PolyBase/unknown · homogeneous SQL↔SQL DTC · heterogeneous DTC · DTC/unknown · linked servers · SQL Agent · SQL CLR · Service Broker/intra-instance · Service Broker/cross-instance · Service Broker/unknown · cross-DB queries |
+| `scope` | single database · a few databases (2-10) · large estate. Routes the estate-discovery branch. |
+| `size` | `UNDER_150_GB` · `FROM_150_GB_TO_4_TB` · `FROM_4_TB_TO_128_TB` · `OVER_128_TB` · unknown. The classes do not overlap: until v2.1 a 200 TB database matched two of them. |
+| `downtime` | `NEAR_ZERO` · `MINIMAL` · `OFFLINE` · unknown. Never inferred from the chosen method. |
+| `compliance` | `STANDARD_COMMERCIAL` · `EU_DATA_BOUNDARY` · `GOVERNMENT_SOVEREIGN` · `EDGE_AIR_GAPPED` · unknown |
+| `network_bandwidth` | `GOOD_BANDWIDTH` · `LIMITED_WAN` · `VERY_LARGE_MULTI_TB` · unknown. Drives seeding strategy only. |
+| `mi_link_ports` | `PORTS_CONFIRMED_OPEN` · `PORTS_BLOCKED` · unknown. Only `PORTS_CONFIRMED_OPEN` lets MI Link be confirmed. |
+| `blob_https_reachability` | `BLOB_HTTPS_CONFIRMED` · `BLOB_HTTPS_BLOCKED` · `BLOB_HTTPS_UNKNOWN`. Gates every backup-based path through `BACKUP-BLOB-PATH`; unknown holds the method gate at `unknown_requires_assessment` rather than `passed`. |
+| `clr_permission_set` | `CLR_SAFE` · `CLR_EXTERNAL_ACCESS` · `CLR_UNSAFE` · unknown. Gates `CLR-PERMISSION`. **SAFE is not a clearance**: under `clr strict security` the engine treats SAFE and EXTERNAL_ACCESS as UNSAFE unless signed or hash-trusted. |
+| `tde_status` | `TDE_ENABLED` · `TDE_NOT_ENABLED` · unknown. A backup-based method needs the server certificate in the target before restore. |
+| `source_permissions` | `SYSADMIN_AVAILABLE` · `LIMITED_RIGHTS` · unknown. The SSMS 22 Migration Component requires `sysadmin` on the source. |
+| `authentication` | `SQL_LOGINS_ONLY` · `WINDOWS_LOGINS` · `ENTRA_ID` · `MIXED_AUTH` · unknown. Drives login remediation effort. |
+| `rpo` / `rto` | free text in the customer's own units. Recorded as required evidence; no HA/DR posture is asserted without them. |
+| `target_region` | free text. Regional feature availability is stated as unverified until confirmed. |
 | `fabric_constraints` | DACPAC size, Private Link need, on-prem gateway acceptable, preview acceptable |
 | `database_count` | integer — total databases in scope. Drives MI Link capacity (100 GP/BC, 500 Next-gen GP) and the estate-discovery branch. Never inferred from free-text size. |
 | `migration_batch_size` | integer — databases selected per Azure Arc portal migration batch. Checked against the Arc wizard limit, not against MI Link capacity. |

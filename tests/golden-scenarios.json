@@ -11,7 +11,8 @@
       "feature_dependencies": [
         "homogeneous SQL↔SQL DTC"
       ],
-      "downtime": "minimal"
+      "downtime": "minimal",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -46,7 +47,8 @@
       "feature_dependencies": [
         "None"
       ],
-      "downtime": "minimal"
+      "downtime": "minimal",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -80,7 +82,8 @@
       "feature_dependencies": [
         "None"
       ],
-      "downtime": "minimal"
+      "downtime": "minimal",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -116,7 +119,8 @@
       ],
       "downtime": "offline",
       "driver": "analytics/Fabric",
-      "size": "< 150 GB"
+      "size": "< 150 GB",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -152,7 +156,8 @@
       "feature_dependencies": [
         "None"
       ],
-      "downtime": "near-zero"
+      "downtime": "near-zero",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -186,7 +191,8 @@
       "feature_dependencies": [
         "Not sure"
       ],
-      "downtime": "Not sure"
+      "downtime": "Not sure",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -222,7 +228,8 @@
         "SQL Agent"
       ],
       "downtime": "Not sure",
-      "performance": "general purpose"
+      "performance": "general purpose",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "primary_target": "Azure SQL Managed Instance",
@@ -256,7 +263,8 @@
         "None"
       ],
       "downtime": "Not sure",
-      "size": "< 150 GB"
+      "size": "< 150 GB",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "primary_target": "Azure SQL Database",
@@ -291,7 +299,8 @@
       "size": "150 GB - 4 TB",
       "downtime": "offline planned window",
       "network_ports": "Good ExpressRoute/high bandwidth",
-      "compliance": "standard commercial"
+      "compliance": "standard commercial",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -329,7 +338,8 @@
       ],
       "size": "150 GB – 4 TB",
       "downtime": "offline",
-      "performance": "Not sure"
+      "performance": "Not sure",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -363,7 +373,8 @@
       "feature_dependencies": [
         "None"
       ],
-      "downtime": "offline"
+      "downtime": "offline",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -404,7 +415,8 @@
       "feature_dependencies": [
         "None"
       ],
-      "downtime": "offline"
+      "downtime": "offline",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -445,7 +457,8 @@
       "feature_dependencies": [
         "FILESTREAM/FileTable"
       ],
-      "downtime": "offline"
+      "downtime": "offline",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -482,7 +495,8 @@
       "feature_dependencies": [
         "PolyBase/cloud files"
       ],
-      "downtime": "offline"
+      "downtime": "offline",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -514,7 +528,8 @@
       "feature_dependencies": [
         "PolyBase/external RDBMS"
       ],
-      "downtime": "offline"
+      "downtime": "offline",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -550,7 +565,8 @@
       "feature_dependencies": [
         "heterogeneous DTC"
       ],
-      "downtime": "minimal"
+      "downtime": "minimal",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -584,7 +600,8 @@
       "feature_dependencies": [
         "PolyBase/unknown"
       ],
-      "downtime": "offline"
+      "downtime": "offline",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -617,7 +634,8 @@
       "feature_dependencies": [
         "DTC/unknown"
       ],
-      "downtime": "minimal"
+      "downtime": "minimal",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -650,7 +668,8 @@
       "feature_dependencies": [
         "linked servers"
       ],
-      "downtime": "offline"
+      "downtime": "offline",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -683,7 +702,8 @@
       "feature_dependencies": [
         "SQL Agent"
       ],
-      "downtime": "offline"
+      "downtime": "offline",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -717,7 +737,8 @@
         "None"
       ],
       "downtime": "offline",
-      "size": "> 4 TB"
+      "size": "> 4 TB",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -751,7 +772,8 @@
         "None"
       ],
       "downtime": "offline",
-      "performance": "intermittent usage"
+      "performance": "intermittent usage",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -785,7 +807,8 @@
         "None"
       ],
       "downtime": "offline",
-      "tenant_count": "many tenants / variable demand"
+      "tenant_count": "many tenants / variable demand",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -819,7 +842,8 @@
         "SQL Agent"
       ],
       "downtime": "minimal",
-      "performance": "low-latency writes; high IOPS/log throughput; read-scale replicas"
+      "performance": "low-latency writes; high IOPS/log throughput; read-scale replicas",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -854,7 +878,8 @@
         "SQL Agent"
       ],
       "downtime": "offline",
-      "performance": "moderate latency/IO; cost-sensitive"
+      "performance": "moderate latency/IO; cost-sensitive",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -888,7 +913,8 @@
         "SQL Agent"
       ],
       "downtime": "offline",
-      "performance": "none/unknown"
+      "performance": "none/unknown",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -923,7 +949,8 @@
       "feature_dependencies": [
         "None"
       ],
-      "downtime": "offline"
+      "downtime": "offline",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -956,7 +983,8 @@
         "None"
       ],
       "downtime": "offline",
-      "driver": "modernize in place / not ready"
+      "driver": "modernize in place / not ready",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -989,7 +1017,8 @@
         "None"
       ],
       "downtime": "offline",
-      "kubernetes_model": "managed engine via Arc data controller"
+      "kubernetes_model": "managed engine via Arc data controller",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1022,7 +1051,8 @@
         "None"
       ],
       "downtime": "offline",
-      "kubernetes_model": "full DIY container"
+      "kubernetes_model": "full DIY container",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1055,7 +1085,8 @@
         "None"
       ],
       "downtime": "offline",
-      "kubernetes_model": "unknown"
+      "kubernetes_model": "unknown",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1089,7 +1120,8 @@
         "None"
       ],
       "downtime": "minimal",
-      "driver": "data-center exit"
+      "driver": "data-center exit",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1124,7 +1156,8 @@
       "downtime": "offline",
       "driver": "sovereignty/edge",
       "kubernetes_model": "managed engine via Arc data controller",
-      "compliance": "Edge / air-gapped"
+      "compliance": "Edge / air-gapped",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1157,7 +1190,8 @@
         "None"
       ],
       "downtime": "minimal",
-      "network_ports": "5022 blocked"
+      "network_ports": "5022 blocked",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1192,7 +1226,8 @@
         "None",
         "TDE"
       ],
-      "downtime": "offline"
+      "downtime": "offline",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1225,7 +1260,8 @@
       "feature_dependencies": [
         "SQL Agent"
       ],
-      "downtime": "offline"
+      "downtime": "offline",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1258,7 +1294,8 @@
       "feature_dependencies": [
         "None"
       ],
-      "downtime": "near-zero"
+      "downtime": "near-zero",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1293,7 +1330,8 @@
         "None"
       ],
       "downtime": "near-zero",
-      "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available"
+      "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1327,7 +1365,8 @@
       ],
       "downtime": "minimal",
       "network_ports": "Limited WAN; very large multi-TB move",
-      "size": "> 4 TB"
+      "size": "> 4 TB",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1361,7 +1400,8 @@
         "None"
       ],
       "downtime": "near-zero",
-      "network_ports": "5022 open; 11000-11999 open"
+      "network_ports": "5022 open; 11000-11999 open",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1393,7 +1433,8 @@
       "feature_dependencies": [
         "None"
       ],
-      "downtime": "near-zero"
+      "downtime": "near-zero",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "primary_target": "SQL Server on Azure VM",
@@ -1427,7 +1468,8 @@
       "network_ports": "5022 open and 11000-11999 open",
       "performance": "general purpose",
       "source_os": "Windows Server 2008 R2",
-      "source_edition": "Enterprise"
+      "source_edition": "Enterprise",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "primary_target": "Azure SQL Managed Instance",
@@ -1459,7 +1501,8 @@
         "None"
       ],
       "downtime": "minimal",
-      "network_ports": "5022 open"
+      "network_ports": "5022 open",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1494,7 +1537,8 @@
         "None"
       ],
       "downtime": "offline",
-      "size": "estate scale / business case / dependency map"
+      "size": "estate scale / business case / dependency map",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1533,7 +1577,8 @@
       "feature_dependencies": [
         "None"
       ],
-      "downtime": "offline"
+      "downtime": "offline",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1582,7 +1627,8 @@
       ],
       "downtime": "offline",
       "driver": "app modernization",
-      "size": "150 GB – 4 TB"
+      "size": "150 GB – 4 TB",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1614,7 +1660,8 @@
       "feature_dependencies": [
         "None"
       ],
-      "downtime": "offline"
+      "downtime": "offline",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1649,7 +1696,8 @@
         "None"
       ],
       "downtime": "offline",
-      "performance": "low-latency writes; high transaction log rate; strict SLA / zone redundancy"
+      "performance": "low-latency writes; high transaction log rate; strict SLA / zone redundancy",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1685,7 +1733,8 @@
       "downtime": "offline",
       "performance": "none/unknown",
       "size": "Not sure",
-      "tenant_count": "Not sure"
+      "tenant_count": "Not sure",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1721,7 +1770,8 @@
         "None"
       ],
       "downtime": "near-zero",
-      "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available"
+      "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1754,7 +1804,8 @@
         "None"
       ],
       "downtime": "near-zero",
-      "network_ports": "5022 open"
+      "network_ports": "5022 open",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1789,7 +1840,8 @@
       "downtime": "offline",
       "driver": "analytics/Fabric",
       "compliance": "Private Link required",
-      "fabric_constraints": "DACPAC <= 20 MB; preview accepted; on-prem data gateway acceptable; Private Link required"
+      "fabric_constraints": "DACPAC <= 20 MB; preview accepted; on-prem data gateway acceptable; Private Link required",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1825,7 +1877,8 @@
       "downtime": "offline",
       "driver": "analytics/Fabric",
       "size": "> 4 TB",
-      "fabric_constraints": "DACPAC > 20 MB; preview accepted; on-prem data gateway acceptable; no Private Link required"
+      "fabric_constraints": "DACPAC > 20 MB; preview accepted; on-prem data gateway acceptable; no Private Link required",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1861,7 +1914,8 @@
       ],
       "downtime": "offline",
       "size": "> 4 TB",
-      "fabric_constraints": "DACPAC <= 20 MB; preview accepted; gateway acceptable; no private link"
+      "fabric_constraints": "DACPAC <= 20 MB; preview accepted; gateway acceptable; no private link",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1898,7 +1952,8 @@
       ],
       "downtime": "offline",
       "size": "< 150 GB",
-      "fabric_constraints": "DACPAC > 20 MB; preview accepted; gateway acceptable; no private link"
+      "fabric_constraints": "DACPAC > 20 MB; preview accepted; gateway acceptable; no private link",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1933,7 +1988,8 @@
       "feature_dependencies": [
         "None"
       ],
-      "downtime": "offline"
+      "downtime": "offline",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -1979,7 +2035,8 @@
         "performanceMeasured": true,
         "regionAvailabilityConfirmed": true,
         "architectSignedOff": true
-      }
+      },
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2025,7 +2082,8 @@
       ],
       "downtime": "offline",
       "size": "< 150 GB",
-      "fabric_constraints": "DACPAC <= 20 MB; preview not acceptable; on-prem data gateway acceptable; no Private Link required"
+      "fabric_constraints": "DACPAC <= 20 MB; preview not acceptable; on-prem data gateway acceptable; no Private Link required",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2064,7 +2122,8 @@
       ],
       "downtime": "offline",
       "size": "< 150 GB",
-      "fabric_constraints": "DACPAC size unknown; ingestion path undecided"
+      "fabric_constraints": "DACPAC size unknown; ingestion path undecided",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2110,7 +2169,8 @@
         "architectSignedOff": true
       },
       "source_os": "Windows Server 2019",
-      "source_edition": "Enterprise"
+      "source_edition": "Enterprise",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2164,7 +2224,8 @@
         "performanceMeasured": true,
         "regionAvailabilityConfirmed": true,
         "architectSignedOff": true
-      }
+      },
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2208,7 +2269,8 @@
       ],
       "downtime": "near-zero",
       "network_ports": "5022 open; 11000-11999 blocked",
-      "performance": "moderate latency/IO; cost-sensitive"
+      "performance": "moderate latency/IO; cost-sensitive",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2256,7 +2318,8 @@
       "performance": "moderate latency/IO; cost-sensitive; Next-gen General Purpose",
       "database_count": 200,
       "source_os": "Windows Server 2019",
-      "source_edition": "Enterprise"
+      "source_edition": "Enterprise",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2300,7 +2363,8 @@
       "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
       "size": "General Purpose estate",
       "performance": "moderate latency/IO; cost-sensitive",
-      "database_count": 200
+      "database_count": 200,
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2343,7 +2407,8 @@
       "feature_dependencies": [
         "None"
       ],
-      "downtime": "minimal"
+      "downtime": "minimal",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2384,7 +2449,8 @@
       ],
       "downtime": "minimal",
       "network_ports": "5022 open; 11000-11999 blocked",
-      "performance": "low-latency writes; high IOPS/log throughput; read-scale replicas"
+      "performance": "low-latency writes; high IOPS/log throughput; read-scale replicas",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2429,7 +2495,8 @@
       "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
       "performance": "low-latency writes; high IOPS/log throughput; read-scale replicas",
       "source_os": "Windows Server 2019",
-      "source_edition": "Enterprise"
+      "source_edition": "Enterprise",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2470,7 +2537,8 @@
         "None"
       ],
       "downtime": "offline",
-      "performance": "Narrative only: tool-confirmed, measured, region confirmed, architect sign-off."
+      "performance": "Narrative only: tool-confirmed, measured, region confirmed, architect sign-off.",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2512,7 +2580,8 @@
         "performanceMeasured": true,
         "regionAvailabilityConfirmed": true,
         "architectSignedOff": false
-      }
+      },
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2549,7 +2618,8 @@
       "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
       "database_count": 120,
       "size": "2 TB",
-      "performance": "moderate"
+      "performance": "moderate",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2593,7 +2663,8 @@
       "management_model": "fully managed PaaS",
       "feature_dependencies": [
         "SQL Agent"
-      ]
+      ],
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2634,7 +2705,8 @@
       "database_count": 120,
       "performance": null,
       "source_os": "Windows Server 2019",
-      "source_edition": "Enterprise"
+      "source_edition": "Enterprise",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "primary_target": "Azure SQL Managed Instance",
@@ -2667,7 +2739,8 @@
       "management_model": "fully managed PaaS",
       "feature_dependencies": [
         "linked servers"
-      ]
+      ],
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2710,7 +2783,8 @@
       "migration_batch_size": 5,
       "performance": "general purpose",
       "source_os": "Windows Server 2019",
-      "source_edition": "Enterprise"
+      "source_edition": "Enterprise",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "primary_target": "Azure SQL Managed Instance",
@@ -2749,7 +2823,8 @@
       "arc_extension_version": "1.1.3348.364",
       "migration_batch_size": 8,
       "source_os": "Windows Server 2019",
-      "source_edition": "Enterprise"
+      "source_edition": "Enterprise",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "targetAvailabilityDuringSync": "read-only",
@@ -2787,7 +2862,8 @@
       "arc_extension_version": "1.1.3200.100",
       "migration_batch_size": 5,
       "source_os": "Windows Server 2019",
-      "source_edition": "Enterprise"
+      "source_edition": "Enterprise",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "targetAvailabilityDuringSync": "read-only",
@@ -2820,7 +2896,8 @@
       "feature_dependencies": [
         "None"
       ],
-      "downtime": "offline"
+      "downtime": "offline",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2853,7 +2930,8 @@
       "feature_dependencies": [
         "None"
       ],
-      "downtime": "offline"
+      "downtime": "offline",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2886,7 +2964,8 @@
       "feature_dependencies": [
         "None"
       ],
-      "downtime": "offline"
+      "downtime": "offline",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2919,7 +2998,8 @@
       ],
       "downtime": "offline",
       "driver": "app modernization",
-      "size": "< 150 GB"
+      "size": "< 150 GB",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2954,7 +3034,8 @@
       "downtime": "offline",
       "driver": "app modernization",
       "size": "150 GB – 4 TB",
-      "performance": "general purpose; steady workload"
+      "performance": "general purpose; steady workload",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -2988,7 +3069,8 @@
       ],
       "downtime": "offline",
       "driver": "app modernization",
-      "performance": "intermittent dev/test workload"
+      "performance": "intermittent dev/test workload",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -3022,7 +3104,8 @@
       ],
       "downtime": "offline",
       "driver": "app modernization",
-      "tenant_count": "many tenants / variable demand"
+      "tenant_count": "many tenants / variable demand",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -3056,7 +3139,8 @@
       ],
       "downtime": "offline",
       "driver": "app modernization",
-      "performance": "strict SLA / zone redundancy; low-latency writes"
+      "performance": "strict SLA / zone redundancy; low-latency writes",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -3088,7 +3172,8 @@
       "feature_dependencies": [
         "None"
       ],
-      "downtime": "near-zero"
+      "downtime": "near-zero",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -3121,7 +3206,8 @@
       "feature_dependencies": [
         "None"
       ],
-      "downtime": "minimal"
+      "downtime": "minimal",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -3154,7 +3240,8 @@
       "feature_dependencies": [
         "None"
       ],
-      "downtime": "offline"
+      "downtime": "offline",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -3190,7 +3277,8 @@
       "downtime": "near-zero",
       "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
       "source_os": "Linux",
-      "source_edition": "Enterprise"
+      "source_edition": "Enterprise",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -3231,7 +3319,8 @@
       "downtime": "near-zero",
       "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
       "source_os": "Linux",
-      "source_edition": "Standard"
+      "source_edition": "Standard",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -3274,7 +3363,8 @@
       "downtime": "near-zero",
       "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
       "source_os": "Windows Server 2019",
-      "source_edition": "Express"
+      "source_edition": "Express",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
       "eligibility": {
@@ -3301,5 +3391,575 @@
       "Enterprise / Standard / Developer edition"
     ],
     "auditRef": "audit-mi-link-edition-gate"
+  },
+  {
+    "id": "aws-ec2-2016-clr-offline-blob-unknown",
+    "title": "AWS EC2 SQL 2016, SQL CLR SAFE, offline cutover, Blob path unverified",
+    "why": "The audited session, replayed with its exact answers. It produced a defensible target and a method gate reported as passed while the Blob upload path had never been verified.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "AWS_EC2",
+      "source_version": "SQL2016",
+      "intent": "MIGRATE_NOW",
+      "driver": "COST",
+      "management_model": "MANAGED_PAAS",
+      "feature_dependencies": [
+        "SQL CLR"
+      ],
+      "size": "UNDER_150_GB",
+      "downtime": "OFFLINE",
+      "compliance": "EU_DATA_BOUNDARY",
+      "source_os": "WINDOWS_SERVER_2012_OR_LATER",
+      "source_edition": "STANDARD",
+      "clr_permission_set": "CLR_SAFE",
+      "tde_status": "TDE_NOT_ENABLED",
+      "authentication": "WINDOWS_LOGINS",
+      "blob_https_reachability": "BLOB_HTTPS_UNKNOWN"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_mi": "eligible_with_remediation",
+        "sql_db": "unsupported",
+        "sql_vm": "eligible"
+      },
+      "primary_target": "Azure SQL Managed Instance",
+      "recommendationStatus": "provisional",
+      "confidence": "low",
+      "mustNotRecommend": [
+        "Azure SQL Database for CLR-dependent workload"
+      ],
+      "method": "LRS",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes"
+    },
+    "assertRulePresent": [
+      "BACKUP-BLOB-PATH"
+    ],
+    "auditRef": "audit2-v2.1-real-session"
+  },
+  {
+    "id": "aws-ec2-2016-clr-offline-blob-confirmed",
+    "title": "Same estate with the Blob upload confirmed",
+    "why": "Metamorphic pair: confirming the upload path is the only change, so the method may stop being provisional on that ground alone.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "AWS_EC2",
+      "source_version": "SQL2016",
+      "intent": "MIGRATE_NOW",
+      "driver": "COST",
+      "management_model": "MANAGED_PAAS",
+      "feature_dependencies": [
+        "SQL CLR"
+      ],
+      "size": "UNDER_150_GB",
+      "downtime": "OFFLINE",
+      "compliance": "EU_DATA_BOUNDARY",
+      "source_os": "WINDOWS_SERVER_2012_OR_LATER",
+      "source_edition": "STANDARD",
+      "clr_permission_set": "CLR_SAFE",
+      "tde_status": "TDE_NOT_ENABLED",
+      "authentication": "WINDOWS_LOGINS",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+    },
+    "expect": {
+      "primary_target": "Azure SQL Managed Instance",
+      "recommendationStatus": "provisional",
+      "method": "LRS",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "BACKUP-BLOB-PATH"
+    ],
+    "auditRef": "audit2-v2.1-real-session"
+  },
+  {
+    "id": "clr-external-access-escalates",
+    "title": "Same estate, CLR assemblies use EXTERNAL_ACCESS",
+    "why": "clr strict security treats EXTERNAL_ACCESS as UNSAFE without a signature, so the remediation must not be lighter than for SAFE.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "AWS_EC2",
+      "source_version": "SQL2016",
+      "intent": "MIGRATE_NOW",
+      "driver": "COST",
+      "management_model": "MANAGED_PAAS",
+      "feature_dependencies": [
+        "SQL CLR"
+      ],
+      "size": "UNDER_150_GB",
+      "downtime": "OFFLINE",
+      "compliance": "EU_DATA_BOUNDARY",
+      "source_os": "WINDOWS_SERVER_2012_OR_LATER",
+      "source_edition": "STANDARD",
+      "clr_permission_set": "CLR_EXTERNAL_ACCESS",
+      "tde_status": "TDE_NOT_ENABLED",
+      "authentication": "WINDOWS_LOGINS",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_db": "unsupported"
+      },
+      "recommendationStatus": "provisional",
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "LRS",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "CLR-PERMISSION"
+    ],
+    "auditRef": "audit2-v2.1-real-session"
+  },
+  {
+    "id": "clr-unsafe-holds-mi",
+    "title": "Same estate, CLR assemblies use UNSAFE",
+    "why": "UNSAFE assemblies may call unmanaged code, which managed PaaS does not expose. MI must not be ranked first before an inventory.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "AWS_EC2",
+      "source_version": "SQL2016",
+      "intent": "MIGRATE_NOW",
+      "driver": "COST",
+      "management_model": "MANAGED_PAAS",
+      "feature_dependencies": [
+        "SQL CLR"
+      ],
+      "size": "UNDER_150_GB",
+      "downtime": "OFFLINE",
+      "compliance": "EU_DATA_BOUNDARY",
+      "source_os": "WINDOWS_SERVER_2012_OR_LATER",
+      "source_edition": "STANDARD",
+      "clr_permission_set": "CLR_UNSAFE",
+      "tde_status": "TDE_NOT_ENABLED",
+      "authentication": "WINDOWS_LOGINS",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_vm": "eligible"
+      },
+      "recommendationStatus": "provisional",
+      "primary_target": "provisional shortlist only",
+      "method": "Assessment and dependency discovery first",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "confidence": "low",
+      "mustNotRecommend": [
+        "Azure SQL Managed Instance before an assembly inventory"
+      ]
+    },
+    "assertRulePresent": [
+      "CLR-PERMISSION"
+    ],
+    "auditRef": "audit2-v2.1-real-session"
+  },
+  {
+    "id": "clr-permission-unknown-holds-paas",
+    "title": "Same estate, CLR permission set never stated",
+    "why": "An unstated permission set must never be read as SAFE.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "AWS_EC2",
+      "source_version": "SQL2016",
+      "intent": "MIGRATE_NOW",
+      "driver": "COST",
+      "management_model": "MANAGED_PAAS",
+      "feature_dependencies": [
+        "SQL CLR"
+      ],
+      "size": "UNDER_150_GB",
+      "downtime": "OFFLINE",
+      "compliance": "EU_DATA_BOUNDARY",
+      "source_os": "WINDOWS_SERVER_2012_OR_LATER",
+      "source_edition": "STANDARD",
+      "tde_status": "TDE_NOT_ENABLED",
+      "authentication": "WINDOWS_LOGINS",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+    },
+    "expect": {
+      "recommendationStatus": "provisional",
+      "primary_target": "provisional shortlist only",
+      "method": "Assessment and dependency discovery first",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "confidence": "low",
+      "mustNotRecommend": [
+        "Azure SQL Managed Instance before an assembly inventory"
+      ]
+    },
+    "assertRulePresent": [
+      "CLR-PERMISSION"
+    ],
+    "auditRef": "audit2-v2.1-real-session"
+  },
+  {
+    "id": "os-control-flips-to-sql-vm",
+    "title": "Same estate, but the customer needs OS control",
+    "why": "Changing only the management model must move the primary target to SQL Server on Azure VM.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "AWS_EC2",
+      "source_version": "SQL2016",
+      "intent": "MIGRATE_NOW",
+      "driver": "COST",
+      "management_model": "OS_CONTROL",
+      "feature_dependencies": [
+        "SQL CLR"
+      ],
+      "size": "UNDER_150_GB",
+      "downtime": "OFFLINE",
+      "compliance": "EU_DATA_BOUNDARY",
+      "source_os": "WINDOWS_SERVER_2012_OR_LATER",
+      "source_edition": "STANDARD",
+      "clr_permission_set": "CLR_SAFE",
+      "tde_status": "TDE_NOT_ENABLED",
+      "authentication": "WINDOWS_LOGINS",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+    },
+    "expect": {
+      "primary_target": "SQL Server on Azure VM",
+      "recommendationStatus": "provisional",
+      "method": "Native backup/restore",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "MANAGEMENT-MODEL"
+    ],
+    "auditRef": "audit2-v2.1-real-session"
+  },
+  {
+    "id": "offline-to-near-zero-reopens-online-methods",
+    "title": "Same estate, but the business now needs near-zero downtime",
+    "why": "Changing only the downtime tolerance must reopen the online methods and their prerequisites, which an offline answer had made irrelevant.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "AWS_EC2",
+      "source_version": "SQL2016",
+      "intent": "MIGRATE_NOW",
+      "driver": "COST",
+      "management_model": "MANAGED_PAAS",
+      "feature_dependencies": [
+        "SQL CLR"
+      ],
+      "size": "UNDER_150_GB",
+      "downtime": "NEAR_ZERO",
+      "compliance": "EU_DATA_BOUNDARY",
+      "source_os": "WINDOWS_SERVER_2012_OR_LATER",
+      "source_edition": "STANDARD",
+      "clr_permission_set": "CLR_SAFE",
+      "tde_status": "TDE_NOT_ENABLED",
+      "authentication": "WINDOWS_LOGINS",
+      "mi_link_ports": "PORTS_CONFIRMED_OPEN",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "network_ports": "Ports confirmed open in both directions 5022 and 11000-11999"
+    },
+    "expect": {
+      "primary_target": "Azure SQL Managed Instance",
+      "recommendationStatus": "provisional",
+      "method": "MI Link",
+      "targetAvailabilityDuringSync": "read-only",
+      "businessCutoverDowntime": "<1min",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "MI-LINK-HOST"
+    ],
+    "auditRef": "audit2-v2.1-real-session"
+  },
+  {
+    "id": "tde-enabled-adds-certificate-not-new-target",
+    "title": "Same estate with TDE enabled",
+    "why": "Enabling TDE adds a certificate step before restore. It must not silently change the target.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "AWS_EC2",
+      "source_version": "SQL2016",
+      "intent": "MIGRATE_NOW",
+      "driver": "COST",
+      "management_model": "MANAGED_PAAS",
+      "feature_dependencies": [
+        "SQL CLR"
+      ],
+      "size": "UNDER_150_GB",
+      "downtime": "OFFLINE",
+      "compliance": "EU_DATA_BOUNDARY",
+      "source_os": "WINDOWS_SERVER_2012_OR_LATER",
+      "source_edition": "STANDARD",
+      "clr_permission_set": "CLR_SAFE",
+      "tde_status": "TDE_ENABLED",
+      "authentication": "WINDOWS_LOGINS",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+    },
+    "expect": {
+      "primary_target": "Azure SQL Managed Instance",
+      "recommendationStatus": "provisional",
+      "method": "LRS",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "TDE cert installed first when encrypted"
+    ],
+    "auditRef": "audit2-v2.1-real-session"
+  },
+  {
+    "id": "over-128-tb-forces-sharding-or-vm",
+    "title": "A single database above the Hyperscale ceiling",
+    "why": "The size classes used to overlap, so this case could match two answers. Above 128 TB no Azure SQL target holds it as a single database.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "AWS_EC2",
+      "source_version": "SQL2016",
+      "intent": "MIGRATE_NOW",
+      "driver": "COST",
+      "management_model": "OS_CONTROL",
+      "feature_dependencies": [
+        "SQL CLR"
+      ],
+      "size": "OVER_128_TB",
+      "downtime": "OFFLINE",
+      "compliance": "EU_DATA_BOUNDARY",
+      "source_os": "WINDOWS_SERVER_2012_OR_LATER",
+      "source_edition": "STANDARD",
+      "clr_permission_set": "CLR_SAFE",
+      "tde_status": "TDE_NOT_ENABLED",
+      "authentication": "WINDOWS_LOGINS",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+    },
+    "expect": {
+      "primary_target": "SQL Server on Azure VM",
+      "recommendationStatus": "provisional",
+      "method": "Native backup/restore",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "HYPERSCALE-CEILING"
+    ],
+    "auditRef": "audit2-v2.1-real-session"
+  },
+  {
+    "id": "label-and-id-reach-the-same-decision",
+    "title": "The same estate answered in English labels rather than IDs",
+    "why": "A label a user clicks and an ID a script sends must reach the same rule, which was not true before v2.1.",
+    "inputs": {
+      "scope": "single database",
+      "source_location": "AWS EC2",
+      "source_version": "2016",
+      "intent": "move to azure now",
+      "driver": "cost optimization",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "SQL CLR"
+      ],
+      "size": "< 150 GB",
+      "downtime": "offline",
+      "compliance": "EU data boundary",
+      "clr_permission_set": "SAFE"
+    },
+    "expect": {
+      "eligibility": {
+        "sql_db": "unsupported"
+      },
+      "recommendationStatus": "provisional",
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "LRS",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
+      "confidence": "low"
+    },
+    "assertRulePresent": [
+      "CLR-PERMISSION"
+    ],
+    "auditRef": "audit2-v2.1-real-session"
+  },
+  {
+    "id": "blob-blocked-does-not-block-a-non-blob-path",
+    "title": "Blob upload blocked, and the chosen path does not need it",
+    "why": "BACKUP-BLOB-PATH must constrain backup-based methods only. A blocked upload path is not a reason to refuse a method that never traverses Blob.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "ON_PREM",
+      "source_version": "SQL2019",
+      "intent": "MIGRATE_NOW",
+      "management_model": "MANAGED_PAAS",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "OFFLINE",
+      "blob_https_reachability": "BLOB_HTTPS_BLOCKED"
+    },
+    "expect": {
+      "primary_target": "Azure SQL Database",
+      "method": "modern DMS (offline)",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time",
+      "confidence": "medium",
+      "recommendationStatus": "provisional"
+    },
+    "assertRulePresent": [
+      "BACKUP-BLOB-PATH"
+    ],
+    "auditRef": "audit2-v2.1-coverage"
+  },
+  {
+    "id": "windows-logins-need-login-remediation",
+    "title": "Windows/AD logins on a SQL Database target",
+    "why": "The audited session listed Windows logins and no scenario covered them. They survive as remediation effort, not as a blocker.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "ON_PREM",
+      "source_version": "SQL2019",
+      "intent": "MIGRATE_NOW",
+      "management_model": "MANAGED_PAAS",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "OFFLINE",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "authentication": "WINDOWS_LOGINS",
+      "driver": "APP_MODERNIZATION"
+    },
+    "expect": {
+      "primary_target": "Azure SQL Database",
+      "method": "modern DMS (offline)",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time",
+      "confidence": "medium",
+      "recommendationStatus": "provisional"
+    },
+    "assertRulePresent": [
+      "Azure SQL Database"
+    ],
+    "auditRef": "audit2-v2.1-coverage"
+  },
+  {
+    "id": "limited-source-rights-are-recorded",
+    "title": "Limited rights on the source",
+    "why": "The SSMS 22 Migration Component requires sysadmin on the source. Recommending it without saying so sends someone to a tool they cannot run.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "ON_PREM",
+      "source_version": "SQL2019",
+      "intent": "MIGRATE_NOW",
+      "management_model": "MANAGED_PAAS",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "OFFLINE",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "source_permissions": "LIMITED_RIGHTS"
+    },
+    "expect": {
+      "primary_target": "Azure SQL Database",
+      "method": "modern DMS (offline)",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "total-migration-time",
+      "confidence": "medium",
+      "recommendationStatus": "provisional"
+    },
+    "assertRulePresent": [
+      "SSMS 22"
+    ],
+    "auditRef": "audit2-v2.1-coverage"
+  },
+  {
+    "id": "datacenter-exit-reaches-avs",
+    "title": "VMware estate leaving the data centre",
+    "why": "AVS was absent from the trace in a real run. It must remain reachable and be ranked on its own merits.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "ON_PREM",
+      "source_version": "SQL2019",
+      "intent": "MIGRATE_NOW",
+      "management_model": "OS_CONTROL",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "OFFLINE",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "driver": "DATACENTER_EXIT"
+    },
+    "expect": {
+      "primary_target": "Azure VMware Solution",
+      "method": "VMware HCX / vMotion",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "confidence": "medium",
+      "recommendationStatus": "provisional"
+    },
+    "assertRulePresent": [
+      "Azure VMware Solution"
+    ],
+    "auditRef": "audit2-v2.1-coverage"
+  },
+  {
+    "id": "fabric-driver-without-constraints-returns-a-shortlist",
+    "title": "Fabric named as the driver, with no constraints stated",
+    "why": "Fabric was absent from a real trace. Naming it as the driver must reach a Fabric branch rather than silently disappear.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "ON_PREM",
+      "source_version": "SQL2019",
+      "intent": "MIGRATE_NOW",
+      "management_model": "MANAGED_PAAS",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "OFFLINE",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "driver": "FABRIC_ANALYTICS"
+    },
+    "expect": {
+      "primary_target": "provisional shortlist only",
+      "method": "Confirm a Fabric ingestion path first; Migration Assistant Preview gates apply only if that path is chosen",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "confidence": "low",
+      "recommendationStatus": "provisional"
+    },
+    "assertRulePresent": [
+      "Fabric"
+    ],
+    "auditRef": "audit2-v2.1-coverage"
+  },
+  {
+    "id": "air-gapped-kubernetes-reaches-arc-mi",
+    "title": "Air-gapped estate on Kubernetes",
+    "why": "Sovereign and disconnected estates must reach the Arc family rather than a public PaaS target.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "ON_PREM",
+      "source_version": "SQL2019",
+      "intent": "MIGRATE_NOW",
+      "management_model": "KUBERNETES",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "OFFLINE",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "compliance": "EDGE_AIR_GAPPED",
+      "kubernetes_model": "ARC_MANAGED_ENGINE"
+    },
+    "expect": {
+      "primary_target": "Arc-enabled SQL Managed Instance",
+      "method": "Native backup/restore",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
+      "confidence": "medium",
+      "recommendationStatus": "provisional"
+    },
+    "assertRulePresent": [
+      "Arc"
+    ],
+    "auditRef": "audit2-v2.1-coverage"
   }
 ]

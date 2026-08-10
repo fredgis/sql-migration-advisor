@@ -494,7 +494,43 @@ function enforceOutputConsistency(inputs, eligibility, out) {
   out.method = fallbackMethod;
   delete out.alternativeTarget;
 }
+function applyBackupBlobPath(inputs, out) {
+  // BACKUP-BLOB-PATH. Every backup-based path moves through HTTPS to Azure Blob. A session
+  // reported this gate as `passed` with that path never verified, which is how a cutover date
+  // gets fixed against an assumption. LRS belongs here too: it replays full and log backups
+  // staged in a Blob container, so it depends on the same upload path as a native restore.
+  if (!/backup\/restore|backup and restore|bacpac|data box|\bLRS\b|log replay/i.test(String(out.method ?? ''))) return;
+  const blob = String(inputs.blob_https_reachability ?? '');
+  if (/confirmed/i.test(blob)) return;
+  if (/blocked/i.test(blob)) {
+    addUnique(out.hardBlockers, 'BACKUP-BLOB-PATH: HTTPS to Azure Blob is blocked, so no backup-based path can carry the data. Open the path, or select a method that does not traverse Blob.');
+  }
+  addUnique(out.unknowns, 'BACKUP-BLOB-PATH: the HTTPS upload path to Azure Blob is not verified, so this method gate cannot report passed.');
+  addUnique(out.evidenceRequired, 'Upload a representative backup to Azure Blob and restore it into the target before fixing a cutover date.');
+}
+function applyClrPermission(inputs, out, eligibility) {
+  // CLR-PERMISSION. SAFE is not a clearance. Under `clr strict security`, on by default since
+  // SQL Server 2017, the engine treats SAFE and EXTERNAL_ACCESS assemblies as UNSAFE unless they
+  // are signed or hash-trusted, so the permission set alone settles nothing.
+  const deps = [].concat(inputs.feature_dependencies ?? []).join(' ');
+  if (!/\bCLR\b/i.test(deps)) return;
+  const set = String(inputs.clr_permission_set ?? '');
+  if (/UNSAFE/i.test(set)) {
+    eligibility.sql_mi = E.UNKNOWN;
+    addUnique(out.unknowns, 'CLR-PERMISSION: UNSAFE assemblies may call unmanaged code and reach the host, which managed PaaS does not expose.');
+    addUnique(out.evidenceRequired, 'Inventory every UNSAFE assembly with its external file, network and native-library calls before ranking a PaaS target.');
+    return;
+  }
+  if (/SAFE|EXTERNAL_ACCESS/i.test(set)) {
+    addUnique(out.evidenceRequired, 'CLR-PERMISSION: sign each assembly, or trust its hash, because clr strict security treats SAFE and EXTERNAL_ACCESS as UNSAFE. A permission set is not a compatibility result.');
+    return;
+  }
+  eligibility.sql_mi = E.UNKNOWN;
+  addUnique(out.unknowns, 'CLR-PERMISSION: the assembly permission sets were never stated, and an unstated permission set is not SAFE.');
+  addUnique(out.evidenceRequired, 'Produce an assembly inventory with permission sets, signatures and external calls.');
+}
 function finalizeStatus(inputs, out, eligibility) {
+  applyBackupBlobPath(inputs, out);
   const hasUnknown = Object.values(eligibility).includes(E.UNKNOWN) || out.unknowns.length > 0 || out.tier === E.UNKNOWN;
   // No validated status. Four self-declared booleans used to promote a recommendation to
   // validated/high while the skill reads no artefact, which turned an unverified claim into an
@@ -653,6 +689,7 @@ export function evaluate(rawInputs = {}) {
   const out = { hardBlockers: [], unknowns: [], evidenceRequired: [], exclusions: {} };
   applyFabric(inputs, eligibility, out);
   applyFeatureEligibility(inputs, eligibility, out);
+  applyClrPermission(inputs, out, eligibility);
   applyManagement(inputs, eligibility, out);
 
   const [primaryTarget, method] = chooseTarget(inputs, eligibility, out);
