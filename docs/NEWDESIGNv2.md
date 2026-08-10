@@ -1,220 +1,220 @@
-# NEWDESIGN v2.0.0 — plan de refonte
+# NEWDESIGN v2.0.0 — refactor plan
 
-> **Statut : proposition, en attente de validation.** Rien n'est implémenté.
-> Base actuelle : `v1.18.0`, commit `fbd72f6`, 18 portes, 90 scénarios.
+> **Status: proposal, awaiting approval.** Nothing here is implemented.
+> Current baseline: `v1.18.0`, commit `fbd72f6`, 18 gates, 90 golden scenarios.
 
 ---
 
-## 1. Pourquoi une v2
+## 1. Why a v2
 
-Un audit externe a formulé une charge centrale : *le dépôt a optimisé ce qui est facile à tester plutôt que ce qui prend la décision*.
+An external audit made one central charge: *the repository optimised what is easy to test rather than what makes the decision*.
 
-En reproduisant ses contre-exemples, presque tous se sont confirmés. Les vagues 0 à 2 (livrées en v1.18.0) ont traité l'urgence : une erreur factuelle que le dépôt protégeait avec sa propre porte, un contrat d'entrée où les libellés affichés n'atteignaient aucune règle, des portes qui acceptaient l'invérifié, et un statut `validated` fondé sur quatre booléens auto-déclarés.
+Reproducing its counter-examples confirmed almost all of them. Waves 0 to 2, shipped in `v1.18.0`, dealt with the urgent findings: a factual error the repository was defending with its own gate, an input contract whose displayed labels reached no rule, gates that accepted the unverified, and a `validated` status resting on four self-declared booleans.
 
-Il reste le défaut structurel, celui que ces correctifs n'adressent pas :
+What remains is the structural defect those fixes do not address:
 
-> **Les tests exercent un miroir des règles. Ils n'exercent jamais l'agent qui les lit en session.**
+> **The tests exercise a mirror of the rules. They never exercise the agent that reads them in a session.**
 
-La v2 s'attaque à ce point. Elle ne rend pas la skill déterministe — c'est l'option A, écartée. Elle réduit ce que le modèle doit interpréter, lui fait vérifier sa propre sortie, et **mesure** ce qu'il fait réellement.
+v2 attacks that. It does not make the skill deterministic — that was option A, and it was rejected. It reduces what the model has to interpret, makes the model check its own output, and **measures** what it actually does.
 
-### Ce qui ne change pas
+### What does not change
 
-| Élément | Décision |
+| Item | Decision |
 |---|---|
-| **La base de connaissances** | 🔒 **Intouchée.** Aucun fait, règle, plancher, source ou date. Les sections partenaires restent. Seuls le tampon de version et une éventuelle référence de chemin bougent |
-| **Le weekly check** | 🔒 **Conservé**, y compris ses 4 jobs. Voir §6, il demande du travail pour survivre |
-| **Les 19 questions** | Aucune supprimée. Deux enrichies, le catalogue déménage |
-| **La carte de sortie** | Même structure, mêmes emoji. Deux ajouts discrets |
-| **L'option A** | Écartée : pas de moteur exécuté en production |
+| **The knowledge base** | 🔒 **Untouched.** No fact, rule, floor, source or verification date. The partner sections stay. Only the version stamp and possibly one path reference move |
+| **The weekly check** | 🔒 **Kept**, all four jobs. See §6: it needs work to survive |
+| **The 19 interview questions** | None removed. Two enriched, the option catalogue moves out |
+| **The output card** | Same structure, same emoji rows. Two discreet additions |
+| **Option A** | Rejected: no executable engine in production |
 
 ---
 
-## 2. Les questions de l'interview
+## 2. The interview questions
 
-**Aucune suppression.** Deux enrichissements, pour des raisons précises :
+**Nothing is removed.** Two questions gain an option, for concrete reasons:
 
-| Question | Changement | Pourquoi |
+| Question | Change | Why |
 |---|---|---|
-| **Q8** taille | ➕ option `> 128 TB` | Impossible aujourd'hui d'exprimer un dépassement du plafond Hyperscale, donc la règle correspondante ne peut jamais se déclencher |
-| **Q10** réseau | ➕ option `ports confirmés ouverts dans les deux sens` | On peut déclarer « bloqué » mais pas « confirmé ouvert ». MI Link ne peut donc jamais être *confirmé*, seulement non-infirmé |
-| Les 19 | Le catalogue d'options **déménage** vers `reference/input-contract.md` | `SKILL.md` orchestre, il ne stocke plus le vocabulaire |
-| ➕ nouveau | **Mode profil compact** avant l'interview | L'audit relève 20-26 tours. Coller un profil et ne poser que les manques |
+| **Q8** size | ➕ `> 128 TB` | Today there is no way to express a database above the Hyperscale ceiling, so the rule that handles it can never fire |
+| **Q10** network | ➕ `ports confirmed open in both directions` | A user can declare "blocked" but not "confirmed open". MI Link can therefore never be *confirmed*, only un-refuted |
+| All 19 | The option catalogue **moves** to `reference/input-contract.md` | `SKILL.md` orchestrates; it no longer stores the vocabulary |
+| ➕ new | **Compact profile mode** before the interview | The audit counts 20 to 26 turns. Let the user paste a profile and ask only for what is missing |
 
 ---
 
-## 3. La sortie
+## 3. The output
 
-La structure de la carte ne change pas. Deux ajouts :
+The card keeps its structure. Two additions:
 
 ```
-Éligibilité Phase A
-• SQL MI — eligible_with_remediation : SQL Server 2016 compatible LRS…    ← existe déjà
-                                                           [MI-LINK-HOST] ← ajouté
-• SQL DB — unknown_requires_assessment : dépendances inconnues             ← existe déjà
+Phase A eligibility
+• SQL MI — eligible_with_remediation: SQL Server 2016 is LRS-compatible…   ← already there
+                                                           [MI-LINK-HOST]  ← added
+• SQL DB — unknown_requires_assessment: dependencies not confirmed          ← already there
 
-🔁 Porte de méthode — LRS : passée (source 2016 dans 2008-2022, fenêtre ≤30 j)  ← ajouté
+🔁 Method gate — LRS: passed (source 2016 within 2008-2022, window ≤30 days) ← added
 ```
 
-**L'auto-vérification est invisible quand elle passe.** C'est un contrôle effectué avant l'affichage : cible primaire éligible, méthode passant sa porte, inconnues de hard gate remontées, cible `unsupported` jamais primaire. Elle ne devient visible que si un invariant casse, et là elle expose l'incohérence au lieu de la réparer en silence.
+**The self-check is invisible when it passes.** It runs before the card is rendered: the primary target is eligible, the method passes its own gate, hard-gate unknowns are surfaced, an `unsupported` target is never primary. It only becomes visible when an invariant breaks, and then it exposes the inconsistency instead of quietly repairing it.
 
-La trace détaillée reste **sur demande**. Le défaut reste la carte lisible.
+The detailed trace stays **on request**. The readable card remains the default.
 
 ---
 
-## 4. Les six lots
+## 4. The six lots
 
-### Lot A — Auto-vérification et trace 🔴 *le seul qui agit en session*
+### Lot A — Self-check and trace 🔴 *the only one that acts during a session*
 
-| # | Tâche | Fichiers | Difficulté |
+| # | Task | Files | Difficulty |
 |---|---|---|---|
-| A1 | Écrire les invariants de cohérence de sortie | `decision-rules.md` | 🟠 |
-| A2 | Rendre l'auto-vérification obligatoire avant affichage | `SKILL.md` §Operations | 🟠 |
-| A3 | Trace visible : tableau Phase A, ID de règle, résultat de porte | `SKILL.md` §Output | 🟠 |
-| A4 | Porte : chaque scénario produit une trace cohérente | `run-tests.mjs` | 🟠 |
-| A5 | Exemple mis à jour | `examples/` | 🟢 |
+| A1 | Write the output consistency invariants | `decision-rules.md` | 🟠 |
+| A2 | Make the self-check mandatory before rendering | `SKILL.md` §Operations | 🟠 |
+| A3 | Visible trace: Phase A table, rule ID, method-gate result | `SKILL.md` §Output | 🟠 |
+| A4 | Gate: every scenario produces a coherent trace | `run-tests.mjs` | 🟠 |
+| A5 | Update the worked example | `examples/` | 🟢 |
 
-### Lot B — Contrats
+### Lot B — Contracts
 
-| # | Tâche | Fichiers | Difficulté |
+| # | Task | Files | Difficulty |
 |---|---|---|---|
-| B1 | `reference/input-contract.md` : 30 IDs, ~35 champs, types, consommateurs, comportement inconnu | nouveau | 🔴 |
-| B2 | `reference/output-contract.md` | nouveau | 🟠 |
-| B3 | Alléger `SKILL.md` : le catalogue part, les liens restent | `SKILL.md` | 🟠 |
-| B4 | Q8, Q10 enrichies, mode profil compact | `SKILL.md` | 🟢 |
-| B5 | Porte : tout champ a une question, un type, un consommateur, un scénario | `run-tests.mjs` | 🔴 |
+| B1 | `reference/input-contract.md`: 30 IDs, ~35 fields, types, consumers, unknown behaviour | new | 🔴 |
+| B2 | `reference/output-contract.md` | new | 🟠 |
+| B3 | Slim `SKILL.md`: the catalogue leaves, the links stay | `SKILL.md` | 🟠 |
+| B4 | Q8 and Q10 enriched, compact profile mode | `SKILL.md` | 🟢 |
+| B5 | Gate: every field has a question, a type, a consumer and a scenario | `run-tests.mjs` | 🔴 |
 
-### Lot C — Règles atomiques
+### Lot C — Atomic rules
 
-| # | Tâche | Fichiers | Difficulté |
+| # | Task | Files | Difficulty |
 |---|---|---|---|
-| C1 | Hard gates au format atomique : ID, champs consommés, comportement inconnu, preuve, source | `decision-rules.md` | 🔴 |
-| C2 | Ranking ordonné en 10 étapes, à la place de « compare cost, compatibility, resilience » | `decision-rules.md` | 🟠 |
-| C3 | Porte : chaque règle déclare ses champs, chaque champ existe au contrat | `run-tests.mjs` | 🟠 |
-| C4 | 🔴 **Adapter le weekly check au nouveau format** | `check-consistency.mjs` | 🔴 |
+| C1 | Rewrite the hard gates in atomic form: ID, consumed fields, unknown behaviour, evidence, source | `decision-rules.md` | 🔴 |
+| C2 | The 10-step ordered ranking, replacing "compare cost, compatibility, resilience" | `decision-rules.md` | 🟠 |
+| C3 | Gate: every rule declares its fields, every field exists in the contract | `run-tests.mjs` | 🟠 |
+| C4 | 🔴 **Adapt the weekly check to the new format** | `check-consistency.mjs` | 🔴 |
 
-### Lot D — Renommage et déplacement
+### Lot D — Rename and move
 
-| # | Tâche | Portée | Difficulté |
+| # | Task | Scope | Difficulty |
 |---|---|---|---|
-| D1 | `git mv SKILL.md skills/get-migration-assessment/SKILL.md` | historique préservé | 🟢 |
+| D1 | `git mv SKILL.md skills/get-migration-assessment/SKILL.md` | history preserved | 🟢 |
 | D2 | `name: get-migration-assessment` | frontmatter | 🟢 |
-| D3 | Références **de chemin** | ~8 fichiers sur 20 | 🟠 |
-| D4 | 🔴 **`check-consistency.mjs` lit `SKILL.md` à la racine** | weekly check | 🟠 |
-| D5 | Réinstaller, supprimer l'ancien dossier | `~/.copilot/skills/` | 🟢 |
-| D6 | Message Teams à Travis et Jyotika | — | 🟢 |
+| D3 | **Path** references | ~8 of the 20 files | 🟠 |
+| D4 | 🔴 **`check-consistency.mjs` reads `SKILL.md` at the repository root** | weekly check | 🟠 |
+| D5 | Reinstall locally, remove the old folder | `~/.copilot/skills/` | 🟢 |
+| D6 | Teams message to Travis and Jyotika | — | 🟢 |
 
-### Lot E — Documentation, alignement v2.0.0
+### Lot E — Documentation, v2.0.0 alignment
 
-| # | Fichier | Volume | Difficulté |
+| # | File | Size | Difficulty |
 |---|---|---|---|
-| E1 | 🔴 **`README.md` — revue complète** | 289 l | 🔴 |
-| E2 | `howto/how-the-skill-works.md` | 377 l | 🟠 |
-| E3 | `blume/docs/index.mdx` | 221 l | 🟠 |
-| E4 | `docs/…developer-pitch.md` | 789 l | 🔴 |
-| E5 | `CONTRIBUTING.md`, `tests/README.md` | 69 + 40 l | 🟢 |
-| E6 | Diagrammes `runtime-loop`, `skill-architecture`, `quality-gate` | 3 × 4 fichiers | 🟠 |
+| E1 | 🔴 **`README.md` — full review** | 289 lines | 🔴 |
+| E2 | `howto/how-the-skill-works.md` | 377 lines | 🟠 |
+| E3 | `blume/docs/index.mdx` | 221 lines | 🟠 |
+| E4 | `docs/…developer-pitch.md` | 789 lines | 🔴 |
+| E5 | `CONTRIBUTING.md`, `tests/README.md` | 69 + 40 lines | 🟢 |
+| E6 | Diagrams `runtime-loop`, `skill-architecture`, `quality-gate` | 3 × 4 files | 🟠 |
 
-#### E1 — ce que la revue du README doit couvrir
+#### E1 — what the README review must cover
 
-| Section | État en v1.18 | Cible v2.0.0 |
+| Section | State in v1.18 | v2.0.0 target |
 |---|---|---|
-| Badges | KB v1.18 | v2.0.0, 18 → N portes, 90 → N scénarios |
-| Pitch d'ouverture | « regression-tested » | Positionner v2 : politique lisible, auto-vérifiée, mesurée |
-| Pourquoi c'est fiable | 5 puces | Ajouter auto-vérification, trace, mesure runtime |
-| Réponse à l'audit | 5 lignes, audit de 2025 | ➕ le nouvel audit et ce qu'il a produit |
-| Ce qu'il y a dedans | table des fichiers | ➕ `input-contract`, `output-contract`, `evals/`, nouveau chemin de skill |
-| Installation | `~/.copilot/skills/assessment-advisor` | ⚠️ nouveau nom **et** dépôt complet requis, pas seulement `SKILL.md` |
-| Comment ça marche | 3 étapes | ➕ phase d'auto-vérification |
-| Encart confiance | 3 niveaux | ⚠️ `high` n'existe plus, à réécrire |
-| Encart couverture | 92,02 % de branches | ➕ distinguer couverture du miroir et mesure runtime |
-| Poster / PDF | v1.18 | régénérés par le CI |
-| Changelog | v1.18 en tête | ➕ ligne v2.0.0 |
+| Badges | KB v1.18 | v2.0.0, 18 → N gates, 90 → N scenarios |
+| Opening pitch | "regression-tested" | Position v2: readable policy, self-checked, measured |
+| Why it is trustworthy | 5 bullets | Add the self-check, the trace, the runtime measurement |
+| Audit response | 5 rows, 2025 audit | ➕ the new audit and what it produced |
+| What's inside | file table | ➕ `input-contract`, `output-contract`, `evals/`, new skill path |
+| Install | `~/.copilot/skills/assessment-advisor` | ⚠️ new name **and** the full repository is now required, not `SKILL.md` alone |
+| How it works | 3 steps | ➕ the self-check phase |
+| Confidence callout | 3 levels | ⚠️ `high` no longer exists; rewrite |
+| Coverage callout | 92.02% branches | ➕ separate mirror coverage from runtime measurement |
+| Poster / PDF | v1.18 | rebuilt by CI |
+| Changelog | v1.18 on top | ➕ the v2.0.0 row |
 
-**Point de vigilance :** l'installation change de nature. Aujourd'hui on clone le dépôt dans `~/.copilot/skills/assessment-advisor`. Avec la nouvelle arborescence, la skill référence `../../reference/…` : installer `SKILL.md` seul ne fonctionnera plus. Le README doit le dire explicitement.
+**Watch out:** installation changes in nature. Today the repository is cloned into `~/.copilot/skills/assessment-advisor`. With the new layout the skill references `../../reference/…`, so installing `SKILL.md` alone will no longer work. The README has to say so plainly.
 
-### Lot F — B2, l'éval runtime
+### Lot F — B2, the runtime eval
 
-| # | Tâche | Difficulté |
+| # | Task | Difficulty |
 |---|---|---|
-| F1 | 8-12 fiches client, avec des « je ne sais pas » | 🟠 |
-| F2 | Boucle conseiller ⟷ client simulé, 15-25 tours | 🔴 |
-| F3 | Comparateur : conformité politique, stabilité inter-modèles, auto-cohérence | 🔴 |
-| F4 | Invariants métamorphiques : label = ID, FR = EN, monotonie | 🟠 |
-| F5 | Première mesure publiée, **sans seuil** | 🟢 |
+| F1 | 8 to 12 customer cards, including "I don't know" answers | 🟠 |
+| F2 | Advisor ⟷ simulated-customer loop, 15 to 25 turns | 🔴 |
+| F3 | Comparator: policy conformance, cross-model stability, self-consistency | 🔴 |
+| F4 | Metamorphic invariants: label = ID, FR = EN, monotonicity | 🟠 |
+| F5 | First measurement published, **no threshold** | 🟢 |
 
 ---
 
-## 5. Séquence et parallélisation
+## 5. Sequence and parallelisation
 
 ```
-D  déplacement pur              ← commit mécanique isolé, diff lisible
+D  pure move                    ← mechanical commit on its own, reviewable diff
         ↓
-B + A  un seul passage          ← les deux éditent SKILL.md
+B + A  one pass                 ← both edit SKILL.md
         ↓
-C  règles atomiques  ──────┐
+C  atomic rules  ──────────┐
         ↓                   │
-E1 E2 E3 E4 E5 E6           │    ← ✅ vraiment parallèles, fichiers disjoints
+E1 E2 E3 E4 E5 E6           │    ← ✅ genuinely parallel, disjoint files
         ↓                   │
-      portes ←──────────────┘    ← C4 et D4 doivent passer ici
+      gates ←───────────────┘    ← C4 and D4 must pass here
         ↓
    release v2.0.0
         ↓
-        F                        ← mesure, valide l'ensemble
+        F                        ← measures, validates the whole
 ```
 
-**Parallélisable :** le lot E uniquement. Six fichiers disjoints, sous-agents simultanés, gain estimé 40 % sur ce lot.
+**Parallelisable:** lot E only. Six disjoint files, concurrent sub-agents, an estimated 40% saving on that lot.
 
-**Non parallélisable, et je préfère le dire :** A et B éditent tous deux `SKILL.md`, les paralléliser produirait des conflits, d'où la fusion en un passage. C dépend de B par construction. Les portes se lancent en séquence.
+**Not parallelisable, and worth saying rather than promising speed:** A and B both edit `SKILL.md`, so running them concurrently would produce conflicts; they are merged into one pass. C depends on B by construction. Gates run in sequence.
 
-| Étape | Contenu | Commit |
+| Step | Content | Commits |
 |---|---|---|
-| 1 | D — déplacement, renommage, zéro changement de contenu | 1 |
-| 2 | B + A — contrats et auto-vérification | 1 |
-| 3 | C — règles atomiques **et adaptation du weekly check** | 1 |
-| 4 | E — documentation, 6 sous-agents | 1 |
-| 5 | Portes, artefacts, Blume, **release v2.0.0** | PR artefacts |
-| 6 | F — B2, première mesure | 1 |
+| 1 | D — move, rename, zero content change | 1 |
+| 2 | B + A — contracts and self-check | 1 |
+| 3 | C — atomic rules **and the weekly-check adaptation** | 1 |
+| 4 | E — documentation, 6 sub-agents | 1 |
+| 5 | Gates, artifacts, Blume, **release v2.0.0** | artifacts PR |
+| 6 | F — B2, first measurement | 1 |
 
 ---
 
-## 6. 🔴 Impact sur le weekly check
+## 6. 🔴 Weekly-check impact
 
-**Tu veux le garder. Il est menacé par le lot C, et il faut le traiter dans le même lot.**
+**The weekly check is kept. Lot C threatens it, and the fix has to travel in the same lot.**
 
-### Ce que le weekly check lit
+### What the weekly check reads
 
-| Script | Lit | Impact v2 |
+| Script | Reads | v2 impact |
 |---|---|---|
-| `check-consistency.mjs` | KB, `decision-rules.md`, **`SKILL.md`**, README | 🔴 **casse deux fois** |
-| `decide.mjs` | KB, `decision-rules.md` | 🟡 diff substantiel, à revérifier |
-| `apply-update.mjs` | KB, `decision-rules.md`, README | 🟡 tampon de version |
-| `verify-claims.mjs` | `claims-registry.json` | 🟢 aucun |
-| `classify-links.mjs`, `gather-news.mjs`, `ai-review.mjs`, `build-prompt.mjs` | — | 🟢 aucun |
+| `check-consistency.mjs` | KB, `decision-rules.md`, **`SKILL.md`**, README | 🔴 **breaks twice** |
+| `decide.mjs` | KB, `decision-rules.md` | 🟡 substantive diff, re-verify |
+| `apply-update.mjs` | KB, `decision-rules.md`, README | 🟡 version stamp |
+| `verify-claims.mjs` | `claims-registry.json` | 🟢 none |
+| `classify-links.mjs`, `gather-news.mjs`, `ai-review.mjs`, `build-prompt.mjs` | — | 🟢 none |
 
-### Rupture 1 — le déplacement de `SKILL.md`
+### Break 1 — the `SKILL.md` move
 
-`check-consistency.mjs` ouvre `SKILL.md` à la racine. Après `git mv`, le fichier n'y est plus : le script lève une erreur et le **job 1 échoue**, ce qui bloque les 3 suivants.
+`check-consistency.mjs` opens `SKILL.md` at the repository root. After `git mv` the file is not there: the script throws and **job 1 fails**, which blocks the three that follow.
 
-**Correctif :** une ligne, le nouveau chemin. Doit partir **dans le même commit que D**, sinon le weekly check est cassé entre deux commits.
+**Fix:** one line, the new path. It must ship **in the same commit as D**, otherwise the weekly check is broken between two commits.
 
-### Rupture 2 — les règles atomiques, plus sérieuse
+### Break 2 — atomic rules, the serious one
 
-`extractGate` fonctionne ainsi :
+`extractGate` works like this:
 
 ```js
 const candidates = text.split(/\r?\n/)
   .filter(line => terms.every(term => line.toLowerCase().includes(term)));
 ```
 
-**Il cherche une ligne unique contenant tous les termes.** C'est ce parseur qui s'est cassé ce matin quand j'ai réordonné les sections de `SKILL.md` : il lisait le plancher Arc MI Link sur la première ligne contenant à la fois « arc » et « mi link », et le réordonnancement lui a fait lire 2017 au lieu de 2016.
+**It looks for a single line containing every search term.** This is the parser that misread the Arc MI Link floor earlier: it takes the first line containing both "arc" and "mi link", and reordering the `SKILL.md` sections made it read 2017 instead of 2016.
 
-Aujourd'hui une règle tient sur une ligne de tableau :
+Today a rule fits on one table row:
 
 ```
 | Near-zero / online | **MI Link** | SQL Server 2016+, Enterprise…, Windows Server 2012 or later… |
 ```
 
-Au format atomique, elle s'étale :
+In atomic form it spreads out:
 
 ```
 ### MI-LINK-HOST — Host OS and edition
@@ -223,68 +223,66 @@ Au format atomique, elle s'étale :
 - Windows Server below 2012
 ```
 
-**Les termes ne sont plus sur la même ligne. `extractGate` ne trouve plus rien.** Il retombe sur `extractWithPatterns(text)`, qui balaie le document entier et peut ramener la mauvaise valeur, ou rien.
+**The terms are no longer on one line, so `extractGate` finds nothing.** It falls back to `extractWithPatterns(text)`, which scans the whole document and may return the wrong value, or none.
 
-Conséquence : `compareAcrossDocs` émet *« could not find gate in KB, decision-rules, or SKILL »*, et le weekly check crie au faux positif toutes les semaines jusqu'à ce qu'on cesse de le lire. **Un contrôle qu'on ignore est pire qu'un contrôle absent.**
+The consequence is `compareAcrossDocs` reporting *"could not find gate in KB, decision-rules, or SKILL"* every week until nobody reads the issue any more. **A check people ignore is worse than no check.**
 
-### Correctif proposé — C4
+### Proposed fix — C4
 
-Deux options :
-
-| Option | Principe | Coût | Robustesse |
+| Option | Principle | Cost | Robustness |
 |---|---|---|---|
-| **C4-a** | Parsing par **bloc de règle** : découper sur `### RULE-ID`, chercher les termes dans le bloc | 🟠 moyen | 🟢 bonne, le bloc est une unité sémantique |
-| C4-b | Lire les valeurs depuis `decision-rules.data.json` au lieu du markdown | 🟢 faible | 🔴 supprime le contrôle : c'est justement l'écart data/prose qu'on veut détecter |
+| **C4-a** | Parse **by rule block**: split on `### RULE-ID`, search the terms within the block | 🟠 medium | 🟢 good, a block is a semantic unit |
+| C4-b | Read the values from `decision-rules.data.json` instead of the markdown | 🟢 low | 🔴 removes the check: the data/prose gap is exactly what it exists to catch |
 
-**Je recommande C4-a.** C4-b transformerait le contrôle en tautologie.
+**C4-a is the recommendation.** C4-b would turn the check into a tautology.
 
-**Bénéfice indirect :** le format atomique rend le parsing *plus* fiable qu'aujourd'hui. Un bloc `### RULE-ID` est une frontière explicite, là où le parsing par proximité de ligne est un accident qui a déjà produit un bug ce matin.
+**Side benefit:** the atomic format makes parsing *more* reliable than today. A `### RULE-ID` block is an explicit boundary, whereas line-proximity parsing is an accident that has already produced one bug.
 
-### Vérification exigée avant release
+### Required verification before release
 
-- [ ] `check-consistency.mjs` lit le nouveau chemin de `SKILL.md`
-- [ ] Les 4 portes Arc, les ports MI Link, la capacité MI Link et la limite de lot Arc sont toujours extraites
-- [ ] **Test de sabotage** : introduire une divergence volontaire, vérifier que le weekly check la voit
-- [ ] Déclenchement manuel : les 4 jobs verts
-- [ ] `decide.mjs` détecte toujours un diff substantiel
-- [ ] `apply-update.mjs` pose toujours le tampon de version
+- [ ] `check-consistency.mjs` reads the new `SKILL.md` path
+- [ ] The four Arc gates, MI Link ports, MI Link capacity and the Arc batch limit are still extracted
+- [ ] **Sabotage test:** introduce a deliberate divergence and confirm the weekly check sees it
+- [ ] Manual dispatch: all four jobs green
+- [ ] `decide.mjs` still detects a substantive diff
+- [ ] `apply-update.mjs` still writes the version stamp
 
 ---
 
-## 7. Hors périmètre
+## 7. Out of scope
 
-| Sujet | Pourquoi c'est exclu |
+| Topic | Why it is excluded |
 |---|---|
-| **Restructuration de la KB** (WP4 de l'audit) | 531 lignes, 83 URLs, 187 constantes, 4 portes en dépendent. Mélangée au reste, la revue devient impossible et le risque de casser un fait sourcé est réel. À faire seule, avec sa propre revue |
-| **Option A**, moteur exécuté | Écartée. Dépend d'une contrainte non maîtrisée : le dépôt cible doit accepter une skill qui exécute du code |
-| **Seuil de divergence** | On mesure d'abord sur 2-3 releases, on fixe une valeur informée ensuite plutôt qu'arbitraire |
+| **Knowledge-base restructuring** (audit WP4) | 531 lines, 83 URLs, 187 constants and 4 gates depend on it. Mixed into this work the review becomes impossible and the risk of breaking a sourced fact is real. It needs its own change and its own review |
+| **Option A**, executable engine | Rejected. It also depends on something outside our control: the destination repository would have to accept a skill that executes code |
+| **Divergence threshold** | Measure over two or three releases first, then set an informed value rather than an arbitrary one |
 
 ---
 
-## 8. Ce que la v2 ne résoudra pas
+## 8. What v2 will not fix
 
-Par honnêteté, et parce que la v1 s'est trompée en promettant trop :
+Stated plainly, because v1 went wrong by promising more than it could show:
 
-- **B2 mesure l'accord, pas la justesse.** Si la politique est fausse, 100 % de concordance signifie que tout le monde est d'accord sur une erreur. Le plancher Windows Server 2012 aurait été « conforme à 100 % » pendant cinq versions.
-- **C'est de l'échantillonnage.** 8-12 profils sur un espace d'entrées immense.
-- **61 constantes sur 142 restent non lues par le miroir.** Le lot C en récupère une partie, pas toutes.
-- **La skill reste un assistant de cadrage.** Aucun lot ne la transforme en autorité d'architecture, et c'est délibéré.
+- **B2 measures agreement, not correctness.** If the policy is wrong, 100% conformance means everyone agrees on the same error. The Windows Server 2012 floor would have scored 100% for five versions.
+- **It is sampling.** Eight to twelve profiles against an enormous input space.
+- **61 of 142 constants remain unread by the mirror.** Lot C recovers some, not all.
+- **The skill stays a scoping assistant.** No lot turns it into an architecture authority, and that is deliberate.
 
 ---
 
-## 9. Décisions actées
+## 9. Decisions taken
 
-| Point | Décision |
+| Item | Decision |
 |---|---|
-| Nom | `get-migration-assessment` |
-| Option | **B** — politique lisible, mesurée, pas de moteur exécuté |
-| Seuil | Mesurer d'abord, fixer ensuite |
-| KB | Intouchée |
-| Weekly check | Conservé, adapté dans le lot C |
-| README | Revue complète pour l'alignement v2.0.0 |
+| Name | `get-migration-assessment` |
+| Option | **B** — readable, measured policy; no executable engine |
+| Threshold | Measure first, set later |
+| Knowledge base | Untouched |
+| Weekly check | Kept, adapted in lot C |
+| README | Full review for the v2.0.0 alignment |
 
-## 10. En attente
+## 10. Open
 
-- [ ] Validation de la séquence en 6 étapes
-- [ ] Avis sur le report du pitch développeur (789 lignes) après la v2.0.0
-- [ ] Go pour l'étape 1
+- [ ] Approve the six-step sequence
+- [ ] Decide whether the developer pitch (789 lines) is deferred until after v2.0.0
+- [ ] Go for step 1
