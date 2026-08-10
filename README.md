@@ -135,21 +135,14 @@ copilot --plugin-dir ./sql-migration-advisor
 | Plugin — the unit you install | `sql-migration-advisor` |
 | **Skill — what actually triggers** | **`get-migration-assessment`** |
 
-The skill was renamed in v2.0.0. `assessment-advisor` said what it was; `get-migration-assessment`
-says what it does, and it produces an assessment rather than a decision. It also had to stop
-colliding with the agent in `microsoft/sql-migration-agent`, the repository this is meant to be
-contributed to.
+> **Install the plugin, not `SKILL.md` alone.** The skill reads the two contracts and the decision
+> rules that sit above it in the repository, and installing them together is what keeps the rules and
+> the skill at the same commit. A skill running against rules from another version is exactly the
+> drift this project exists to prevent.
 
-> **Copying `SKILL.md` on its own no longer works.** The skill reads
-> `../../reference/input-contract.md`, `../../reference/decision-rules.md` and
-> `../../reference/output-contract.md`, which sit above it in the repository. Installing the whole
-> plugin is what keeps the rules and the skill at the same commit — that pairing is the point, since
-> a skill running against rules from a different version is exactly the drift this project exists to
-> prevent.
-
-Before v2.0.0 the skill was called `assessment-advisor` and was cloned directly into
-`~/.copilot/skills/`. If you installed it that way, delete the old folder: two copies will both
-match the trigger and you will not know which one answered.
+Upgrading from a version before 2.0? The skill used to be called `assessment-advisor` and cloned
+straight into `~/.copilot/skills/`. Delete that folder, or two copies will match the trigger and you
+will not know which one answered.
 
 ```bash
 # macOS / Linux
