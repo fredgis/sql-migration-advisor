@@ -335,13 +335,30 @@ try {
     { id: 'AHB Hyperscale without its creation-date qualifier', re: /Hyperscale[^\n]*(?:can continue|continue to)\s+us(?:e|ing)\s+(?:Azure Hybrid Benefit|AHB)|(?:existing|older)\s+Hyperscale[^\n]*AHB/iu, allow: /15 Dec(?:ember)? 2023|December 15, 2023/iu },
     // SQL MI tops out far below 128 TB, so it is not an as-is destination for a single database
     // above the Hyperscale ceiling. v1.9 fixed the knowledge base and left SKILL.md standing.
-    { id: 'SQL MI offered as an as-is destination above 128 TB', re: /above 128 TB[^\n]*(?:SQL MI|Managed Instance)|128 TB[^\n]*moved to SQL MI/iu, allow: /not\b[^\n]*as-is|is \*\*not\*\*|far below|shard/iu }
+    { id: 'SQL MI offered as an as-is destination above 128 TB', re: /above 128 TB[^\n]*(?:SQL MI|Managed Instance)|128 TB[^\n]*moved to SQL MI/iu, allow: /not\b[^\n]*as-is|is \*\*not\*\*|far below|shard/iu },
+    // Microsoft publishes no Windows Server version floor for MI Link: the host OS only has to be
+    // supported by that SQL Server version, and Linux qualifies from SQL Server 2017. v1.12 removed
+    // the floor everywhere it was spelled out in full and missed the abbreviated "Win Server 2016+"
+    // in the section 5.2 method table, which the next weekly review reported. Both spellings are
+    // matched here so the abbreviation cannot hide the claim again.
+    { id: 'MI Link gated on a Windows Server version floor', re: /Win(?:dows)?\s*(?:Server|Srv)\s*20\d\d\s*\+/iu, allow: /Windows Server only|no separate|not a floor|does not|Arc-driven|Arc portal/iu },
+    // The ESU programme covers SQL Server 2014 and 2016 only. "2014 and earlier" implies a free
+    // Azure ESU for 2012 and 2008 that ended in July 2023, which is the permissive direction: it
+    // tells a customer they are covered when they are not. v1.12 fixed Step D1 and the knowledge
+    // base and left the Step A1 eligibility row standing.
+    { id: 'ESU described as covering 2014 and earlier', re: /ESU[^\n]*2014 (?:and|or) earlier|2014 (?:and|or) earlier[^\n]*ESU/iu }
   ];
   for (const file of files) {
     const text = fs.readFileSync(file, 'utf8');
     const lines = text.split(/\r?\n/);
     lines.forEach((line, i) => {
-      for (const f of forbidden) if (f.re.test(line) && !(f.allow && f.allow.test(line))) failures.push(`${fileLine(file, i + 1)} ${f.id}: ${line.trim()}`);
+      // A changelog row states what a past version claimed, so it has to be allowed to quote the
+      // very wording later versions forbid. Rewording history to satisfy a gate would falsify the
+      // record, which is worse than the gate it satisfies.
+      const isChangelogRow = /^\|\s*v\d+\.\d+\s*\|/.test(line.trim());
+      if (!isChangelogRow) {
+        for (const f of forbidden) if (f.re.test(line) && !(f.allow && f.allow.test(line))) failures.push(`${fileLine(file, i + 1)} ${f.id}: ${line.trim()}`);
+      }
       const isAuthoritativeRuleFile = !file.includes(`${path.sep}tools${path.sep}`) && !file.includes(`${path.sep}examples${path.sep}`);
       if (isAuthoritativeRuleFile && /MI Link/i.test(line) && /\bports?\b|5022/i.test(line) && !/11000/.test(line) && !/managed DTC|DTC ports|Retired|ports below|Worked case/i.test(line)) failures.push(`${fileLine(file, i + 1)} MI Link ports mention omits 11000-11999: ${line.trim()}`);
       const retiredContext = /retired|unavailable|deprecated|replaced|do not recommend|never recommend|use instead/i.test(line);

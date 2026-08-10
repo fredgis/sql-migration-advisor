@@ -5,7 +5,7 @@ Apply Steps **A → D** in order. Steps map to the two engine phases:
 - **Phase B — Ranking and plan:** Steps B → D. Rank only surviving targets, then choose method, tier, blockers, cost, and assessment.
 
 Determinism contract: **same inputs + same KB version + same engine version ⇒ same result**. Every recommendation must carry the KB version, engine version, and, when available, the source commit SHA and fetch timestamp.
-Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v1.12**, verified August 2026.
+Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v1.13**, verified August 2026.
 
 Three layers, never mixed:
 - **Target** = where the DB ends up (runtime).
@@ -62,7 +62,7 @@ Classify each target independently. Only `eligible` and `eligible_with_remediati
 | Candidate target | `unsupported` hard blockers | `eligible_with_remediation` examples | Notes |
 | --- | --- | --- | --- |
 | **SQL Server enabled by Azure Arc** *(control plane, in-place)* | none for assessment/control-plane use | Arc onboarding, agent/network prerequisites, paid on-prem ESU | Not a runtime migration target. Use when intent is assess/modernize in place/not ready. |
-| **SQL Server on Azure VM** | none of these rules eliminate it | right-size VM/storage, HA design, patch/backup operations, TDE cert migration | Maximum compatibility and OS/engine control; free ESU only for SQL Server 2014 and earlier; SQL Server 2016 ESU is paid even on Azure VM. |
+| **SQL Server on Azure VM** | none of these rules eliminate it | right-size VM/storage, HA design, patch/backup operations, TDE cert migration | Maximum compatibility and OS/engine control; free ESU on Azure VM applies to SQL Server 2014, SQL Server 2016 ESU is paid even on Azure VM, and SQL Server 2012 and earlier have no remaining ESU path at all. |
 | **Azure VMware Solution (AVS)** | not a VMware estate or no need to keep VMware operational model | HCX/vMotion readiness, AVS capacity/networking | Rehost VMware estate with minimal refactor; keeps FCI/AG patterns. |
 | **Azure SQL Managed Instance (MI)** | FILESTREAM/FileTable; PolyBase to external RDBMS; heterogeneous DTC to third-party RDBMS; need OS/file-system access; unsupported third-party linked server dependency | SQL Agent jobs usually native; **Service Broker intra-instance is eligible**; **Service Broker cross-instance is in public preview** and therefore gated on `previewAcceptable`; SQL CLR/cross-DB usually compatible but assess; cloud-file PolyBase eligible; homogeneous SQL↔SQL DTC eligible | PaaS lift-and-shift for instance features. Service Broker within a single instance is fully supported. Cross-instance message exchange, MI-to-MI and SQL Server-to-MI, is in **public preview**: `CREATE ROUTE`/`ALTER ROUTE` must specify port 4022, transport security only (`CREATE REMOTE SERVICE BINDING` unsupported). Treat it exactly like the Fabric Migration Assistant: preview refusal removes the capability, never the MI target. Unknown scope still requires a topology assessment. |
 | **Azure SQL Database** | FILESTREAM/FileTable; linked servers; cross-database three-part-name dependency; instance-level CLR/Service Broker dependency; native restore requirement; DTC dependency | refactor SQL Agent jobs to Elastic Jobs/Automation, refactor cross-DB/linked-server patterns, use contained DB model | Use for cloud-native DB-scoped workloads after dependencies are removed. |

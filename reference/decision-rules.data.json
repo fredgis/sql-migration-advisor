@@ -1,9 +1,9 @@
 {
   "schema": "sql-migration-advisor.decision-rules-data/v1",
-  "version": "v1.12",
+  "version": "v1.13",
   "source": {
     "markdown": "reference/decision-rules.md",
-    "description": "Machine-checkable constants and gates extracted from decision-rules.md v1.12."
+    "description": "Machine-checkable constants and gates extracted from decision-rules.md v1.13."
   },
   "sourceVersionFloors": {
     "miLink": {

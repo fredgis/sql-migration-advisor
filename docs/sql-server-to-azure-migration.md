@@ -4,9 +4,9 @@
 >
 > **Audience.** Partners, architects, and customer DBAs — usable in pre-sales and as the knowledge base behind the *SQL in a Day* AI Migration Agent ([§14](#14-fy27-sql-motion-context--ai-migration-agent)).
 >
-> **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of 5 August 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
+> **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of 10 August 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
 >
-> **Version.** v1.12 — 5 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
+> **Version.** v1.13 — 10 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**
@@ -193,7 +193,7 @@ Standardized columns (Microsoft Learn style): **Method · Min source · Target/m
 
 | Method | Min source | Downtime | Key constraints / notes |
 | --- | --- | --- | --- |
-| [Managed Instance link (MI Link)](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-feature-overview) | SQL 2016 and later (incl. 2022, 2025; Win Server 2016+, Ent/Std/Dev) | Near-zero (online; <1 minute cutover) | Distributed-AG based; R/O readable target during migration; reverse failback to SQL 2022 / 2025 (DR / Azure exit); one link per database, up to 100 links on General Purpose / Business Critical and up to 500 links on Next-gen General Purpose; requires MI Link network ports below. |
+| [Managed Instance link (MI Link)](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-feature-overview) | SQL 2016 and later (incl. 2022, 2025; Ent/Std/Dev; host OS supported by that SQL version — Windows Server throughout, Linux from SQL 2017, SQL 2016 Windows-only) | Near-zero (online; <1 minute cutover) | Distributed-AG based; R/O readable target during migration; reverse failback to SQL 2022 / 2025 (DR / Azure exit); one link per database, up to 100 links on General Purpose / Business Critical and up to 500 links on Next-gen General Purpose; requires MI Link network ports below. |
 | [Log Replay Service (LRS)](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate) | Standalone LRS: SQL Server 2008–2022 | Online sync; cutover downtime | Full/diff/log → Azure Blob; public endpoint; 30-day max window; target remains RESTORING / NORECOVERY (no reads/writes) until cutover. Cutover restores the final backup: minutes on GP with a small final backup, but potentially hours on Business Critical while replicas are seeded. Supports up to the service-tier database limit (for example 100 GP, 500 Next-gen GP), with 100 simultaneous restores per instance and 150 per subscription. Arc portal migration uses the conservative 2014+ Arc floor; standalone LRS remains 2008–2022. |
 | [Native backup & restore (.bak)](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/restore-sample-database-quickstart) | SQL 2008 | Offline | Simplest; migrate TDE certificate *before* restore or it fails late; master/msdb restore not supported (script instance objects). |
 | [Transactional replication](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/replication-transactional-overview) | SQL Server 2016+ | Online | MI can be a subscriber from SQL Server 2016 and later; exact publisher/distributor/subscriber combinations depend on the MI update policy, so check the supportability matrix. |
@@ -614,13 +614,14 @@ flowchart LR
 
 ## 17. Document version & changelog
 
-Current version: **v1.12** (2026-08-05).
+Current version: **v1.13** (2026-08-10).
 
 <details>
-<summary><b>Version history</b> (current: v1.12)</summary>
+<summary><b>Version history</b> (current: v1.13)</summary>
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v1.13 | 2026-08-10 | Applied the weekly review's two sourced findings, both of which were **surviving occurrences of v1.12 corrections**. §5.2's MI Link method row still carried the Windows Server 2016+ floor, spelled **`Win Server 2016+`**: the abbreviation is why the v1.12 sweep missed it. Step A1's SQL Server on Azure VM row still described free ESU as covering "SQL Server 2014 and earlier", which tells a customer running 2012 or 2008 that they are covered when that programme ended in July 2023. Two new forbidden-pattern gates close both, matching every spelling of the OS floor rather than the one that happened to be searched for, and they immediately found **two further occurrences in the poster** that neither the weekly review nor the two-model audit had reported — the printed artefact handed to partners was quoting the stale ESU boundary. Changelog rows are now exempt from the forbidden-pattern check: a version history has to be able to quote the wording later versions forbid, and rewording history to satisfy a gate would falsify the record. |
 | v1.12 | 2026-08-05 | Applied an external two-model adversarial review of the decision rules, after verifying every finding against Microsoft Learn. **MI Link no longer excludes Linux**: Microsoft supports Linux hosts from SQL Server 2017 onwards and documents only SQL Server 2016 as Windows Server only, so v1.11 and earlier pushed a supported host to a planned-cutover method for no reason. The **Windows Server 2016+** floor is removed because no Microsoft page states it; the Arc-portal-driven path keeps its own documented Windows Server only constraint. **MI managed DTC port 135** now carries both directions, as Microsoft requires. **Azure Hybrid Benefit on Hyperscale** is qualified by the 15 December 2023 creation-date cohort, so newer databases are no longer flagged eligible. **Service Broker cross-instance** is a public preview capability gated on `previewAcceptable`, not a hard MI blocker. **ESU** scope narrowed to SQL Server 2014 and 2016 with their dates. Added the Hyperscale elastic-pool 100 TB per-database ceiling. `SKILL.md` still offered SQL MI as a destination for a single database over the Hyperscale ceiling, a fourth surviving occurrence of the v1.9 correction; three new forbidden-pattern gates now cover DTC directionality, the AHB cohort and that destination claim. |
 | v1.11 | 2026-08-05 | §5.5 no longer implies the §5.2 methods apply to Arc-enabled SQL MI: MI Link is scoped to Azure SQL Managed Instance, and exposing a SQL endpoint does not change that. New: the **retained server name / DNS redirect** pitfall — clients validating the TLS hostname or setting `HostNameInCertificate` can break at cutover because Microsoft is changing the MI instance certificate, so inventory and test them before the DNS change. A forbidden-pattern gate now fails whenever the Arc target is described as inheriting the MI methods. |
 | v1.10 | 2026-08-05 | Removed the last two unqualified LRS-fallback statements. v1.9 corrected the MI Link prerequisites paragraph and left the §C2 cutover-blockers row and the `SKILL.md` gate table standing, so the engine could still route a SQL Server 2025 source or an over-long migration to a method that does not support it. A forbidden-pattern gate now fails whenever LRS is offered without its 2008–2022 range and 30-day window attached, which is what found the third occurrence. |

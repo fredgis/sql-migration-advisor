@@ -16,7 +16,7 @@ At session start, fetch the live knowledge-base document:
 
 - Raw URL: `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/main/docs/sql-server-to-azure-migration.md`
 - Use the live doc when available. If offline, use `reference/decision-rules.md` and tell the user that the offline fallback may lag.
-- Current coordinated knowledge-base line: **v1.12**, dated **2026-08-05**.
+- Current coordinated knowledge-base line: **v1.13**, dated **2026-08-05**.
 - Display the **knowledge-base version** in every recommendation and, when available, the **commit SHA** and **fetch timestamp**.
 - Determinism contract: **same inputs + same KB version + same engine version ⇒ same result**.
 
