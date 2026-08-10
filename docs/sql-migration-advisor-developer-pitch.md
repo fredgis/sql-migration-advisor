@@ -114,7 +114,7 @@ one: `NONE_CONFIRMED` when the user checked and there are none, `UNKNOWN` when n
 `NOT_APPLICABLE`. Conflating the first two is what once told a user their dependencies were unknown
 immediately after they answered that there were none.
 
-The output contract owns the status vocabulary, the card structure, and the nine invariants of the
+The output contract owns the status vocabulary, the card structure, and the 13 invariants of the
 self-check below.
 
 ---
@@ -289,7 +289,7 @@ it rather than take it on trust.
 
 ### The self-check
 
-Before the card is shown, the skill re-reads its own draft against the nine invariants in the output
+Before the card is shown, the skill re-reads its own draft against the 13 invariants in the output
 contract. Two examples: no eligibility claim may rest on a field the user never answered, and the
 stated method must actually be available for the recommended target.
 

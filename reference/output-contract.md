@@ -10,7 +10,9 @@ The single source of truth for what a recommendation contains, how it is rendere
 |---|---|
 | `recommendationStatus` | `provisional` — **the only value this skill produces** |
 | `confidence` | `low` · `medium` |
-| Eligibility, per target | `eligible` · `eligible_with_remediation` · `unsupported` · `unknown_requires_assessment` |
+| Eligibility, per target | `eligible` · `eligible_with_remediation` · `unsupported` · `excluded_by_preference` · `unknown_requires_assessment` |
+
+**`unsupported` and `excluded_by_preference` are not interchangeable.** A real session marked containers and Arc-enabled SQL MI `unsupported` because they conflicted with the customer's stated preference for managed PaaS. Nothing was technically incompatible. A reader returning to that card in three months would conclude Arc had been ruled out on its merits, when the customer had only expressed a preference — and preferences change, while incompatibilities do not. Use `excluded_by_preference` and name the answer that caused it, so it can be revisited without re-litigating feasibility.
 
 `validated` and `high` are not in this contract. The skill reads no assessment artefact: it opens no report, runs no tool and queries no service, so it cannot certify one. Four self-declared booleans used to promote a recommendation to `validated` and `high`, which turned an unverified statement into an assurance and moved responsibility onto a flag nobody had checked.
 
@@ -70,6 +72,10 @@ Run every invariant below **before** showing the card. This is the only mechanis
 | 7 | Refusing a preview **method** never removes a generally available **target** when another viable method exists |
 | 8 | No cost figure appears without measured sizing and stated pricing assumptions |
 | 9 | `recommendationStatus` is `provisional` and `confidence` is at most `medium` |
+| 10 | **A method gate may not report `passed` while any field it consumes is unknown.** A real session declared native backup/restore `passed` with the Blob upload path unverified. Report `unknown_requires_assessment` and name the evidence instead |
+| 11 | Every one of the eight target families appears in the Phase A trace: SQL VM, AVS, SQL MI, SQL DB, Fabric SQL DB, Arc-enabled SQL MI, container, Arc in-place. A family that silently disappears cannot be argued with |
+| 12 | `unsupported` marks a technical incompatibility only. A target the user ruled out by preference is `excluded_by_preference`, because a preference can be revisited and an incompatibility cannot |
+| 13 | `normalizedProfile` is present, so the reader can see what the skill thinks it was told |
 
 **When an invariant fails, do not repair the output silently.** Expose the inconsistency, return a provisional shortlist or name the missing evidence, and say which invariant broke. A card that quietly corrects itself hides the fact that the rules disagreed.
 

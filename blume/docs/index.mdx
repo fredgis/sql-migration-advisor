@@ -92,7 +92,7 @@ the user asks, the interview runs, and the decision is made in two distinct phas
   refactoring effort, downtime fit, operational burden, reversibility, sovereignty, cost levers only when the
   inputs exist, and unresolved assumptions. If candidates still tie, the card returns a provisional shortlist
   instead of inventing a winner.
-- **The self-check** rereads the draft against nine invariants before the user sees it. A method must be
+- **The self-check** rereads the draft against 13 invariants before the user sees it. A method must be
   available for the target, unsupported targets cannot appear as recommendations, unknown hard gates must be
   visible, and status must remain `provisional` with confidence no higher than `medium`. If an invariant
   fails, the skill must expose the inconsistency rather than silently repair it.
@@ -196,7 +196,7 @@ wrong guess silently changes the recommendation. The stable fields and option ID
 | `evidence` *(4 booleans)* | the user reports that an assessment was run | recorded as claims to verify elsewhere; they never raise the status above `provisional` or confidence above `medium` |
 
 The canonical list lives in [`reference/input-contract.md`](https://github.com/fredgis/sql-migration-advisor/blob/main/reference/input-contract.md).
-The output fields, allowed status vocabulary and nine self-check invariants live in
+The output fields, allowed status vocabulary and 13 self-check invariants live in
 [`reference/output-contract.md`](https://github.com/fredgis/sql-migration-advisor/blob/main/reference/output-contract.md).
 
 ---

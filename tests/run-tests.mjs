@@ -680,13 +680,27 @@ try {
     if (!new RegExp(`\`${field}\``, 'u').test(inputContract)) failures.push(`the interview names field '${field}', which input-contract.md does not define`);
   }
 
-  // The three questions that separate "none" from "not checked" must keep all three answers.
+  // The three list-or-none questions that separate "none" from "not checked" must keep all three answers.
   for (const intent of ['LIST_FEATURES', 'LIST_SERVICES', 'LIST_TIER_DRIVERS']) {
     if (!offered.has(intent)) failures.push(`${intent} is no longer offered, so a list question can collapse "none" into "not checked" again`);
   }
 
+  // The invariant count is quoted in five documents. A number stated once and never rechecked is
+  // exactly how "18 gates" and "9 invariants" survived past the releases that changed them.
+  const invariantCount = (readText(path.join('reference', 'output-contract.md')).match(/^\| \d+ \| /gmu) || []).length;
+  for (const doc of ['README.md', path.join('howto', 'how-the-skill-works.md'), path.join('blume', 'docs', 'index.mdx'), path.join('docs', 'sql-migration-advisor-developer-pitch.md')]) {
+    const text = readText(doc);
+    for (const m of text.matchAll(/(\d+|nine|ten) (?:pre-render self-check |self-check )?invariants/giu)) {
+      // Changelog rows record what was true at the time and must not be rewritten.
+      const line = text.slice(text.lastIndexOf('\n', m.index) + 1, text.indexOf('\n', m.index));
+      if (/^\| v[0-9]/u.test(line)) continue;
+      const stated = /^\d+$/u.test(m[1]) ? Number(m[1]) : { nine: 9, ten: 10 }[m[1].toLowerCase()];
+      if (stated !== invariantCount) failures.push(`${doc} claims ${m[1]} invariants; the output contract defines ${invariantCount}`);
+    }
+  }
+
   add('interview-conforms-to-contract', failures.length === 0,
-    failures.length ? failures : [`${offered.size} option IDs and ${named.size} field names offered by the interview are all defined in the input contract.`]);
+    failures.length ? failures : [`${offered.size} option IDs and ${named.size} field names offered by the interview are defined in the input contract, and ${invariantCount} invariants are quoted consistently.`]);
 }
 
 {
