@@ -1,5 +1,5 @@
 ---
-name: assessment-advisor
+name: get-migration-assessment
 description: "Preliminary SQL Server to Azure migration disposition and recommended assessment path. Runs a short guided interview, then applies a source-verified knowledge base to pre-select candidate targets (SQL VM, AVS, SQL MI, SQL DB, Fabric SQL DB, Arc SQL MI, container or Arc in-place), migration methods (MI Link, LRS, backup/restore, DAG/AG, modern DMS, transactional replication, BACPAC, Fabric Migration Assistant), blockers, evidence gaps, cost levers and Microsoft program fit. Trigger when the user wants to migrate or modernize SQL Server to Azure, asks for the best or recommended migration path, target or tool, or says 'migrer SQL Server', 'migrate SQL Server' or 'SQL to Azure'."
 allowed-tools: ask_user
 ---

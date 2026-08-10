@@ -12,7 +12,7 @@ knowledge base and version-gated freshness automation.
 <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", margin: "1.5rem 0" }}>
   <a href="https://github.com/fredgis/sql-migration-advisor/blob/main/howto/how-the-skill-works.md">📘 Read the full guide</a>
   <a href="https://github.com/fredgis/sql-migration-advisor">⭐ View the repository</a>
-  <a href="https://github.com/fredgis/sql-migration-advisor/blob/main/SKILL.md">🧩 Get the skill</a>
+  <a href="https://github.com/fredgis/sql-migration-advisor/blob/main/skills/get-migration-assessment/SKILL.md">🧩 Get the skill</a>
 </div>
 
 ---
@@ -169,7 +169,7 @@ wrong guess silently changes the recommendation:
 | `arc_extension_version` | the Azure Arc portal migration is used | gates the Arc wizard batch limit; unknown is **not** treated as recent |
 | `evidence` *(4 booleans)* | the user wants a validated rather than provisional recommendation | status and confidence — all four must be true; free text never substitutes |
 
-The canonical list lives in [`SKILL.md`](https://github.com/fredgis/sql-migration-advisor/blob/main/SKILL.md)
+The canonical list lives in [`SKILL.md`](https://github.com/fredgis/sql-migration-advisor/blob/main/skills/get-migration-assessment/SKILL.md)
 under *Interview structure*.
 
 ---
@@ -281,6 +281,6 @@ proves the pattern works end to end.
 ## Learn more
 
 - [How the skill works](https://github.com/fredgis/sql-migration-advisor/blob/main/howto/how-the-skill-works.md) — the full implementer guide.
-- [`SKILL.md`](https://github.com/fredgis/sql-migration-advisor/blob/main/SKILL.md) — the skill contract and questionnaire.
+- [`SKILL.md`](https://github.com/fredgis/sql-migration-advisor/blob/main/skills/get-migration-assessment/SKILL.md) — the skill contract and questionnaire.
 - [Decision rules](https://github.com/fredgis/sql-migration-advisor/blob/main/reference/decision-rules.md) — the deterministic engine.
 - [Knowledge base](https://github.com/fredgis/sql-migration-advisor/blob/main/docs/sql-server-to-azure-migration.md) — the verified source of truth.

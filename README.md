@@ -80,7 +80,7 @@ An external audit deliberately challenged the advisor before wider use. It found
 
 | Path | Purpose |
 | --- | --- |
-| [`SKILL.md`](SKILL.md) | The skill — trigger description, principles, the two-tier interview (triage, then confirmation), and the output-card template. |
+| [`SKILL.md`](skills/get-migration-assessment/SKILL.md) | The skill — trigger description, principles, the two-tier interview (triage, then confirmation), and the output-card template. |
 | [`reference/decision-rules.md`](reference/decision-rules.md) | The deterministic decision engine: Phase A eligibility filter, then Phase B ranking and tier selection — used as the offline fallback. |
 | [`examples/sample-recommendation.md`](examples/sample-recommendation.md) | A worked end-to-end example (SQL 2014 → Azure SQL MI via LRS). |
 | [`docs/sql-server-to-azure-migration.md`](docs/sql-server-to-azure-migration.md) | The knowledge base — every target family, method, tool, and commercial lever, with Microsoft Learn links. |

@@ -191,9 +191,9 @@ function outputConsistencyFailures(scenarios, data) {
 }
 
 const rulesPath = rel('reference', 'decision-rules.md');
-const skillPath = rel('SKILL.md');
+const skillPath = rel('skills', 'get-migration-assessment', 'SKILL.md');
 const rules = readText(path.join('reference', 'decision-rules.md'));
-const skill = readText('SKILL.md');
+const skill = readText(path.join('skills', 'get-migration-assessment', 'SKILL.md'));
 const rulesData = JSON.parse(readText(path.join('reference', 'decision-rules.data.json')));
 let scenarios = [];
 try {
@@ -304,7 +304,7 @@ try {
 }
 
 {
-  const files = [rel('SKILL.md'), rel('reference','decision-rules.md'), rel('docs','sql-server-to-azure-migration.md')]
+  const files = [rel('skills','get-migration-assessment','SKILL.md'), rel('reference','decision-rules.md'), rel('docs','sql-server-to-azure-migration.md')]
     .concat(walk(rel('examples'), () => true))
     .concat(walk(rel('tools','diagram'), p => p.toLowerCase().endsWith('.html')));
   const failures = [];
@@ -384,7 +384,7 @@ try {
   {
     const floor = rulesData.sourceVersionFloors.miLink.windowsServerMin;
     const re = new RegExp(`Windows Server ${floor}(?: or later|\\+)`, 'iu');
-    for (const [label, text] of [['reference\\decision-rules.md', rules], ['SKILL.md', skill], ['docs\\sql-server-to-azure-migration.md', readText(path.join('docs', 'sql-server-to-azure-migration.md'))]]) {
+    for (const [label, text] of [['reference\\decision-rules.md', rules], ['skills/get-migration-assessment/SKILL.md', skill], ['docs\\sql-server-to-azure-migration.md', readText(path.join('docs', 'sql-server-to-azure-migration.md'))]]) {
       if (!re.test(text)) failures.push(`${label} does not state the MI Link host floor Windows Server ${floor} or later`);
     }
   }

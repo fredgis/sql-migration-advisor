@@ -9,7 +9,7 @@ const ROOT = path.resolve(process.env.WEEKLY_CHECK_ROOT || process.argv[2] || pa
 const DOC = path.join(ROOT, 'docs', 'sql-server-to-azure-migration.md');
 const RULES = path.join(ROOT, 'reference', 'decision-rules.md');
 const README = path.join(ROOT, 'README.md');
-const SKILL = path.join(ROOT, 'SKILL.md');
+const SKILL = path.join(ROOT, 'skills', 'get-migration-assessment', 'SKILL.md');
 
 const errors = [];
 const warnings = [];
