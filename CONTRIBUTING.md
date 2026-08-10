@@ -10,12 +10,14 @@ plus the machinery that keeps its content true:
 
 | Path | Role |
 | --- | --- |
-| `SKILL.md` | the skill the agent runs |
-| `reference/decision-rules.md` | the offline decision tree the skill applies |
+| `skills/get-migration-assessment/SKILL.md` | the skill the agent runs |
+| `reference/input-contract.md` | what the interview may produce: option IDs, canonical fields, and the three answer states |
+| `reference/output-contract.md` | what an answer must look like, and the invariants the skill checks against its own draft |
+| `reference/decision-rules.md` | the decision policy the skill applies, and the index of every addressable rule |
 | `reference/decision-rules.data.json` | the same constants in machine-readable form |
 | `docs/sql-server-to-azure-migration.md` | the knowledge base the rules are distilled from |
 | `reference/claims-registry.json` | high-risk claims tracked by source content hash |
-| `tests/` | the executable oracle and 75 golden scenarios |
+| `tests/` | the executable mirror and 90 golden scenarios |
 
 ## Prerequisites
 
@@ -29,7 +31,7 @@ Chrome binary, but you only need those if you are changing `docs/` output or `to
 Run all four before opening a pull request. They are the same four CI runs.
 
 ```bash
-node tests/run-tests.mjs                        # 18 gates over 90 scenarios
+node tests/run-tests.mjs                        # 21 gates over 90 scenarios
 node tools/rules/check-rules-data.mjs --strict  # constants agree between JSON and markdown
 node tools/weekly-check/check-consistency.mjs   # versions and freshness stamps agree
 node tools/artifacts/check-artifacts.mjs        # derived artifacts are not stale
@@ -82,7 +84,7 @@ high-risk claim. When Microsoft edits a page, the weekly check reports drift.
 
 A version bump requires a substantive content change and green checks. A model verdict, a
 broken link or claim drift alone never justifies one. When you do bump, the knowledge base,
-the rules, `SKILL.md` and the README must all move together, and the artifacts must be
+the rules, `skills/get-migration-assessment/SKILL.md` and the README must all move together, and the artifacts must be
 regenerated. `check-consistency.mjs` enforces the first part; `check-artifacts.mjs` the second.
 
 ## Pull requests

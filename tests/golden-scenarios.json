@@ -2089,7 +2089,7 @@
   {
     "id": "evidence-complete-mi-link-medium-ceiling",
     "title": "MI Link reaches validated only with complete evidence",
-    "why": "Exercises validated/high confidence status with tool evidence, measured sizing, region confirmation, and architect sign-off. MI Link host prerequisites stated explicitly in v1.18: the method is now fail-closed, so a scenario that omits the OS and edition no longer receives it. From v1.18 the four evidence booleans no longer promote the recommendation: this skill reads no artefact, so it records the claim and leaves the status provisional.",
+    "why": "Exercises the medium confidence ceiling with tool evidence, measured sizing, region confirmation, and architect sign-off. MI Link host prerequisites stated explicitly in v1.18: the method is now fail-closed, so a scenario that omits the OS and edition no longer receives it. From v1.18 the four evidence booleans no longer promote the recommendation: this skill reads no artefact, so it records the claim and leaves the status provisional.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -2144,7 +2144,7 @@
   {
     "id": "evidence-complete-sql-db-dms-medium-ceiling",
     "title": "SQL DB offline reaches validated with complete evidence",
-    "why": "Exercises a validated SQL DB recommendation without relying on declarative interview answers alone. From v1.18 the four evidence booleans no longer promote the recommendation: this skill reads no artefact, so it records the claim and leaves the status provisional.",
+    "why": "Exercises a SQL DB recommendation at the medium ceiling without relying on declarative interview answers alone. From v1.18 the four evidence booleans no longer promote the recommendation: this skill reads no artefact, so it records the claim and leaves the status provisional.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",

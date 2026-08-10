@@ -1,7 +1,7 @@
 # NEWDESIGN v2.0.0 — refactor plan
 
-> **Status: proposal, awaiting approval.** Nothing here is implemented.
-> Current baseline: `v1.18.0`, commit `fbd72f6`, 18 gates, 90 golden scenarios.
+> **Status: implemented, released as `v2.0.0`.** Baseline at approval: `v1.18.0`, commit `fbd72f6`, 18 gates, 90 golden scenarios.
+> Delivered: **21 gates**, 90 golden scenarios. Progress is tracked in §10; departures from the plan are recorded in §11 with the reason.
 
 ---
 
@@ -240,12 +240,14 @@ The consequence is `compareAcrossDocs` reporting *"could not find gate in KB, de
 
 ### Required verification before release
 
-- [ ] `check-consistency.mjs` reads the new `SKILL.md` path
-- [ ] The four Arc gates, MI Link ports, MI Link capacity and the Arc batch limit are still extracted
-- [ ] **Sabotage test:** introduce a deliberate divergence and confirm the weekly check sees it
-- [ ] Manual dispatch: all four jobs green
-- [ ] `decide.mjs` still detects a substantive diff
-- [ ] `apply-update.mjs` still writes the version stamp
+- [x] `check-consistency.mjs` reads the new `SKILL.md` path — fixed in the same commit as the move (`4f26c41`)
+- [x] The four Arc gates, MI Link ports, MI Link capacity and the Arc batch limit are still extracted
+- [x] **Sabotage test:** introduce a deliberate divergence and confirm the weekly check sees it
+- [ ] Manual dispatch: all four jobs green — after the release tag
+- [x] `decide.mjs` still detects a substantive diff
+- [x] `apply-update.mjs` still writes the version stamp
+
+**Break 2 did not happen, because the atomic rewrite was not carried out as specified.** See §11.
 
 ---
 
@@ -281,8 +283,76 @@ Stated plainly, because v1 went wrong by promising more than it could show:
 | Weekly check | Kept, adapted in lot C |
 | README | Full review for the v2.0.0 alignment |
 
-## 10. Open
+## 10. Delivery status
 
-- [ ] Approve the six-step sequence
-- [ ] Decide whether the developer pitch (789 lines) is deferred until after v2.0.0
-- [ ] Go for step 1
+Every lot below is complete unless marked otherwise. Commits are on `main`.
+
+### Lot D — rename and move · `4f26c41`
+
+- [x] D1 `git mv` to `skills/get-migration-assessment/SKILL.md`, rename detected, history preserved
+- [x] D2 frontmatter `name: get-migration-assessment`
+- [x] D3 13 path references across 6 files
+- [x] D4 `check-consistency.mjs` path fix, deliberately in the same commit
+- [x] D5 reinstalled locally, old `assessment-advisor` folder removed
+- [ ] D6 Teams message to Travis and Jyotika — for the repository owner to send
+
+### Lot B — contracts and self-check · `6833537`
+
+- [x] B1 `reference/input-contract.md`: 30 option IDs, 20 canonical fields, `NONE_CONFIRMED` / `UNKNOWN` / `NOT_APPLICABLE`
+- [x] B2 `reference/output-contract.md`: status vocabulary, structure, 9 self-check invariants
+- [x] B3 `SKILL.md` defers to both contracts rather than restating them
+- [x] B4 the self-check runs as step 8 of Operations, and exposes a failure instead of repairing it
+- [x] B5 gate `contracts-wired`, proved by sabotage
+- [x] Q8 gains `> 128 TB`; Q10 gains the both-directions port confirmation
+
+### Lot C — rules · `c7cfa06`
+
+- [x] C2 the 10-step ordered ranking replaces the unweighted criteria table
+- [x] C3 gate `rule-index-consistent`: every rule consumes only documented fields, every rule declares an unknown behaviour, no rule treats an unknown as a pass
+- [x] C1 **delivered as a rule index rather than an atomic rewrite** — see §11
+- [x] C4 **not required**, because the one-line gate rows the weekly check parses were left in place
+
+### Lot E — documentation · `9ec2802`
+
+- [x] E1 `README.md` full v2.0.0 review: install section rewritten, contracts and self-check added, gate count, confidence callout, changelog row
+- [x] E2 `howto/how-the-skill-works.md`
+- [x] E3 `blume/docs/index.mdx` — builds clean
+- [x] E5 `CONTRIBUTING.md`, `tests/README.md`
+- [ ] E4 `docs/…developer-pitch.md`, 789 lines — **deferred**, see §11
+- [ ] E6 the three diagram triples — deferred with E4
+
+### Unplanned, and necessary
+
+- [x] Gate `confidence-vocabulary`, the twenty-first — see §11
+- [x] `.claude-plugin/plugin.json`: the repository installs with `copilot plugin install`
+- [x] Six mixed path references in `SKILL.md` corrected, which is what made the installed copy work
+
+### Lot F — B2 runtime eval
+
+- [ ] Not started. It is the last lot by design: it measures, it does not improve. Tracked separately.
+
+---
+
+## 11. Departures from the plan, and why
+
+**C1, atomic rules — not done as written.** The plan called for rewriting each hard gate as a block with a heading, a consumed-fields list and an unsupported-when list. §6 explains why that breaks `extractGate`, and the fix C4-a was to parse by `### RULE-ID` block. Doing both would have meant rewriting the rules and the parser that guards them in one change, with no independent check left standing while the work was in flight.
+
+What shipped instead is a rule index: 26 entries naming each gate, the fields it consumes and its behaviour on an unknown, appended to `decision-rules.md` while the one-line gate rows stay exactly where the weekly check reads them. That delivers what the atomic format was for — addressability, declared inputs, explicit unknown handling — at a fraction of the risk. The full prose restructure and C4-a remain available if the format ever proves limiting; they are not needed to make a rule addressable, which was the goal.
+
+**A twenty-first gate that was not in the plan.** Aligning the documentation turned up `confidence: high|medium|low` and `recommendationStatus: provisional|validated` still published in `decision-rules.md`, an explanation of what *High* meant in `SKILL.md`, and two golden scenarios asserting the old wording. v1.18 had announced both values removed three versions earlier. Nothing was watching the vocabulary, so the suite was protecting the words it was supposed to have deleted. `confidence-vocabulary` now reads the four policy documents line by line and fails on the recommendation vocabulary while leaving ordinary English such as *high IOPS* alone. It is proved by sabotage.
+
+This is the audit's own charge appearing inside the response to it: a claim was announced, tested nowhere, and quietly stopped being true.
+
+**Installation was broken by the move, and only testing it revealed that.** `SKILL.md` mixed `reference/…` and `../../reference/…`. The installed copy placed `reference/` beside `SKILL.md`, so `../../reference/` pointed outside the skill folder and neither contract was reachable. The layout `skills/<name>/SKILL.md` beside a root `reference/` is the Copilot CLI plugin convention, so the repository now ships `.claude-plugin/plugin.json`, and `copilot skill list --plugin-dir .` was used to confirm the skill is discovered rather than assumed to be.
+
+**E4 and E6 deferred.** The developer pitch is 789 lines describing a runtime that v2 changed underneath it; a careful rewrite is a piece of work in its own right, and a half-corrected 789-line document is worse than one clearly marked as trailing. The diagrams depend on it.
+
+---
+
+## 12. Open
+
+- [x] Approve the six-step sequence
+- [x] Decide whether the developer pitch is deferred until after v2.0.0 — deferred
+- [x] Go for step 1
+- [ ] Release `v2.0.0`, then dispatch the weekly check and confirm four green jobs
+- [ ] Lot F, when there is appetite to measure
