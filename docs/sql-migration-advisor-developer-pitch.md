@@ -61,7 +61,7 @@ The runtime process is simple:
 
 1. The user asks a SQL Server migration question.
 2. Copilot activates the skill.
-3. The skill always loads the bundled deterministic decision rules.
+3. The skill always loads the bundled decision rules, which ship at the same commit as the skill.
 4. When online, it also fetches the live knowledge base and uses both.
 5. When offline, it uses the bundled decision rules as a fallback and warns that the information may be older.
 6. The agent asks structured questions.
@@ -74,9 +74,11 @@ The runtime process is simple:
 
 ## 3. The three main parts
 
-### `SKILL.md`
+### `skills/get-migration-assessment/SKILL.md`
 
-`SKILL.md` controls the behaviour of the agent.
+`SKILL.md` controls the behaviour of the agent. It is the skill the CLI activates, and it defers the
+vocabulary and the answer shape to the two contracts beside it rather than restating them, because a
+vocabulary written twice drifts and this one already did.
 
 It defines:
 
@@ -84,7 +86,7 @@ It defines:
 - the interview questions;
 - the guardrails;
 - the decision process;
-- the expected output;
+- the self-check it runs on its own draft before answering;
 - what the agent must never recommend.
 
 The skill follows one important rule:
@@ -92,6 +94,28 @@ The skill follows one important rule:
 > Interview first, recommend second.
 
 The agent must collect the important facts before giving a migration recommendation.
+
+---
+
+### The two contracts
+
+```text
+reference/input-contract.md
+reference/output-contract.md
+```
+
+Added in v2.0.0, and the reason is a defect rather than a design preference.
+
+The interview's vocabulary used to live in `SKILL.md` and again in the rules, in two wordings that
+slowly stopped matching. Four displayed options reached no rule at all, so 86 passing scenarios
+coexisted with an interview whose answers were quietly discarded. The input contract now owns the
+30 option IDs and the 20 canonical field names, and it separates three states that were previously
+one: `NONE_CONFIRMED` when the user checked and there are none, `UNKNOWN` when nobody checked, and
+`NOT_APPLICABLE`. Conflating the first two is what once told a user their dependencies were unknown
+immediately after they answered that there were none.
+
+The output contract owns the status vocabulary, the card structure, and the nine invariants of the
+self-check below.
 
 ---
 
@@ -124,7 +148,7 @@ This means that the migration facts can stay current even when the local skill p
 When the agent is online, the live knowledge base and `decision-rules.md` are used together:
 
 - the knowledge base provides the current facts and Microsoft sources;
-- `decision-rules.md` applies the deterministic eligibility and ranking logic.
+- `decision-rules.md` applies the eligibility filter, then the ordered ranking.
 
 When the agent is offline, it uses the bundled `decision-rules.md` as a fallback and clearly warns that the information may be less current.
 
@@ -138,13 +162,17 @@ The decision engine is:
 reference/decision-rules.md
 ```
 
-It contains the deterministic rules.
+It contains the rules, and the index that makes each of them addressable by ID.
 
 Regression-tested means:
 
-> Same inputs + same knowledge-base version + same engine version = same result.
+> The same inputs, replayed against a machine-readable mirror of these rules, produce the same result
+> on every commit.
 
-The language model can adapt the conversation, but the technical decision rules stay strict.
+It does **not** mean your session is reproducible. An agent reads the rules and applies them, so this
+is a policy under regression test, not a byte-identical guarantee. The mirror in `tests/` is never
+executed in production; it exists so a rule change cannot pass unnoticed. The language model adapts
+the conversation, and the ordered ranking exists to stop it adapting the decision.
 
 The agent can:
 
@@ -236,25 +264,38 @@ Phase A removes impossible paths before any ranking happens.
 
 ### Phase B — Ranking
 
-Phase B compares the valid options.
+Phase B compares the valid options in a **fixed order**. The order is the point.
 
-The main criteria are:
+It used to be an unweighted list of eight criteria — refactoring effort, downtime fit, operational
+burden, compatibility, resilience, cost, reversibility, sovereignty. Two readers weighing cost
+against resilience differently reached two different answers from the same estate, and both could
+claim to be following the rules. v2.0.0 replaced it with ten ordered steps in `decision-rules.md`
+§B1, each stating when it settles the order and when it defers to the next.
 
-- refactoring effort;
-- downtime fit;
-- operational burden;
-- compatibility;
-- resilience;
-- cost;
-- reversibility;
-- sovereignty constraints.
+When the steps do not separate the finalists, the result is a shortlist and the evidence that would
+break the tie. It never invents a winner.
 
-The engine then selects:
+The result names:
 
 - a primary target;
 - a migration method;
 - a service tier;
 - the best alternative.
+
+Each verdict carries the ID of the rule that produced it, such as `MI-LINK-HOST` or
+`FILESTREAM-PAAS`. The index at the end of `decision-rules.md` lists all 26 with the fields each one
+consumes and what it does when a field is unknown, so a reader can look a decision up and argue with
+it rather than take it on trust.
+
+### The self-check
+
+Before the card is shown, the skill re-reads its own draft against the nine invariants in the output
+contract. Two examples: no eligibility claim may rest on a field the user never answered, and the
+stated method must actually be available for the recommended target.
+
+When an invariant fails, the skill exposes the inconsistency. It does not repair it. A card that
+quietly corrects itself hides the fact that the rules disagreed, and that disagreement is the most
+useful thing a reviewer could have seen.
 
 ---
 
@@ -305,16 +346,19 @@ region validation and architect approval.
 
 ---
 
-## 7. Provisional versus validated
+## 7. Provisional, and why there is nothing above it
 
-A normal interview can only produce a **provisional** result.
+Every result is **provisional**. There is no second state, and `medium` is the highest confidence the
+skill can reach.
 
-A result becomes **validated** only when all required evidence exists:
+An earlier version promoted a recommendation to *validated* once four evidence booleans were set. The
+booleans were self-declared: nothing verified them, and the skill reads no artefact from the estate,
+so the promotion turned an unchecked claim into an assurance. They were removed in v1.18, and a gate
+now fails if the vocabulary reappears.
 
-- dependency assessment completed;
-- performance and sizing data measured;
-- Azure region availability confirmed;
-- architect approval completed.
+What the evidence does instead is close the gaps the card names. It still has to be produced, and it
+still changes the decision — it just no longer changes the *status*, because the skill is not the
+thing that can confirm it.
 
 ```mermaid
 flowchart LR
@@ -323,7 +367,7 @@ flowchart LR
     C --> D[Performance and sizing]
     D --> E[Region validation]
     E --> F[Architect approval]
-    F --> G[Validated recommendation]
+    F --> G[Decision to migrate, taken outside the skill]
 
     classDef prov fill:#fff8e1,stroke:#f9a825,color:#111
     classDef evid fill:#e8f5e9,stroke:#2e7d32,color:#111
@@ -333,8 +377,8 @@ flowchart LR
     class G done
 ```
 
-Amber is what an interview alone can produce, green is each of the four typed proofs, and blue is the only
-state in which the recommendation stops being provisional.
+Amber is what an interview alone can produce, green is each of the four proofs a tool or a human must
+supply, and blue is a decision the skill never makes.
 
 The skill is therefore a decision-support system, not an autonomous migration authority.
 
@@ -546,7 +590,7 @@ The CI workflow runs this check in **strict mode** on every push and every pull 
 - cutover downtime values;
 - cross-cloud eligibility rules;
 - hard eligibility rules;
-- required evidence for a validated recommendation;
+- the evidence a tool or an architect must still produce;
 - retired tools and their replacements.
 
 #### Example failure
@@ -595,7 +639,7 @@ tests/run-tests.mjs
 
 A golden scenario is a migration profile with an expected result.
 
-The test engine runs the inputs through the deterministic rules and compares the actual output with the expected output.
+The test engine runs the inputs through a machine-readable mirror of the rules and compares the actual output with the expected output.
 
 A simplified scenario looks like this:
 
@@ -657,8 +701,12 @@ Bad behaviour:
 ```text
 Feature dependencies: unknown
 Agent silently assumes: no dependencies
-Recommendation status: validated
+Confidence: medium
 ```
+
+That exact defect shipped. A user answered *no dependencies*, and the card told them dependencies were
+unknown — the inverse mistake, from the same missing distinction. The input contract now separates
+`NONE_CONFIRMED` from `UNKNOWN` so neither can be read as the other.
 
 Expected behaviour:
 
@@ -920,7 +968,7 @@ flowchart LR
     G3([Push to main on the KB, tools/pdf,<br/>tools/diagram, tools/artifacts, howto SVGs]) --> W3[Artifacts coherence<br/>artifacts.yml]
     G4([Push to main on blume/ or howto/]) --> W4[Deploy docs<br/>deploy-docs.yml]
 
-    W1 --> O1[actionlint · rules data --strict<br/>18 gates · 90 golden scenarios<br/>engine branch coverage >= 85%]
+    W1 --> O1[actionlint · rules data --strict<br/>21 gates · 90 golden scenarios<br/>engine branch coverage >= 85%]
 
     W2 --> C1[consistency] --> C2[evidence<br/>links · news · claims] --> C3[review<br/>Foundry gpt-5.6-sol] --> C4[decide]
     C4 --> O2a[Substantive edits:<br/>pull request + version bump]
@@ -972,14 +1020,17 @@ on the same checkout.
 ```text
 sql-migration-advisor/
 │
-├── SKILL.md
-│   └── Agent behaviour, interview and output contract
+├── skills/get-migration-assessment/
+│   └── SKILL.md
+│       └── Agent behaviour, interview, and the self-check before answering
 │
 ├── docs/
 │   ├── sql-server-to-azure-migration.md
 │   └── sql-server-to-azure-migration.pdf
 │
 ├── reference/
+│   ├── input-contract.md
+│   ├── output-contract.md
 │   ├── decision-rules.md
 │   ├── decision-rules.data.json
 │   └── claims-registry.json
@@ -1059,7 +1110,7 @@ The SQL Migration Advisor is not an AI that replaces migration experts.
 It is a controlled decision-support system.
 
 ```text
-SKILL.md
+skills/get-migration-assessment/SKILL.md
     controls the conversation
 
 Knowledge base
