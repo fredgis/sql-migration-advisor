@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { evaluate } from './engine/evaluate.mjs';
+import { evaluate, __guards as guards } from './engine/evaluate.mjs';
 import { validateGoldenScenarios } from './validate-scenarios.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -97,7 +97,6 @@ function textOf(value) {
   if (value && typeof value === 'object') return Object.values(value).map(textOf).join(' | ');
   return String(value ?? '');
 }
-function hasText(haystack, needle) { return textOf(haystack).toLowerCase().includes(String(needle).toLowerCase()); }
 function isManagedCloudSqlSource(inputs) {
   const source = String(inputs.source_location || '').toLowerCase();
   return source.includes('aws rds') || source.includes('gcp cloud sql');
@@ -449,6 +448,71 @@ try {
   ];
   const missing = required.filter(re => !re.test(rules)).map(re => String(re));
   add('no-silent-defaults', missing.length === 0, missing.length ? missing : ['Unknown decision-driving inputs produce assessment/provisional status, not defaults.']);
+}
+
+{
+  // The engine keeps guards that a normal run cannot reach: chooseTarget only ever emits
+  // a target and method that already satisfy each other, and sql_vm is never marked
+  // unsupported, so the per-target method rejections and the fallback's later candidates
+  // never fire. A coverage report calls them dead. They are not dead, they are a net, and
+  // a net nobody has ever tested is a net nobody should rely on. This exercises them
+  // directly, so removing a guard fails the suite instead of quietly widening the engine.
+  const { methodGateFailure, chooseConsistentFallback, chooseTarget, TARGET_LABELS, E, MI_LINK } = guards;
+  const fresh = () => ({ hardBlockers: [], unknowns: [], evidenceRequired: [], exclusions: {} });
+  const onPrem = { source_location: 'on-prem / Azure VM', source_version: '2019' };
+  const failures = [];
+  const expect = (label, actual, predicate) => { if (!predicate(actual)) failures.push(`${label}: got ${JSON.stringify(actual)}`); };
+
+  expect('MI rejects an unknown method',
+    methodGateFailure(onPrem, TARGET_LABELS.sql_mi, 'BACPAC/SqlPackage', fresh()),
+    v => typeof v === 'string' && v.includes('not a supported Azure SQL Managed Instance migration method'));
+  expect('SQL DB rejects an unknown method',
+    methodGateFailure(onPrem, TARGET_LABELS.sql_db, 'MI Link', fresh()),
+    v => typeof v === 'string' && v.includes('not a supported Azure SQL Database migration method'));
+  expect('MI Link names both port requirements when they are blocked',
+    methodGateFailure({ ...onPrem, network_ports: '5022 blocked' }, TARGET_LABELS.sql_mi, 'MI Link', fresh()),
+    v => typeof v === 'string' && v.includes(String(MI_LINK.ports.sqlServerEndpoint)) && v.includes(String(MI_LINK.ports.managedInstanceHadrRange.end)));
+  expect('an unhandled target is not rejected',
+    methodGateFailure(onPrem, 'Some target the rules do not model', 'any method', fresh()),
+    v => v === null);
+
+  // sql_vm unsupported forces the loop past its first candidate, which is the branch a
+  // normal run can never take.
+  const out1 = fresh();
+  expect('the fallback skips an ineligible candidate and takes the next',
+    chooseConsistentFallback({ ...onPrem, downtime: 'offline' }, { sql_vm: E.UNSUPPORTED, sql_db: E.ELIGIBLE, sql_mi: E.UNSUPPORTED }, out1),
+    v => Array.isArray(v) && v[0] === TARGET_LABELS.sql_db);
+
+  const out2 = fresh();
+  expect('the fallback returns the shortlist when nothing qualifies',
+    chooseConsistentFallback({ ...onPrem, downtime: 'offline' }, { sql_vm: E.UNSUPPORTED, sql_db: E.UNSUPPORTED, sql_mi: E.UNSUPPORTED }, out2),
+    v => Array.isArray(v) && v[0] === 'provisional shortlist only');
+  expect('exhausting the fallback records the assessment to run',
+    out2.evidenceRequired,
+    v => v.some(e => /Azure Migrate \/ Arc assessment/.test(e)));
+
+  // A rejected candidate must say why, otherwise the exclusion map loses the reason.
+  const out3 = fresh();
+  chooseConsistentFallback({ ...onPrem, source_version: '2025', downtime: 'offline' },
+    { sql_vm: E.UNSUPPORTED, sql_db: E.UNSUPPORTED, sql_mi: E.ELIGIBLE }, out3);
+  expect('a rejected fallback candidate records its exclusion',
+    Object.keys(out3.exclusions),
+    v => v.some(k => k.endsWith('_method')));
+
+  // chooseTarget ends on a terminal return that the current rules can never reach:
+  // applyFabric always leaves fabric_sql_db as unknown, eligible or remediate, and each
+  // of those returns earlier. The terminal return is what stops the function returning
+  // undefined if that ever stops being true, so it is exercised through a crafted map.
+  const out4 = { ...fresh(), fabricIndicated: true };
+  expect('chooseTarget still answers when no earlier branch claims the case',
+    chooseTarget({ ...onPrem, source_version: '2022', downtime: 'offline', feature_dependencies: ['None'], size: '2 TB' },
+      { sql_vm: E.ELIGIBLE, avs: E.UNSUPPORTED, sql_mi: E.ELIGIBLE, sql_db: E.ELIGIBLE,
+        fabric_sql_db: E.UNSUPPORTED, arc_sql_mi: E.UNSUPPORTED, container: E.UNSUPPORTED, arc_in_place: E.UNSUPPORTED },
+      out4),
+    v => Array.isArray(v) && v[0] === TARGET_LABELS.sql_db && typeof v[1] === 'string' && v[1].length > 0);
+
+  add('engine-guard-checks', failures.length === 0,
+    failures.length ? failures : ['9 unreachable-by-design guards exercised directly: method rejections, port message, unhandled target, the fallback skip, exhaustion and exclusion paths, and the chooseTarget terminal return.']);
 }
 
 {

@@ -127,7 +127,9 @@
         "capacityEligibility": { "$ref": "#/$defs/eligibilityStatus" },
         "arcWizardBatchEligibility": { "$ref": "#/$defs/eligibilityStatus" },
         "lrsBusinessCriticalCutoverCanTakeHours": { "type": "boolean" },
-        "exclusions.mi_link": { "type": "string" }
+        "exclusions.mi_link": { "type": "string" },
+        "exclusions.arc_wizard_batch": { "type": "string" },
+        "exclusions.fabric_sql_db": { "type": "string" }
       }
     }
   }

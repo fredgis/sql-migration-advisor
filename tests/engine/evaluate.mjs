@@ -51,13 +51,16 @@ function isBlankAnswer(value) {
   const items = Array.isArray(value) ? value : [value];
   return items.every(v => textOf(v).trim() === '');
 }
+function downtimeUnknown(inputs) {
+  const t = textOf(inputs.downtime).trim();
+  return t === '' || /not sure|unknown/i.test(t);
+}
 function versionNumber(v) {
   const m = textOf(v).match(/\b(?:19|20)\d{2}\b/);
   return m ? Number(m[0]) : undefined;
 }
 function sourceKind(inputs) { return String(inputs.source_location || '').toLowerCase(); }
 function isManagedCloudSqlSource(inputs) { const s = sourceKind(inputs); return s.includes('aws rds') || s.includes('gcp cloud sql'); }
-function isSelfManagedSource(inputs) { return !isManagedCloudSqlSource(inputs); }
 function portPattern(port) { return new RegExp(`${port}[^.;,]*(blocked|cannot|can't|closed)|(blocked|cannot|can't|closed)[^.;,]*${port}`); }
 function rangePattern(range) { return new RegExp(`(${range.start}|${range.end})[^.;,]*(blocked|cannot|can't|closed)|(blocked|cannot|can't|closed)[^.;,]*(${range.start}|${range.end})`); }
 function portsOpenForMiLink(inputs) {
@@ -111,7 +114,7 @@ function methodAvailability(method, tier) {
 }
 function chooseMiTier(inputs, out) {
   const p = String(inputs.performance || '').toLowerCase();
-  const explicitTier = String(inputs.tier || inputs.size || '').toLowerCase();
+  const explicitTier = String(inputs.size || '').toLowerCase();
   if (/next-gen|next gen/.test(explicitTier) || /next-gen|next gen/.test(p)) return 'MI Next-gen General Purpose';
   if (/business critical|low-latency|low latency|high iops|log throughput|read-scale|read scale|highest ha|heavy tempdb|in-memory/.test(p)) return 'MI Business Critical';
   if (/general purpose|moderate|cost-sensitive|cost sensitive|general enterprise/.test(p)) return 'MI General Purpose';
@@ -175,7 +178,12 @@ function applyFabric(inputs, eligibility, out) {
     addUnique(out.evidenceRequired, `Confirm an ingestion path; if it is the Migration Assistant, confirm DACPAC <= ${FABRIC_MIGRATION.maxDacpacMb} MB, no Private Link requirement, gateway acceptable, Preview acceptable`);
     return;
   }
-  if (/private link required|requires private link|private link: required|private link yes/.test(fabricText)) {
+  // "no private link required" contains "private link required" as a substring, so an
+  // unanchored test reads the negation as its opposite. That misfired on three of the
+  // four Fabric scenarios: they were handed a Private Link blocker they had explicitly
+  // ruled out, and it masked the DACPAC and preview gates below, which never ran.
+  const privateLinkRuledOut = /no private link|without private link|private link not required|private link: no/.test(fabricText);
+  if (!privateLinkRuledOut && /private link required|requires private link|private link: required|private link yes/.test(fabricText)) {
     eligibility.fabric_sql_db = E.REMEDIATE;
     out.exclusions.fabric_sql_db = 'The Fabric Migration Assistant has no Private Link/VNet gateway path; the GA target itself remains available through another ingestion path.';
     return;
@@ -492,7 +500,16 @@ export function evaluate(inputs = {}) {
   else if (out.primaryTarget !== 'SQL database in Fabric') delete out.tier;
   const [availability, cutover] = methodAvailability(out.method, out.tier);
   out.targetAvailabilityDuringSync = availability;
-  out.businessCutoverDowntime = cutover;
+  // A cutover class is a promise made to the business. Deriving it from a method that was
+  // itself picked by defaulting an unanswered downtime question states a number nobody
+  // supplied, so an unknown tolerance yields an unknown class rather than "minutes".
+  if (downtimeUnknown(inputs)) {
+    out.businessCutoverDowntime = E.UNKNOWN;
+    addUnique(out.unknowns, 'Cutover downtime tolerance');
+    addUnique(out.evidenceRequired, 'Agree the business cutover downtime tolerance with the application owner, then re-rank the methods');
+  } else {
+    out.businessCutoverDowntime = cutover;
+  }
   if (out.method === 'LRS' && out.tier === 'MI Business Critical') out.lrsBusinessCriticalCutoverCanTakeHours = true;
   if (out.method === 'MI Link' && eligibility.sql_vm !== E.UNSUPPORTED) out.alternativeTarget = 'SQL Server on Azure VM';
   if (out.primaryTarget === 'Azure SQL Database' && eligibility.sql_mi !== E.UNSUPPORTED) out.alternativeTarget = 'Azure SQL Managed Instance';
@@ -501,3 +518,10 @@ export function evaluate(inputs = {}) {
   out.eligibility = eligibility;
   return out;
 }
+
+// Safety nets that evaluate() cannot reach. chooseTarget only ever emits a target and
+// method that already satisfy each other's gates, and sql_vm is never marked
+// unsupported, so the per-target method guards and the fallback's later candidates
+// never fire in a normal run. Deleting them would remove the net that catches a future
+// rule change; exporting them lets the suite prove they still work.
+export const __guards = { methodGateFailure, chooseConsistentFallback, chooseTarget, TARGET_LABELS, E, MI_LINK };

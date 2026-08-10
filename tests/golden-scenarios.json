@@ -210,6 +210,73 @@
     "auditRef": "P0-6"
   },
   {
+    "id": "unknown-downtime-tolerance-must-not-claim-a-cutover-class",
+    "title": "An unanswered downtime tolerance yields an unknown cutover class, not \"minutes\"",
+    "why": "Third instance of the same defect as v1.15 and v1.16. A user answering \"Not sure\" on downtime was handed LRS, a stated cutover of \"minutes\" and medium confidence, with no unknown recorded. The cutover class is a promise to the business, and it was derived from a method chosen by defaulting the very question the user had declined.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2019",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "SQL Agent"
+      ],
+      "downtime": "Not sure",
+      "performance": "general purpose"
+    },
+    "expect": {
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "LRS",
+      "tier": "MI General Purpose",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "recommendationStatus": "provisional",
+      "confidence": "low",
+      "mustNotRecommend": [
+        "minutes",
+        "validated recommendation"
+      ]
+    },
+    "assertRulePresent": [
+      "Never turn an unknown into a silent safe default"
+    ],
+    "auditRef": "P0-6"
+  },
+  {
+    "id": "unknown-downtime-holds-for-sql-database-too",
+    "title": "The unknown cutover class is not specific to Managed Instance",
+    "why": "The downtime fix lives in evaluate() rather than in any one method chooser, so it must hold for every target. This is the Azure SQL Database half of the pair: same declined question, same unknown class, same drop to low confidence.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2022",
+      "driver": "app modernization",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "Not sure",
+      "size": "< 150 GB"
+    },
+    "expect": {
+      "primary_target": "Azure SQL Database",
+      "method": "BACPAC/SqlPackage",
+      "tier": "General Purpose",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "recommendationStatus": "provisional",
+      "confidence": "low",
+      "mustNotRecommend": [
+        "full-load-time",
+        "validated recommendation"
+      ]
+    },
+    "assertRulePresent": [
+      "Never turn an unknown into a silent safe default"
+    ],
+    "auditRef": "P0-6"
+  },
+  {
     "id": "empty-dependency-answer-is-not-none",
     "title": "Unanswered dependency multi-select must not read as \"no dependencies\"",
     "why": "UX defect: ticking nothing is the natural gesture for both \"I have none\" and \"I have not checked\". An empty list must resolve to unknown, never to None, or the PaaS feature blockers are silently cleared.",
@@ -1751,7 +1818,7 @@
   {
     "id": "fabric-driver-preview-gates-met-validated",
     "title": "Fabric driver with all Preview gates and validation evidence",
-    "why": "Covers the positive Fabric path only when mandatory Preview gates and validation evidence are supplied.",
+    "why": "Covers the positive Fabric path only when mandatory Preview gates and validation evidence are supplied. Expectations corrected in v1.17: the engine read \"no Private Link required\" as \"Private Link required\", so this scenario had been recorded as Azure SQL Database with a Private Link remediation it never asked for.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -1780,14 +1847,14 @@
         "avs": "unsupported",
         "sql_mi": "eligible",
         "sql_db": "eligible",
-        "fabric_sql_db": "eligible_with_remediation",
+        "fabric_sql_db": "eligible",
         "arc_sql_mi": "unsupported",
         "container": "unsupported",
         "arc_in_place": "unsupported"
       },
-      "primary_target": "Azure SQL Database",
-      "method": "BACPAC/SqlPackage",
-      "tier": "General Purpose",
+      "primary_target": "SQL database in Fabric",
+      "method": "Fabric Migration Assistant",
+      "tier": "Fabric SQL database (GA)",
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-load-time",
       "recommendationStatus": "validated",
@@ -1800,6 +1867,82 @@
       "No VNet gateway/Private Link"
     ],
     "auditRef": "P0/P1-fabric-validated"
+  },
+  {
+    "id": "fabric-preview-refused-keeps-the-ga-target-through-another-path",
+    "title": "Refusing Preview disqualifies the Migration Assistant, not the Fabric target",
+    "why": "The preview and gateway gate had never executed: the Private Link negation defect returned before reaching it, so every Fabric scenario stopped one branch earlier. Refusing Preview must exclude the assistant as a method while the GA target stays reachable by another ingestion path.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2022",
+      "driver": "analytics/Fabric",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "offline",
+      "size": "< 150 GB",
+      "fabric_constraints": "DACPAC <= 20 MB; preview not acceptable; on-prem data gateway acceptable; no Private Link required"
+    },
+    "expect": {
+      "eligibility": {
+        "fabric_sql_db": "eligible_with_remediation"
+      },
+      "primary_target": "Azure SQL Database",
+      "method": "BACPAC/SqlPackage",
+      "tier": "General Purpose",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-load-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "exclusions.fabric_sql_db": "Preview acceptance and the on-prem data gateway are Migration Assistant gates, not target gates; select a non-assistant ingestion path.",
+      "mustNotRecommend": [
+        "SQL database in Fabric",
+        "Fabric Migration Assistant"
+      ]
+    },
+    "assertRulePresent": [
+      "Fabric SQL database"
+    ],
+    "auditRef": "P0-4"
+  },
+  {
+    "id": "fabric-gates-undetermined-stay-unknown",
+    "title": "A Fabric driver with undetermined assistant gates stays unknown",
+    "why": "Covers the final branch of the Fabric rules: the constraints mention a gate, so the interview did not skip the question, but none of the affirmative forms is satisfied. That is an unknown to assess, not an eligible target.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2022",
+      "driver": "analytics/Fabric",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "offline",
+      "size": "< 150 GB",
+      "fabric_constraints": "DACPAC size unknown; ingestion path undecided"
+    },
+    "expect": {
+      "eligibility": {
+        "fabric_sql_db": "unknown_requires_assessment"
+      },
+      "primary_target": "provisional shortlist only",
+      "method": "Confirm a Fabric ingestion path first; Migration Assistant Preview gates apply only if that path is chosen",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "recommendationStatus": "provisional",
+      "confidence": "low",
+      "mustNotRecommend": [
+        "validated recommendation",
+        "SQL database in Fabric"
+      ]
+    },
+    "assertRulePresent": [
+      "Fabric SQL database"
+    ],
+    "auditRef": "P0-4"
   },
   {
     "id": "validated-mi-link-evidence-complete",
@@ -2431,6 +2574,79 @@
       "Never turn an unknown into a silent safe default"
     ],
     "auditRef": "P1-4b"
+  },
+  {
+    "id": "arc-extension-current-raises-the-wizard-batch-limit",
+    "title": "A current Azure Extension for SQL Server raises the Arc wizard batch limit to 10",
+    "why": "The batch-limit rule had only ever been exercised through its unknown branch: no scenario supplied arc_extension_version, so the version comparison and the raised limit never executed. This covers the satisfied case.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2019",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "SQL Agent"
+      ],
+      "downtime": "minimal",
+      "network_ports": "5022 open and 11000-11999 open",
+      "performance": "general purpose",
+      "arc_extension_version": "1.1.3348.364",
+      "migration_batch_size": 8
+    },
+    "expect": {
+      "targetAvailabilityDuringSync": "read-only",
+      "businessCutoverDowntime": "<1min",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": [
+        "validated recommendation"
+      ],
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "MI Link",
+      "tier": "MI General Purpose"
+    },
+    "assertRulePresent": [
+      "up to \\*\\*10 databases\\*\\* per batch with Azure Extension for SQL Server \\*\\*1.1.3348.364\\+\\*\\*",
+      "earlier extension versions select one database at a time"
+    ],
+    "auditRef": "P1-32"
+  },
+  {
+    "id": "arc-extension-below-floor-keeps-the-single-database-batch-limit",
+    "title": "An extension below the documented version keeps the batch limit at 1",
+    "why": "Covers the other side of the version comparison: an extension older than 1.1.3348.364 leaves the limit at one database per batch, so a batch of five is excluded.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2019",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "SQL Agent"
+      ],
+      "downtime": "minimal",
+      "network_ports": "5022 open and 11000-11999 open",
+      "performance": "general purpose",
+      "arc_extension_version": "1.1.3200.100",
+      "migration_batch_size": 5
+    },
+    "expect": {
+      "targetAvailabilityDuringSync": "read-only",
+      "businessCutoverDowntime": "<1min",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": [
+        "validated recommendation"
+      ],
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "MI Link",
+      "tier": "MI General Purpose",
+      "exclusions.arc_wizard_batch": "Arc portal wizard batch limit 1 databases exceeded by 5 selected databases."
+    },
+    "assertRulePresent": [
+      "up to \\*\\*10 databases\\*\\* per batch with Azure Extension for SQL Server \\*\\*1.1.3348.364\\+\\*\\*",
+      "earlier extension versions select one database at a time"
+    ],
+    "auditRef": "P1-32"
   },
   {
     "id": "distribution-sql-vm-os-control-native-restore",

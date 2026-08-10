@@ -5,7 +5,7 @@ Apply Steps **A → D** in order. Steps map to the two engine phases:
 - **Phase B — Ranking and plan:** Steps B → D. Rank only surviving targets, then choose method, tier, blockers, cost, and assessment.
 
 Determinism contract: **same inputs + same KB version + same engine version ⇒ same result**. Every recommendation must carry the KB version, engine version, and, when available, the source commit SHA and fetch timestamp.
-Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v1.16**, verified August 2026.
+Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v1.17**, verified August 2026.
 
 Three layers, never mixed:
 - **Target** = where the DB ends up (runtime).
@@ -306,7 +306,7 @@ evidenceRequired: []
 recommendationStatus: provisional|validated
 ```
 
-Decision-driving unknowns are: linked servers/provider targets, SQL Agent job criticality, FILESTREAM/FileTable, DTC participants, PolyBase/external data source types, source platform privileges (sysadmin/AG endpoints), network ports for selected online method, TDE status/cert availability, database size, tier-driving performance inputs, sovereignty/disconnected constraints, and Fabric preview/Private Link/gateway constraints.
+Decision-driving unknowns are: linked servers/provider targets, SQL Agent job criticality, FILESTREAM/FileTable, DTC participants, PolyBase/external data source types, source platform privileges (sysadmin/AG endpoints), network ports for selected online method, TDE status/cert availability, database size, **cutover downtime tolerance**, tier-driving performance inputs, sovereignty/disconnected constraints, and Fabric preview/Private Link/gateway constraints.
 
 Rules:
 - Unknown on a decision-driving dependency ⇒ `recommendationStatus: provisional`, add `evidenceRequired`, and name the next assessment (Azure Migrate/Arc discovery/SSMS 22 assessment/scripts/Perfmon/DMVs).
@@ -314,6 +314,7 @@ Rules:
 - `confidence = medium` when only non-blocking remediation details remain.
 - `confidence = low` when any candidate is `unknown_requires_assessment` on a decision-driving dependency.
 - Never turn an unknown into a silent safe default.
+- An unknown cutover downtime tolerance yields `businessCutoverDowntime: unknown_requires_assessment`. A downtime class is a promise made to the business, so it is never inferred from a method that was itself selected by defaulting the unanswered question.
 
 ---
 

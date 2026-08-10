@@ -169,7 +169,7 @@ At session start, fetch the live knowledge-base document:
 
 - Raw URL: `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/main/docs/sql-server-to-azure-migration.md`
 - Use the live doc when available. If offline, use `reference/decision-rules.md` and tell the user that the offline fallback may lag.
-- Current coordinated knowledge-base line: **v1.16**, dated **2026-08-10**.
+- Current coordinated knowledge-base line: **v1.17**, dated **2026-08-10**.
 - Display the **knowledge-base version** in every recommendation and, when available, the **commit SHA** and **fetch timestamp**.
 - Determinism contract: **same inputs + same KB version + same engine version ⇒ same result**.
 
@@ -426,7 +426,7 @@ Asks the remaining triage questions one at a time (source location, migration in
 
 > **Preliminary recommendation — 40-database OLTP estate**
 > **Azure SQL Managed Instance** via **MI Link** · status **provisional** · confidence **medium**
-> KB **v1.16** · commit **n/a** · fetched **n/a**
+> KB **v1.17** · commit **n/a** · fetched **n/a**
 >
 > SQL Agent and linked-server dependencies point at instance-scoped PaaS rather than a database-scoped target, and the downtime tolerance is met by an online method.
 >
