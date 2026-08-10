@@ -104,18 +104,18 @@ install is to clone it straight into the skills folder.
 
 ```bash
 # macOS / Linux
-git clone https://github.com/fredgis/sql-migration-advisor.git ~/.copilot/skills/sql-migration-advisor
+git clone https://github.com/fredgis/sql-migration-advisor.git ~/.copilot/skills/assessment-advisor
 ```
 
 ```powershell
 # Windows (PowerShell)
-git clone https://github.com/fredgis/sql-migration-advisor.git "$env:USERPROFILE\.copilot\skills\sql-migration-advisor"
+git clone https://github.com/fredgis/sql-migration-advisor.git "$env:USERPROFILE\.copilot\skills\assessment-advisor"
 ```
 
 Then:
 
 1. Restart Copilot CLI (skills load at startup).
-2. Run `/skills` and confirm **`sql-migration-advisor`** is listed.
+2. Run `/skills` and confirm **`assessment-advisor`** is listed. The repository is named `sql-migration-advisor`; the skill inside it is `assessment-advisor`, which is the name it will carry when contributed to `microsoft/sql-migration-agent`.
 3. Ask, e.g. *"I want to migrate a SQL Server environment to Azure"* — the skill takes over
    and starts the interview.
 
@@ -132,12 +132,12 @@ If you cloned the repo:
 
 ```bash
 # macOS / Linux
-cd ~/.copilot/skills/sql-migration-advisor && git pull
+cd ~/.copilot/skills/assessment-advisor && git pull
 ```
 
 ```powershell
 # Windows (PowerShell)
-cd "$env:USERPROFILE\.copilot\skills\sql-migration-advisor"; git pull
+cd "$env:USERPROFILE\.copilot\skills\assessment-advisor"; git pull
 ```
 
 If you copied only the three files, copy them again from the latest repo:
@@ -147,7 +147,7 @@ Then **restart Copilot CLI** — skills load at startup, so an update isn't pick
 To check which version you're running:
 
 ```powershell
-Select-String -Path "$env:USERPROFILE\.copilot\skills\sql-migration-advisor\SKILL.md" -Pattern "knowledge-base line"
+Select-String -Path "$env:USERPROFILE\.copilot\skills\assessment-advisor\SKILL.md" -Pattern "knowledge-base line"
 ```
 
 It should match the knowledge-base badge at the top of this README.
