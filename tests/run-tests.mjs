@@ -658,6 +658,41 @@ try {
 }
 
 {
+  // A version manifest that nobody updates is worse than none: it tells every user they are current
+  // while the repository moves on. This gate is the only thing standing between that and a lie.
+  const failures = [];
+  const manifestPath = path.join('version.json');
+  let manifest = null;
+  try { manifest = JSON.parse(readText(manifestPath)); }
+  catch { failures.push('version.json is missing or is not valid JSON'); }
+
+  if (manifest) {
+    // The coordinated line lives in SKILL.md, e.g. "knowledge-base line: **v2.1**".
+    const line = skill.match(/knowledge-base line:\s*\*\*(v[0-9]+\.[0-9]+)\*\*/u);
+    if (!line) failures.push('SKILL.md no longer states the coordinated knowledge-base line');
+    else if (manifest.knowledgeBase !== line[1]) {
+      failures.push(`version.json says knowledgeBase ${manifest.knowledgeBase}, SKILL.md says ${line[1]}`);
+    }
+    // `latest` must be the release built from this KB line, so v2.1 pairs with v2.1.x.
+    if (!/^v[0-9]+\.[0-9]+\.[0-9]+$/u.test(manifest.latest || '')) {
+      failures.push(`version.json latest '${manifest.latest}' is not a vMAJOR.MINOR.PATCH release tag`);
+    } else if (manifest.knowledgeBase && !manifest.latest.startsWith(`${manifest.knowledgeBase}.`)) {
+      failures.push(`version.json latest ${manifest.latest} does not belong to knowledge-base line ${manifest.knowledgeBase}`);
+    }
+    // The skill must actually read it, and from main: pinning it to a tag freezes the answer.
+    if (!skill.includes('main/version.json')) {
+      failures.push('SKILL.md does not read version.json from main, so the update check cannot see a newer release');
+    }
+    if (!/Update with: copilot plugin update/u.test(skill)) {
+      failures.push('SKILL.md states no update command for the user to run');
+    }
+  }
+
+  add('version-manifest-current', failures.length === 0,
+    failures.length ? failures : [`version.json advertises ${manifest.latest} on knowledge-base line ${manifest.knowledgeBase}, matching SKILL.md, and the skill reads it from main.`]);
+}
+
+{
   // v1.18 removed `high` and `validated`, and both survived in three documents until a docs pass
   // found them by hand. Nothing was watching the vocabulary, so this gate watches it.
   const files = [
