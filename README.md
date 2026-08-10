@@ -62,7 +62,7 @@ knowledge-base version, commit SHA and fetch timestamp so the advice is traceabl
 - **Explicit uncertainty** — every recommendation is `provisional`, and `medium` is the confidence ceiling. Nothing higher is reachable from an interview, because the skill reads no artefact from your estate. It carries assumptions, unknowns, blockers and the evidence a tool would have to produce.
 - **It checks its own answer** — before the card is shown, the skill re-reads its draft against the 9 invariants in [`reference/output-contract.md`](reference/output-contract.md). One of them: no eligibility claim may rest on a field you never answered. A failed invariant is shown to you, never silently repaired.
 - **Freshness gates** — version bumps require substantive diffs; link checks classify bot-blocked pages; high-risk claims are tracked in [`reference/claims-registry.json`](reference/claims-registry.json).
-- **Regression protection** — [`tests/`](tests/) holds 90 golden scenarios and 20 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
+- **Regression protection** — [`tests/`](tests/) holds 90 golden scenarios and 21 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
 
 ## Audit response
 
@@ -114,14 +114,11 @@ Then restart Copilot CLI (skills load at startup), run `/skills`, and confirm
 Azure"* and the interview starts.
 
 Installing from a marketplace opens an interactive picker, so run the second command from a real
-terminal or from `/plugin` inside a session. A single-command install also works today:
+terminal or from `/plugin` inside a session. A single-command install also works:
 
 ```bash
 copilot plugin install fredgis/sql-migration-advisor
 ```
-
-Copilot CLI marks that form as deprecated and will eventually accept marketplace installs only,
-which is why the two-command version is listed first.
 
 To load it from a local clone instead, without installing anything:
 
@@ -266,11 +263,11 @@ node --experimental-test-coverage --test-coverage-include='tests/engine/**' `
 ## Poster Skill AI
 
 The whole engine on one page — not just the target choice, but everything the skill reasons
-through: the **agentic loop** (grounds itself in the live knowledge base, interviews, reasons
-deterministically, guards itself, then acts), the Tier 1/Tier 2 interview, Phase A eligibility,
-Phase B ranking and tier selection, cutover downtime classes + blockers & remediations, confidence
-and evidence requirements, cost levers, Microsoft program and the assessment tool to run next — with the official Azure &amp; Microsoft Fabric
-service icons.
+through: the **agentic loop** (grounds itself in the live knowledge base, interviews, applies the
+rules in a fixed order, checks its own answer, then acts), the Tier 1/Tier 2 interview, Phase A
+eligibility, Phase B ranking and tier selection, cutover downtime classes + blockers & remediations,
+confidence and evidence requirements, cost levers, Microsoft program and the assessment tool to run
+next — with the official Azure &amp; Microsoft Fabric service icons.
 
 [![sql-migration-advisor — the complete AI decision logic](docs/sql-migration-advisor-poster.png)](docs/sql-migration-advisor-poster.png)
 
