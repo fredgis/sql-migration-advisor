@@ -685,15 +685,30 @@ allowed, but only alongside the scenarios that justify it.
 
 #### Forbidden-pattern checks
 
-The tests scan the authoritative documents for old or unsafe claims.
+The tests scan the authoritative documents for old or unsafe claims. There are **13** of them, and they
+exist because the same failure keeps recurring: a claim is corrected in one place and left standing in
+another, then reported again by the weekly review a cycle later. A gate is the only fix that survives the
+author forgetting.
 
 Examples include:
 
 - the obsolete SQL Server `2016–2019 only` replication range;
 - an old statement that MI Link supports only 10 databases;
+- LRS offered as a fallback without its 2008–2022 range and 30-day window;
+- MI Link implied for Arc-enabled SQL MI, which does not support it;
+- DTC port 135 listed inbound-only when Microsoft requires both directions;
+- Azure Hybrid Benefit on Hyperscale without its 15 December 2023 creation-date qualifier;
+- SQL MI offered as an as-is destination for a database above the Hyperscale ceiling;
+- any spelling of a Windows Server version floor on MI Link, which Microsoft does not publish;
+- ESU described as covering "2014 and earlier", which no longer exists;
 - retired validation tools recommended without a retirement warning;
 - MI Link port instructions that mention `5022` but omit `11000–11999`;
 - unsupported statistics without a source.
+
+Two details are worth knowing before adding one. **Write the pattern for every spelling, not the one you
+searched for**: the Windows Server floor survived a sweep because the knowledge base abbreviates it to
+`Win Server 2016+`. And **changelog rows are exempt**, because a version history has to be able to quote
+the wording later versions forbid; rewording history to satisfy a gate falsifies the record.
 
 This is useful because a documentation regression can be dangerous even when the code still works.
 
@@ -809,11 +824,12 @@ flowchart TD
     H --> I[Rebuild the PDF and its preview]
     I --> J[Rebuild the poster and images]
     J --> K[--fix-prose: page count and version]
-    K --> L[Verify the regenerated tree<br/>artifacts · rules --strict · full suite]
-    L -- a check fails --> M[The job fails and proposes nothing<br/>it prints the local rebuild commands]
-    L -- all pass --> N[Commit to the reused branch chore/artifacts]
-    N --> O[Open or update the pull request<br/>the body records the checks and links the run]
-    O --> P[A human reviews the diff and merges]
+    K --> L[Commit to the reused branch chore/artifacts<br/>locally, nothing pushed yet]
+    L --> M[Verify the staged commit<br/>artifacts · rules --strict · full suite]
+    M -- a check fails --> N[The job fails, nothing is pushed<br/>it prints the local rebuild commands]
+    M -- all pass --> O[Push the branch]
+    O --> P[Open or update the pull request<br/>the body records the checks and links the run]
+    P --> Q[A human reviews the diff and merges]
 
     classDef src fill:#e3f2fd,stroke:#1565c0,color:#111
     classDef proc fill:#e8f5e9,stroke:#2e7d32,color:#111
@@ -821,14 +837,21 @@ flowchart TD
     classDef stop fill:#ffebee,stroke:#c62828,color:#111
     classDef human fill:#f3e5f5,stroke:#6a1b9a,color:#111
     class A,D src
-    class B,E,H,I,J,K,L,N,O proc
+    class B,E,H,I,J,K,L,M,O,P proc
     class F ask
-    class M stop
-    class C,G,P human
+    class N stop
+    class C,G,Q human
 ```
 
-Green is automated work, amber is a decision point, red is the path that stops without proposing anything,
+Green is automated work, amber is a decision point, red is the path that stops without pushing anything,
 and purple is where a human is required.
+
+**The commit comes before the verification, and that ordering is load-bearing.** `check-artifacts` decides
+staleness from git history rather than file contents, so running it on an uncommitted rebuild can never
+pass: the artifact's last commit is by definition older than the source's. The first version of this job
+verified first and consequently refused to open a pull request the one time it had something real to
+propose. The force-dispatch test had not caught it, because with nothing genuinely stale the pre-commit
+check had nothing to complain about — the same trap as a green check that proves nothing.
 
 ### What counts as an artifact
 
@@ -874,10 +897,11 @@ one artifact pull request is open at a time.
 That choice has a consequence which is handled rather than ignored. GitHub deliberately starts **no
 workflow runs for pull requests opened with `GITHUB_TOKEN`**, so the artifacts PR carries no checks of its
 own, and a reviewer seeing an empty check list could reasonably assume nothing was verified. Verification
-therefore runs *inside the job*, on the exact tree about to be proposed, and the pull request body records
-what ran with a link back to the run. Since `--fix-prose` can touch `README.md` and `poster.html`, both of
-which the test suite scans, the full suite and the strict rules check run alongside the artifact check. A
-tree that fails any of them is never proposed at all: the job fails and prints the local rebuild commands.
+therefore runs *inside the job*, against the exact commit about to be proposed, and the pull request body
+records what ran with a link back to the run. Since `--fix-prose` can touch `README.md` and `poster.html`,
+both of which the test suite scans, the full suite and the strict rules check run alongside the artifact
+check. A commit that fails any of them is never pushed at all: the job fails and prints the local rebuild
+commands.
 
 Dispatching the workflow manually with `force: true` runs the whole path even when nothing is stale, so the
 pull-request logic can be exercised on demand instead of only when the next knowledge-base change happens to
