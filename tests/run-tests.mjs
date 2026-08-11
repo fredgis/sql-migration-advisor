@@ -510,9 +510,11 @@ try {
     out2.evidenceRequired,
     v => v.some(e => /Azure Migrate \/ Arc assessment/.test(e)));
 
-  // A rejected candidate must say why, otherwise the exclusion map loses the reason.
+  // A rejected candidate must say why, otherwise the exclusion map loses the reason. SQL Server
+  // 2025 with a short window is the case: MI Link needs ports nobody confirmed, and LRS stops at
+  // 2022, so the fallback has to reject something and record it.
   const out3 = fresh();
-  chooseConsistentFallback({ ...onPrem, source_version: '2025', downtime: 'offline' },
+  chooseConsistentFallback({ ...onPrem, source_version: '2025', downtime: 'minimal' },
     { sql_vm: E.UNSUPPORTED, sql_db: E.UNSUPPORTED, sql_mi: E.ELIGIBLE }, out3);
   expect('a rejected fallback candidate records its exclusion',
     Object.keys(out3.exclusions),
@@ -674,7 +676,7 @@ try {
   // Every canonical field the interview names must be defined too. Fields appear in the
   // questions as `field_name`, which is how the contract writes them.
   const RESERVED = new Set(['unknown_requires_assessment', 'none_confirmed', 'not_applicable', 'eligible_with_remediation',
-    'ask_user', 'web_fetch', 'allowed_tools']);
+    'excluded_by_preference', 'ask_user', 'web_fetch', 'allowed_tools']);
   const named = new Set([...skill.matchAll(/`([a-z][a-z0-9]*_[a-z0-9_]+)`/gu)].map(m => m[1]).filter(f => !RESERVED.has(f)));
   for (const field of named) {
     if (!new RegExp(`\`${field}\``, 'u').test(inputContract)) failures.push(`the interview names field '${field}', which input-contract.md does not define`);

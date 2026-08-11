@@ -113,7 +113,7 @@ One sentence on why this is the recommended assessment path.
 - **SQL DB** — `<status>`: `<reason>` `[RULE-ID]`
 - … one line per relevant target
 
-🔁 **Method gate** — <method>: passed | refused (<reason>)
+🔁 **Method gate** — <method>: passed | unknown_requires_assessment (<what is unverified>) | refused (<reason>)
 
 🚧 **Blockers and required evidence**
 - **<blocker>** → <remediation or assessment>

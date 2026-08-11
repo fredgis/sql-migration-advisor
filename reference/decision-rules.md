@@ -73,6 +73,8 @@ eligibility table the engine just produced. The full set of invariants, and the 
 
 Classify each target independently. Only `eligible` and `eligible_with_remediation` survive to Phase B. `unknown_requires_assessment` may be carried into the shortlist, flagged, but it can never be the primary recommendation.
 
+**`excluded_by_preference` is not `unsupported`.** When the stated management model rules a family out — managed PaaS excluding SQL VM, or OS control excluding SQL MI and SQL DB — nothing technical has failed. Record `excluded_by_preference`, name the answer that caused it, and say it can be revisited. `unsupported` is reserved for a target that cannot host the workload as it stands, and a reader six months later must be able to tell the two apart.
+
 | Candidate target | `unsupported` hard blockers | `eligible_with_remediation` examples | Notes |
 | --- | --- | --- | --- |
 | **SQL Server enabled by Azure Arc** *(control plane, in-place)* | none for assessment/control-plane use | Arc onboarding, agent/network prerequisites, paid on-prem ESU | Not a runtime migration target. Use when intent is assess/modernize in place/not ready. |

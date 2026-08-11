@@ -49,10 +49,12 @@ It never recommends retired tooling (DMA, the Azure Data Studio extension, DMS *
 ![sql-migration-advisor recommendation card](docs/preview/sql-migration-advisor-skill.png)
 
 Every recommendation is grounded in the knowledge base
-[`docs/sql-server-to-azure-migration.md`](docs/sql-server-to-azure-migration.md), which the
-skill fetches live. The result is a preliminary disposition, not a final migration verdict:
-tool-based assessment and architect validation are mandatory before execution. Each output carries the
-knowledge-base version, commit SHA and fetch timestamp so the advice is traceable.
+[`docs/sql-server-to-azure-migration.md`](docs/sql-server-to-azure-migration.md). The bundled copy
+is the default — it ships at the same commit as the rules, so a recommendation can be reproduced by
+fetching that commit — and the pinned live document is read on explicit request. The result is a
+preliminary disposition, not a final migration verdict: tool-based assessment and architect
+validation are mandatory before execution. Every answer opens by stating which knowledge-base
+version loaded and where it came from, so the advice is traceable.
 
 ## Why it is trustworthy
 
@@ -165,9 +167,9 @@ copilot plugin update sql-migration-advisor
 
 Then **restart Copilot CLI** — skills load at startup, so an update isn't picked up until you do.
 
-> Not urgent if you skip it: the skill **fetches the knowledge base live** on every run, so the
-> facts stay current even on an older copy. Updating refreshes the *interview and the decision
-> rules* — worth doing after a version bump.
+> **Worth doing.** The bundled knowledge base is what answers by default, so an old install answers
+> from old facts. The skill checks once at launch whether a newer release exists and tells you, but
+> it cannot update itself.
 
 ---
 

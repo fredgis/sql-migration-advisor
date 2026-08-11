@@ -503,9 +503,9 @@
         "sql_mi": "eligible"
       },
       "primary_target": "Azure SQL Managed Instance",
-      "method": "LRS",
-      "targetAvailabilityDuringSync": "unavailable",
-      "businessCutoverDowntime": "minutes",
+      "method": "Native backup/restore",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
       "confidence": "medium",
       "mustNotRecommend": []
@@ -677,9 +677,9 @@
         "sql_db": "unsupported"
       },
       "primary_target": "Azure SQL Managed Instance",
-      "method": "LRS",
-      "targetAvailabilityDuringSync": "unavailable",
-      "businessCutoverDowntime": "minutes",
+      "method": "Native backup/restore",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
       "confidence": "medium",
       "mustNotRecommend": []
@@ -711,9 +711,9 @@
         "sql_db": "eligible_with_remediation"
       },
       "primary_target": "Azure SQL Managed Instance",
-      "method": "LRS",
-      "targetAvailabilityDuringSync": "unavailable",
-      "businessCutoverDowntime": "minutes",
+      "method": "Native backup/restore",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
       "confidence": "medium",
       "mustNotRecommend": []
@@ -886,10 +886,10 @@
         "sql_mi": "eligible"
       },
       "primary_target": "Azure SQL Managed Instance",
-      "method": "LRS",
+      "method": "Native backup/restore",
       "tier": "MI General Purpose",
-      "targetAvailabilityDuringSync": "unavailable",
-      "businessCutoverDowntime": "minutes",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
       "confidence": "medium",
       "mustNotRecommend": []
@@ -921,10 +921,10 @@
         "sql_mi": "eligible"
       },
       "primary_target": "Azure SQL Managed Instance",
-      "method": "LRS",
+      "method": "Native backup/restore",
       "tier": "unknown_requires_assessment",
-      "targetAvailabilityDuringSync": "unavailable",
-      "businessCutoverDowntime": "minutes",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
       "confidence": "low",
       "mustNotRecommend": [
@@ -1268,9 +1268,9 @@
         "sql_mi": "eligible"
       },
       "primary_target": "Azure SQL Managed Instance",
-      "method": "LRS",
-      "targetAvailabilityDuringSync": "unavailable",
-      "businessCutoverDowntime": "minutes",
+      "method": "Native backup/restore",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
       "confidence": "medium",
       "mustNotRecommend": []
@@ -1665,8 +1665,8 @@
     },
     "expect": {
       "eligibility": {
-        "sql_mi": "unsupported",
-        "sql_db": "unsupported",
+        "sql_mi": "excluded_by_preference",
+        "sql_db": "excluded_by_preference",
         "sql_vm": "eligible"
       },
       "primary_target": "SQL Server on Azure VM",
@@ -2542,8 +2542,8 @@
     },
     "expect": {
       "eligibility": {
-        "sql_mi": "unsupported",
-        "sql_db": "unsupported"
+        "sql_mi": "excluded_by_preference",
+        "sql_db": "excluded_by_preference"
       },
       "primary_target": "SQL Server on Azure VM",
       "method": "Native backup/restore",
@@ -2901,8 +2901,8 @@
     },
     "expect": {
       "eligibility": {
-        "sql_mi": "unsupported",
-        "sql_db": "unsupported",
+        "sql_mi": "excluded_by_preference",
+        "sql_db": "excluded_by_preference",
         "sql_vm": "eligible"
       },
       "primary_target": "SQL Server on Azure VM",
@@ -3178,8 +3178,8 @@
     "expect": {
       "eligibility": {
         "sql_vm": "eligible",
-        "sql_mi": "unsupported",
-        "sql_db": "unsupported"
+        "sql_mi": "excluded_by_preference",
+        "sql_db": "excluded_by_preference"
       },
       "primary_target": "SQL Server on Azure VM",
       "method": "Distributed AG or Always On AG",
@@ -3212,8 +3212,8 @@
     "expect": {
       "eligibility": {
         "sql_vm": "eligible",
-        "sql_mi": "unsupported",
-        "sql_db": "unsupported"
+        "sql_mi": "excluded_by_preference",
+        "sql_db": "excluded_by_preference"
       },
       "primary_target": "SQL Server on Azure VM",
       "method": "Log shipping",
@@ -3246,8 +3246,8 @@
     "expect": {
       "eligibility": {
         "sql_vm": "eligible",
-        "sql_mi": "unsupported",
-        "sql_db": "unsupported"
+        "sql_mi": "excluded_by_preference",
+        "sql_db": "excluded_by_preference"
       },
       "primary_target": "SQL Server on Azure VM",
       "method": "Native backup/restore",
@@ -3428,9 +3428,10 @@
       "mustNotRecommend": [
         "Azure SQL Database for CLR-dependent workload"
       ],
-      "method": "LRS",
-      "targetAvailabilityDuringSync": "unavailable",
-      "businessCutoverDowntime": "minutes"
+      "method": "Native backup/restore",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
+      "methodGateStatus": "unknown_requires_assessment"
     },
     "assertRulePresent": [
       "BACKUP-BLOB-PATH"
@@ -3464,10 +3465,11 @@
     "expect": {
       "primary_target": "Azure SQL Managed Instance",
       "recommendationStatus": "provisional",
-      "method": "LRS",
-      "targetAvailabilityDuringSync": "unavailable",
-      "businessCutoverDowntime": "minutes",
-      "confidence": "medium"
+      "method": "Native backup/restore",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
+      "confidence": "medium",
+      "methodGateStatus": "passed"
     },
     "assertRulePresent": [
       "BACKUP-BLOB-PATH"
@@ -3504,9 +3506,9 @@
       },
       "recommendationStatus": "provisional",
       "primary_target": "Azure SQL Managed Instance",
-      "method": "LRS",
-      "targetAvailabilityDuringSync": "unavailable",
-      "businessCutoverDowntime": "minutes",
+      "method": "Native backup/restore",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
       "confidence": "medium"
     },
     "assertRulePresent": [
@@ -3699,9 +3701,9 @@
     "expect": {
       "primary_target": "Azure SQL Managed Instance",
       "recommendationStatus": "provisional",
-      "method": "LRS",
-      "targetAvailabilityDuringSync": "unavailable",
-      "businessCutoverDowntime": "minutes",
+      "method": "Native backup/restore",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
       "confidence": "medium"
     },
     "assertRulePresent": [
@@ -3771,9 +3773,9 @@
       },
       "recommendationStatus": "provisional",
       "primary_target": "Azure SQL Managed Instance",
-      "method": "LRS",
-      "targetAvailabilityDuringSync": "unavailable",
-      "businessCutoverDowntime": "minutes",
+      "method": "Native backup/restore",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
       "confidence": "low"
     },
     "assertRulePresent": [

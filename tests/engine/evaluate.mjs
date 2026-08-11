@@ -29,6 +29,10 @@ const E = {
   ELIGIBLE: 'eligible',
   REMEDIATE: 'eligible_with_remediation',
   UNSUPPORTED: 'unsupported',
+  // A target the customer ruled out is not a target that cannot work. Saying `unsupported` for a
+  // stated preference tells a reader six months later that Arc was rejected on its merits, when
+  // nothing had ever said so, and preferences change while incompatibilities do not.
+  PREFERENCE: 'excluded_by_preference',
   UNKNOWN: 'unknown_requires_assessment'
 };
 const MI_LINK = RULES.miLink;
@@ -269,10 +273,14 @@ function applyManagement(inputs, eligibility, out) {
     }
   }
   if (/need os|file-system|file system|engine control|third-party agents/.test(model)) {
-    eligibility.sql_mi = E.UNSUPPORTED; eligibility.sql_db = E.UNSUPPORTED; eligibility.sql_vm = E.ELIGIBLE;
+    eligibility.sql_mi = E.PREFERENCE; eligibility.sql_db = E.PREFERENCE; eligibility.sql_vm = E.ELIGIBLE;
+    out.exclusions.sql_mi = 'Excluded by the stated management model, not by a technical limit: the workload needs OS or engine control. Revisit if that requirement changes.';
+    out.exclusions.sql_db = 'Excluded by the stated management model, not by a technical limit.';
   }
   if (/kubernetes/.test(model)) {
-    eligibility.sql_mi = E.UNSUPPORTED; eligibility.sql_db = E.UNSUPPORTED;
+    eligibility.sql_mi = E.PREFERENCE; eligibility.sql_db = E.PREFERENCE;
+    out.exclusions.sql_mi = 'Excluded by the stated management model: Kubernetes on-prem, edge or multi-cloud. Not a technical limit of the target.';
+    out.exclusions.sql_db = 'Excluded by the stated management model: Kubernetes on-prem, edge or multi-cloud.';
     if (/managed engine|arc data controller/.test(k8s)) { eligibility.arc_sql_mi = E.ELIGIBLE; eligibility.container = E.UNSUPPORTED; }
     else if (/diy|full diy/.test(k8s)) { eligibility.container = E.ELIGIBLE; eligibility.arc_sql_mi = E.UNSUPPORTED; }
     else setUnknown(eligibility, ['arc_sql_mi', 'container'], 'Kubernetes managed-vs-DIY engine model', out);
@@ -377,7 +385,10 @@ function chooseMiMethod(inputs, out) {
     if (!isManagedCloudSqlSource(inputs) && v >= SOURCE_FLOORS.miLink.sqlServerMin && miLinkHostSupport(inputs) !== 'unsupported' && portsOpenForMiLink(inputs) && (!dbCount || (cap && dbCount <= cap) || (!cap && dbCount <= MI_LINK.capacityLinks.generalPurpose) || out.capacityEligibility === E.UNKNOWN)) return 'MI Link';
     return 'LRS';
   }
-  if (has(inputs.downtime, 'offline')) return dep(inputs, 'TDE') ? 'Native backup/restore' : 'LRS';
+  // An offline window is what native backup/restore is for: the simplest path, the fewest moving
+  // parts, and the one a real session picked when it was offered. LRS exists to shorten a cutover
+  // that cannot be long, so returning it here contradicted the rules and surprised the reader.
+  if (has(inputs.downtime, 'offline')) return 'Native backup/restore';
   return 'LRS';
 }
 function applyMethodGates(inputs, target, method, eligibility, out) {
@@ -499,11 +510,22 @@ function applyBackupBlobPath(inputs, out) {
   // reported this gate as `passed` with that path never verified, which is how a cutover date
   // gets fixed against an assumption. LRS belongs here too: it replays full and log backups
   // staged in a Blob container, so it depends on the same upload path as a native restore.
-  if (!/backup\/restore|backup and restore|bacpac|data box|\bLRS\b|log replay/i.test(String(out.method ?? ''))) return;
+  if (!/backup\/restore|backup and restore|bacpac|data box|\bLRS\b|log replay/i.test(String(out.method ?? ''))) {
+    out.methodGateStatus = out.methodGateStatus ?? 'passed';
+    return;
+  }
   const blob = String(inputs.blob_https_reachability ?? '');
-  if (/confirmed/i.test(blob)) return;
+  if (/confirmed/i.test(blob)) {
+    out.methodGateStatus = out.methodGateStatus ?? 'passed';
+    return;
+  }
   if (/blocked/i.test(blob)) {
     addUnique(out.hardBlockers, 'BACKUP-BLOB-PATH: HTTPS to Azure Blob is blocked, so no backup-based path can carry the data. Open the path, or select a method that does not traverse Blob.');
+    out.methodGateStatus = 'refused';
+  } else {
+    // The third state is the whole point. Without it the only way to describe an unverified
+    // prerequisite is `passed` or `refused`, and a reader forced to choose picks `passed`.
+    out.methodGateStatus = 'unknown_requires_assessment';
   }
   addUnique(out.unknowns, 'BACKUP-BLOB-PATH: the HTTPS upload path to Azure Blob is not verified, so this method gate cannot report passed.');
   addUnique(out.evidenceRequired, 'Upload a representative backup to Azure Blob and restore it into the target before fixing a cutover date.');

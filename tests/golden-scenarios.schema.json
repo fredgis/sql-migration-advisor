@@ -9,7 +9,7 @@
 
   "$defs": {
     "eligibilityStatus": {
-      "enum": ["eligible", "eligible_with_remediation", "unsupported", "unknown_requires_assessment"]
+      "enum": ["eligible", "eligible_with_remediation", "unsupported", "excluded_by_preference", "unknown_requires_assessment"]
     },
 
     "scenario": {
@@ -129,8 +129,12 @@
         "businessCutoverDowntime": {
           "enum": ["<1min", "near-zero", "minutes", "minimal", "hours", "full-restore-time", "full-load-time", "total-migration-time", "unknown_requires_assessment"]
         },
-        "recommendationStatus": { "enum": ["provisional", "validated"] },
-        "confidence": { "enum": ["high", "medium", "low"] },
+        "methodGateStatus": {
+          "enum": ["passed", "unknown_requires_assessment", "refused"],
+          "description": "Three states, not two. With only passed and refused, an unverified prerequisite has nowhere to go and gets reported as passed, which is what happened to a real session whose Blob upload path nobody had tested."
+        },
+        "recommendationStatus": { "enum": ["provisional"] },
+        "confidence": { "enum": ["medium", "low"] },
         "mustNotRecommend": {
           "type": "array",
           "items": { "type": "string", "minLength": 1 },
