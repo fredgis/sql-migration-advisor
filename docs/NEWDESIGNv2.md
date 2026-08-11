@@ -4,6 +4,7 @@
 > Delivered: **21 gates**, 90 golden scenarios. Progress is tracked in §10; departures from the plan are recorded in §11 with the reason.
 >
 > **A second audit of `v2.0.0` has been received and verified. Its findings and plan are in §13; delivery status is §13.5. Released as `v2.1.0`.**
+> **A third audit, of `v2.1.0`, asked for four coherence corrections and no new features. They are done — see §14.**
 
 ---
 
@@ -528,3 +529,58 @@ in phase A now, where it can change the answer.
 Managed Instance. Raising the threshold would have been the exact behaviour both audits complained
 about, so six scenarios were added instead, covering AVS, Arc on Kubernetes, Fabric as a driver,
 Windows logins, limited source rights and a blocked Blob path.
+
+---
+
+## 14. Third audit, of `v2.1.0` — four coherence corrections
+
+> **Status: done.** Audited at commit `dc560e8`. The auditor's verdict: *"on est vraiment bien"*, no
+> new features, four coherence gaps to close. All four are closed; released work is on `main`.
+
+The audit added no findings about facts or design. Every item was a gap between what a document
+promised and what the mirror produced — the class of defect this project keeps finding one layer
+further out each time.
+
+| Finding | Correction | Verified |
+|---|---|---|
+| The real scenario expected LRS while the rules map offline to native backup/restore, and the audited session had chosen the native restore | `chooseMiMethod` returns **native backup/restore** for an offline window. LRS exists to shorten a cutover that cannot be long | ✅ nine scenario expectations realigned |
+| Templates offered `passed \| refused` only, and the mirror emitted no gate status at all | **`methodGateStatus` with three states**, emitted, rendered, schema-constrained, asserted by both Blob scenarios | ✅ unknown when unverified, passed when confirmed |
+| `excluded_by_preference` existed only in `output-contract.md` — a contractual status nobody could produce | Implemented in the mirror, the rules and the skill, wherever the stated management model removes a family | ✅ scenarios assert it |
+| The README still said the knowledge base is fetched live on every run | Bundled by default, pinned live on explicit request, stated in both places that claimed otherwise | ✅ |
+
+**Two smaller finds while doing the work.** The scenario schema still permitted `validated` and
+`high`, three versions after both were removed, so the suite would have accepted the vocabulary its
+own gate forbids elsewhere. And a guard check depended on offline mapping to LRS in order to force a
+fallback rejection; it now uses SQL Server 2025 with a short window, where MI Link needs unconfirmed
+ports and LRS stops at 2022.
+
+### Smoke test — the audited AWS profile
+
+Single SQL Server 2016 on AWS EC2, SQL CLR with `CLR_SAFE`, Windows logins, offline cutover, EU data
+boundary, Blob path unverified. Six checks, all passing:
+
+| Check | Result |
+|---|---|
+| Managed Instance recommended | ✅ |
+| Method is native backup/restore | ✅ |
+| Blob gate `unknown_requires_assessment` | ✅ |
+| Confidence `low` | ✅ |
+| Status `provisional` | ✅ |
+| SAFE presented as remediation with a signing requirement, never as validation | ✅ |
+
+The first two Blob scenarios now assert `methodGateStatus`, so the original defect is locked rather
+than merely documented.
+
+### Also delivered
+
+[`docs/ARCHITECTURE.md`](ARCHITECTURE.md) — a deep dive on what the plugin is, how a session runs end
+to end, what the 23 gates defend, and where it can still be wrong.
+
+### Still open, and deliberately so
+
+- `rule_ids` in the claims registry
+- The conditional interview: skip what the current path cannot use, re-ask when the path changes
+- Lot F, runtime evaluation across models — the only work that would measure whether a session
+  reaches the mirror's answer, and the gap no gate closes
+- Two partial gates: no check that every URL in the policy documents resolves, and none that each
+  rule-index entry has normative text behind it
