@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Knowledge base v2.1" src="https://img.shields.io/badge/knowledge%20base-v2.1-2b8a3e">
+  <img alt="Knowledge base v2.2" src="https://img.shields.io/badge/knowledge%20base-v2.2-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml/badge.svg"></a>
 </p>
@@ -58,7 +58,7 @@ version loaded and where it came from, so the advice is traceable.
 
 ## Why it is trustworthy
 
-- **Verified knowledge** — the v2.1 knowledge base is source-backed and corrected against Microsoft Learn.
+- **Verified knowledge** — the v2.2 knowledge base is source-backed and corrected against Microsoft Learn.
 - **Rules under regression test** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers. An executable mirror in `tests/` replays 106 scenarios through those rules on every commit. The mirror is not what runs in your session: an agent reads the rules and applies them, so this is a tested policy rather than a byte-identical guarantee.
 - **Every decision is addressable** — the card cites a rule ID for each verdict, and [`reference/decision-rules.md`](reference/decision-rules.md) ends with an index of all 26. Look one up, read what it consumes and how it treats an unknown, and argue with it.
 - **Explicit uncertainty** — every recommendation is `provisional`, and `medium` is the confidence ceiling. Nothing higher is reachable from an interview, because the skill reads no artefact from your estate. It carries assumptions, unknowns, blockers and the evidence a tool would have to produce.
@@ -86,7 +86,7 @@ A second external audit, in v2.0.0, went after the design rather than the facts.
 
 | Path | Purpose |
 | --- | --- |
-| [`skills/get-migration-assessment/SKILL.md`](skills/get-migration-assessment/SKILL.md) | The skill — trigger description, principles, the two-tier interview (triage, then confirmation), and the output-card template. |
+| [`skills/recommend-migration-path/SKILL.md`](skills/recommend-migration-path/SKILL.md) | The skill — trigger description, principles, the two-tier interview (triage, then confirmation), and the output-card template. |
 | [`reference/input-contract.md`](reference/input-contract.md) | What the interview may produce: 30 stable option IDs, 20 canonical field names, and the difference between *confirmed none* and *nobody checked*. |
 | [`reference/output-contract.md`](reference/output-contract.md) | What an answer must look like, and the 13 invariants the skill checks against its own draft before showing it. |
 | [`reference/decision-rules.md`](reference/decision-rules.md) | The decision policy: Phase A eligibility filter, Phase B ordered ranking and tier selection, and the index of all 26 addressable rules. |
@@ -113,7 +113,7 @@ copilot plugin install sql-migration-advisor@fredgis
 ```
 
 Then restart Copilot CLI (skills load at startup), run `/skills`, and confirm
-**`get-migration-assessment`** is listed. Ask *"I want to migrate a SQL Server environment to
+**`recommend-migration-path`** is listed. Ask *"I want to migrate a SQL Server environment to
 Azure"* and the interview starts.
 
 Installing from a marketplace opens an interactive picker, so run the second command from a real
@@ -136,12 +136,17 @@ copilot --plugin-dir ./sql-migration-advisor
 | --- | --- |
 | Repository, and the marketplace it hosts | `sql-migration-advisor`, published under the marketplace `fredgis` |
 | Plugin — the unit you install | `sql-migration-advisor` |
-| **Skill — what actually triggers** | **`get-migration-assessment`** |
+| **Skill — what actually triggers** | **`recommend-migration-path`** |
 
 > **Install the plugin, not `SKILL.md` alone.** The skill reads the two contracts and the decision
 > rules that sit above it in the repository, and installing them together is what keeps the rules and
 > the skill at the same commit. A skill running against rules from another version is exactly the
 > drift this project exists to prevent.
+
+**Renamed in 2.2.** The skill was `get-migration-assessment` up to 2.1.1. That name belongs to a
+different skill in `microsoft/sql-migration-agent`, which reads assessment results from Azure
+Resource Manager — the opposite situation to this one. `copilot plugin update` handles the rename;
+the triggers are unchanged, so what you type stays the same.
 
 Upgrading from a version before 2.0? The skill used to be called `assessment-advisor` and cloned
 straight into `~/.copilot/skills/`. Delete that folder, or two copies will match the trigger and you
@@ -300,7 +305,7 @@ Mermaid decision diagrams. The `SKILL.md` mirrors its AI Migration Agent I/O con
 
 The same knowledge base ships as a polished, branded PDF —
 [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (25 pages,
-v2.1, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
+v2.2, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
 
@@ -362,10 +367,11 @@ base and this README on the same version. Last verified: August 2026.
 
 <!-- CHANGELOG:START -->
 <details>
-<summary><b>📓 Changelog</b> — current: <b>v2.1</b> (August 2026)</summary>
+<summary><b>📓 Changelog</b> — current: <b>v2.2</b> (August 2026)</summary>
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| v2.2 | 2026-08-11 | The skill is renamed **`recommend-migration-path`**, and no knowledge-base fact changed. `get-migration-assessment` is already taken by a skill in `microsoft/sql-migration-agent` that reads assessment results from Azure Resource Manager for Arc-enabled instances — the opposite situation to this one, which interviews a person when no assessment data exists yet. Anyone installing both plugins would have had two skills of the same name in `/skills` and no way to tell which one answered. The rename also turns a future contribution into a straight copy instead of a hand-applied rename on every refresh. The two are complementary, and the skill now routes to `get-migration-assessment` when an assessment already exists: measured evidence beats an interview every time. |
 | v2.1 | 2026-08-10 | Second audit response, and no knowledge-base fact changed. The audit scored v2.0 at 8/10 and named the gap it had left: the contracts were written, but nothing proved the *interview* obeys them. A real session answered in six option IDs the contract had never heard of and collected eight undeclared fields while every gate stayed green. The contract now covers 72 option IDs instead of 30, a gate checks the interview against it, and the network question became three because bandwidth, MI Link ports and Blob reachability gate different things. Two rules that existed only on paper are now implemented: [`BACKUP-BLOB-PATH`](reference/decision-rules.md) holds any backup-based method — Log Replay Service included, since it stages backups in Blob — at `unknown_requires_assessment` until the upload path is confirmed, and `CLR-PERMISSION` returns a shortlist rather than a confident recommendation when assemblies are `UNSAFE` or their permission set was never stated. `SAFE` is not a clearance: `clr strict security` treats it as UNSAFE without a signature. Size classes no longer overlap. Four invariants added, including one that forbids a method gate reporting `passed` on an unknown, and one that separates *excluded by preference* from *technically unsupported*. The live knowledge-base URL was returning 404. The skill now announces which versions it loaded and tells you when a newer release exists. 23 gates, 106 scenarios. |
 | v2.0 | 2026-08-10 | Second external audit response, and no knowledge-base fact changed. The charge this time was structural: the repository tested what was easy to test rather than what makes the decision. Two contracts now own what was implicit — [`input-contract.md`](reference/input-contract.md) holds the 30 option IDs, the 20 fields and the difference between *confirmed none* and *nobody checked*, [`output-contract.md`](reference/output-contract.md) holds the status vocabulary and 9 invariants. The skill re-reads its own draft against those invariants before showing it, and exposes a failure instead of repairing it silently. Phase B ranking becomes ten ordered steps, because an unweighted table let two readers reach two answers from one estate; ties return a shortlist. All 26 hard gates are addressable by ID, with the fields each consumes and its behaviour on an unknown. `high` and `validated`, announced as removed in v1.18, had survived in three documents and two scenarios — a gate now guards the vocabulary. The skill moved to `skills/get-migration-assessment/` and installs as a Copilot CLI plugin. 21 gates, 90 scenarios. |
 | v1.18 | 2026-08-10 | External audit response, waves 0 to 2. MI Link's Windows Server 2012 floor is restored (Microsoft states it in the link Limitations; v1.12 removed it and v1.13 added a gate protecting the error). Every interview option gains a stable ID, because the displayed labels were not the vocabulary the rules recognised. MI Link and the availability-group floors are fail-closed. `validated` and `high` are removed: the skill reads no artefact, so it cannot certify one. The Fabric DACPAC limit no longer fires on database size. All 29 Actions references are pinned to SHAs, the KB fetch is pinned to a release tag, and privacy absolutes become a minimisation policy. 18 gates, 90 scenarios. |

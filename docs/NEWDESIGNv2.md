@@ -99,8 +99,8 @@ The detailed trace stays **on request**. The readable card remains the default.
 
 | # | Task | Scope | Difficulty |
 |---|---|---|---|
-| D1 | `git mv SKILL.md skills/get-migration-assessment/SKILL.md` | history preserved | 🟢 |
-| D2 | `name: get-migration-assessment` | frontmatter | 🟢 |
+| D1 | `git mv SKILL.md skills/recommend-migration-path/SKILL.md` | history preserved | 🟢 |
+| D2 | `name: recommend-migration-path` | frontmatter | 🟢 |
 | D3 | **Path** references | ~8 of the 20 files | 🟠 |
 | D4 | 🔴 **`check-consistency.mjs` reads `SKILL.md` at the repository root** | weekly check | 🟠 |
 | D5 | Reinstall locally, remove the old folder | `~/.copilot/skills/` | 🟢 |
@@ -279,7 +279,7 @@ Stated plainly, because v1 went wrong by promising more than it could show:
 
 | Item | Decision |
 |---|---|
-| Name | `get-migration-assessment` |
+| Name | `recommend-migration-path` |
 | Option | **B** — readable, measured policy; no executable engine |
 | Threshold | Measure first, set later |
 | Knowledge base | Untouched |
@@ -292,8 +292,8 @@ Every lot below is complete unless marked otherwise. Commits are on `main`.
 
 ### Lot D — rename and move · `4f26c41`
 
-- [x] D1 `git mv` to `skills/get-migration-assessment/SKILL.md`, rename detected, history preserved
-- [x] D2 frontmatter `name: get-migration-assessment`
+- [x] D1 `git mv` to `skills/recommend-migration-path/SKILL.md`, rename detected, history preserved
+- [x] D2 frontmatter `name: recommend-migration-path`
 - [x] D3 13 path references across 6 files
 - [x] D4 `check-consistency.mjs` path fix, deliberately in the same commit
 - [x] D5 reinstalled locally, old `assessment-advisor` folder removed

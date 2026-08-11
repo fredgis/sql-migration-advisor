@@ -191,9 +191,9 @@ function outputConsistencyFailures(scenarios, data) {
 }
 
 const rulesPath = rel('reference', 'decision-rules.md');
-const skillPath = rel('skills', 'get-migration-assessment', 'SKILL.md');
+const skillPath = rel('skills', 'recommend-migration-path', 'SKILL.md');
 const rules = readText(path.join('reference', 'decision-rules.md'));
-const skill = readText(path.join('skills', 'get-migration-assessment', 'SKILL.md'));
+const skill = readText(path.join('skills', 'recommend-migration-path', 'SKILL.md'));
 const rulesData = JSON.parse(readText(path.join('reference', 'decision-rules.data.json')));
 let scenarios = [];
 try {
@@ -304,7 +304,7 @@ try {
 }
 
 {
-  const files = [rel('skills','get-migration-assessment','SKILL.md'), rel('reference','decision-rules.md'), rel('docs','sql-server-to-azure-migration.md')]
+  const files = [rel('skills','recommend-migration-path','SKILL.md'), rel('reference','decision-rules.md'), rel('docs','sql-server-to-azure-migration.md')]
     .concat(walk(rel('examples'), () => true))
     .concat(walk(rel('tools','diagram'), p => p.toLowerCase().endsWith('.html')));
   const failures = [];
@@ -384,7 +384,7 @@ try {
   {
     const floor = rulesData.sourceVersionFloors.miLink.windowsServerMin;
     const re = new RegExp(`Windows Server ${floor}(?: or later|\\+)`, 'iu');
-    for (const [label, text] of [['reference\\decision-rules.md', rules], ['skills/get-migration-assessment/SKILL.md', skill], ['docs\\sql-server-to-azure-migration.md', readText(path.join('docs', 'sql-server-to-azure-migration.md'))]]) {
+    for (const [label, text] of [['reference\\decision-rules.md', rules], ['skills/recommend-migration-path/SKILL.md', skill], ['docs\\sql-server-to-azure-migration.md', readText(path.join('docs', 'sql-server-to-azure-migration.md'))]]) {
       if (!re.test(text)) failures.push(`${label} does not state the MI Link host floor Windows Server ${floor} or later`);
     }
   }
@@ -784,7 +784,7 @@ try {
   // v1.18 removed `high` and `validated`, and both survived in three documents until a docs pass
   // found them by hand. Nothing was watching the vocabulary, so this gate watches it.
   const files = [
-    ['skills\\get-migration-assessment\\SKILL.md', skill],
+    ['skills\\recommend-migration-path\\SKILL.md', skill],
     ['reference\\decision-rules.md', rules],
     ['reference\\output-contract.md', readText(path.join('reference', 'output-contract.md'))],
     ['reference\\input-contract.md', readText(path.join('reference', 'input-contract.md'))],

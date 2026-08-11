@@ -75,7 +75,7 @@ The runtime process:
 
 ## 3. The three main parts
 
-### `skills/get-migration-assessment/SKILL.md`
+### `skills/recommend-migration-path/SKILL.md`
 
 `SKILL.md` controls the behaviour of the agent. It is the skill the CLI activates, and it defers the
 vocabulary and the answer shape to the two contracts beside it rather than restating them, because a
@@ -235,7 +235,7 @@ Examples, all now declared as canonical fields rather than asked ad hoc:
 - rollback plan;
 - Azure Hybrid Benefit eligibility.
 
-This avoids asking unnecessary questions. Until v2.1 these were asked in prose and declared nowhere,
+This avoids asking unnecessary questions. Until v2.2 these were asked in prose and declared nowhere,
 so a session collected answers no contract knew about and no gate could check.
 
 ---
@@ -550,8 +550,8 @@ It compares:
 #### Example failure
 
 ```text
-KB version:              v2.1
-decision-rules version:  v2.1
+KB version:              v2.2
+decision-rules version:  v2.2
 README badge:            v1.6
 ```
 
@@ -675,7 +675,7 @@ A simplified scenario looks like this:
 }
 ```
 
-Inputs are written as contract IDs. Scenarios predating v2.1 still use prose and the composite
+Inputs are written as contract IDs. Scenarios predating v2.2 still use prose and the composite
 `network_ports` field, which the mirror keeps reading, so the split did not force a rewrite of ninety
 files.
 
@@ -1041,7 +1041,7 @@ on the same checkout.
 ```text
 sql-migration-advisor/
 │
-├── skills/get-migration-assessment/
+├── skills/recommend-migration-path/
 │   └── SKILL.md
 │       └── Agent behaviour, interview, and the self-check before answering
 │
@@ -1131,7 +1131,7 @@ The SQL Migration Advisor is not an AI that replaces migration experts.
 It is a controlled decision-support system.
 
 ```text
-skills/get-migration-assessment/SKILL.md
+skills/recommend-migration-path/SKILL.md
     controls the conversation
 
 Knowledge base

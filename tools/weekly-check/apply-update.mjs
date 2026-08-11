@@ -14,7 +14,7 @@ const ROOT = path.resolve(HERE, '..', '..');
 const DOC = path.join(ROOT, 'docs', 'sql-server-to-azure-migration.md');
 const RULES = path.join(ROOT, 'reference', 'decision-rules.md');
 const README = path.join(ROOT, 'README.md');
-const SKILL = path.join(ROOT, 'skills', 'get-migration-assessment', 'SKILL.md');
+const SKILL = path.join(ROOT, 'skills', 'recommend-migration-path', 'SKILL.md');
 const MANIFEST = path.join(ROOT, 'version.json');
 const REL_DOC = 'docs/sql-server-to-azure-migration.md';
 

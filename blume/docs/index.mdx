@@ -3,7 +3,7 @@ title: SQL Migration Advisor
 description: A GitHub Copilot skill that helps an agent produce a provisional SQL Server to Azure migration assessment, grounded in a tested prompt policy and version-gated knowledge base.
 ---
 
-A GitHub Copilot **skill** named `get-migration-assessment` that helps a Copilot agent produce a
+A GitHub Copilot **skill** named `recommend-migration-path` that helps a Copilot agent produce a
 provisional SQL Server → Azure migration assessment. It runs a guided interview, applies a prompt policy
 under regression test, checks its own draft before rendering, and returns a preliminary recommendation for
 assessment: primary path, best alternative, exclusions, confidence, evidence required, downtime, blockers,
@@ -13,14 +13,14 @@ version-gated freshness automation.
 <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", margin: "1.5rem 0" }}>
   <a href="https://github.com/fredgis/sql-migration-advisor/blob/main/howto/how-the-skill-works.md">📘 Read the full guide</a>
   <a href="https://github.com/fredgis/sql-migration-advisor">⭐ View the repository</a>
-  <a href="https://github.com/fredgis/sql-migration-advisor/blob/main/skills/get-migration-assessment/SKILL.md">🧩 Get the skill</a>
+  <a href="https://github.com/fredgis/sql-migration-advisor/blob/main/skills/recommend-migration-path/SKILL.md">🧩 Get the skill</a>
 </div>
 
 ---
 
 ## What it is
 
-The advisor is a self-contained skill at `skills/get-migration-assessment/SKILL.md`. It travels with
+The advisor is a self-contained skill at `skills/recommend-migration-path/SKILL.md`. It travels with
 reference documents that define the accepted inputs, the output shape and the rule set. Clone the whole
 repository into a Copilot skills location; installing only `SKILL.md` breaks the relative links to
 `reference/input-contract.md`, `reference/decision-rules.md` and `reference/output-contract.md`. No
@@ -45,8 +45,8 @@ fine-tuning or external service sits in the decision path. It is:
 ## Install
 
 Clone the repository, not a single file, because the skill reads reference documents beside it. The skill
-name is `get-migration-assessment` and its entry point is
-`skills\get-migration-assessment\SKILL.md`.
+name is `recommend-migration-path` and its entry point is
+`skills\recommend-migration-path\SKILL.md`.
 
 ```powershell
 git clone https://github.com/fredgis/sql-migration-advisor.git $env:USERPROFILE\.copilot\skills\sql-migration-advisor
@@ -62,7 +62,7 @@ that the new skill depends on `reference\input-contract.md`, `reference\decision
 
 <img src={`${import.meta.env.BASE_URL}/skill-architecture.svg`} alt="Repository architecture of the SQL Migration Advisor skill" />
 
-The skill is just files in a repo: `skills/get-migration-assessment/SKILL.md`, a knowledge base, two
+The skill is just files in a repo: `skills/recommend-migration-path/SKILL.md`, a knowledge base, two
 contracts, decision rules, worked examples, a claims registry, golden tests, and a weekly freshness Action.
 The agent reads them at runtime.
 
@@ -72,7 +72,7 @@ The agent reads them at runtime.
 
 <img src={`${import.meta.env.BASE_URL}/runtime-loop.svg`} alt="Runtime loop: user request to skill, guided interview, scoring against the knowledge base, and a grounded recommendation card" />
 
-When a user asks for a migration recommendation, the agent loads `get-migration-assessment`, runs Tier 1
+When a user asks for a migration recommendation, the agent loads `recommend-migration-path`, runs Tier 1
 triage and Tier 2 confirmation questions, applies Phase A eligibility and Phase B ranking, runs the
 self-check, and produces a grounded preliminary recommendation. The card includes the primary path, best
 alternative, exclusions, confidence, assumptions, unknowns and evidence required. The agent can still build
@@ -310,7 +310,7 @@ proves the pattern works end to end.
 ## Learn more
 
 - [How the skill works](https://github.com/fredgis/sql-migration-advisor/blob/main/howto/how-the-skill-works.md) — the full implementer guide.
-- [`SKILL.md`](https://github.com/fredgis/sql-migration-advisor/blob/main/skills/get-migration-assessment/SKILL.md) — the `get-migration-assessment` skill contract and questionnaire.
+- [`SKILL.md`](https://github.com/fredgis/sql-migration-advisor/blob/main/skills/recommend-migration-path/SKILL.md) — the `recommend-migration-path` skill contract and questionnaire.
 - [Input contract](https://github.com/fredgis/sql-migration-advisor/blob/main/reference/input-contract.md) — stable option IDs, canonical fields and unknown handling.
 - [Output contract](https://github.com/fredgis/sql-migration-advisor/blob/main/reference/output-contract.md) — status vocabulary and self-check invariants.
 - [Decision rules](https://github.com/fredgis/sql-migration-advisor/blob/main/reference/decision-rules.md) — the rule policy and addressable rule index.

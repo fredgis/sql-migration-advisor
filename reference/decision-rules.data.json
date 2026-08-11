@@ -1,6 +1,6 @@
 {
   "schema": "sql-migration-advisor.decision-rules-data/v1",
-  "version": "v2.1",
+  "version": "v2.2",
   "source": {
     "markdown": "reference/decision-rules.md",
     "description": "Machine-checkable constants and gates extracted from decision-rules.md v2.0."

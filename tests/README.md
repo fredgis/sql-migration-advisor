@@ -41,7 +41,7 @@ node --experimental-test-coverage --test-coverage-include='tests/engine/**' --te
 For each model and each scenario, start a fresh Copilot session with the skill available. Paste this prompt, replacing the JSON block with one scenario from `golden-scenarios.json`:
 
 ```text
-You are evaluating sql-migration-advisor. Use skills/get-migration-assessment/SKILL.md, reference/input-contract.md, reference/decision-rules.md and reference/output-contract.md only.
+You are evaluating sql-migration-advisor. Use skills/recommend-migration-path/SKILL.md, reference/input-contract.md, reference/decision-rules.md and reference/output-contract.md only.
 Replay this scenario exactly. Ask no follow-up questions; treat missing fields as unknown.
 Return only JSON with: primary_target, method, recommendationStatus, eligibility, mustNotRecommendObserved, rationaleRuleCitations.
 

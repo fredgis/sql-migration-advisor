@@ -10,7 +10,7 @@ plus the machinery that keeps its content true:
 
 | Path | Role |
 | --- | --- |
-| `skills/get-migration-assessment/SKILL.md` | the skill the agent runs |
+| `skills/recommend-migration-path/SKILL.md` | the skill the agent runs |
 | `reference/input-contract.md` | what the interview may produce: option IDs, canonical fields, and the three answer states |
 | `reference/output-contract.md` | what an answer must look like, and the invariants the skill checks against its own draft |
 | `reference/decision-rules.md` | the decision policy the skill applies, and the index of every addressable rule |
@@ -84,7 +84,7 @@ high-risk claim. When Microsoft edits a page, the weekly check reports drift.
 
 A version bump requires a substantive content change and green checks. A model verdict, a
 broken link or claim drift alone never justifies one. When you do bump, the knowledge base,
-the rules, `skills/get-migration-assessment/SKILL.md` and the README must all move together, and the artifacts must be
+the rules, `skills/recommend-migration-path/SKILL.md` and the README must all move together, and the artifacts must be
 regenerated. `check-consistency.mjs` enforces the first part; `check-artifacts.mjs` the second.
 
 ## Pull requests

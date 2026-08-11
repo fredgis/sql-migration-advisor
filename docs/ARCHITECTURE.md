@@ -28,7 +28,7 @@ The machinery in `tests/` exists to fight the first three. It is not what runs i
 ```mermaid
 flowchart TD
     subgraph plugin["The plugin, installed on a user's machine"]
-      SK["skills/get-migration-assessment/SKILL.md<br/>the prompt Copilot loads"]
+      SK["skills/recommend-migration-path/SKILL.md<br/>the prompt Copilot loads"]
       IC["reference/input-contract.md<br/>what an answer may be"]
       DR["reference/decision-rules.md<br/>the policy"]
       OC["reference/output-contract.md<br/>what an answer must look like"]
@@ -65,7 +65,7 @@ Green is loaded in a user's session. Blue never is.
 
 | Path | Role |
 | --- | --- |
-| `skills/get-migration-assessment/SKILL.md` | The skill. Trigger description, interview, order of operations, output template. |
+| `skills/recommend-migration-path/SKILL.md` | The skill. Trigger description, interview, order of operations, output template. |
 | `reference/input-contract.md` | The vocabulary an answer may use: 73 option IDs, the canonical field names, and the three states an answer can hold. |
 | `reference/decision-rules.md` | The policy. Phase A eligibility, Phase B ordered ranking, tier selection, and an index of 26 addressable rules. |
 | `reference/output-contract.md` | The shape of an answer, the status vocabulary, and 13 invariants the skill checks against its own draft. |
@@ -83,14 +83,14 @@ Green is loaded in a user's session. Blue never is.
 
 Copilot CLI discovers a plugin as `<root>/.claude-plugin/plugin.json` plus `<root>/skills/<name>/SKILL.md`. This repository is shaped exactly like that, which is not a coincidence: `SKILL.md` used to sit at the repository root and was moved in v2.0 so the whole repository could be one installable plugin.
 
-The consequence is the important part. From `skills/get-migration-assessment/`, the reference documents are at `../../reference/…`. Install the skill file alone and those paths resolve to nothing — the skill loads, the contracts do not, and the failure is silent. Installing the whole plugin is what keeps the rules and the skill pinned to one commit, and that pairing is the point: a skill answering from one version's rules while claiming another version's authority is exactly the drift the project exists to prevent.
+The consequence is the important part. From `skills/recommend-migration-path/`, the reference documents are at `../../reference/…`. Install the skill file alone and those paths resolve to nothing — the skill loads, the contracts do not, and the failure is silent. Installing the whole plugin is what keeps the rules and the skill pinned to one commit, and that pairing is the point: a skill answering from one version's rules while claiming another version's authority is exactly the drift the project exists to prevent.
 
 ```
 copilot plugin marketplace add fredgis/sql-migration-advisor
 copilot plugin install sql-migration-advisor@fredgis
 ```
 
-Three names coexist and they are not interchangeable. The **repository** and the **plugin** are both `sql-migration-advisor`; the **marketplace** is `fredgis`; the **skill**, the thing that actually triggers, is `get-migration-assessment`.
+Three names coexist and they are not interchangeable. The **repository** and the **plugin** are both `sql-migration-advisor`; the **marketplace** is `fredgis`; the **skill**, the thing that actually triggers, is `recommend-migration-path`.
 
 ---
 
@@ -230,7 +230,7 @@ A version bump is refused unless a substantive content diff exists, so stamps ca
 Stated plainly, because overselling is the failure mode this project keeps correcting.
 
 - **The mirror is not the model.** Nothing proves a session reaches the mirror's answer. Runtime evaluation across models is designed and unbuilt.
-- **The rules are prose, mirrored by hand.** A rule can be written correctly and mirrored wrongly, or written and never mirrored at all. Two such cases were found and fixed in v2.1, which is evidence the class exists, not evidence it is exhausted.
+- **The rules are prose, mirrored by hand.** A rule can be written correctly and mirrored wrongly, or written and never mirrored at all. Two such cases were found and fixed in v2.2, which is evidence the class exists, not evidence it is exhausted.
 - **106 scenarios sample an enormous input space.**
 - **A shared error scores perfectly.** The Windows Server 2012 floor was wrong for five versions and every test agreed with it, because the tests were written from the same mistaken document.
 - **The skill reads no artefact from your estate.** It opens no report, runs no tool, queries no service. `provisional` is the only status it can produce and `medium` the highest confidence, and no answer it gives replaces an assessment tool or an architect.

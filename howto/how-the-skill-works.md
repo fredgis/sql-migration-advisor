@@ -15,8 +15,8 @@ It closes with implementation notes for porting the pattern to a Microsoft-owned
 
 ## 1. In one paragraph
 
-`sql-migration-advisor` is a **GitHub Copilot skill** named `get-migration-assessment`: a small,
-prompt-driven markdown package ([`skills/get-migration-assessment/SKILL.md`](../skills/get-migration-assessment/SKILL.md))
+`sql-migration-advisor` is a **GitHub Copilot skill** named `recommend-migration-path`: a small,
+prompt-driven markdown package ([`skills/recommend-migration-path/SKILL.md`](../skills/recommend-migration-path/SKILL.md))
 with **no build step and no runtime dependencies**. It turns a general
 agent into a focused **SQL Server → Azure migration consultant**. The skill is backed by a verified
 **knowledge base** ([`docs/sql-server-to-azure-migration.md`](../docs/sql-server-to-azure-migration.md))
@@ -35,13 +35,13 @@ When a user asks something like *"migrate a SQL Server environment to Azure"* (o
 vers Azure"*), the agent loads the skill and runs this loop:
 
 <p align="center">
-  <img src="./runtime-loop.svg" alt="Runtime loop: the user's migration ask activates skills/get-migration-assessment/SKILL.md, which runs a guided interview grounded in the bundled contracts, decision rules and knowledge base, applies Steps A to D, self-checks the draft, and produces a recommendation card plus optional follow-ups." width="960">
+  <img src="./runtime-loop.svg" alt="Runtime loop: the user's migration ask activates skills/recommend-migration-path/SKILL.md, which runs a guided interview grounded in the bundled contracts, decision rules and knowledge base, applies Steps A to D, self-checks the draft, and produces a recommendation card plus optional follow-ups." width="960">
 </p>
 
 Step by step:
 
 1. **Trigger.** The agent matches the user's intent against the `description` in
-   [`skills/get-migration-assessment/SKILL.md`](../skills/get-migration-assessment/SKILL.md)
+   [`skills/recommend-migration-path/SKILL.md`](../skills/recommend-migration-path/SKILL.md)
    front matter (keywords like *migrate SQL Server*, *SQL to Azure*, *SQL in a Day*) and activates the skill.
 2. **Load the source of truth.** It reads the bundled input contract, decision rules, output contract and
    knowledge base. The bundle is the default because the skill now lives below `skills/` and refers back to
@@ -224,7 +224,7 @@ Why wrap this in a skill instead of just asking a model to "plan a SQL migration
 The repo separates the **prompt logic**, the **knowledge**, and the **freshness automation**:
 
 <p align="center">
-  <img src="./skill-architecture.svg" alt="Architecture of the sql-migration-advisor skill: a Copilot agent loads skills/get-migration-assessment/SKILL.md, which grounds every answer in the contracts, knowledge base and decision rules, while a weekly GitHub Action re-verifies the knowledge base." width="960">
+  <img src="./skill-architecture.svg" alt="Architecture of the sql-migration-advisor skill: a Copilot agent loads skills/recommend-migration-path/SKILL.md, which grounds every answer in the contracts, knowledge base and decision rules, while a weekly GitHub Action re-verifies the knowledge base." width="960">
 </p>
 
 <sub>Diagram source: [`skill-architecture.architecture.json`](./skill-architecture.architecture.json) · interactive dark/light version with export menu: [`skill-architecture.html`](./skill-architecture.html) (open in a browser).</sub>
@@ -232,7 +232,7 @@ The repo separates the **prompt logic**, the **knowledge**, and the **freshness 
 
 | Path | Purpose |
 | --- | --- |
-| [`skills/get-migration-assessment/SKILL.md`](../skills/get-migration-assessment/SKILL.md) | The skill itself: trigger `description`, core principles, the two-tier interview (triage, then confirmation), the output-card template, and guardrails. The skill name is `get-migration-assessment`, because it produces an assessment path rather than deciding for the user. |
+| [`skills/recommend-migration-path/SKILL.md`](../skills/recommend-migration-path/SKILL.md) | The skill itself: trigger `description`, core principles, the two-tier interview (triage, then confirmation), the output-card template, and guardrails. The skill name is `recommend-migration-path`, because it produces an assessment path rather than deciding for the user. |
 | [`reference/input-contract.md`](../reference/input-contract.md) | The interview contract: canonical fields, stable option IDs, answer states, consumers and unknown behaviour. |
 | [`reference/output-contract.md`](../reference/output-contract.md) | The output contract: status vocabulary, card shape and the 13 pre-render self-check invariants. |
 | [`reference/decision-rules.md`](../reference/decision-rules.md) | The tested policy: Phase A eligibility, the ordered Phase B ranking, tier selection, uncertainty handling and the rule index. Distilled from the knowledge base; bundled with the skill. |
@@ -490,7 +490,7 @@ already proves the pattern works end to end.
 
 ### Related reading
 
-- [`skills/get-migration-assessment/SKILL.md`](../skills/get-migration-assessment/SKILL.md) — the skill contract and the full questionnaire.
+- [`skills/recommend-migration-path/SKILL.md`](../skills/recommend-migration-path/SKILL.md) — the skill contract and the full questionnaire.
 - [`reference/input-contract.md`](../reference/input-contract.md) — the canonical input fields, option IDs and answer states.
 - [`reference/output-contract.md`](../reference/output-contract.md) — the card shape, status vocabulary and self-check invariants.
 - [`reference/decision-rules.md`](../reference/decision-rules.md) — the tested policy and rule index.
