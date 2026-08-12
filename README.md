@@ -70,45 +70,30 @@ version loaded and where it came from, so the advice is traceable.
 
 ## One version, every surface
 
-The knowledge base is quoted by a skill, three manifests, a PDF, a poster, this README, a docs site, a published rule graph and a fork in the Microsoft organisation. Each is a place the version can drift, and drift here is not cosmetic: a reader who is served an old fact has no way to know it.
-
-The table is checked, not decorative: `check-artifacts` compares every version below against the knowledge base and the release manifest, fails when one drifts, and rewrites them under `--fix-prose`. A surface that falls behind fails CI instead of waiting to be noticed. One row is marked red, because a table that only listed what is guarded would be advertising, not documentation.
+The knowledge base is quoted by a skill, three manifests, a PDF, a poster, this README, a docs site, a published rule graph and a fork in the Microsoft organisation. `check-artifacts` compares every version below against the knowledge base and the release manifest, fails when one drifts, and rewrites them under `--fix-prose`.
 
 <!-- surfaces:start -->
 
-| Surface | Version | Follows | Kept honest by |
-| --- | --- | --- | --- |
-| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v2.6` | — the source of truth | 🟢 `version-consistency` · a version bump requires a substantive diff |
-| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v2.6` | the knowledge base | 🟢 `rules-data-consistency` · 187 constants re-checked against the prose |
-| `SKILL.md` and its pinned fetch URL | `v2.6.0` | the release tag | 🟢 `version-manifest-current` · the pinned tag must equal the shipped release |
-| `version.json`, `plugin.json`, `marketplace.json` | `v2.6.0` | the release | 🟢 `version-manifest-current` · a manifest left behind fails the build |
-| The six `blume/public/*.svg` mirrors | — | `howto/*.svg` | 🟢 `check-artifacts` compares them byte for byte |
-| [`blume/docs/index.mdx`](blume/docs/index.mdx) — the docs site | — | the gate, scenario, rule and invariant counts | 🟢 a stale count fails the build in six documents at once |
-| **This table** | `v2.6` | the knowledge base and the release | 🟢 `check-artifacts` reads every version between its markers |
-| This README's badge and PDF sentence | `v2.6` | the knowledge base and the PDF | 🔵 `check-artifacts --fix-prose` · page count, version and month |
-| Poster caption and PNG | `v2.6` | the knowledge base | 🔵 rewritten by `--fix-prose`, then rebuilt by the workflow |
-| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v2.6` | the knowledge base | 🟠 the **Artifacts coherence** workflow rebuilds them and opens a pull request |
-| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v2.6.0` | the release tag | 🟠 re-ported per release; the port script fails on a stale knowledge base |
-| [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | — | `blume/public/rule-graph.html`, deployed by Pages | 🔴 **nothing checks its 28 rules against `decision-rules.md`** — hand-maintained, and it has drifted |
-| `howto/*.html` | — | nothing — they quote no version | ⚪ n/a by design |
-| The developer pitch's sample failure block | — | nothing — its values are deliberately wrong, to show a failure | ⚪ n/a by design |
+| Surface | Version | Up to date |
+| --- | --- | --- |
+| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v2.6` | ✅ |
+| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v2.6` | ✅ |
+| `SKILL.md` and its pinned fetch URL | `v2.6.0` | ✅ |
+| `version.json`, `plugin.json`, `marketplace.json` | `v2.6.0` | ✅ |
+| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v2.6` | ✅ |
+| Poster caption and PNG | `v2.6` | ✅ |
+| This README's badge and PDF sentence | `v2.6` | ✅ |
+| **This table** | `v2.6` | ✅ |
+| The six `blume/public/*.svg` mirrors | — | ✅ |
+| [`blume/docs/index.mdx`](blume/docs/index.mdx) — the docs site | — | ✅ |
+| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v2.6.0` | ✅ |
+| [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | — | 🔴 **unwatched** |
+| `howto/*.html` | — | ⚪ no version to track |
+| The developer pitch's sample failure block | — | ⚪ deliberately wrong, it shows a failure |
 
 <!-- surfaces:end -->
 
-🟢 **gated** — a drift fails the build · 🔵 **self-repairing** — `--fix-prose` rewrites it · 🟠 **rebuilt** — a workflow or a release step regenerates it · 🔴 **unwatched** — a known gap · ⚪ **untracked by design**
-
-**About the red row.** The [rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) publishes all 28 rules with a status for each, which makes it the most authoritative-looking surface here and the only one nothing verifies. In v2.5.0 it was caught encoding a rule error verbatim — it listed Data Box among the methods blocked by `BACKUP-BLOB-PATH`, the one transport that exists *because* the network path is blocked — next to a citation pointing at the wrong table and a caption printed twice. All three are fixed and the deployed page carries the fix. No gate would have caught them, and none would catch the next one.
-
-Ask the repository rather than trusting the table:
-
-```bash
-node tools/artifacts/check-artifacts.mjs   # every derived artifact, mirror and version claim
-node tests/run-tests.mjs                   # 25 gates, 110 scenarios
-```
-
-Two of these mechanisms exist because the drift they catch already happened: the poster and this README each advertised a knowledge base two releases old, and the skill once fetched its facts from a tag three releases behind. The table is watched for the same reason.
-
-**Where the audit history went.** Four external audits have now run against this repository. Their findings and the responses are recorded in [`howto/how-the-skill-works.md`](howto/how-the-skill-works.md#audit-response) and, for the design audit that produced the contracts and the self-check, in [`docs/NEWDESIGNv2.md`](docs/NEWDESIGNv2.md).
+Check it yourself: `node tools/artifacts/check-artifacts.mjs`.
 
 ---
 
