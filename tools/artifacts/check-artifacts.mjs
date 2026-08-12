@@ -211,6 +211,11 @@ for (const { artifact, sources, rebuild } of DERIVED) {
 // versions inside it are checked against the knowledge base and the release manifest, and
 // rewritten under --fix-prose. The markers delimit the block so the rest of the README, which
 // legitimately quotes old versions in its changelog, is left alone.
+//
+// The markers must wrap the table rows and nothing else. The first version of this check enclosed
+// the legend and the paragraph below it, and the paragraph recounts a defect found "in v2.5.0" --
+// a historical reference the fixer promptly rewrote to v2.6, turning a dated fact into a false
+// one. Prose belongs outside the markers.
 {
   const readmePath = path.join(ROOT, 'README.md');
   const readme = fs.readFileSync(readmePath, 'utf8');
