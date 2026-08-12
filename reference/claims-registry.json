@@ -231,5 +231,151 @@
       "lrs-downtime-characteristics",
       "mi-offline-migration"
     ]
+  },
+  {
+    "claim_id": "conn-mi-connection-types-redirect-ports",
+    "claim": "Which ports must a SQL client reach for the Managed Instance redirect connection type, and what is the default connection type?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connection-types-overview",
+    "source_section": "Connection types",
+    "last_verified": "2026-08-12",
+    "verification_hash": "4890364f9c778cbf42e87908189aae77e1fdd19e7ff01b54143c3501435a90d9",
+    "affected_rules": [
+      "mi-redirect-ports",
+      "mi-default-connection-type"
+    ],
+    "knowledge_base": "docs/sql-server-to-azure-migration-connectivity.md",
+    "note": "Highest volatility in this knowledge base. An external audit quotes a variant of this page requiring 11000-11999 with the note that it remains authoritative until further notice, which our reading does not contain. Recorded as CONFLICT; this claim exists to catch the page settling one way or the other."
+  },
+  {
+    "claim_id": "conn-mi-endpoint-ports",
+    "claim": "Which ports do the VNet-local, public and private endpoints of Azure SQL Managed Instance accept, and which connection type do they force?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connectivity-architecture-overview",
+    "source_section": "Communication overview",
+    "last_verified": "2026-08-12",
+    "verification_hash": "805b4f373ee61e90ceb96a1c7ed242e42b6deffe95f6cdc3a6f142b42d6d4205",
+    "affected_rules": [
+      "mi-public-endpoint-3342",
+      "mi-vnet-local-1433",
+      "mi-private-endpoint-proxy-forced"
+    ],
+    "knowledge_base": "docs/sql-server-to-azure-migration-connectivity.md",
+    "note": "Port 3342 on the public endpoint is the single most commonly mis-set value in this domain."
+  },
+  {
+    "claim_id": "conn-sqldb-connection-policy-ports",
+    "claim": "Which ports does a client need under the Redirect, Proxy and Default connection policies for Azure SQL Database?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/connectivity-architecture",
+    "source_section": "Connection policy",
+    "last_verified": "2026-08-12",
+    "verification_hash": "33bf3877ad43a53690019dfa56fa260e81e0ceb14118c91a078a576b226b61a1",
+    "affected_rules": [
+      "sqldb-redirect-11000-11999",
+      "sqldb-default-inside-outside-azure"
+    ],
+    "knowledge_base": "docs/sql-server-to-azure-migration-connectivity.md",
+    "note": "Default means Redirect inside Azure and Proxy outside, so the same application has different firewall requirements depending where it runs."
+  },
+  {
+    "claim_id": "conn-sqldb-private-endpoint-redirect",
+    "claim": "Which port range does the Redirect connection policy require over an Azure SQL Database private endpoint, and which FQDN must clients use?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/private-endpoint-overview",
+    "source_section": "Use Redirect connection policy with private endpoints",
+    "last_verified": "2026-08-12",
+    "verification_hash": "99c20c912dfc5dd8b49c99386685ebee5516a0414b0b8c9108ae0e7cd3652308",
+    "affected_rules": [
+      "sqldb-pe-1433-65535",
+      "sqldb-pe-fqdn-only",
+      "sqldb-pe-default-is-proxy"
+    ],
+    "knowledge_base": "docs/sql-server-to-azure-migration-connectivity.md",
+    "note": "The range here is 1433-65535, not the 11000-11999 of the public path. A second audit caught the omission; opening the public-path range leaves the connection failing."
+  },
+  {
+    "claim_id": "conn-fabric-sqldb-authentication",
+    "claim": "Which identity providers does SQL database in Microsoft Fabric support, and what Fabric permissions are required?",
+    "source_url": "https://learn.microsoft.com/en-us/fabric/database/sql/authentication",
+    "source_section": "Limitations",
+    "last_verified": "2026-08-12",
+    "verification_hash": "0e93af8f4f9977f2f5bea02cf47fe586ee5b9bc70fb49423369ae6143bcfc44d",
+    "affected_rules": [
+      "fabric-sqldb-entra-only",
+      "fabric-sqldb-read-item-permission",
+      "fabric-sqldb-sp-tenant-setting"
+    ],
+    "knowledge_base": "docs/sql-server-to-azure-migration-connectivity.md",
+    "note": "v0.1 recorded this as unknown on the grounds that the documentation was silent. It is not silent, and this page was already in the source register."
+  },
+  {
+    "claim_id": "conn-fabric-warehouse-connectivity",
+    "claim": "Which port and authentication types does the Fabric Warehouse TDS endpoint require, and which connection-string properties are unsupported?",
+    "source_url": "https://learn.microsoft.com/en-us/fabric/data-warehouse/connectivity",
+    "source_section": "Considerations and limitations",
+    "last_verified": "2026-08-12",
+    "verification_hash": "1f671780ffec249430cce085d957aa9c548cc8a750c97c3afcc6d6017c9bc7fc",
+    "affected_rules": [
+      "fabric-warehouse-no-sql-auth",
+      "fabric-warehouse-no-mars",
+      "fabric-warehouse-initialcatalog"
+    ],
+    "knowledge_base": "docs/sql-server-to-azure-migration-connectivity.md",
+    "note": "SQL authentication being unsupported eliminates a whole class of connection string."
+  },
+  {
+    "claim_id": "conn-sqlclient-encryption-defaults",
+    "claim": "What are the Encrypt and TrustServerCertificate defaults in Microsoft.Data.SqlClient, and in which versions did they change?",
+    "source_url": "https://learn.microsoft.com/en-us/sql/connect/ado-net/encryption-and-certificate-validation",
+    "source_section": "Changes in encryption and certificate validation behavior",
+    "last_verified": "2026-08-12",
+    "verification_hash": "7d89a8fcf41c53c94d1ab2e87c58de3ce15aa5fc94c1b526dca16fe67536d42f",
+    "affected_rules": [
+      "tls-sqlclient-4-encrypt-default",
+      "tls-sqlclient-2-cert-validation"
+    ],
+    "knowledge_base": "docs/sql-server-to-azure-migration-connectivity.md",
+    "note": "The classic post-upgrade regression: nothing in the network or the credential changed, only the driver default."
+  },
+  {
+    "claim_id": "conn-odbc-entra-auth-values",
+    "claim": "Which values does the ODBC driver accept for the Authentication keyword, and from which driver versions?",
+    "source_url": "https://learn.microsoft.com/en-us/sql/connect/odbc/using-azure-active-directory",
+    "source_section": "New and/or Modified DSN and Connection String Keywords",
+    "last_verified": "2026-08-12",
+    "verification_hash": "10e36d23106e96f7e9084e5078c303271fd07944f7df2e977dec09c65825da17",
+    "affected_rules": [
+      "odbc-auth-values-closed-list",
+      "odbc-no-default-credential",
+      "odbc-encrypt-default-18"
+    ],
+    "knowledge_base": "docs/sql-server-to-azure-migration-connectivity.md",
+    "note": "A closed list with no ActiveDirectoryDefault, so porting the SqlClient default mode produces a value the driver rejects."
+  },
+  {
+    "claim_id": "conn-jdbc-entra-auth-modes",
+    "claim": "From which Microsoft JDBC driver versions are ActiveDirectoryMSI and ActiveDirectoryManagedIdentity supported, and how is a user-assigned identity specified?",
+    "source_url": "https://learn.microsoft.com/en-us/sql/connect/jdbc/connecting-using-azure-active-directory-authentication",
+    "source_section": "Connect using ActiveDirectoryManagedIdentity authentication mode",
+    "last_verified": "2026-08-12",
+    "verification_hash": "8192ac0067168e894516b25638fe9f46bedffe88c0aca132dee296c1d1600adc",
+    "affected_rules": [
+      "jdbc-auth-keywords",
+      "jdbc-msi-client-id"
+    ],
+    "knowledge_base": "docs/sql-server-to-azure-migration-connectivity.md",
+    "note": "Anchored on this mode because an external audit disputes the minimum version, claiming 7.2 where our reading says 8.3.1 for the MSI alias. The previous anchor matched the page H1 and fell back to the whole document, which would have drifted on any editorial change."
+  },
+  {
+    "claim_id": "conn-sqlvm-entra-and-connectivity",
+    "claim": "Which authentication modes does SQL Server on Azure VM support, and what does the portal configure for Public, Private and Local connectivity?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/virtual-machines/windows/ways-to-connect-to-sql",
+    "source_section": "Connect to a SQL Server on Azure VM using Microsoft Entra ID",
+    "last_verified": "2026-08-12",
+    "verification_hash": "63b259ddba296a59b86b9e57a89d3279c8481234c522732c74b60c673deac19f",
+    "affected_rules": [
+      "sqlvm-entra-2022-plus",
+      "sqlvm-tcpip-developer-express",
+      "sqlvm-windows-auth-domain-join"
+    ],
+    "knowledge_base": "docs/sql-server-to-azure-migration-connectivity.md",
+    "note": "Microsoft Entra is supported from SQL Server 2022. v0.1 omitted it because the quote it used proved only the Windows authentication case."
   }
 ]

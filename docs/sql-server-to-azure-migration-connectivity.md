@@ -1,6 +1,6 @@
 # SQL Server to Azure — connectivity knowledge base
 
-> **Version.** v0.5 — 12 August 2026. Draft. This document is **not** wired into the
+> **Version.** v0.6 — 12 August 2026. Draft. This document is **not** wired into the
 > `recommend-migration-path` skill and does not change any of its facts.
 >
 > **Scope.** How an application connects to an Azure SQL family target, and why a connection
@@ -643,16 +643,42 @@ not wired into the skill.
 
 | Item | Why it matters here |
 | --- | --- |
-| **Six-status taxonomy** — `VERIFIED_DIRECT`, `VERIFIED_DERIVED`, `CONFLICT`, `OPEN`, `DEPRECATED`, `STALE_REVIEW_REQUIRED` | A binary status hid five errors. It cannot express a fact derived from two pages, nor one whose review date has passed |
+| **Six-status taxonomy** — `VERIFIED_DIRECT`, `VERIFIED_DERIVED`, `CONFLICT`, `OPEN`, `DEPRECATED`, `STALE_REVIEW_REQUIRED` | A binary status hid five errors. It cannot express a fact derived from two pages, nor one whose review date has passed. **`CONFLICT` now exists** (§7.1); the other four do not |
 | **Atomic facts on a composite key** — target × endpoint × client location × policy × auth × driver × version × network path | §1's claim that connectivity purely *composes* is too simple. The network path can force Proxy, the policy changes the ports, the target restricts auth modes, and the driver version gates Redirect |
-| **Volatility-based review dates** | Nothing here expires. 57 facts are asserted and not one carries a review date |
-| **Claims registry with drift detection** | The machinery already exists for the migration knowledge base — a weekly hash of each source section that fails the build on drift. It covers 19 of 209 constants there. It covers **0 of 57** here |
+| **Volatility-based review dates** | Nothing here expires. §7.1 carries "until further notice", which is by definition high-volatility, and no fact has a review date |
 | **Errors as candidate causes** | `18456` without its state does not identify one cause, and 26/40/10053 are families rather than diagnoses |
 
-The claims registry is the one that blocks. Until each fact carries a source hash and a review
-date, "verified" means "true on 12 August 2026" and nothing tells anyone when it stops being true —
-which is exactly how a wrong SQL Server 2014 ESU date survived months in the sibling knowledge
-base.
+### 7.8 Drift detection — **done**
+
+Ten claims now watch the sources behind the volatile facts in this document. They live in
+[`reference/claims-registry.json`](../reference/claims-registry.json) alongside the migration
+knowledge base's own claims, so the existing weekly workflow picks them up with no new machinery.
+
+| Claim | Watches |
+| --- | --- |
+| `conn-mi-connection-types-redirect-ports` | The §7.1 conflict — the highest-volatility fact here |
+| `conn-mi-endpoint-ports` | 1433 / 3342 / forced Proxy |
+| `conn-sqldb-connection-policy-ports` | Redirect 11000–11999, Default inside vs outside Azure |
+| `conn-sqldb-private-endpoint-redirect` | 1433–65535, FQDN-only, Default means Proxy |
+| `conn-fabric-sqldb-authentication` | Entra-only, Read item permission, tenant setting |
+| `conn-fabric-warehouse-connectivity` | No SQL auth, no MARS, `InitialCatalog` |
+| `conn-sqlclient-encryption-defaults` | The TLS defaults that changed in 2.0 and 4.0 |
+| `conn-odbc-entra-auth-values` | The closed value list with no default-credential mode |
+| `conn-jdbc-entra-auth-modes` | The disputed minimum version for managed identity |
+| `conn-sqlvm-entra-and-connectivity` | Entra from SQL Server 2022, TCP/IP on Developer and Express |
+
+**Each section was proved to carry its fact before being baselined.** One did not: the JDBC claim
+first matched the page's H1 and silently spanned the whole document, which would have reported
+drift on any editorial change and told nobody anything. It is now anchored on the managed-identity
+mode, which is where the version dispute actually lives. That check exists because the SQL Server
+lifecycle dates were once registered against a section that never mentioned them.
+
+Sabotage-tested: a corrupted hash reports `drifted=1` and exits non-zero, so CI fails and a human
+reads the page.
+
+**What this does not solve.** Drift detection watches the ten pages behind the volatile facts, not
+all 58 rows, and it detects *change* rather than *staleness* — a page nobody edits is never
+flagged, however old the fact. Review dates by volatility remain the missing half.
 
 ---
 

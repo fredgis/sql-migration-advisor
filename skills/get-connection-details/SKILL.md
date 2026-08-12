@@ -5,9 +5,9 @@ description: Produce the exact connection string, ports, DNS and identity prereq
 
 # get-connection-details
 
-> **Status: draft, v0.5.** This skill is under design. It is not registered in any plugin
+> **Status: draft, v0.6.** This skill is under design. It is not registered in any plugin
 > manifest, not covered by the test suite, and must not be presented to a user as ready.
-> Its knowledge base is [`docs/sql-server-to-azure-migration-connectivity.md`](../../docs/sql-server-to-azure-migration-connectivity.md) v0.5.
+> Its knowledge base is [`docs/sql-server-to-azure-migration-connectivity.md`](../../docs/sql-server-to-azure-migration-connectivity.md) v0.6.
 
 ## What this skill does
 
@@ -87,7 +87,7 @@ cannot judge how much to trust the advice, nor reproduce it later.
 **Representative output — composing a connection**
 
 > **Azure SQL Managed Instance** · public endpoint · **port 3342** · connection type **Proxy (forced)**
-> KB **v0.5** · sourced and quoted
+> KB **v0.6** · sourced and quoted
 >
 > The public endpoint does not listen on 1433. A string naming 1433 resolves the right server and
 > times out, which is why this reads as a network fault rather than a configuration one.
@@ -113,7 +113,7 @@ cannot judge how much to trust the advice, nor reproduce it later.
 **Representative output — diagnosing a failure**
 
 > **Error 18456 from one network only** · probable cause **DNS override**, not credentials
-> KB **v0.5** · sourced and quoted
+> KB **v0.6** · sourced and quoted
 >
 > The gateway validates the FQDN it receives against the target server. A name pinned to a retired
 > gateway address is rejected by design, and the rejection is reported as a login failure. The same
