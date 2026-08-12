@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>sql-migration-advisor — graphe des règles</title>
-<meta name="description" content="Cibles, méthodes, 28 règles adressables, 73 identifiants canoniques et 110 scénarios testés, sous forme de graphe interactif.">
+<title>sql-migration-advisor — rule graph</title>
+<meta name="description" content="Targets, methods, 28 addressable rules, 73 canonical identifiers and 110 tested scenarios, as an interactive graph.">
 <style>
   body {
     margin: 0;
@@ -28,20 +28,20 @@
 </head>
 <body>
 <main>
-<h1>Règles et chemins de migration SQL Server vers Azure</h1>
-<p class="lede">Trois vues : les chemins documentés vers chaque cible, les 28 règles adressables avec les champs qu’elles consomment, et la couverture des 110 scénarios rejoués à chaque commit. Sélectionnez un nœud pour isoler ses relations.</p>
+<h1>SQL Server to Azure migration rules and paths</h1>
+<p class="lede">Three views: the documented paths to each target, the 28 addressable rules with the fields each one consumes, and the coverage of the 110 scenarios replayed on every commit. Select a node to isolate its relations.</p>
 <div id="sql-migration-rule-graph">
-  <div class="viz-controls" aria-label="Vue du graphe">
-    <button type="button" class="btn" data-view="paths" aria-pressed="true">Chemins documentés</button>
-    <button type="button" class="btn" data-view="rules" aria-pressed="false">Règles</button>
-    <button type="button" class="btn" data-view="coverage" aria-pressed="false">Couverture testée</button>
+  <div class="viz-controls" aria-label="Graph view">
+    <button type="button" class="btn" data-view="paths" aria-pressed="true">Documented paths</button>
+    <button type="button" class="btn" data-view="rules" aria-pressed="false">Rules</button>
+    <button type="button" class="btn" data-view="coverage" aria-pressed="false">Tested coverage</button>
   </div>
 
   <div class="smg-meta text-small text-muted" aria-live="polite"></div>
-  <div class="smg-network" data-network role="img" aria-label="Graphe des règles et chemins de migration SQL Server vers Azure"></div>
-  <div class="smg-legend viz-row text-small" aria-label="Légende"></div>
-  <p class="smg-detail text-small" aria-live="polite">Sélectionnez un nœud pour isoler ses relations.</p>
-  <p class="sr-only">Le graphe comporte trois vues : chemins documentés, dépendances des règles, et couverture des scénarios de test.</p>
+  <div class="smg-network" data-network role="img" aria-label="Graph of SQL Server to Azure migration rules and paths"></div>
+  <div class="smg-legend viz-row text-small" aria-label="Legend"></div>
+  <p class="smg-detail text-small" aria-live="polite">Select a node to isolate its relations.</p>
+  <p class="sr-only">The graph has three views: documented paths, rule dependencies, and test scenario coverage.</p>
 </div>
 
 <style>
@@ -210,72 +210,72 @@
   }
 
   const PATHS = [
-    ["SQL Server on Azure VM", "Distributed AG / Always On AG", "observed", 2, "Near-zero ; AG 2012+, DAG 2016+."],
-    ["SQL Server on Azure VM", "Log shipping", "observed", 4, "Fenêtre minimale ; source Windows et chaîne de logs viable."],
-    ["SQL Server on Azure VM", "Native backup/restore", "observed", 8, "Hors ligne ; chemin Blob et certificat TDE à valider."],
-    ["SQL Server on Azure VM", "Azure Migrate replication", "rules_only", 0, "Rehost VM/instance ; documenté mais non émis comme méthode primaire par le miroir."],
-    ["SQL Server on Azure VM", "Data Box seed → sync delta", "rules_only", 0, "Seed multi-TB puis synchronisation du delta."],
+    ["SQL Server on Azure VM", "Distributed AG / Always On AG", "observed", 2, "Near-zero; AG 2012+, DAG 2016+."],
+    ["SQL Server on Azure VM", "Log shipping", "observed", 4, "Minimal window; Windows source and a viable log chain."],
+    ["SQL Server on Azure VM", "Native backup/restore", "observed", 8, "Offline; Blob path and TDE certificate to verify."],
+    ["SQL Server on Azure VM", "Azure Migrate replication", "rules_only", 0, "Rehost VM or instance; documented, never emitted as a primary method by the mirror."],
+    ["SQL Server on Azure VM", "Data Box seed → sync delta", "rules_only", 0, "Multi-TB seed, then delta sync."],
 
-    ["Azure VMware Solution", "VMware HCX / vMotion", "observed", 2, "Continuité du modèle VMware."],
+    ["Azure VMware Solution", "VMware HCX / vMotion", "observed", 2, "Keeps the VMware operating model."],
 
-    ["Azure SQL Managed Instance", "MI Link", "observed", 9, "2016+ ; édition, OS, sysadmin, AG, ports et capacité."],
-    ["Azure SQL Managed Instance", "LRS", "observed", 15, "2008–2022 ; cible indisponible pendant le replay ; fenêtre maximale 30 jours."],
-    ["Azure SQL Managed Instance", "Native backup/restore", "observed", 12, "2008+ ; chemin Blob et certificat TDE."],
-    ["Azure SQL Managed Instance", "Transactional replication", "rules_only", 0, "Sous-ensemble en ligne ; droits publisher requis."],
-    ["Azure SQL Managed Instance", "bcp / Smart Bulk Copy / BACPAC / ADF", "rules_only", 0, "Mouvement de données ; schéma et fonctions à valider séparément."],
+    ["Azure SQL Managed Instance", "MI Link", "observed", 9, "2016+; edition, OS, sysadmin, AG, ports and capacity."],
+    ["Azure SQL Managed Instance", "LRS", "observed", 15, "2008-2022; target unavailable during replay; 30-day maximum window."],
+    ["Azure SQL Managed Instance", "Native backup/restore", "observed", 12, "2008+; Blob path and TDE certificate."],
+    ["Azure SQL Managed Instance", "Transactional replication", "rules_only", 0, "Online subset; publisher rights required."],
+    ["Azure SQL Managed Instance", "bcp / Smart Bulk Copy / BACPAC / ADF", "rules_only", 0, "Data movement; schema and functions verified separately."],
 
-    ["Azure SQL Database", "modern DMS (offline)", "observed", 20, "SQL Server 2008+ ; chemin hors ligne."],
-    ["Azure SQL Database", "BACPAC / SqlPackage", "observed", 4, "Petits/moyens workloads compatibles ; export/import à tester."],
-    ["Azure SQL Database", "Transactional replication", "observed", 5, "Publisher SQL Server 2016+ ; push subscriber."],
-    ["Azure SQL Database", "Striim", "rules_only", 0, "CDC en ligne tiers ; documenté, absent des sorties du miroir."],
-    ["Azure SQL Database", "bcp / Smart Bulk Copy / BACPAC / ADF", "rules_only", 0, "Bulk ou intégration ; data-only."],
-    ["Azure SQL Database", "Data Box seed → sync delta", "observed", 1, "Seed multi-TB / WAN limité, puis delta."],
+    ["Azure SQL Database", "modern DMS (offline)", "observed", 20, "SQL Server 2008+; offline path."],
+    ["Azure SQL Database", "BACPAC / SqlPackage", "observed", 4, "Small and mid-size compatible workloads; export and import to be tested."],
+    ["Azure SQL Database", "Transactional replication", "observed", 5, "Publisher SQL Server 2016+; push subscriber."],
+    ["Azure SQL Database", "Striim", "rules_only", 0, "Third-party online CDC; documented, absent from the mirror outputs."],
+    ["Azure SQL Database", "bcp / Smart Bulk Copy / BACPAC / ADF", "rules_only", 0, "Bulk or integration; data only."],
+    ["Azure SQL Database", "Data Box seed → sync delta", "observed", 1, "Multi-TB seed or limited WAN, then delta."],
 
-    ["SQL database in Fabric", "Fabric Migration Assistant", "observed", 2, "Méthode Preview ; DACPAC ≤ 20 MB, gateway accepté, pas de Private Link."],
-    ["SQL database in Fabric", "T-SQL", "rules_only", 0, "Chemin d’ingestion alternatif documenté."],
-    ["SQL database in Fabric", "Transactional replication", "rules_only", 0, "Publisher SQL Server 2022 RTM CU12+ ; pas de Private Link."],
-    ["SQL database in Fabric", "Fabric pipelines / Data Factory", "rules_only", 0, "Chemin d’ingestion alternatif documenté."],
-    ["SQL database in Fabric", "Dataflow Gen2", "rules_only", 0, "Chemin d’ingestion alternatif documenté."],
-    ["SQL database in Fabric", "Outil compatible TDS", "rules_only", 0, "Chemin d’ingestion alternatif documenté."],
+    ["SQL database in Fabric", "Fabric Migration Assistant", "observed", 2, "Preview method; DACPAC up to 20 MB, gateway accepted, no Private Link."],
+    ["SQL database in Fabric", "T-SQL", "rules_only", 0, "Documented alternative ingestion path."],
+    ["SQL database in Fabric", "Transactional replication", "rules_only", 0, "Publisher SQL Server 2022 RTM CU12+; no Private Link."],
+    ["SQL database in Fabric", "Fabric pipelines / Data Factory", "rules_only", 0, "Documented alternative ingestion path."],
+    ["SQL database in Fabric", "Dataflow Gen2", "rules_only", 0, "Documented alternative ingestion path."],
+    ["SQL database in Fabric", "Outil compatible TDS", "rules_only", 0, "Documented alternative ingestion path."],
 
-    ["Arc-enabled SQL Managed Instance", "Native backup/restore via endpoint Arc", "observed", 3, "Endpoint SQL MI disponible après déploiement du data controller."],
+    ["Arc-enabled SQL Managed Instance", "Native backup/restore via endpoint Arc", "observed", 3, "SQL MI endpoint available once the data controller is deployed."],
 
-    ["SQL Server in a container", "Backup/restore via mounted volume", "observed", 1, "Le client possède HA, patch, sauvegarde et runbooks."],
-    ["SQL Server in a container", "Detach / attach", "rules_only", 0, "Cas appropriés seulement."],
-    ["SQL Server in a container", "BACPAC / bcp / ADF", "rules_only", 0, "Chemins documentés, non émis comme méthodes primaires par le miroir."],
+    ["SQL Server in a container", "Backup/restore via mounted volume", "observed", 1, "The customer owns HA, patching, backup and runbooks."],
+    ["SQL Server in a container", "Detach / attach", "rules_only", 0, "Appropriate cases only."],
+    ["SQL Server in a container", "BACPAC / bcp / ADF", "rules_only", 0, "Documented paths, never emitted as primary methods by the mirror."],
 
-    ["SQL Server enabled by Azure Arc", "Arc best-practices assessment", "observed", 3, "Plan de contrôle in-place, pas une cible runtime."]
+    ["SQL Server enabled by Azure Arc", "Arc best-practices assessment", "observed", 3, "In-place control plane, not a runtime target."]
   ];
 
   const RULES = [
-    { id: "MI-LINK-SOURCE", type: "hard method gate", fields: ["source_location"], impacts: ["MI Link"], status: "partial", note: "Les sources managées sont bloquées, mais une source inconnue n’est pas tenue en assessment." },
-    { id: "MI-LINK-VERSION", type: "hard method gate", fields: ["source_version"], impacts: ["MI Link"], status: "partial", note: "Le plancher 2016 est appliqué ; une version inconnue peut basculer silencieusement vers LRS." },
-    { id: "MI-LINK-HOST", type: "hard method gate", fields: ["source_os", "source_edition", "source_version"], impacts: ["MI Link"], status: "ok", note: "Fail-closed sur OS et édition." },
-    { id: "MI-LINK-PORTS", type: "hard method gate", fields: ["mi_link_ports"], impacts: ["MI Link"], status: "ok", note: "5022 et 11000–11999 doivent être confirmés." },
-    { id: "BACKUP-BLOB-PATH", type: "hard method gate", fields: ["blob_https_reachability"], impacts: ["Native backup/restore", "LRS", "BACPAC / SqlPackage", "Data Box seed \u2192 sync delta"], status: "ok", note: "Un chemin bloque retire la methode au lieu de l\u2019afficher refusee ; LRS est couvert car il rejoue des sauvegardes deposees dans Blob." },
-    { id: "SOURCE-PERMISSIONS", type: "hard method gate", fields: ["source_permissions"], impacts: ["MI Link", "Transactional replication", "Distributed AG / Always On AG"], status: "ok", note: "Droits limites : methode refusee. Droits non declares : inconnu. Le champ etait declare au contrat et lu par personne." },
-    { id: "MI-LINK-CAPACITY", type: "hard method gate", fields: ["database_count", "performance"], impacts: ["MI Link"], status: "ok", note: "100 liens GP/BC, 500 Next-gen GP." },
-    { id: "LRS-VERSION", type: "hard method gate", fields: ["source_version"], impacts: ["LRS"], status: "ok", note: "2008–2022." },
-    { id: "LRS-WINDOW", type: "hard method gate", fields: ["size", "network_bandwidth"], impacts: ["LRS"], status: "ok", note: "La contrainte des 30 jours est toujours consignee, et devient un inconnu des que la taille ou la bande passante en font un risque reel." },
+    { id: "MI-LINK-SOURCE", type: "hard method gate", fields: ["source_location"], impacts: ["MI Link"], status: "partial", note: "Managed cloud sources are blocked, but an unknown source is not held at assessment." },
+    { id: "MI-LINK-VERSION", type: "hard method gate", fields: ["source_version"], impacts: ["MI Link"], status: "partial", note: "The 2016 floor is applied; an unknown version can fall through to LRS without saying so." },
+    { id: "MI-LINK-HOST", type: "hard method gate", fields: ["source_os", "source_edition", "source_version"], impacts: ["MI Link"], status: "ok", note: "Fail-closed on host OS and edition." },
+    { id: "MI-LINK-PORTS", type: "hard method gate", fields: ["mi_link_ports"], impacts: ["MI Link"], status: "ok", note: "5022 and 11000-11999 must be confirmed open." },
+    { id: "BACKUP-BLOB-PATH", type: "hard method gate", fields: ["blob_https_reachability"], impacts: ["Native backup/restore", "LRS", "BACPAC / SqlPackage", "Data Box seed \u2192 sync delta"], status: "ok", note: "A blocked path removes the method rather than printing it as refused; LRS is covered because it replays backups staged in Blob." },
+    { id: "SOURCE-PERMISSIONS", type: "hard method gate", fields: ["source_permissions"], impacts: ["MI Link", "Transactional replication", "Distributed AG / Always On AG"], status: "ok", note: "Limited rights refuse the method; unstated rights hold it at unknown. The field was declared in the contract and read by nothing." },
+    { id: "MI-LINK-CAPACITY", type: "hard method gate", fields: ["database_count", "performance"], impacts: ["MI Link"], status: "ok", note: "100 links on GP and BC, 500 on Next-gen GP." },
+    { id: "LRS-VERSION", type: "hard method gate", fields: ["source_version"], impacts: ["LRS"], status: "ok", note: "2008-2022." },
+    { id: "LRS-WINDOW", type: "hard method gate", fields: ["size", "network_bandwidth"], impacts: ["LRS"], status: "ok", note: "The 30-day constraint is always recorded, and becomes an unknown once size or bandwidth make it a real risk." },
     { id: "AG-VERSION", type: "hard method gate", fields: ["source_version"], impacts: ["Distributed AG / Always On AG"], status: "ok", note: "AG 2012+, DAG 2016+." },
-    { id: "REPL-PUBLISHER", type: "hard method gate", fields: ["source_version", "source_location", "source_permissions"], impacts: ["Transactional replication"], status: "ok", note: "Version, sources cloud managees et droits du publisher sont tous appliques." },
-    { id: "FILESTREAM-PAAS", type: "hard target gate", fields: ["feature_dependencies"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "MI et SQL DB refusés." },
-    { id: "POLYBASE-KIND", type: "hard target gate", fields: ["feature_dependencies"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "Cloud files, RDBMS externe et inconnu sont distingués." },
-    { id: "DTC-TOPOLOGY", type: "hard target gate", fields: ["feature_dependencies"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "Homogène, hétérogène et inconnu sont distingués." },
-    { id: "LINKED-SERVERS", type: "hard target gate", fields: ["feature_dependencies"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "MI avec remédiation ; SQL DB refusé." },
-    { id: "CLR-PERMISSION", type: "hard target gate", fields: ["feature_dependencies", "clr_permission_set"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "SAFE/EXTERNAL_ACCESS demandent signature ou hash ; UNSAFE/inconnu restent à évaluer." },
-    { id: "DEPENDENCY-INVENTORY", type: "hard target gate", fields: ["feature_dependencies"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "Une liste vide ou inconnue ne vaut pas absence." },
-    { id: "MANAGEMENT-MODEL", type: "hard target gate", fields: ["management_model", "kubernetes_model"], impacts: ["SQL Server on Azure VM", "Azure SQL Managed Instance", "Azure SQL Database", "Arc-enabled SQL Managed Instance", "SQL Server in a container"], status: "partial", note: "Le miroir choisit excluded_by_preference ; la table A2 dit encore unsupported." },
-    { id: "ARC-IN-PLACE", type: "hard target gate", fields: ["intent", "source_version"], impacts: ["SQL Server enabled by Azure Arc"], status: "ok", note: "Assess-first / modernisation in-place." },
-    { id: "ARC-WIZARD-BATCH", type: "hard method gate", fields: ["migration_batch_size", "arc_extension_version"], impacts: ["Azure SQL Managed Instance"], status: "ok", note: "1 base avant l’extension minimale, 10 à partir de 1.1.3348.364." },
-    { id: "FABRIC-TARGET", type: "hard target gate", fields: ["driver"], impacts: ["SQL database in Fabric"], status: "partial", note: "La cible GA survit, mais le miroir ne conserve pas toujours Fabric quand l’assistant Preview est refusé." },
-    { id: "FABRIC-ASSISTANT", type: "hard method gate", fields: ["fabric_constraints"], impacts: ["Fabric Migration Assistant"], status: "partial", note: "Les gates Assistant sont présentes ; les autres chemins Fabric ne sont pas sélectionnables." },
-    { id: "HYPERSCALE-CEILING", type: "hard target gate", fields: ["size"], impacts: ["Azure SQL Database", "Azure SQL Managed Instance", "SQL Server on Azure VM"], status: "ok", note: "Au-dela du plafond de 128 To pour une base unique, les deux familles PaaS sont refusees : sharding ou SQL VM." },
-    { id: "MI-TIER", type: "tier rule", fields: ["performance", "size", "database_count"], impacts: ["Azure SQL Managed Instance"], status: "partial", note: "Les tiers principaux sont couverts ; le plan multi-instance >500 n’est pas modélisé." },
-    { id: "SQLDB-TIER", type: "tier rule", fields: ["performance", "size", "tenant_count"], impacts: ["Azure SQL Database"], status: "ok", note: "GP, BC, Serverless, Elastic Pool et Hyperscale sont choisis selon les signaux." },
-    { id: "DOWNTIME-CLASS", type: "consistency rule", fields: ["downtime"], impacts: ["Classe de coupure"], status: "ok", note: "Une tolérance inconnue produit unknown_requires_assessment." },
-    { id: "RANK-ORDER", type: "ranking", fields: ["surviving_candidates", "rpo", "rto", "compliance"], impacts: ["Classement final"], status: "partial", note: "Le miroir est une cascade de branches ; il n’émet pas la trace des 10 étapes documentées." },
-    { id: "OUTPUT-CONSISTENCY", type: "consistency rule", fields: ["eligibility", "method", "tier"], impacts: ["Recommandation finale"], status: "ok", note: "Les gates de prerequis tournent apres la passe de coherence ; une methode refusee est retiree avec ses constats." }
+    { id: "REPL-PUBLISHER", type: "hard method gate", fields: ["source_version", "source_location", "source_permissions"], impacts: ["Transactional replication"], status: "ok", note: "Version, managed cloud sources and publisher rights are all applied." },
+    { id: "FILESTREAM-PAAS", type: "hard target gate", fields: ["feature_dependencies"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "MI and SQL DB refused." },
+    { id: "POLYBASE-KIND", type: "hard target gate", fields: ["feature_dependencies"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "Cloud files, external RDBMS and unknown are told apart." },
+    { id: "DTC-TOPOLOGY", type: "hard target gate", fields: ["feature_dependencies"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "Homogeneous, heterogeneous and unknown are told apart." },
+    { id: "LINKED-SERVERS", type: "hard target gate", fields: ["feature_dependencies"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "MI with remediation; SQL DB refused." },
+    { id: "CLR-PERMISSION", type: "hard target gate", fields: ["feature_dependencies", "clr_permission_set"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "SAFE and EXTERNAL_ACCESS need a signature or a trusted hash; UNSAFE and unknown stay to be assessed." },
+    { id: "DEPENDENCY-INVENTORY", type: "hard target gate", fields: ["feature_dependencies"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "An empty or unknown list is not an absence." },
+    { id: "MANAGEMENT-MODEL", type: "hard target gate", fields: ["management_model", "kubernetes_model"], impacts: ["SQL Server on Azure VM", "Azure SQL Managed Instance", "Azure SQL Database", "Arc-enabled SQL Managed Instance", "SQL Server in a container"], status: "partial", note: "The mirror returns excluded_by_preference; table A2 still says unsupported." },
+    { id: "ARC-IN-PLACE", type: "hard target gate", fields: ["intent", "source_version"], impacts: ["SQL Server enabled by Azure Arc"], status: "ok", note: "Assess-first and in-place modernization." },
+    { id: "ARC-WIZARD-BATCH", type: "hard method gate", fields: ["migration_batch_size", "arc_extension_version"], impacts: ["Azure SQL Managed Instance"], status: "ok", note: "1 database below the minimum extension, 10 from 1.1.3348.364." },
+    { id: "FABRIC-TARGET", type: "hard target gate", fields: ["driver"], impacts: ["SQL database in Fabric"], status: "partial", note: "The GA target survives, but the mirror does not always keep Fabric when the Preview assistant is refused." },
+    { id: "FABRIC-ASSISTANT", type: "hard method gate", fields: ["fabric_constraints"], impacts: ["Fabric Migration Assistant"], status: "partial", note: "The Assistant gates are present; the other Fabric paths cannot be selected." },
+    { id: "HYPERSCALE-CEILING", type: "hard target gate", fields: ["size"], impacts: ["Azure SQL Database", "Azure SQL Managed Instance", "SQL Server on Azure VM"], status: "ok", note: "Past the 128 TB single-database ceiling, both PaaS families are refused: shard, or move to SQL VM." },
+    { id: "MI-TIER", type: "tier rule", fields: ["performance", "size", "database_count"], impacts: ["Azure SQL Managed Instance"], status: "partial", note: "The main tiers are covered; the multi-instance plan above 500 is not modelled." },
+    { id: "SQLDB-TIER", type: "tier rule", fields: ["performance", "size", "tenant_count"], impacts: ["Azure SQL Database"], status: "ok", note: "GP, BC, Serverless, Elastic Pool and Hyperscale are chosen from the signals." },
+    { id: "DOWNTIME-CLASS", type: "consistency rule", fields: ["downtime"], impacts: ["Classe de coupure"], status: "ok", note: "An unknown tolerance yields unknown_requires_assessment." },
+    { id: "RANK-ORDER", type: "ranking", fields: ["surviving_candidates", "rpo", "rto", "compliance"], impacts: ["Classement final"], status: "partial", note: "The mirror is a cascade of branches; it does not emit the trace of the 10 documented steps." },
+    { id: "OUTPUT-CONSISTENCY", type: "consistency rule", fields: ["eligibility", "method", "tier"], impacts: ["Recommandation finale"], status: "ok", note: "The prerequisite gates run after the consistency pass; a refused method is removed together with its findings." }
   ];
 
   const OPTIONS = {
@@ -289,7 +289,7 @@
     feature_dependencies_intent: ["NONE_CONFIRMED", "LIST_FEATURES", "UNKNOWN"],
     ancillary_services_intent: ["NONE_CONFIRMED", "LIST_SERVICES", "UNKNOWN"],
     tier_drivers_intent: ["NONE_CONFIRMED", "LIST_TIER_DRIVERS", "UNKNOWN"],
-    feature_dependencies: ["NONE_CONFIRMED", "FILESTREAM / FileTable", "PolyBase/cloud files", "PolyBase/external RDBMS", "PolyBase/unknown", "DTC SQL↔SQL", "DTC hétérogène", "DTC/unknown", "linked servers", "SQL Agent", "SQL CLR", "Service Broker", "cross-DB", "UNKNOWN"],
+    feature_dependencies: ["NONE_CONFIRMED", "FILESTREAM / FileTable", "PolyBase/cloud files", "PolyBase/external RDBMS", "PolyBase/unknown", "DTC SQL↔SQL", "heterogeneous DTC", "DTC/unknown", "linked servers", "SQL Agent", "SQL CLR", "Service Broker", "cross-DB", "UNKNOWN"],
     size: ["UNDER_150_GB", "FROM_150_GB_TO_4_TB", "FROM_4_TB_TO_128_TB", "OVER_128_TB", "UNKNOWN"],
     downtime: ["NEAR_ZERO", "MINIMAL", "OFFLINE", "UNKNOWN"],
     network_bandwidth: ["GOOD_BANDWIDTH", "LIMITED_WAN", "VERY_LARGE_MULTI_TB", "UNKNOWN"],
@@ -315,8 +315,8 @@
     "migration_duration (champ absent)": ["≤30 jours", ">30 jours", "UNKNOWN"],
     surviving_candidates: ["eligible", "eligible_with_remediation", "tie / UNKNOWN"],
     eligibility: ["eligible", "eligible_with_remediation", "unsupported", "excluded_by_preference", "unknown_requires_assessment"],
-    method: ["méthode sélectionnée"],
-    tier: ["tier sélectionné"]
+    method: ["selected method"],
+    tier: ["selected tier"]
   };
 
   const TARGET_METHODS = [
@@ -413,7 +413,7 @@
       if (!targetIds.has(target)) {
         const id = safeId("target", target);
         targetIds.set(target, id);
-        nodes.push(makeNode(id, target, "target", "Cible ou plan de contrôle documenté.", 0));
+        nodes.push(makeNode(id, target, "target", "Documented target or control plane.", 0));
       }
       if (!methodIds.has(method)) {
         const id = safeId("method", method);
@@ -421,7 +421,7 @@
         methodDetails.set(method, []);
         nodes.push(makeNode(id, method, "method", "", 1));
       }
-      methodDetails.get(method).push(target + (count ? " · " + count + " scénario(s)" : " · non émis dans le corpus"));
+      methodDetails.get(method).push(target + (count ? " · " + count + " scenario(s)" : " · not emitted in the corpus"));
       const edgeLabel = count ? String(count) : "";
       edges.push(makeEdge(targetIds.get(target), methodIds.get(method), state, edgeLabel, count ? 1 + Math.sqrt(count) * 0.35 : 1));
     }
@@ -436,12 +436,12 @@
     return {
       nodes,
       edges,
-      meta: "8 destinations · 23 familles de méthodes · trait plein = sortie observée dans les 110 scenarios",
+      meta: "8 targets · 23 method families · solid line = output observed in the 110 scenarios",
       legend: [
-        ["observed", "Émis par le miroir testé"],
-        ["rules_only", "Documenté, non émis dans le corpus"],
-        ["target", "Cible / plan de contrôle"],
-        ["method", "Méthode"]
+        ["observed", "Emitted by the tested mirror"],
+        ["rules_only", "Documented, not emitted in the corpus"],
+        ["target", "Target or control plane"],
+        ["method", "Method"]
       ]
     };
   }
@@ -460,7 +460,7 @@
       const id = safeId("field", field);
       fields.set(field, id);
       const values = OPTIONS[field] || [];
-      const detail = values.length ? values.join(" · ") : "Champ libre ou structure interne.";
+      const detail = values.length ? values.join(" · ") : "Free text or an internal structure.";
       nodes.push(makeNode(id, field, field.includes("absent") ? "field_missing" : "field", detail, 0));
     }
 
@@ -474,7 +474,7 @@
           const impactId = safeId("impact", impact);
           impacts.set(impact, impactId);
           const isMethod = PATHS.some((row) => row[1] === impact);
-          nodes.push(makeNode(impactId, impact, isMethod ? "method" : "target", "Élément affecté par une ou plusieurs règles.", 2));
+          nodes.push(makeNode(impactId, impact, isMethod ? "method" : "target", "Affected by one or more rules.", 2));
         }
         edges.push(makeEdge(id, impacts.get(impact), rule.status === "missing" ? "missing" : rule.status === "partial" ? "partial" : "neutral"));
       }
@@ -483,12 +483,12 @@
     return {
       nodes,
       edges,
-      meta: "28 regles adressables \u00b7 " + indexedFields.size + " champs consommes \u00b7 orange = partiellement implementee" + indexedFields.size + " champs consommés · rouge = règle écrite mais non exécutée",
+      meta: "28 addressable rules \u00b7 " + indexedFields.size + " fields consumed \u00b7 amber = partially implemented" + indexedFields.size + " fields consumed · amber = partially implemented",
       legend: [
-        ["rule_ok", "Implémentée"],
-        ["rule_partial", "Partielle"],
-        ["rule_missing", "Absente"],
-        ["field", "Champ"],
+        ["rule_ok", "Implemented"],
+        ["rule_partial", "Partial"],
+        ["rule_missing", "Missing"],
+        ["field", "Field"],
         ["target", "Impact"]
       ]
     };
@@ -515,7 +515,7 @@
     for (const [source, total] of sourceTotals) {
       const id = safeId("source", source);
       sources.set(source, id);
-      nodes.push(makeNode(id, source, "source", total + " scénario(s) du corpus.", 0));
+      nodes.push(makeNode(id, source, "source", total + " scenario(s) du corpus.", 0));
     }
     for (const [target, total] of targetTotals) {
       const id = safeId("target", target);
@@ -525,7 +525,7 @@
     for (const [method, total] of methodTotals) {
       const id = safeId("method", method);
       methods.set(method, id);
-      nodes.push(makeNode(id, method, "method", total + " émission(s) dans le corpus.", 2));
+      nodes.push(makeNode(id, method, "method", total + " output(s) in the corpus.", 2));
     }
 
     for (const [source, target, count] of SOURCE_TARGETS) {
@@ -538,12 +538,12 @@
     return {
       nodes,
       edges,
-      meta: "110 scenarios golden · 9 sorties primaires · 19 méthodes distinctes · 23/23 gates au vert",
+      meta: "110 golden scenarios · 9 primary outputs · 19 distinct methods · 23/23 gates green",
       legend: [
         ["source", "Source"],
         ["target", "Sortie primaire"],
-        ["method", "Méthode"],
-        ["observed", "Nombre de scénarios"]
+        ["method", "Method"],
+        ["observed", "Scenario count"]
       ]
     };
   }
@@ -632,10 +632,10 @@
 
     metaEl.textContent = currentData.meta;
     legendEl.innerHTML = legendMarkup(currentData.legend);
-    detailEl.textContent = "Sélectionnez un nœud pour isoler ses relations.";
+    detailEl.textContent = "Select a node to isolate its relations.";
 
     if (!window.vis || !window.vis.Network) {
-      graphEl.textContent = "Le graphe interactif n’a pas pu être chargé.";
+      graphEl.textContent = "The interactive graph could not be loaded.";
       return;
     }
 
@@ -697,7 +697,7 @@
     });
 
     network.on("deselectNode", () => {
-      detailEl.textContent = "Sélectionnez un nœud pour isoler ses relations.";
+      detailEl.textContent = "Select a node to isolate its relations.";
     });
   }
 

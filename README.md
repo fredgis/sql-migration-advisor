@@ -16,6 +16,8 @@
 
 <p align="center">
   <a href="https://fredgis.github.io/sql-migration-advisor/"><b>📖 Docs — how the skill works &amp; stays up to date →</b></a>
+  &nbsp;·&nbsp;
+  <a href="https://fredgis.github.io/sql-migration-advisor/rule-graph.html"><b>🕸️ Explore the rules →</b></a>
 </p>
 
 <p align="center">
