@@ -696,6 +696,81 @@ function normalizeInputs(inputs) {
   if (!out.size && /large estate/i.test(String(out.scope ?? ''))) out.size = 'estate scale / business case / dependency map';
   return out;
 }
+function applyHyperscaleCeiling(inputs, eligibility, out) {
+  // HYPERSCALE-CEILING. 128 TB is the Hyperscale maximum for a single database, and Managed
+  // Instance tops out far below it. Above that, no Azure SQL target holds the database as it
+  // stands, so it has to be sharded or moved to a VM. The rule was written, indexed, and applied
+  // nowhere: a 200 TB database was being recommended onto Azure SQL Database at medium confidence.
+  if (!new RegExp(`over ${SQL_DB_TIERS.hyperscaleMaxSizeTb} tb|>\\s*${SQL_DB_TIERS.hyperscaleMaxSizeTb}\\s*tb`, 'i').test(String(inputs.size ?? ''))) return;
+  eligibility.sql_db = E.UNSUPPORTED;
+  eligibility.sql_mi = E.UNSUPPORTED;
+  eligibility.sql_vm = E.ELIGIBLE;
+  out.exclusions.sql_db = `A single database above ${SQL_DB_TIERS.hyperscaleMaxSizeTb} TB exceeds the Hyperscale ceiling.`;
+  out.exclusions.sql_mi = `Managed Instance storage tops out far below ${SQL_DB_TIERS.hyperscaleMaxSizeTb} TB; it is not an as-is destination at this size.`;
+  addUnique(out.hardBlockers, `The database exceeds the ${SQL_DB_TIERS.hyperscaleMaxSizeTb} TB Hyperscale ceiling for a single database.`);
+  addUnique(out.evidenceRequired, 'Partition or shard the database, or size SQL Server on Azure VM storage for it. Confirm which before choosing a target.');
+}
+function applySourcePermissions(inputs, out) {
+  // MI Link and transactional replication both need elevated rights on the source: the link sets
+  // up an availability group, and a publisher needs its own privileges. The field was declared in
+  // the contract and in the rule index, and read by nothing, so limited rights changed no answer.
+  const method = String(out.method ?? '');
+  if (!/MI Link|Transactional replication|distributed availability|Always On/i.test(method)) return;
+  const perms = String(inputs.source_permissions ?? '');
+  if (/sysadmin_available|sysadmin available/i.test(perms)) return;
+  if (/limited/i.test(perms)) {
+    addUnique(out.hardBlockers, `${method} requires elevated rights on the source, and the account was reported as having limited rights.`);
+    out.methodGateStatus = 'refused';
+  } else {
+    addUnique(out.unknowns, `${method} requires sysadmin on the source to configure endpoints, and the available rights were never stated.`);
+    out.methodGateStatus = out.methodGateStatus === 'refused' ? 'refused' : 'unknown_requires_assessment';
+  }
+  addUnique(out.evidenceRequired, 'Confirm the migration account holds sysadmin on the source instance before scheduling this method.');
+}
+function applyLrsWindow(inputs, out) {
+  // LRS-WINDOW. The Log Replay Service has a hard 30-day maximum, after which the restore chain
+  // must start again. Nobody collects an expected duration, so the constraint is always recorded;
+  // it becomes an unknown only when the estate is large enough for 30 days to be a real risk.
+  if (!/\bLRS\b|log replay/i.test(String(out.method ?? ''))) return;
+  addUnique(out.evidenceRequired, `Confirm the migration completes inside the ${SOURCE_FLOORS.standaloneLrs.maxMigrationWindowDays}-day Log Replay Service window; past it the restore chain must be restarted from a new full backup.`);
+  const large = /4 tb|128 tb|multi-tb|multitb/i.test(String(inputs.size ?? ''));
+  const slow = /limited wan|very large/i.test(`${inputs.network_bandwidth ?? ''} ${inputs.network_ports ?? ''}`);
+  if (!large && !slow) return;
+  addUnique(out.unknowns, `At this size or bandwidth the ${SOURCE_FLOORS.standaloneLrs.maxMigrationWindowDays}-day LRS window is a real constraint, and the expected duration was never estimated.`);
+  out.methodGateStatus = out.methodGateStatus === 'refused' ? 'refused' : 'unknown_requires_assessment';
+}
+function applyMethodPrerequisiteGates(inputs, out) {
+  out.methodGateStatus = undefined;
+  applyBackupBlobPath(inputs, out);
+  applySourcePermissions(inputs, out);
+  applyLrsWindow(inputs, out);
+}
+function applyRefusedMethodGate(inputs, eligibility, out) {
+  // A gate that reports `refused` while its method stays on the card is worse than no gate: the
+  // card contradicts itself and the reader has to decide which half to believe.
+  if (out.methodGateStatus !== 'refused') return;
+  const rejected = String(out.method ?? '');
+  addMethodExclusion(out.primaryTarget, `${rejected} was refused by its own gate.`, out);
+  // Findings raised against the rejected method must go with it, or the card carries an unknown
+  // about a method nobody is proposing any more.
+  const mentions = (text) => rejected && String(text).toLowerCase().includes(rejected.toLowerCase());
+  out.unknowns = out.unknowns.filter(u => !mentions(u));
+  out.evidenceRequired = out.evidenceRequired.filter(e => !mentions(e));
+  const [fallbackTarget, fallbackMethod] = chooseConsistentFallback(inputs, eligibility, out);
+  out.primaryTarget = fallbackTarget;
+  out.primary_target = fallbackTarget;
+  out.method = fallbackMethod;
+  delete out.alternativeTarget;
+  applyMethodPrerequisiteGates(inputs, out);
+  if (out.methodGateStatus === 'refused') {
+    // Nothing viable survived. Say so rather than presenting a refused method.
+    out.primaryTarget = 'provisional shortlist only';
+    out.primary_target = 'provisional shortlist only';
+    out.method = 'Assessment and dependency discovery first';
+    out.methodGateStatus = 'unknown_requires_assessment';
+    addUnique(out.unknowns, 'Every candidate method was refused by one of its own gates; the target cannot be settled from the interview alone.');
+  }
+}
 export function evaluate(rawInputs = {}) {
   const inputs = normalizeInputs(rawInputs);
   const eligibility = {
@@ -712,6 +787,7 @@ export function evaluate(rawInputs = {}) {
   applyFabric(inputs, eligibility, out);
   applyFeatureEligibility(inputs, eligibility, out);
   applyClrPermission(inputs, out, eligibility);
+  applyHyperscaleCeiling(inputs, eligibility, out);
   applyManagement(inputs, eligibility, out);
 
   const [primaryTarget, method] = chooseTarget(inputs, eligibility, out);
@@ -725,6 +801,11 @@ export function evaluate(rawInputs = {}) {
 
   applyMethodGates(inputs, primaryTarget, method, eligibility, out);
   enforceOutputConsistency(inputs, eligibility, out);
+  // The three gates below run *after* the consistency pass, not before it. Running them first
+  // meant they judged a method the consistency pass then replaced, leaving an unknown on the card
+  // that belonged to a method nobody was proposing any more.
+  applyMethodPrerequisiteGates(inputs, out);
+  applyRefusedMethodGate(inputs, eligibility, out);
   if (out.primaryTarget === 'Azure SQL Managed Instance') out.tier = chooseMiTier(inputs, out);
   else if (out.primaryTarget === 'Azure SQL Database') out.tier = chooseSqlDbTier(inputs, out);
   else if (out.primaryTarget !== 'SQL database in Fabric') delete out.tier;

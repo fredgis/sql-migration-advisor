@@ -67,7 +67,7 @@ Green is loaded in a user's session. Blue never is.
 | --- | --- |
 | `skills/recommend-migration-path/SKILL.md` | The skill. Trigger description, interview, order of operations, output template. |
 | `reference/input-contract.md` | The vocabulary an answer may use: 73 option IDs, the canonical field names, and the three states an answer can hold. |
-| `reference/decision-rules.md` | The policy. Phase A eligibility, Phase B ordered ranking, tier selection, and an index of 26 addressable rules. |
+| `reference/decision-rules.md` | The policy. Phase A eligibility, Phase B ordered ranking, tier selection, and an index of 28 addressable rules. |
 | `reference/output-contract.md` | The shape of an answer, the status vocabulary, and 13 invariants the skill checks against its own draft. |
 | `docs/sql-server-to-azure-migration.md` | The knowledge base: every target, method, limit and lever, with Microsoft Learn links. |
 | `reference/decision-rules.data.json` | The same constants in machine-readable form, so a floor can be checked rather than read. |
@@ -154,7 +154,7 @@ Three design decisions here came from defects, not from theory.
 
 **Phase B** applies ten ordered steps. The order is normative. It replaced an unweighted table of eight criteria under which two readers weighing cost against resilience differently reached two defensible answers from the same estate. When the steps do not separate the finalists, the result is a shortlist and the evidence that would break the tie — never an invented winner.
 
-Every verdict cites a rule ID, and the rule index lists all 26 with the fields each consumes and what it does when one is unknown. A reader can look a decision up and disagree with it.
+Every verdict cites a rule ID, and the rule index lists all 28 with the fields each consumes and what it does when one is unknown. A reader can look a decision up and disagree with it.
 
 ### Checking its own answer
 
@@ -231,7 +231,7 @@ Stated plainly, because overselling is the failure mode this project keeps corre
 
 - **The mirror is not the model.** Nothing proves a session reaches the mirror's answer. Runtime evaluation across models is designed and unbuilt.
 - **The rules are prose, mirrored by hand.** A rule can be written correctly and mirrored wrongly, or written and never mirrored at all. Two such cases were found and fixed in v2.2, which is evidence the class exists, not evidence it is exhausted.
-- **106 scenarios sample an enormous input space.**
+- **110 scenarios sample an enormous input space.**
 - **A shared error scores perfectly.** The Windows Server 2012 floor was wrong for five versions and every test agreed with it, because the tests were written from the same mistaken document.
 - **The skill reads no artefact from your estate.** It opens no report, runs no tool, queries no service. `provisional` is the only status it can produce and `medium` the highest confidence, and no answer it gives replaces an assessment tool or an architect.
 

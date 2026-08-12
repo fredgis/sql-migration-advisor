@@ -706,6 +706,7 @@ try {
   // is registered twice, in a try and its catch, and only ever runs once.
   const gateCount = new Set([...readText(path.join('tests', 'run-tests.mjs')).matchAll(/^\s*add\('([a-z0-9-]+)'/gmu)].map(m => m[1])).size;
   const scenarioCount = scenarios.length;
+  const ruleCount = (rules.match(/^\| `[A-Z][A-Z0-9-]+` \|/gmu) || []).length;
   const QUOTED = ['README.md', 'CONTRIBUTING.md', path.join('howto', 'how-the-skill-works.md'), path.join('blume', 'docs', 'index.mdx'), path.join('docs', 'sql-migration-advisor-developer-pitch.md'), path.join('tests', 'README.md')];
   for (const doc of QUOTED) {
     const text = readText(doc);
@@ -718,6 +719,9 @@ try {
     };
     check(/(\d+) gates/giu, gateCount, 'gates');
     check(/(\d+) (?:golden )?scenarios/giu, scenarioCount, 'scenarios');
+    // The rule count drifted the moment BACKUP-BLOB-PATH was added in v2.1: five documents kept
+    // saying 26 while the index held 27. Same defect as "18 gates", one noun further along.
+    check(/(?:all |index of |index of all )(\d+) (?:addressable |hard gates are addressable|hard )?/giu, ruleCount, 'rules');
   }
 
   add('interview-conforms-to-contract', failures.length === 0,

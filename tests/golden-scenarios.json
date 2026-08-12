@@ -48,7 +48,8 @@
         "None"
       ],
       "downtime": "minimal",
-      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "source_permissions": "SYSADMIN_AVAILABLE"
     },
     "expect": {
       "eligibility": {
@@ -1331,7 +1332,8 @@
       ],
       "downtime": "near-zero",
       "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
-      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "source_permissions": "SYSADMIN_AVAILABLE"
     },
     "expect": {
       "eligibility": {
@@ -1401,7 +1403,8 @@
       ],
       "downtime": "near-zero",
       "network_ports": "5022 open; 11000-11999 open",
-      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "source_permissions": "SYSADMIN_AVAILABLE"
     },
     "expect": {
       "eligibility": {
@@ -1771,7 +1774,8 @@
       ],
       "downtime": "near-zero",
       "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
-      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "source_permissions": "SYSADMIN_AVAILABLE"
     },
     "expect": {
       "eligibility": {
@@ -1805,7 +1809,8 @@
       ],
       "downtime": "near-zero",
       "network_ports": "5022 open",
-      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "source_permissions": "SYSADMIN_AVAILABLE"
     },
     "expect": {
       "eligibility": {
@@ -2170,7 +2175,8 @@
       },
       "source_os": "Windows Server 2019",
       "source_edition": "Enterprise",
-      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "source_permissions": "SYSADMIN_AVAILABLE"
     },
     "expect": {
       "eligibility": {
@@ -2319,7 +2325,8 @@
       "database_count": 200,
       "source_os": "Windows Server 2019",
       "source_edition": "Enterprise",
-      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "source_permissions": "SYSADMIN_AVAILABLE"
     },
     "expect": {
       "eligibility": {
@@ -2496,7 +2503,8 @@
       "performance": "low-latency writes; high IOPS/log throughput; read-scale replicas",
       "source_os": "Windows Server 2019",
       "source_edition": "Enterprise",
-      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "source_permissions": "SYSADMIN_AVAILABLE"
     },
     "expect": {
       "eligibility": {
@@ -2664,7 +2672,8 @@
       "feature_dependencies": [
         "SQL Agent"
       ],
-      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "source_permissions": "SYSADMIN_AVAILABLE"
     },
     "expect": {
       "eligibility": {
@@ -2706,7 +2715,8 @@
       "performance": null,
       "source_os": "Windows Server 2019",
       "source_edition": "Enterprise",
-      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "source_permissions": "SYSADMIN_AVAILABLE"
     },
     "expect": {
       "primary_target": "Azure SQL Managed Instance",
@@ -2784,7 +2794,8 @@
       "performance": "general purpose",
       "source_os": "Windows Server 2019",
       "source_edition": "Enterprise",
-      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "source_permissions": "SYSADMIN_AVAILABLE"
     },
     "expect": {
       "primary_target": "Azure SQL Managed Instance",
@@ -2824,7 +2835,8 @@
       "migration_batch_size": 8,
       "source_os": "Windows Server 2019",
       "source_edition": "Enterprise",
-      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "source_permissions": "SYSADMIN_AVAILABLE"
     },
     "expect": {
       "targetAvailabilityDuringSync": "read-only",
@@ -2863,7 +2875,8 @@
       "migration_batch_size": 5,
       "source_os": "Windows Server 2019",
       "source_edition": "Enterprise",
-      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "source_permissions": "SYSADMIN_AVAILABLE"
     },
     "expect": {
       "targetAvailabilityDuringSync": "read-only",
@@ -3173,7 +3186,8 @@
         "None"
       ],
       "downtime": "near-zero",
-      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "source_permissions": "SYSADMIN_AVAILABLE"
     },
     "expect": {
       "eligibility": {
@@ -3278,7 +3292,8 @@
       "network_ports": "5022 open; 11000-11999 open; sysadmin + AG endpoints available",
       "source_os": "Linux",
       "source_edition": "Enterprise",
-      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "source_permissions": "SYSADMIN_AVAILABLE"
     },
     "expect": {
       "eligibility": {
@@ -3659,7 +3674,8 @@
       "authentication": "WINDOWS_LOGINS",
       "mi_link_ports": "PORTS_CONFIRMED_OPEN",
       "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
-      "network_ports": "Ports confirmed open in both directions 5022 and 11000-11999"
+      "network_ports": "Ports confirmed open in both directions 5022 and 11000-11999",
+      "source_permissions": "SYSADMIN_AVAILABLE"
     },
     "expect": {
       "primary_target": "Azure SQL Managed Instance",
@@ -3963,5 +3979,136 @@
       "Arc"
     ],
     "auditRef": "audit2-v2.1-coverage"
+  },
+  {
+    "id": "over-128-tb-is-refused-by-paas",
+    "title": "A single database above the Hyperscale ceiling under managed PaaS",
+    "why": "The rule was written and indexed and applied nowhere: a database above 128 TB was recommended onto Azure SQL Database at medium confidence.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "ON_PREM",
+      "source_version": "SQL2017_2019",
+      "intent": "MIGRATE_NOW",
+      "management_model": "MANAGED_PAAS",
+      "feature_dependencies": [
+        "None"
+      ],
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "source_permissions": "SYSADMIN_AVAILABLE",
+      "size": "OVER_128_TB",
+      "downtime": "OFFLINE"
+    },
+    "expect": {
+      "primary_target": "SQL Server on Azure VM",
+      "method": "Native backup/restore",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "methodGateStatus": "passed"
+    },
+    "assertRulePresent": [
+      "HYPERSCALE-CEILING"
+    ],
+    "auditRef": "graph-audit-v2.3"
+  },
+  {
+    "id": "blocked-blob-path-removes-the-method",
+    "title": "Blob upload blocked while every candidate method traverses it",
+    "why": "A refused gate used to be printed beside the method it refused. The method must go with it.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "ON_PREM",
+      "source_version": "SQL2017_2019",
+      "intent": "MIGRATE_NOW",
+      "management_model": "MANAGED_PAAS",
+      "feature_dependencies": [
+        "None"
+      ],
+      "blob_https_reachability": "BLOB_HTTPS_BLOCKED",
+      "source_permissions": "SYSADMIN_AVAILABLE",
+      "size": "UNDER_150_GB",
+      "downtime": "OFFLINE"
+    },
+    "expect": {
+      "primary_target": "provisional shortlist only",
+      "method": "Assessment and dependency discovery first",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "recommendationStatus": "provisional",
+      "confidence": "low",
+      "methodGateStatus": "unknown_requires_assessment"
+    },
+    "assertRulePresent": [
+      "BACKUP-BLOB-PATH"
+    ],
+    "auditRef": "graph-audit-v2.3"
+  },
+  {
+    "id": "limited-rights-refuse-mi-link",
+    "title": "MI Link with limited rights on the source",
+    "why": "MI Link configures an availability group, which needs sysadmin. source_permissions was declared in the contract and read by nothing.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "ON_PREM",
+      "source_version": "SQL2017_2019",
+      "intent": "MIGRATE_NOW",
+      "management_model": "MANAGED_PAAS",
+      "feature_dependencies": [
+        "SQL Agent"
+      ],
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "source_permissions": "LIMITED_RIGHTS",
+      "size": "UNDER_150_GB",
+      "downtime": "NEAR_ZERO",
+      "source_os": "WINDOWS_SERVER_2012_OR_LATER",
+      "source_edition": "ENTERPRISE",
+      "mi_link_ports": "PORTS_CONFIRMED_OPEN"
+    },
+    "expect": {
+      "primary_target": "provisional shortlist only",
+      "method": "Assessment and dependency discovery first",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "recommendationStatus": "provisional",
+      "confidence": "low",
+      "methodGateStatus": "unknown_requires_assessment"
+    },
+    "assertRulePresent": [
+      "MI Link"
+    ],
+    "auditRef": "graph-audit-v2.3"
+  },
+  {
+    "id": "lrs-window-is-a-risk-at-scale",
+    "title": "LRS on a multi-terabyte estate with no duration estimate",
+    "why": "The 30-day LRS maximum existed only as a guard scenario in the data file, never as a condition.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "ON_PREM",
+      "source_version": "SQL2014",
+      "intent": "MIGRATE_NOW",
+      "management_model": "MANAGED_PAAS",
+      "feature_dependencies": [
+        "SQL Agent"
+      ],
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "source_permissions": "SYSADMIN_AVAILABLE",
+      "size": "FROM_4_TB_TO_128_TB",
+      "downtime": "MINIMAL"
+    },
+    "expect": {
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "LRS",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
+      "recommendationStatus": "provisional",
+      "confidence": "low",
+      "methodGateStatus": "unknown_requires_assessment"
+    },
+    "assertRulePresent": [
+      "30-day maximum window"
+    ],
+    "auditRef": "graph-audit-v2.3"
   }
 ]

@@ -410,7 +410,7 @@ The normative wording stays in the sections above. This index is the address boo
 | `BACKUP-BLOB-PATH` | hard method gate | `blob_https_reachability` | **Gate cannot report `passed`**; `unknown_requires_assessment` | B3 |
 | `MI-LINK-CAPACITY` | hard method gate | `database_count`, tier | Capacity `unknown_requires_assessment` | B3 |
 | `LRS-VERSION` | hard method gate | `source_version` | Method `unknown_requires_assessment` | B3 |
-| `LRS-WINDOW` | hard method gate | migration duration | Method `unknown_requires_assessment` | B3 |
+| `LRS-WINDOW` | hard method gate | `size`, `network_bandwidth` | Constraint always recorded; **`unknown_requires_assessment`** once size or bandwidth make 30 days a real risk | B3 |
 | `AG-VERSION` | hard method gate | `source_version` | Method not selected | B3 |
 | `REPL-PUBLISHER` | hard method gate | `source_version`, `source_location` | Method `unknown_requires_assessment` | A4, B3 |
 | `FILESTREAM-PAAS` | hard target gate | `feature_dependencies` | SQL MI and SQL DB `unknown_requires_assessment` | A2 |
@@ -424,7 +424,8 @@ The normative wording stays in the sections above. This index is the address boo
 | `ARC-WIZARD-BATCH` | hard method gate | `migration_batch_size`, `arc_extension_version` | **Not treated as recent**, `unknown_requires_assessment` | B3 |
 | `FABRIC-TARGET` | hard target gate | `driver` | Fabric ranked below, never eliminated | A2 |
 | `FABRIC-ASSISTANT` | hard method gate | `fabric_constraints` | Assistant `unknown_requires_assessment`; the GA target survives | A2 |
-| `HYPERSCALE-CEILING` | tier rule | `size` | Tier `unknown_requires_assessment` | B2 |
+| `HYPERSCALE-CEILING` | hard target gate | `size` | Tier `unknown_requires_assessment`. Past the 128 TB single-database ceiling, both PaaS families are **refused** and the workload must be sharded or moved to a VM | A2, B2 |
+| `SOURCE-PERMISSIONS` | hard method gate | `source_permissions` | Method `unknown_requires_assessment`; limited rights **refuse** the method | B3 |
 | `MI-TIER` | tier rule | `performance`, `size`, `database_count` | Tier `unknown_requires_assessment`, never General Purpose by default | B2 |
 | `SQLDB-TIER` | tier rule | `performance`, `size`, `tenant_count` | Tier `unknown_requires_assessment` | B2 |
 | `DOWNTIME-CLASS` | consistency rule | `downtime` | `businessCutoverDowntime` `unknown_requires_assessment` | C1, C4 |
