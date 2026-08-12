@@ -350,3 +350,120 @@ database SQL-authentication support is unknown and must not be inferred from Fab
 | Version | Date | Changes |
 | --- | --- | --- |
 | v0.1 | 2026-08-12 | Initial draft, merged from six independent research runs against learn.microsoft.com. Five facts re-fetched and matched during the merge: MI public endpoint port 3342, MI redirect on 1433 across the subnet range, Fabric Warehouse SQL-authentication prohibition, the MI private DNS zone form, and the JDBC `ActiveDirectoryDefault` keyword. One inter-run contradiction resolved against the live page (§7.1) and two left open (§7.2, §7.5). Not wired into any skill; no fact in `sql-server-to-azure-migration.md` changed. |
+
+
+---
+
+## 9. Source register
+
+Every learn.microsoft.com page consulted by the six research runs behind this document, so a reader can audit what was read and not only what was quoted. All 102 URLs below were fetched during the merge and returned HTTP 200 on 12 August 2026.
+
+Pages marked VERIFIED had their supporting sentence re-fetched and matched word for word. The others resolve and were consulted, which is evidence that a page exists, not that every claim attributed to it is correct.
+
+One cited URL was dead and is excluded: the passwordless authentication overview under /azure/azure-sql/database/ returned 404. A research run cited a page that does not exist, which is the plainest argument for demanding a verbatim quote beside every link.
+
+### Azure SQL Database
+
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/adonet-v12-develop-direct-route-ports?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/authentication-aad-overview
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/authentication-aad-overview?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/authentication-aad-service-principal-tutorial?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/authentication-azure-ad-user-assigned-managed-identity?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/authentication-microsoft-entra-connect-to-azure-sql?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/azure-sql-dotnet-entity-framework-core-quickstart?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/azure-sql-dotnet-quickstart?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/connect-query-content-reference-guide?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/connect-query-go?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/connect-query-java?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/connect-query-ssms
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/connect-query-ssms?view=azuresql
+- **VERIFIED** — https://learn.microsoft.com/en-us/azure/azure-sql/database/connectivity-architecture
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/connectivity-architecture?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/connectivity-settings
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/connectivity-settings?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/firewall-configure?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/firewall-create-server-level-portal-quickstart?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/private-endpoint-overview
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/private-endpoint-overview?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/security-overview?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/single-database-create-quickstart?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-connectivity-issues
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-connectivity-issues?view=azuresql
+- **VERIFIED** — https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/database/vnet-service-endpoint-rule-overview?view=azuresql
+
+### Azure SQL Managed Instance
+
+- https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connect-application-instance
+- **VERIFIED** — https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connection-types-overview
+- https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connection-types-overview?view=azuresql
+- **VERIFIED** — https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connectivity-architecture-overview
+- https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connectivity-architecture-overview?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/doc-changes-updates-known-issues?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/private-endpoint-overview
+- https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/private-endpoint-overview?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/public-endpoint-overview
+
+### SQL Server on Azure VM
+
+- https://learn.microsoft.com/en-us/azure/azure-sql/virtual-machines/windows/configure-azure-ad-authentication-for-sql-vm
+- https://learn.microsoft.com/en-us/azure/azure-sql/virtual-machines/windows/configure-azure-ad-authentication-for-sql-vm?view=azuresql
+- https://learn.microsoft.com/en-us/azure/azure-sql/virtual-machines/windows/ways-to-connect-to-sql
+- https://learn.microsoft.com/en-us/azure/azure-sql/virtual-machines/windows/ways-to-connect-to-sql?view=azuresql
+
+### Microsoft Fabric
+
+- **VERIFIED** — https://learn.microsoft.com/en-us/fabric/data-warehouse/connectivity
+- https://learn.microsoft.com/en-us/fabric/data-warehouse/entra-id-authentication
+- https://learn.microsoft.com/en-us/fabric/data-warehouse/how-to-connect
+- https://learn.microsoft.com/en-us/fabric/database/sql/authentication
+- **VERIFIED** — https://learn.microsoft.com/en-us/fabric/database/sql/connect
+- https://learn.microsoft.com/en-us/fabric/database/sql/tutorial-service-connector
+- https://learn.microsoft.com/en-us/fabric/security/fabric-allow-list-urls
+- https://learn.microsoft.com/en-us/fabric/security/security-private-links-overview
+- https://learn.microsoft.com/en-us/fabric/security/security-workspace-level-private-links-overview
+- https://learn.microsoft.com/en-us/fabric/security/security-workspace-level-private-links-support
+
+### Drivers and clients
+
+- https://learn.microsoft.com/en-us/sql/connect/ado-net/connection-string-syntax?view=sql-server-ver17
+- **VERIFIED** — https://learn.microsoft.com/en-us/sql/connect/ado-net/sql/azure-active-directory-authentication
+- https://learn.microsoft.com/en-us/sql/connect/ado-net/sql/azure-active-directory-authentication?view=sql-server-ver16
+- https://learn.microsoft.com/en-us/sql/connect/ado-net/sql/azure-active-directory-authentication?view=sql-server-ver17
+- https://learn.microsoft.com/en-us/sql/connect/golang/azure-sql
+- https://learn.microsoft.com/en-us/sql/connect/golang/connection-strings?view=sql-server-ver17
+- https://learn.microsoft.com/en-us/sql/connect/golang/entra-authentication?view=sql-server-ver17
+- https://learn.microsoft.com/en-us/sql/connect/golang/faq
+- https://learn.microsoft.com/en-us/sql/connect/golang/faq?view=sql-server-ver17
+- https://learn.microsoft.com/en-us/sql/connect/golang/microsoft-go-mssqldb-driver
+- https://learn.microsoft.com/en-us/sql/connect/golang/microsoft-go-mssqldb-driver?view=sql-server-ver17
+- **VERIFIED** — https://learn.microsoft.com/en-us/sql/connect/jdbc/connecting-using-azure-active-directory-authentication
+- https://learn.microsoft.com/en-us/sql/connect/jdbc/connecting-using-azure-active-directory-authentication?view=sql-server-ver16
+- https://learn.microsoft.com/en-us/sql/connect/jdbc/connecting-using-azure-active-directory-authentication?view=sql-server-ver17
+- https://learn.microsoft.com/en-us/sql/connect/odbc/using-azure-active-directory
+- https://learn.microsoft.com/en-us/sql/connect/odbc/using-azure-active-directory?view=sql-server-ver17
+- https://learn.microsoft.com/en-us/sql/tools/sqlcmd/sqlcmd-authentication?view=sql-server-ver17
+- https://learn.microsoft.com/en-us/sql/tools/sqlcmd/sqlcmd-use-utility?view=sql-server-ver17
+- https://learn.microsoft.com/en-us/sql/tools/sqlcmd/sqlcmd-utility
+- https://learn.microsoft.com/en-us/ssms/f1-help/connect-to-server-login-page-database-engine
+
+### Networking, Private Link and DNS
+
+- **VERIFIED** — https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns
+- https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns-integration
+- https://learn.microsoft.com/en-us/azure/private-link/tutorial-private-endpoint-sql-portal
+
+### Other
+
+- https://learn.microsoft.com/en-us/answers/questions/606267/redirect-connection-policy-when-hitting-azure-sql
+- https://learn.microsoft.com/en-us/azure/developer/go/
+- https://learn.microsoft.com/en-us/java/api/overview/azure/sql?view=azure-java-stable
+- https://learn.microsoft.com/en-us/python/api/overview/azure/sql?view=azure-python
+- https://learn.microsoft.com/en-us/sql
+- https://learn.microsoft.com/en-us/sql/relational-databases/errors-events/database-engine-events-and-errors-31000-to-41399?view=sql-server-ver17
+- https://learn.microsoft.com/en-us/sql/relational-databases/errors-events/database-engine-events-and-errors-4000-to-4999?view=sql-server-ver17
+- https://learn.microsoft.com/en-us/sql/relational-databases/errors-events/mssqlserver-18456-database-engine-error
+- https://learn.microsoft.com/en-us/sql/relational-databases/errors-events/mssqlserver-18456-database-engine-error?view=sql-server-ver17
+- https://learn.microsoft.com/en-us/sql/relational-databases/security/authentication-access/azure-ad-authentication-sql-server-setup-tutorial?view=sql-server-ver17
+- https://learn.microsoft.com/en-us/troubleshoot/sql/database-engine/connect/network-related-or-instance-specific-error-occurred-while-establishing-connection
