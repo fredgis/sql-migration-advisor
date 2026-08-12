@@ -2,7 +2,7 @@
   "name": "fredgis",
   "metadata": {
     "description": "Skills published by fredgis.",
-    "version": "2.4.4"
+    "version": "2.4.5"
   },
   "owner": {
     "name": "fredgis"
@@ -11,7 +11,7 @@
     {
       "name": "sql-migration-advisor",
       "source": "./",
-      "version": "2.4.4",
+      "version": "2.4.5",
       "description": "Interview-driven SQL Server to Azure migration assessment. Runs a guided interview, applies a source-backed knowledge base and a versioned rule set, and returns a provisional target, method, downtime class, blockers and evidence gaps, with a rule ID behind every verdict.",
       "author": {
         "name": "fredgis"
