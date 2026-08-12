@@ -38,7 +38,7 @@ flowchart TD
     subgraph repo["The repository, which no session reads"]
       EN["tests/engine/evaluate.mjs<br/>a mirror of the rules, in JavaScript"]
       GS["tests/golden-scenarios.json<br/>106 profiles and their expected answers"]
-      GA["tests/run-tests.mjs<br/>24 gates"]
+      GA["tests/run-tests.mjs<br/>25 gates"]
       WK["tools/weekly-check/<br/>freshness and drift"]
     end
 
@@ -72,7 +72,7 @@ Green is loaded in a user's session. Blue never is.
 | `docs/sql-server-to-azure-migration.md` | The knowledge base: every target, method, limit and lever, with Microsoft Learn links. |
 | `reference/decision-rules.data.json` | The same constants in machine-readable form, so a floor can be checked rather than read. |
 | `tests/engine/evaluate.mjs` | 757 lines of JavaScript that mirror the rules. **Never executed in production.** |
-| `tests/run-tests.mjs` | 24 gates. |
+| `tests/run-tests.mjs` | 25 gates. |
 | `tools/weekly-check/` | Four jobs that check the knowledge base has not gone stale or drifted from its sources. |
 | `version.json` | Served from `main` so an installed skill can tell it is out of date. |
 | `.claude-plugin/` | The plugin manifest, and the marketplace manifest that lets this repository publish itself. |
@@ -179,7 +179,7 @@ The mirror has repeatedly earned its keep anyway, because writing a rule in code
 
 ---
 
-## 6. The 24 gates
+## 6. The 25 gates
 
 Grouped by what they defend.
 

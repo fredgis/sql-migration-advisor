@@ -948,6 +948,49 @@ try {
     failures.length ? failures : [`Connectivity knowledge base and matrix agree at v${matrix?.version}, the skill declares itself a draft, and ${(JSON.parse(readText(path.join('reference', 'claims-registry.json'))).claims ?? JSON.parse(readText(path.join('reference', 'claims-registry.json')))).filter(c => String(c.claim_id).startsWith('conn-')).length} connectivity claims are hashed for drift.`]);
 }
 
+{
+  // A skill can be perfectly documented, pass every consistency check, and still be unable to run.
+  // get-connection-details shipped without `allowed-tools: ask_user` for its whole life: its entire
+  // design is a one-question-at-a-time interview, and it had no way to ask anything. Twenty-four
+  // gates missed it because they all compare documents to each other and none of them asked whether
+  // the skill was executable. This one reads the frontmatter itself.
+  const failures = [];
+  let entries = [];
+  try { entries = fs.readdirSync('skills', { withFileTypes: true }).filter(e => e.isDirectory()).map(e => e.name); }
+  catch { failures.push('skills/ cannot be read'); }
+
+  for (const name of entries) {
+    const file = path.join('skills', name, 'SKILL.md');
+    let text = '';
+    try { text = readText(file); }
+    catch { failures.push(`${file} is missing`); continue; }
+
+    const fm = text.match(/^---\r?\n([\s\S]*?)\r?\n---/u);
+    if (!fm) { failures.push(`${file} has no YAML frontmatter, so the CLI cannot register it`); continue; }
+    const front = fm[1];
+
+    const declaredName = front.match(/^name:\s*(\S+)/mu)?.[1];
+    if (declaredName !== name) {
+      failures.push(`${file} declares name "${declaredName ?? 'none'}" but lives in skills/${name}; the folder and the name must match`);
+    }
+
+    const desc = front.match(/^description:\s*(.+)$/mu)?.[1] ?? '';
+    if (!desc) failures.push(`${file} declares no description, so nothing can route to it`);
+    else if (desc.length < 120) failures.push(`${file} has a ${desc.length}-character description; too thin to win routing against a general-purpose skill`);
+
+    // The interview is the shape of both skills. Without ask_user it cannot happen, and a skill that
+    // cannot execute its own pattern is a poor routing candidate as well as a broken one.
+    const wantsInterview = /\binterview\b/iu.test(text) || /ask one at a time|one question at a time/iu.test(text);
+    const allows = front.match(/^allowed-tools:\s*(.+)$/mu)?.[1] ?? '';
+    if (wantsInterview && !/\bask_user\b/u.test(allows)) {
+      failures.push(`${file} describes an interview but does not declare allowed-tools: ask_user, so it cannot ask anything`);
+    }
+  }
+
+  add('skills-are-executable', failures.length === 0,
+    failures.length ? failures : [`${entries.length} skills declare a name matching their folder, a description long enough to route, and ask_user where they run an interview.`]);
+}
+
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };
 if (jsonMode) {
   process.stdout.write(JSON.stringify({ summary, results }, null, 2) + '\n');
