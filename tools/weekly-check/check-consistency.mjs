@@ -267,6 +267,71 @@ compareAcrossDocs('MI Link required network ports', consistencyDocs.map(doc => (
 compareAcrossDocs('MI Link maximum links/databases capacity', consistencyDocs.map(doc => ({ name: doc.name, value: extractMiLinkCapacity(doc.text) })));
 compareAcrossDocs('Azure Arc portal MI wizard database batch limit', consistencyDocs.map(doc => ({ name: doc.name, value: extractArcWizardBatchLimit(doc.text) })));
 
+// Second knowledge base: connectivity. Added as an independent block on purpose. The checks above
+// are tuned to the migration knowledge base and its rule set, and folding a second document into
+// them would risk the first skill's guarantees for no benefit. This block reads its own files,
+// pushes into the same error list, and skips cleanly when the files are absent -- which is the case
+// in the Microsoft fork, where only the migration skill is ported.
+{
+  const CONN_DOC = path.join(ROOT, 'docs', 'sql-server-to-azure-migration-connectivity.md');
+  const CONN_MATRIX = path.join(ROOT, 'skills', 'get-connection-details', 'reference', 'connectivity-matrix.json');
+  const CONN_SKILL = path.join(ROOT, 'skills', 'get-connection-details', 'SKILL.md');
+
+  if (fs.existsSync(CONN_DOC) && fs.existsSync(CONN_MATRIX)) {
+    const connDoc = read(CONN_DOC);
+    let matrix = null;
+    try { matrix = JSON.parse(read(CONN_MATRIX)); }
+    catch { errors.push('connectivity matrix is not valid JSON'); }
+
+    if (matrix) {
+      const docVersion = first(/\*\*Version\.\*\*\s*v(\d+\.\d+)/, connDoc);
+      if (!docVersion) {
+        errors.push('connectivity KB carries no version stamp');
+      } else if (docVersion !== matrix.version) {
+        errors.push(`connectivity KB is v${docVersion} while its matrix is v${matrix.version}; the prose is generated from the matrix, so they cannot ship apart`);
+      }
+
+      // The changelog must record the version being shipped, or a reader cannot tell what changed.
+      if (docVersion && !new RegExp(`\\|\\s*v${docVersion.replace('.', '\\.')}\\s*\\|`).test(connDoc)) {
+        errors.push(`connectivity KB v${docVersion} has no changelog row`);
+      }
+
+      // Values that have each been wrong once, in a draft or in an audit finding.
+      const loadBearing = [
+        ['3342', 'the Managed Instance public endpoint port'],
+        ['1433 to 65535', 'the Azure SQL Database private-endpoint Redirect range']
+      ];
+      for (const [needle, what] of loadBearing) {
+        if (!connDoc.includes(needle)) errors.push(`connectivity KB no longer states ${what} (${needle})`);
+      }
+
+      // Drift detection has to keep covering the volatile pages, or the facts stop expiring.
+      const registryPath = path.join(ROOT, 'reference', 'claims-registry.json');
+      if (fs.existsSync(registryPath)) {
+        const registry = JSON.parse(read(registryPath));
+        const claims = Array.isArray(registry) ? registry : registry.claims;
+        const conn = claims.filter(c => String(c.claim_id).startsWith('conn-'));
+        if (conn.length < 10) errors.push(`only ${conn.length} connectivity claims are registered; the volatile source pages are no longer all watched`);
+        const unhashed = conn.filter(c => !c.verification_hash).map(c => c.claim_id);
+        if (unhashed.length) errors.push(`connectivity claims without a baseline hash can never report drift: ${unhashed.join(', ')}`);
+      }
+
+      // While the knowledge base is under review, the status line is the only thing telling a user
+      // which facts are provisional. It ships to every plugin installer.
+      if (fs.existsSync(CONN_SKILL)) {
+        const connSkill = read(CONN_SKILL);
+        if (!/Status: draft/.test(connSkill)) {
+          errors.push('get-connection-details no longer declares itself a draft while its knowledge base is under review');
+        }
+        if (!connSkill.includes(`v${matrix.version}`)) {
+          errors.push(`get-connection-details does not quote connectivity KB v${matrix.version}`);
+        }
+      }
+      if (!errors.length) console.log(`Connectivity KB checked: v${matrix.version}.`);
+    }
+  }
+}
+
 for (const w of warnings) console.warn(`WARNING: ${w}`);
 if (errors.length) {
   console.error('KB consistency check failed:');

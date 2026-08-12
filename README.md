@@ -153,9 +153,9 @@ copilot plugin marketplace add fredgis/sql-migration-advisor
 copilot plugin install sql-migration-advisor@fredgis
 ```
 
-Then restart Copilot CLI (skills load at startup), run `/skills`, and confirm
-**`recommend-migration-path`** is listed. Ask *"I want to migrate a SQL Server environment to
-Azure"* and the interview starts.
+Then restart Copilot CLI (skills load at startup), run `/skills`, and confirm **both**
+**`recommend-migration-path`** and **`get-connection-details`** are listed. Ask *"I want to migrate
+a SQL Server environment to Azure"* and the interview starts.
 
 Installing from a marketplace opens an interactive picker, so run the second command from a real
 terminal or from `/plugin` inside a session. A single-command install also works:
@@ -177,7 +177,19 @@ copilot --plugin-dir ./sql-migration-advisor
 | --- | --- |
 | Repository, and the marketplace it hosts | `sql-migration-advisor`, published under the marketplace `fredgis` |
 | Plugin — the unit you install | `sql-migration-advisor` |
-| **Skill — what actually triggers** | **`recommend-migration-path`** |
+| **Skills — what actually triggers** | **`recommend-migration-path`** (production) and **`get-connection-details`** (draft) |
+
+**The plugin installs two skills.** They are discovered from `skills/`, not declared in a manifest,
+so both arrive together:
+
+| Skill | Triggers on | Status |
+| --- | --- | --- |
+| `recommend-migration-path` | *"I want to migrate a SQL Server environment to Azure"* | Production |
+| `get-connection-details` | *"my app can't connect to Managed Instance"*, an error number, or a connection that works from one network and not another | **Draft** — see [The connectivity draft](#the-connectivity-draft) |
+
+`get-connection-details` announces its draft status in its own answers. Its facts are sourced,
+quoted and gated, but three external audits have open findings against them, so treat its answers
+as a reference rather than a verdict.
 
 > **Install the plugin, not `SKILL.md` alone.** The skill reads the two contracts and the decision
 > rules that sit above it in the repository, and installing them together is what keeps the rules and
