@@ -6,7 +6,7 @@
 >
 > **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of August 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
 >
-> **Version.** v2.4 — 10 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
+> **Version.** v2.4 — 12 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**
