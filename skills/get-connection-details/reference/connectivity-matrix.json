@@ -1,6 +1,6 @@
 {
-  "$comment": "Canonical structured source for get-connection-details. Draft v0.1. Prose in docs/sql-server-to-azure-migration-connectivity.md is written FROM this file, never the reverse: the recommend-migration-path skill arrived at canonical constants only after its prose existed, which left the same logic expressed twice. Connectivity is a closed, deterministic domain: a port is 3342 or it is not, so there is no middle tier of confidence. Every row is VERIFIED, meaning its quote was matched against the live Microsoft page, or it does not appear here at all and is listed in open_research instead. Agreement between research runs was explicitly rejected as evidence: two models agreeing usually means one shared training bias, and one run in this batch cited a page that returns 404. UNKNOWN when no quotable source was found. UNKNOWN rows are kept on purpose so gaps stay visible.",
-  "version": "0.2",
+  "$comment": "Canonical structured source for get-connection-details. Draft v0.3. Prose in docs/sql-server-to-azure-migration-connectivity.md is written FROM this file, never the reverse. Each row carries a source and a quote matched against the live page. That is the floor, not a guarantee: a quote proves the cell it supports, not the whole row, not the scope of the claim, and not that the page has no later section qualifying it. An external audit of v0.2 found three material errors that had all passed as verified for exactly that reason - see contradictions[v02-verification-overclaim]. Agreement between research runs is never used as evidence; anything unquotable is listed in open_research instead of being stated.",
+  "version": "0.3",
   "retrieved": "2026-08-12",
   "vocabulary": {
     "target_id": [
@@ -110,7 +110,13 @@
       "connection_type": "proxy, forced regardless of the connection type setting",
       "status": "VERIFIED",
       "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connectivity-architecture-overview",
-      "quote": "Private endpoints always use the Proxy connection type regardless of the connection type setting."
+      "quote": "Private endpoints always use the Proxy connection type regardless of the connection type setting.",
+      "address_stability": "fixed address in the consumer virtual network - the subnet-range rule does NOT apply here",
+      "traffic": "port 1433 only, one direction only",
+      "survives_instance_move": true,
+      "source_url_secondary": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/private-endpoint-overview",
+      "quote_secondary": "it only carries traffic on port 1433 (the standard TDS traffic port)",
+      "$comment": "v0.2 stated \"always allow the whole subnet range on any MI endpoint\". True of VNet-local and public, false here. What does remain true everywhere is connecting by FQDN rather than by address - v0.2 conflated a stable IP with connecting by IP."
     },
     {
       "target_id": "sql-server-on-azure-vm",
@@ -178,7 +184,8 @@
       "support": "supported",
       "status": "VERIFIED",
       "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/virtual-machines/windows/ways-to-connect-to-sql",
-      "quote": "Virtual networks also enable you to join your Azure VMs to a domain. This is the only way to use Windows authentication to SQL Server. The other connection scenarios require SQL authentication with user names and passwords."
+      "quote": "Virtual networks also enable you to join your Azure VMs to a domain. This is the only way to use Windows authentication to SQL Server. The other connection scenarios require SQL authentication with user names and passwords.",
+      "$comment": "Required for remote access unless Active Directory is configured. This is NOT the whole picture: see the entra rows below."
     },
     {
       "target_id": "fabric-warehouse",
@@ -192,9 +199,49 @@
     {
       "target_id": "fabric-sql-database",
       "auth_mode": "sql-authentication",
-      "support": "UNKNOWN",
-      "status": "UNKNOWN",
-      "$comment": "Deliberately unknown. Silence in the docs is not a prohibition, and inferring from fabric-warehouse would be the single most likely source of a wrong answer here."
+      "support": "not-supported",
+      "status": "VERIFIED",
+      "$comment": "v0.2 marked this UNKNOWN on the grounds that the documentation was silent. It was not silent; the wrong page had been read. Logins (server principals) are not supported either.",
+      "source_url": "https://learn.microsoft.com/en-us/fabric/database/sql/authentication#limitations",
+      "quote": "Microsoft Entra ID is the only identity provider SQL database in Fabric supports. Specifically, SQL authentication isn’t supported."
+    },
+    {
+      "target_id": "fabric-sql-database",
+      "auth_mode": "entra-interactive",
+      "support": "supported",
+      "prerequisite": "Read item permission for the database in Fabric",
+      "status": "VERIFIED",
+      "source_url": "https://learn.microsoft.com/en-us/fabric/database/sql/authentication#limitations",
+      "quote": "To successfully authenticate to a SQL database, a Microsoft Entra user, a service principal, or their group, must have the Read item permission for the database in Fabric."
+    },
+    {
+      "target_id": "fabric-sql-database",
+      "auth_mode": "entra-service-principal",
+      "support": "conditional",
+      "prerequisite": "Read item permission AND the \"Service principals can use Fabric APIs\" tenant setting enabled",
+      "status": "VERIFIED",
+      "source_url": "https://learn.microsoft.com/en-us/fabric/database/sql/authentication#limitations",
+      "quote": "To enable service principals to connect to Fabric and to SQL databases, you also need to enable the Service principals can use Fabric APIs Fabric tenant setting.",
+      "$comment": "A tenant-level admin action outside the database. Nothing in the failure message points at it."
+    },
+    {
+      "target_id": "sql-server-on-azure-vm",
+      "auth_mode": "entra-interactive",
+      "support": "conditional",
+      "prerequisite": "SQL Server 2022 (16.x) or later, enabled via the Azure portal",
+      "status": "VERIFIED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/virtual-machines/windows/ways-to-connect-to-sql",
+      "quote": "SQL Server with Microsoft Entra authentication is only supported on SQL Server 2022 (16.x) and later versions.",
+      "$comment": "The version boundary decides the answer: correct on 2022, impossible on 2019."
+    },
+    {
+      "target_id": "sql-server-on-azure-vm",
+      "auth_mode": "entra-integrated",
+      "support": "conditional",
+      "prerequisite": "VM domain-joined inside a virtual network",
+      "status": "VERIFIED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/virtual-machines/windows/ways-to-connect-to-sql",
+      "quote": "Virtual networks also enable you to join your Azure VMs to a domain. This is the only way to use Windows authentication to SQL Server."
     }
   ],
   "driver_syntax": [
@@ -594,6 +641,22 @@
       "note": "Follows from combining two documented facts but is stated nowhere as such. Inferred, not verified. Do not assert without re-checking.",
       "confidence": "low",
       "resolved": false
+    },
+    {
+      "id": "v02-verification-overclaim",
+      "topic": "v0.2 claimed every fact was VERIFIED",
+      "readings": [
+        "a quote proves the cell it supports",
+        "v0.2 read a quote proving one cell as proving the whole row"
+      ],
+      "sources": [
+        "https://learn.microsoft.com/en-us/fabric/database/sql/authentication#limitations",
+        "https://learn.microsoft.com/en-us/azure/azure-sql/virtual-machines/windows/ways-to-connect-to-sql",
+        "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/private-endpoint-overview"
+      ],
+      "note": "Three claims marked VERIFIED were wrong and all three failed the same way. An HTTP 200 proves a page exists, not that a claim is correctly scoped. The register also announced 102 URLs while listing 85, and open_research declared no Go page had been retrieved while the Go documentation sat in the register.",
+      "confidence": "high",
+      "resolved": true
     }
   ],
   "open_research": [
@@ -601,11 +664,6 @@
       "item": "pyodbc connection-string syntax",
       "note": "pyodbc passes ODBC keywords through, but no page was retrieved that states this in quotable form. Use the ODBC rows and say the wrapper was not separately verified.",
       "blocking": false
-    },
-    {
-      "item": "go-mssqldb connection-string syntax",
-      "note": "No page retrieved. Do not infer from the ODBC or JDBC spelling.",
-      "blocking": true
     },
     {
       "item": "sqlcmd authentication flags",
@@ -626,6 +684,94 @@
       "item": "Fabric SQL database SQL-authentication support",
       "note": "Documentation is silent. Silence is not a prohibition and must not be read as one.",
       "blocking": false
+    },
+    {
+      "item": "go-mssqldb syntax",
+      "note": "The Go driver documentation IS listed in the source register, including the Entra authentication page describing the azuread package and the azuresql driver name. v0.2 declared this gap while holding the source. Read and quote it rather than treating it as missing.",
+      "blocking": true
+    },
+    {
+      "item": "SQL VM named instances, dynamic ports, SQL Browser UDP 1434, AG listeners and DNN",
+      "note": "Not researched. A named instance on a dynamic port behaves nothing like the default-instance case documented in section 2.3.",
+      "blocking": false
+    },
+    {
+      "item": "Azure SQL Public network access, logical firewall rules, VNet rules, service tags",
+      "note": "Not researched, and they gate the connection before any endpoint rule applies.",
+      "blocking": false
+    },
+    {
+      "item": "Fabric tenant-level vs workspace-level Private Link",
+      "note": "Different features with different hostname effects. Workspace-level Private Link alters the hostname, so the Azure SQL rule that a private endpoint leaves the FQDN unchanged does not carry over.",
+      "blocking": false
+    },
+    {
+      "item": "Error state and sub-code detail",
+      "note": "The error table keys on the number alone. 18456 without its state does not identify one cause, so the table narrows the search rather than ending it.",
+      "blocking": false
     }
-  ]
+  ],
+  "tls": {
+    "$comment": "TLS sits between the network and the login, so its failures are misread as either. Never resolve one with TrustServerCertificate=True in production.",
+    "order_of_elimination": [
+      "DNS",
+      "TCP",
+      "TLS / pre-login",
+      "token",
+      "database authorisation",
+      "transient faults"
+    ],
+    "breaking_defaults": [
+      {
+        "driver": "dotnet-sqlclient",
+        "version": "4.0",
+        "change": "Encrypt now defaults to True",
+        "status": "VERIFIED",
+        "source_url": "https://learn.microsoft.com/en-us/sql/connect/ado-net/encryption-and-certificate-validation",
+        "quote": "Version 4.0 of Microsoft.Data.SqlClient introduces breaking changes in the encryption settings. `Encrypt` now defaults to `True`."
+      },
+      {
+        "driver": "dotnet-sqlclient",
+        "version": "2.0",
+        "change": "Trust Server Certificate is honoured even when Encrypt=False, if the server forces encryption",
+        "status": "VERIFIED",
+        "source_url": "https://learn.microsoft.com/en-us/sql/connect/ado-net/encryption-and-certificate-validation",
+        "quote": "Now, the server certificate is validated based on the `Trust Server Certificate` setting if the server forces encryption, even if `Encrypt` is set to `False`."
+      },
+      {
+        "driver": "dotnet-sqlclient",
+        "version": "5.0",
+        "change": "Strict mode added - Encrypt is no longer a boolean",
+        "status": "VERIFIED",
+        "source_url": "https://learn.microsoft.com/en-us/sql/connect/ado-net/encryption-and-certificate-validation",
+        "quote": "Strict (added in version 5.0)"
+      },
+      {
+        "driver": "odbc",
+        "version": "18.0.1",
+        "change": "Encrypt default becomes Yes",
+        "status": "VERIFIED",
+        "source_url": "https://learn.microsoft.com/en-us/sql/connect/odbc/using-azure-active-directory",
+        "quote": "The default is also `Yes` in versions 18.0.1+."
+      }
+    ],
+    "certificate_checks": {
+      "checks": [
+        "expiry",
+        "trust chain",
+        "name in the certificate matches the name the client is connecting to"
+      ],
+      "status": "VERIFIED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/ado-net/encryption-and-certificate-validation",
+      "quote": "The certificate is validated for things like expiry, trust chain, and that the name in the certificate matches the name of the server the client is connecting to.",
+      "$comment": "This is why a name that resolves correctly can still fail: a CNAME, a retained legacy server name or a load-balancer alias presents a name the certificate does not carry."
+    },
+    "trust_server_certificate": {
+      "production_use": "never",
+      "diagnostic_use": "if the connection succeeds with it, the fault is the certificate",
+      "status": "VERIFIED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/ado-net/encryption-and-certificate-validation",
+      "quote": "By setting your client to trust the certificate on the server, you might become vulnerable to man-in-the-middle attacks."
+    }
+  }
 }

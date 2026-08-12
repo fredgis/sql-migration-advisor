@@ -1,6 +1,6 @@
 # SQL Server to Azure — connectivity knowledge base
 
-> **Version.** v0.1 — 12 August 2026. Draft. This document is **not** wired into the
+> **Version.** v0.3 — 12 August 2026. Draft. This document is **not** wired into the
 > `recommend-migration-path` skill and does not change any of its facts.
 >
 > **Scope.** How an application connects to an Azure SQL family target, and why a connection
@@ -11,12 +11,16 @@
 > cross-checked. Where the runs disagreed, the disagreement is recorded in §7 rather than averaged
 > away.
 >
-> **Every fact below is VERIFIED**: its supporting sentence was matched against the live Microsoft
-> page. There is no middle tier of confidence, because connectivity is a closed domain — a port is
-> 3342 or it is not. Agreement between research runs was explicitly rejected as evidence: two
-> models agreeing usually means one shared training bias, and one run in this batch cited a page
-> that returns 404. Anything that could not be quoted is not stated here at all; it is listed as
-> open research in §7.5.
+> **What verification here does and does not mean.** Each fact carries a source and a quote that
+> was matched against the live page. That is the floor, not a guarantee. A quote proves the cell it
+> supports — not the whole row it sits in, not the scope of the claim, and not that a page has no
+> further section qualifying it. An external audit of v0.2 found three material errors that had
+> passed as "verified" precisely because a quote proving one cell was read as proving a row. Those
+> are corrected in v0.3 and the incident is recorded in §7.6.
+>
+> **Agreement between research runs is not evidence** and is never used as one. Two models agreeing
+> usually means one shared training bias, and one run in this batch cited a page that returns 404.
+> Anything that cannot be quoted is not stated here; it is listed as open research in §7.5.
 
 ---
 
@@ -115,15 +119,35 @@ fall back to proxy rather than failing.
 > "The benefits of the redirect connection type are only available for SQL clients that support TDS
 > version 7.4 or newer, which was released with SQL Server 2012."
 
-**Always allow the whole subnet range, never a single IP**, on any MI endpoint.
+**The subnet-range rule applies per endpoint, not universally.**
+
+| Endpoint | Rule |
+| --- | --- |
+| VNet-local | Allow the required ports **across the entire subnet range** — the underlying IP can change |
+| Public | Allow 3342 **across the entire subnet range** — same reason |
+| **Private endpoint** | **A fixed address in the consumer VNet.** The subnet-range rule does not apply |
 
 > "always use its domain name and allow inbound traffic on the required ports across the entire
 > subnet range, as the underlying IP address can occasionally change."
+> — [Connectivity architecture for MI](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connectivity-architecture-overview), on the VNet-local endpoint
+
+A private endpoint behaves differently by design. It carries **only port 1433**, only in one
+direction, and it survives the instance moving:
+
+> "it only carries traffic on port 1433 (the standard TDS traffic port)" / "Even if you move the
+> instance to another subnet, any established private endpoints will continue to point to it."
+> — [Private Link for MI](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/private-endpoint-overview)
+
+**What remains true on every endpoint** is the connection string: always the FQDN, never the
+address. Stable IP and connecting by IP are different questions, and v0.2 conflated them.
 
 The public endpoint carries client traffic only.
 
 > "Public endpoints only carry client traffic and can't be used for data replication between two
 > instances, such as failover groups or Managed Instance link."
+
+The VNet-local endpoint is the one to use when a scenario needs ports other than 1433 — failover
+groups, distributed transactions, Managed Instance link.
 
 ### 2.3 SQL Server on Azure VM
 
@@ -200,18 +224,52 @@ Firewall clearance cannot be done by hostname.
 | --- | --- | --- | --- |
 | Azure SQL Database | supported | supported | VERIFIED |
 | Azure SQL Managed Instance | supported | supported | VERIFIED |
-| SQL Server on Azure VM | Windows auth only when domain-joined in a VNet | supported, and required outside that case | VERIFIED |
-| Fabric SQL database | supported | **UNKNOWN — do not assume** | — |
+| SQL Server on Azure VM | **SQL Server 2022 (16.x) and later only** | supported, and required for remote access unless AD is configured | VERIFIED |
+| Fabric SQL database | **the only identity provider** | **not supported** | VERIFIED |
 | Fabric Warehouse | user principals and service principals only | **not supported** | VERIFIED |
 
-> "SQL Authentication isn't supported." — [Warehouse connectivity](https://learn.microsoft.com/en-us/fabric/data-warehouse/connectivity) — VERIFIED
+> "SQL Authentication isn't supported." — [Warehouse connectivity](https://learn.microsoft.com/en-us/fabric/data-warehouse/connectivity)
 
-Fabric Warehouse's prohibition eliminates an entire class of connection string, and it is the
-first thing to check when a Warehouse connection fails with a credential error. **Do not
-generalise it to Fabric SQL database**: the Fabric SQL database documentation is silent on the
-point, and silence is not a prohibition.
+> "Microsoft Entra ID is the only identity provider SQL database in Fabric supports. Specifically,
+> SQL authentication isn't supported." / "Logins (server principals) aren't supported."
+> — [Authentication in SQL database in Fabric](https://learn.microsoft.com/en-us/fabric/database/sql/authentication#limitations)
 
-### 3.2 The prerequisite everyone forgets
+Neither Fabric surface accepts SQL authentication, which eliminates an entire class of connection
+string and is the first thing to check when a Fabric connection fails with a credential error.
+
+**Fabric has prerequisites beyond the database.** An Entra identity that can sign in is still
+refused without them:
+
+- The user, service principal or group needs the **Read item permission** for the database in
+  Fabric.
+
+  > "To successfully authenticate to a SQL database, a Microsoft Entra user, a service principal,
+  > or their group, must have the Read item permission for the database in Fabric."
+
+- Service principals additionally need the **"Service principals can use Fabric APIs" tenant
+  setting** enabled. This is an admin action outside the database, and nothing in the failure
+  message points at it.
+
+- `CREATE USER ... FROM EXTERNAL PROVIDER` requires membership of the **Directory Readers** role in
+  Entra. When connected *as a service principal*, `FROM EXTERNAL PROVIDER` is not usable at all —
+  the application must supply `SID` and `TYPE` explicitly.
+
+### 3.2 SQL Server on Azure VM has three authentication modes, not two
+
+| Mode | Condition |
+| --- | --- |
+| SQL authentication | Required for remote access unless Active Directory is configured |
+| Windows authentication | Only when the VM is domain-joined inside a virtual network |
+| **Microsoft Entra ID** | **SQL Server 2022 (16.x) and later only**, enabled via the Azure portal |
+
+> "SQL Server with Microsoft Entra authentication is only supported on SQL Server 2022 (16.x) and
+> later versions."
+> — [Connect to a SQL Server on Azure VM using Microsoft Entra ID](https://learn.microsoft.com/en-us/azure/azure-sql/virtual-machines/windows/ways-to-connect-to-sql)
+
+The version boundary matters: the same recommendation is correct on SQL Server 2022 and impossible
+on 2019.
+
+### 3.3 The prerequisite everyone forgets
 
 An Entra principal that can sign in to Azure still cannot open a database it has no user in.
 Creating the contained user is a separate, explicit step, and its absence produces a login failure
@@ -289,16 +347,75 @@ is a **missing NuGet package**. Nothing about the network or the identity is wro
 
 Source: [Private endpoint DNS configuration](https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns) — VERIFIED.
 
-The FQDN does not change when a private endpoint is used; **DNS resolution changes**. A private
-endpoint that resolves to the public address is the classic silent failure: the name is right, the
-route is wrong.
-
 Clients on a private endpoint do not need the gateway ranges.
 
 > "Clients connecting to private endpoints don't need connectivity to any of these ranges because a
 > private endpoint has direct connectivity to the gateways."
 
-### 5.2 Never pin an FQDN to an IP
+### 5.2 A private endpoint does not change the FQDN, only its resolution
+
+The name stays the same; where it points does not. An endpoint that resolves to the public address
+is the classic silent failure — right name, wrong route — and it is not visible in the connection
+string.
+
+**This is not universal across Fabric.** Workspace-level Private Link for Fabric alters the
+hostname, unlike the Azure SQL cases above. That behaviour is not researched here and is listed in
+§7.5; do not assume the Azure SQL rule carries over.
+
+### 5.3 TLS and certificate validation
+
+The most common cause of a connection that **stopped** working without anything changing in the
+network or the credential. Driver upgrades changed the defaults, twice.
+
+| Driver | Change | Effect |
+| --- | --- | --- |
+| Microsoft.Data.SqlClient **4.0** | `Encrypt` now defaults to `True` | A connection that worked on 3.x fails on 4.x unless the server has a verifiable certificate |
+| Microsoft.Data.SqlClient **2.0** | `Trust Server Certificate` is honoured even when `Encrypt=False`, if the server forces encryption | Certificate validation starts happening where it previously did not |
+| Microsoft.Data.SqlClient **5.0** | `Strict` mode added | A third value, not a boolean |
+| ODBC Driver **18** | `Encrypt` default becomes `Yes` (18.0.1+) | Same class of regression, on a different upgrade path |
+
+> "Version 4.0 of Microsoft.Data.SqlClient introduces breaking changes in the encryption settings.
+> `Encrypt` now defaults to `True`."
+>
+> "Previously, if `Encrypt` was set to `False`, the server certificate wouldn't be validated,
+> regardless of the `Trust Server Certificate` setting. Now, the server certificate is validated
+> based on the `Trust Server Certificate` setting if the server forces encryption, even if
+> `Encrypt` is set to `False`."
+> — [Encryption and certificate validation](https://learn.microsoft.com/en-us/sql/connect/ado-net/encryption-and-certificate-validation)
+
+**What the certificate is checked against** decides whether a working DNS name is enough:
+
+> "The certificate is validated for things like expiry, trust chain, and that the name in the
+> certificate matches the name of the server the client is connecting to."
+
+This is why a name that resolves correctly can still fail. Connect through a CNAME, a retained
+legacy server name, or a load-balancer alias, and the name presented no longer matches the name in
+the certificate. The migration knowledge base documents the same trap for the retained-server-name
+pattern on Managed Instance, where `HostNameInCertificate` is the client-side answer.
+
+**Do not resolve this with `TrustServerCertificate=True`.** It makes the symptom disappear and
+removes the protection:
+
+> "By setting your client to trust the certificate on the server, you might become vulnerable to
+> man-in-the-middle attacks."
+>
+> "If you deploy a verifiable certificate on the server, ensure client `Encrypt` settings are
+> `True` and `Trust Server Certificate` settings are `False`."
+
+It is a diagnostic step — if the connection succeeds with it, the fault is the certificate — never
+a production setting.
+
+**Order of elimination.** TLS sits between the network and the login, which is why its failures are
+misread in both directions:
+
+```
+DNS  →  TCP  →  TLS / pre-login  →  token  →  database authorisation  →  transient faults
+```
+
+A failure at the TLS step looks like a network problem from one side and a credential problem from
+the other. Establish where the connection actually stops before treating either.
+
+### 5.4 Never pin an FQDN to an IP
 
 > "Never pin Azure SQL server FQDNs to specific IP addresses in hosts files, static CNAME records,
 > or private DNS zones. Azure SQL gateways are dynamic and change over time."
@@ -390,12 +507,38 @@ documentation; nobody has retrieved and quoted them yet. They are listed rather 
 
 | Item | Why it is not stated | Blocking |
 | --- | --- | --- |
-| **Go (`go-mssqldb`) syntax** | No page retrieved. Cannot be inferred from ODBC or JDBC spelling | yes |
 | **`sqlcmd` authentication flags** | No page retrieved. sqlcmd has an ODBC-based and a Go-based implementation with different flags, so inference is unsafe | yes |
 | **pyodbc syntax** | It passes ODBC keywords through, but no page states this quotably. Use the ODBC rows and say the wrapper was not separately verified | no |
 | **Error 4060** | No quotable entry on the troubleshooting page | no |
-| **Fabric SQL database private endpoint** | Not retrieved | no |
-| **Fabric SQL database SQL authentication** | The documentation is silent, and silence is not a prohibition. Must not be inferred from Fabric Warehouse | no |
+| **Named instances, dynamic ports, SQL Browser on UDP 1434, AG listeners and DNN on SQL VM** | Not researched. A named instance on a dynamic port behaves nothing like the default-instance case documented in §2.3 | no |
+| **Azure SQL `Public network access`, logical firewall rules, VNet rules and service tags** | Not researched, and they gate the connection before any of §2.1 applies | no |
+| **Fabric tenant-level versus workspace-level Private Link** | Not researched. They are different features with different hostname effects | no |
+| **Token audience, and user vs service principal vs managed identity differences** | Not researched | no |
+| **Error `state`/sub-code detail** | The table keys on the error number alone. `18456` without its state does not identify a single cause, so the table narrows the search rather than ending it | no |
+
+### 7.6 What an external audit of v0.2 found
+
+Recorded because the failure mode matters more than the individual errors.
+
+Three claims marked VERIFIED were wrong, and all three failed the same way: **a quote proving one
+cell was read as proving the whole row.**
+
+| Claim in v0.2 | Reality |
+| --- | --- |
+| Fabric SQL database SQL auth "UNKNOWN — the documentation is silent" | The documentation is explicit: SQL authentication isn't supported. The page was already listed in §9 |
+| SQL VM: Windows auth via domain, otherwise SQL auth | Omits Microsoft Entra authentication, supported on SQL Server 2022 and later |
+| "Always allow the whole subnet range on **any** MI endpoint" | True of VNet-local and public. False of a private endpoint, which is a fixed address |
+
+Two further findings were process failures rather than fact errors:
+
+- The register announced 102 URLs and listed 85. Both numbers were mine and they contradicted each
+  other.
+- The Go driver documentation sits in the register, yet §7.5 declared that no Go page had been
+  retrieved. **A gap was declared while the source was listed two sections below it.**
+
+The lesson is not "check more carefully". It is that *"silence in the documentation"* is only ever
+a statement about which pages were read. v0.2 twice mistook the edge of its own research for the
+edge of what Microsoft documents.
 
 ---
 
@@ -403,6 +546,8 @@ documentation; nobody has retrieved and quoted them yet. They are listed rather 
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v0.3 | 2026-08-12 | **External audit response. Three claims marked VERIFIED were wrong, and all three failed the same way: a quote proving one cell was read as proving the whole row.** Fabric SQL database was recorded as "SQL authentication UNKNOWN, the documentation is silent" — it is not silent, and the page saying so was already listed in the source register. SQL Server on Azure VM was described as Windows-auth-via-domain or SQL auth, omitting Microsoft Entra authentication on SQL Server 2022 and later; the quote used proved the Windows case only. "Always allow the whole subnet range on any MI endpoint" was true of VNet-local and public and false of a private endpoint, which is a fixed address — a stable IP and connecting by IP had been conflated. Added the TLS section whose absence was indefensible in a document about why connections fail: `Encrypt` defaults changed in SqlClient 4.0 and ODBC 18.0.1, certificate validation changed in SqlClient 2.0, and `TrustServerCertificate=True` is recorded as a diagnostic and never a production setting. Added Fabric's Read item permission and the service principal tenant setting. The header no longer claims that every fact is verified; it states what a quote does and does not prove. Two process failures are recorded rather than quietly fixed: the register announced 102 URLs while listing 85, and open research declared no Go page had been retrieved while the Go documentation sat in the register. |
+| v0.2 | 2026-08-12 | Removed the CONSENSUS tier. Connectivity is a closed domain, so agreement between research runs was rejected as evidence — two models agreeing usually means one shared training bias, and one run cited a page returning 404. ODBC and SQL Server on Azure VM were re-fetched and both proved more precise than the agreement they replaced. Go and sqlcmd were removed rather than guessed. Published the full source register after the first draft cited 9 URLs while the runs had consulted 103. |
 | v0.1 | 2026-08-12 | Initial draft, merged from six independent research runs against learn.microsoft.com. Five facts re-fetched and matched during the merge: MI public endpoint port 3342, MI redirect on 1433 across the subnet range, Fabric Warehouse SQL-authentication prohibition, the MI private DNS zone form, and the JDBC `ActiveDirectoryDefault` keyword. One inter-run contradiction resolved against the live page (§7.1) and two left open (§7.2, §7.5). Not wired into any skill; no fact in `sql-server-to-azure-migration.md` changed. |
 
 
@@ -410,7 +555,7 @@ documentation; nobody has retrieved and quoted them yet. They are listed rather 
 
 ## 9. Source register
 
-Every learn.microsoft.com page consulted by the six research runs behind this document, so a reader can audit what was read and not only what was quoted. All 102 URLs below were fetched during the merge and returned HTTP 200 on 12 August 2026.
+Every learn.microsoft.com page consulted by the six research runs behind this document, so a reader can audit what was read and not only what was quoted. 103 URLs were fetched during the merge. 102 returned HTTP 200, and 17 of those were non-en-us locale duplicates, leaving **85 listed below, which collapse to 65 canonical pages** once `?view=` variants are folded. The v0.2 text claimed "all 102 URLs below" while listing 85 - a self-contradiction in a document whose entire purpose is rigour, and one an external audit caught before any reader did.
 
 Pages marked VERIFIED had their supporting sentence re-fetched and matched word for word. The others resolve and were consulted, which is evidence that a page exists, not that every claim attributed to it is correct.
 
