@@ -281,9 +281,20 @@ function applyManagement(inputs, eligibility, out) {
     eligibility.sql_mi = E.PREFERENCE; eligibility.sql_db = E.PREFERENCE;
     out.exclusions.sql_mi = 'Excluded by the stated management model: Kubernetes on-prem, edge or multi-cloud. Not a technical limit of the target.';
     out.exclusions.sql_db = 'Excluded by the stated management model: Kubernetes on-prem, edge or multi-cloud.';
-    if (/managed engine|arc data controller/.test(k8s)) { eligibility.arc_sql_mi = E.ELIGIBLE; eligibility.container = E.UNSUPPORTED; }
-    else if (/diy|full diy/.test(k8s)) { eligibility.container = E.ELIGIBLE; eligibility.arc_sql_mi = E.UNSUPPORTED; }
-    else setUnknown(eligibility, ['arc_sql_mi', 'container'], 'Kubernetes managed-vs-DIY engine model', out);
+    // Both branches used to mark the losing option UNSUPPORTED, which says the target cannot be
+    // done. Neither is a technical limit: the customer picked one Kubernetes engine model over the
+    // other, and the choice is reversible. The lines above already draw this distinction for
+    // sql_mi and sql_db; these two did not, so the engine contradicted the rule its own knowledge
+    // base states -- "excluded_by_preference is not unsupported".
+    if (/managed engine|arc data controller/.test(k8s)) {
+      eligibility.arc_sql_mi = E.ELIGIBLE;
+      eligibility.container = E.PREFERENCE;
+      out.exclusions.container = 'Excluded by the stated Kubernetes engine model: a managed engine through Arc data services was chosen over a self-run container. Not a technical limit of the target.';
+    } else if (/diy|full diy/.test(k8s)) {
+      eligibility.container = E.ELIGIBLE;
+      eligibility.arc_sql_mi = E.PREFERENCE;
+      out.exclusions.arc_sql_mi = 'Excluded by the stated Kubernetes engine model: a full DIY container was chosen over a managed engine. Arc-enabled SQL Managed Instance remains available if that preference changes.';
+    } else setUnknown(eligibility, ['arc_sql_mi', 'container'], 'Kubernetes managed-vs-DIY engine model', out);
   }
   if (has(inputs.driver, 'data-center exit') && /need os|file-system|file system|engine control/.test(model)) eligibility.avs = E.ELIGIBLE;
 }
@@ -506,11 +517,19 @@ function enforceOutputConsistency(inputs, eligibility, out) {
   delete out.alternativeTarget;
 }
 function applyBackupBlobPath(inputs, out) {
-  // BACKUP-BLOB-PATH. Every backup-based path moves through HTTPS to Azure Blob. A session
-  // reported this gate as `passed` with that path never verified, which is how a cutover date
-  // gets fixed against an assumption. LRS belongs here too: it replays full and log backups
-  // staged in a Blob container, so it depends on the same upload path as a native restore.
-  if (!/backup\/restore|backup and restore|bacpac|data box|\bLRS\b|log replay/i.test(String(out.method ?? ''))) {
+  // BACKUP-BLOB-PATH. A session reported this gate as `passed` with the upload path never
+  // verified, which is how a cutover date gets fixed against an assumption. LRS belongs here:
+  // it replays full and log backups staged in a Blob container, so it depends on the same
+  // upload path as a native restore.
+  //
+  // Data Box used to sit in this list. A weekly review caught it: Data Box is the offline
+  // transport that exists precisely because the network path is blocked or too slow, so gating
+  // it on Blob reachability refused the one method that survives a blocked path. Detach/attach
+  // and a file-level copy move a file without HTTPS to Blob for the same reason.
+  const method = String(out.method ?? '');
+  const blobFree = /data box|detach|attach|file copy|file share/i.test(method);
+  const blobBound = /backup\/restore|backup and restore|bacpac|\bLRS\b|log replay/i.test(method);
+  if (blobFree || !blobBound) {
     out.methodGateStatus = out.methodGateStatus ?? 'passed';
     return;
   }
@@ -520,7 +539,7 @@ function applyBackupBlobPath(inputs, out) {
     return;
   }
   if (/blocked/i.test(blob)) {
-    addUnique(out.hardBlockers, 'BACKUP-BLOB-PATH: HTTPS to Azure Blob is blocked, so no backup-based path can carry the data. Open the path, or select a method that does not traverse Blob.');
+    addUnique(out.hardBlockers, 'BACKUP-BLOB-PATH: HTTPS to Azure Blob is blocked, so this backup-based path cannot carry the data. Open the path, or select a method that does not traverse Blob: Data Box, detach/attach or a file-level copy into a target that has a file system.');
     out.methodGateStatus = 'refused';
   } else {
     // The third state is the whole point. Without it the only way to describe an unverified
@@ -822,6 +841,13 @@ export function evaluate(rawInputs = {}) {
     out.businessCutoverDowntime = cutover;
   }
   if (out.method === 'LRS' && out.tier === 'MI Business Critical') out.lrsBusinessCriticalCutoverCanTakeHours = true;
+  // Log shipping availability is a restore-mode choice, not a property of the method. The shipped
+  // value assumes WITH NORECOVERY, the standard migration configuration. WITH STANDBY makes the
+  // secondary queryable between restore jobs, so the value flips to read-only. A weekly review
+  // caught the rule text calling both modes `unavailable`.
+  if (out.method === 'Log shipping') {
+    addUnique(out.evidenceRequired, 'Log shipping: confirm the secondary restore mode. WITH NORECOVERY leaves the target unavailable; WITH STANDBY makes it read-only between restore jobs, and every restore disconnects the readers. The reported availability assumes NORECOVERY.');
+  }
   if (out.method === 'MI Link' && eligibility.sql_vm !== E.UNSUPPORTED) out.alternativeTarget = 'SQL Server on Azure VM';
   if (out.primaryTarget === 'Azure SQL Database' && eligibility.sql_mi !== E.UNSUPPORTED) out.alternativeTarget = 'Azure SQL Managed Instance';
 

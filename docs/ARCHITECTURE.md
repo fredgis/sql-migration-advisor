@@ -177,6 +177,8 @@ So be precise about what a green suite proves:
 
 The mirror has repeatedly earned its keep anyway, because writing a rule in code forces questions prose lets you avoid. Implementing `BACKUP-BLOB-PATH` revealed that Log Replay Service depends on the same Blob upload path as a native restore — it replays backups staged in a container — which the prose had not said. Implementing `CLR-PERMISSION` in the wrong place made a gate fail, because eligibility was being downgraded after the target had already been chosen.
 
+The traffic runs both ways, and the August 2026 weekly review is the case to remember. There the *mirror* was wrong and the prose was right: it marked the losing Kubernetes engine option `unsupported` on both branches, while `decision-rules.md` states plainly that `excluded_by_preference` is not `unsupported`. No gate caught it, because the golden scenarios asserted only the winning option — a contradiction between two documents that agree on every string they share is invisible to a lexical check. Both scenarios now pin the losing option too, but the general lesson stands: the gates prove a fact is *stated* everywhere it should be, not that two statements of it *mean* the same thing.
+
 ---
 
 ## 6. The 25 gates

@@ -1023,7 +1023,8 @@
     },
     "expect": {
       "eligibility": {
-        "arc_sql_mi": "eligible"
+        "arc_sql_mi": "eligible",
+        "container": "excluded_by_preference"
       },
       "primary_target": "Arc-enabled SQL Managed Instance",
       "method": "Native backup/restore after endpoint is available",
@@ -1057,7 +1058,8 @@
     },
     "expect": {
       "eligibility": {
-        "container": "eligible"
+        "container": "eligible",
+        "arc_sql_mi": "excluded_by_preference"
       },
       "primary_target": "SQL Server in a container",
       "method": "Backup/restore via mounted volume",

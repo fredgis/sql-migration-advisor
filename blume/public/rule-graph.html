@@ -252,7 +252,7 @@
     { id: "MI-LINK-VERSION", type: "hard method gate", fields: ["source_version"], impacts: ["MI Link"], status: "partial", note: "The 2016 floor is applied; an unknown version can fall through to LRS without saying so." },
     { id: "MI-LINK-HOST", type: "hard method gate", fields: ["source_os", "source_edition", "source_version"], impacts: ["MI Link"], status: "ok", note: "Fail-closed on host OS and edition." },
     { id: "MI-LINK-PORTS", type: "hard method gate", fields: ["mi_link_ports"], impacts: ["MI Link"], status: "ok", note: "5022 and 11000-11999 must be confirmed open." },
-    { id: "BACKUP-BLOB-PATH", type: "hard method gate", fields: ["blob_https_reachability"], impacts: ["Native backup/restore", "LRS", "BACPAC / SqlPackage", "Data Box seed \u2192 sync delta"], status: "ok", note: "A blocked path removes the method rather than printing it as refused; LRS is covered because it replays backups staged in Blob." },
+    { id: "BACKUP-BLOB-PATH", type: "hard method gate", fields: ["blob_https_reachability"], impacts: ["Native backup/restore", "LRS", "BACPAC / SqlPackage"], status: "ok", note: "A blocked path removes the method rather than printing it as refused; LRS is covered because it replays backups staged in Blob. Data Box, detach/attach and file-level copies are deliberately out of scope: they are the transports that survive a blocked Blob path." },
     { id: "SOURCE-PERMISSIONS", type: "hard method gate", fields: ["source_permissions"], impacts: ["MI Link", "Transactional replication", "Distributed AG / Always On AG"], status: "ok", note: "Limited rights refuse the method; unstated rights hold it at unknown. The field was declared in the contract and read by nothing." },
     { id: "MI-LINK-CAPACITY", type: "hard method gate", fields: ["database_count", "performance"], impacts: ["MI Link"], status: "ok", note: "100 links on GP and BC, 500 on Next-gen GP." },
     { id: "LRS-VERSION", type: "hard method gate", fields: ["source_version"], impacts: ["LRS"], status: "ok", note: "2008-2022." },
@@ -265,7 +265,7 @@
     { id: "LINKED-SERVERS", type: "hard target gate", fields: ["feature_dependencies"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "MI with remediation; SQL DB refused." },
     { id: "CLR-PERMISSION", type: "hard target gate", fields: ["feature_dependencies", "clr_permission_set"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "SAFE and EXTERNAL_ACCESS need a signature or a trusted hash; UNSAFE and unknown stay to be assessed." },
     { id: "DEPENDENCY-INVENTORY", type: "hard target gate", fields: ["feature_dependencies"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "An empty or unknown list is not an absence." },
-    { id: "MANAGEMENT-MODEL", type: "hard target gate", fields: ["management_model", "kubernetes_model"], impacts: ["SQL Server on Azure VM", "Azure SQL Managed Instance", "Azure SQL Database", "Arc-enabled SQL Managed Instance", "SQL Server in a container"], status: "partial", note: "The mirror returns excluded_by_preference; table A2 still says unsupported." },
+    { id: "MANAGEMENT-MODEL", type: "hard target gate", fields: ["management_model", "kubernetes_model"], impacts: ["SQL Server on Azure VM", "Azure SQL Managed Instance", "Azure SQL Database", "Arc-enabled SQL Managed Instance", "SQL Server in a container"], status: "ok", note: "The mirror and table A1 now agree: a management model rules a target out by preference, never as unsupported, and the losing Kubernetes engine option is recorded as excluded_by_preference on both branches." },
     { id: "ARC-IN-PLACE", type: "hard target gate", fields: ["intent", "source_version"], impacts: ["SQL Server enabled by Azure Arc"], status: "ok", note: "Assess-first and in-place modernization." },
     { id: "ARC-WIZARD-BATCH", type: "hard method gate", fields: ["migration_batch_size", "arc_extension_version"], impacts: ["Azure SQL Managed Instance"], status: "ok", note: "1 database below the minimum extension, 10 from 1.1.3348.364." },
     { id: "FABRIC-TARGET", type: "hard target gate", fields: ["driver"], impacts: ["SQL database in Fabric"], status: "partial", note: "The GA target survives, but the mirror does not always keep Fabric when the Preview assistant is refused." },
@@ -483,7 +483,7 @@
     return {
       nodes,
       edges,
-      meta: "28 addressable rules \u00b7 " + indexedFields.size + " fields consumed \u00b7 amber = partially implemented" + indexedFields.size + " fields consumed · amber = partially implemented",
+      meta: "28 addressable rules \u00b7 " + indexedFields.size + " fields consumed \u00b7 amber = partially implemented",
       legend: [
         ["rule_ok", "Implemented"],
         ["rule_partial", "Partial"],

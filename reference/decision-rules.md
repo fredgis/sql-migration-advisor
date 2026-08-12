@@ -5,7 +5,7 @@ Apply Steps **A → D** in order. Steps map to the two engine phases:
 - **Phase B — Ranking and plan:** Steps B → D. Rank only surviving targets, then choose method, tier, blockers, cost, and assessment.
 
 Regression contract: these rules are a **prompt policy under regression test**. Replaying the same inputs through the rules mirror in `tests/` gives the same result, and 90 golden scenarios enforce it on every commit. The mirror is not what runs in a session: an agent reads these rules and applies them. Treat the contract as a tested policy, not as a guarantee that two runs produce identical wording. Every recommendation must carry the KB version, engine version, and, when available, the source commit SHA and fetch timestamp.
-Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v2.4**, verified August 2026.
+Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v2.5**, verified August 2026.
 
 Three layers, never mixed:
 - **Target** = where the DB ends up (runtime).
@@ -37,7 +37,7 @@ Normalize questionnaire/free-form answers into these fields before filtering:
 | `compliance` | `STANDARD_COMMERCIAL` · `EU_DATA_BOUNDARY` · `GOVERNMENT_SOVEREIGN` · `EDGE_AIR_GAPPED` · unknown |
 | `network_bandwidth` | `GOOD_BANDWIDTH` · `LIMITED_WAN` · `VERY_LARGE_MULTI_TB` · unknown. Drives seeding strategy only. |
 | `mi_link_ports` | `PORTS_CONFIRMED_OPEN` · `PORTS_BLOCKED` · unknown. Only `PORTS_CONFIRMED_OPEN` lets MI Link be confirmed. |
-| `blob_https_reachability` | `BLOB_HTTPS_CONFIRMED` · `BLOB_HTTPS_BLOCKED` · `BLOB_HTTPS_UNKNOWN`. Gates every backup-based path through `BACKUP-BLOB-PATH`; unknown holds the method gate at `unknown_requires_assessment` rather than `passed`. |
+| `blob_https_reachability` | `BLOB_HTTPS_CONFIRMED` · `BLOB_HTTPS_BLOCKED` · `BLOB_HTTPS_UNKNOWN`. Gates the backup-based paths that stage through Azure Blob — Backup to URL, BACPAC, LRS and log replay. It does **not** gate transports that never touch Blob: Data Box, detach/attach and file-level copies into a target that has a file system. Unknown holds the method gate at `unknown_requires_assessment` rather than `passed`. |
 | `clr_permission_set` | `CLR_SAFE` · `CLR_EXTERNAL_ACCESS` · `CLR_UNSAFE` · unknown. Gates `CLR-PERMISSION`. **SAFE is not a clearance**: under `clr strict security` the engine treats SAFE and EXTERNAL_ACCESS as UNSAFE unless signed or hash-trusted. |
 | `tde_status` | `TDE_ENABLED` · `TDE_NOT_ENABLED` · unknown. A backup-based method needs the server certificate in the target before restore. |
 | `source_permissions` | `SYSADMIN_AVAILABLE` · `LIMITED_RIGHTS` · unknown. The SSMS 22 Migration Component requires `sysadmin` on the source. |
@@ -75,7 +75,7 @@ Classify each target independently. Only `eligible` and `eligible_with_remediati
 
 **`excluded_by_preference` is not `unsupported`.** When the stated management model rules a family out — managed PaaS excluding SQL VM, or OS control excluding SQL MI and SQL DB — nothing technical has failed. Record `excluded_by_preference`, name the answer that caused it, and say it can be revisited. `unsupported` is reserved for a target that cannot host the workload as it stands, and a reader six months later must be able to tell the two apart.
 
-| Candidate target | `unsupported` hard blockers | `eligible_with_remediation` examples | Notes |
+| Candidate target | Ruled out when — `unsupported` unless the cell marks it a *preference* | `eligible_with_remediation` examples | Notes |
 | --- | --- | --- | --- |
 | **SQL Server enabled by Azure Arc** *(control plane, in-place)* | none for assessment/control-plane use | Arc onboarding, agent/network prerequisites, paid on-prem ESU | Not a runtime migration target. Use when intent is assess/modernize in place/not ready. |
 | **SQL Server on Azure VM** | none of these rules eliminate it | right-size VM/storage, HA design, patch/backup operations, TDE cert migration | Maximum compatibility and OS/engine control; free ESU on Azure VM applies to SQL Server 2014, SQL Server 2016 ESU is paid even on Azure VM, and SQL Server 2012 and earlier have no remaining ESU path at all. |
@@ -83,8 +83,8 @@ Classify each target independently. Only `eligible` and `eligible_with_remediati
 | **Azure SQL Managed Instance (MI)** | FILESTREAM/FileTable; PolyBase to external RDBMS; heterogeneous DTC to third-party RDBMS; need OS/file-system access; unsupported third-party linked server dependency | SQL Agent jobs usually native; **Service Broker intra-instance is eligible**; **Service Broker cross-instance is in public preview** and therefore gated on `previewAcceptable`; SQL CLR/cross-DB usually compatible but assess; cloud-file PolyBase eligible; homogeneous SQL↔SQL DTC eligible | PaaS lift-and-shift for instance features. Service Broker within a single instance is fully supported. Cross-instance message exchange, MI-to-MI and SQL Server-to-MI, is in **public preview**: `CREATE ROUTE`/`ALTER ROUTE` must specify port 4022, transport security only (`CREATE REMOTE SERVICE BINDING` unsupported). Treat it exactly like the Fabric Migration Assistant: preview refusal removes the capability, never the MI target. Unknown scope still requires a topology assessment. |
 | **Azure SQL Database** | FILESTREAM/FileTable; linked servers; cross-database three-part-name dependency; instance-level CLR/Service Broker dependency; native restore requirement; DTC dependency | refactor SQL Agent jobs to Elastic Jobs/Automation, refactor cross-DB/linked-server patterns, use contained DB model | Use for cloud-native DB-scoped workloads after dependencies are removed. |
 | **SQL database in Fabric** *(GA target; Migration Assistant in Preview)* | complex enterprise OLTP dependency set that the Fabric SQL surface does not support; no viable ingestion path at all | use T-SQL, transactional replication, Fabric pipelines / Data Factory copy jobs, Dataflow Gen2, or TDS-capable tools; if using the Fabric Migration Assistant Preview specifically, its limits are DACPAC > 20 MB, requires Private Link, or cannot use the required on-prem gateway | The target is GA — do **not** apply a target-level preview blocker. Preview acceptance is a *method* gate on the Fabric Migration Assistant only: when preview is unacceptable, keep evaluating the non-assistant ingestion paths. Rank it ahead of general SQL DB when the driver/profile is Fabric analytics; a non-analytics driver lowers its ranking but does not make it `unsupported`. |
-| **Arc-enabled SQL Managed Instance** | no Kubernetes/edge/sovereign requirement; Kubernetes model = full DIY container | Arc data controller prerequisites, storage class, network, HA sizing | Managed engine on Kubernetes: auto patch/backup/HA through Arc data services. |
-| **SQL Server in a container** | requires managed PaaS/managed engine and will not operate DIY | backup/HA/patch/runbook must be built by customer | Dev/test/edge or full DIY containerized SQL Server. |
+| **Arc-enabled SQL Managed Instance** | no Kubernetes/edge/sovereign requirement; Kubernetes model = full DIY container *(preference, not a technical limit — record `excluded_by_preference` and say it can be revisited)* | Arc data controller prerequisites, storage class, network, HA sizing | Managed engine on Kubernetes: auto patch/backup/HA through Arc data services. |
+| **SQL Server in a container** | requires managed PaaS/managed engine and will not operate DIY *(preference, not a technical limit — record `excluded_by_preference` and say it can be revisited)* | backup/HA/patch/runbook must be built by customer | Dev/test/edge or full DIY containerized SQL Server. |
 
 ### A2. Hard compatibility rules (Phase A only)
 
@@ -289,7 +289,7 @@ The source-of-truth downtime model is the pair `targetAvailabilityDuringSync` + 
 | **Transactional replication** | `read-write` (subscriber accessible) | `near-zero` | `minimal` |
 | **DMS offline** | `not-present` | `total migration execution time` | `extended` |
 | **Distributed / Always On AG** | `read-only` (readable secondary, if configured) | `near-zero` (planned failover) | `minimal` |
-| **Log shipping** | `unavailable` (standby/restoring) | `minimal` | `minimal` |
+| **Log shipping** | `read-only` when the secondary is restored WITH STANDBY (queryable between restore jobs, and readers are disconnected for each one); `unavailable` when it is restored WITH NORECOVERY | `minimal` | `minimal` |
 | **BACPAC / bcp / ADF / Data Box** | `not-present` | `full load time` | `extended` |
 
 Rules:
