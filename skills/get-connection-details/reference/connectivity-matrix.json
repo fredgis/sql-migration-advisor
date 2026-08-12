@@ -1,6 +1,6 @@
 {
   "$comment": "Canonical structured source for get-connection-details. Draft v0.3. Prose in docs/sql-server-to-azure-migration-connectivity.md is written FROM this file, never the reverse. Each row carries a source and a quote matched against the live page. That is the floor, not a guarantee: a quote proves the cell it supports, not the whole row, not the scope of the claim, and not that the page has no later section qualifying it. An external audit of v0.2 found three material errors that had all passed as verified for exactly that reason - see contradictions[v02-verification-overclaim]. Agreement between research runs is never used as evidence; anything unquotable is listed in open_research instead of being stated.",
-  "version": "0.3",
+  "version": "0.4",
   "retrieved": "2026-08-12",
   "vocabulary": {
     "target_id": [
@@ -157,12 +157,46 @@
     {
       "target_id": "fabric-warehouse",
       "network_path": "public-endpoint",
-      "fqdn": "<server-unique-identifier>.<tenant>.fabric.microsoft.com",
+      "fqdn": "READ FROM PORTAL - Connection strings pane",
       "port": 1433,
       "firewall_rule": "service tags required; the TDS endpoint FQDN alone is not sufficient",
       "status": "VERIFIED",
       "source_url": "https://learn.microsoft.com/en-us/fabric/data-warehouse/connectivity",
-      "quote": "The SQL connection string requires TCP port 1433 to be open. TCP 1433 is the standard SQL Server port number."
+      "quote": "The SQL connection string requires TCP port 1433 to be open. TCP 1433 is the standard SQL Server port number.",
+      "fqdn_status": "NOT ESTABLISHED",
+      "$comment": "v0.1 asserted <server-unique-identifier>.<tenant>.fabric.microsoft.com and marked the row VERIFIED, but the attached quote proves the port and says nothing about the hostname - the same defect as the three P0s. Another Microsoft page shows a datawarehouse.fabric.microsoft.com form. Treat as portal-derived, like fabric-sql-database."
+    },
+    {
+      "target_id": "azure-sql-database",
+      "network_path": "private-endpoint",
+      "fqdn": "<server>.database.windows.net",
+      "never_use": "<server>.privatelink.database.windows.net, and never the private IP - both fail by design",
+      "port": 1433,
+      "policies": {
+        "redirect": {
+          "ports": [
+            "1433-65535 inbound to the VNet hosting the private endpoint",
+            "1433-65535 outbound from the client VNet"
+          ],
+          "note": "NOT 11000-11999 - that is the public-endpoint range"
+        },
+        "proxy": {
+          "ports": [
+            "1433"
+          ],
+          "note": "documented fallback when the 1433-65535 range cannot be opened"
+        },
+        "default": {
+          "effective": "proxy on 1433 for existing private endpoints",
+          "note": "the policy may need toggling after the endpoint is created"
+        }
+      },
+      "driver_gate": "ODBC, OLE DB, .NET SqlClient and JDBC 9.4+ support redirect; all other drivers are proxied regardless of policy",
+      "status": "VERIFIED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/private-endpoint-overview",
+      "quote": "Allow inbound communication to the VNET hosting the private endpoint to port range 1433 to 65535.",
+      "quote_secondary": "Login attempts made directly to the private IP address or using the private link FQDN (<server>.privatelink.database.windows.net) fail. This behavior is by design because the private endpoint routes traffic to the SQL Gateway, which requires the correct FQDN to route logins successfully.",
+      "$comment": "v0.3 had no private-endpoint row for azure-sql-database at all, so the public-endpoint ports would have been applied by default. Opening 11000-11999 here is not a partial fix: the connection still fails."
     }
   ],
   "auth_support": [
@@ -657,6 +691,20 @@
       "note": "Three claims marked VERIFIED were wrong and all three failed the same way. An HTTP 200 proves a page exists, not that a claim is correctly scoped. The register also announced 102 URLs while listing 85, and open_research declared no Go page had been retrieved while the Go documentation sat in the register.",
       "confidence": "high",
       "resolved": true
+    },
+    {
+      "id": "fabric-warehouse-fqdn",
+      "topic": "Fabric Warehouse FQDN",
+      "readings": [
+        "<server-unique-identifier>.<tenant>.fabric.microsoft.com",
+        "a datawarehouse.fabric.microsoft.com form appears elsewhere"
+      ],
+      "sources": [
+        "https://learn.microsoft.com/en-us/fabric/data-warehouse/connectivity"
+      ],
+      "note": "Not established. Read the value from the portal Connection strings pane rather than composing it.",
+      "confidence": "low",
+      "resolved": false
     }
   ],
   "open_research": [
@@ -773,5 +821,37 @@
       "source_url": "https://learn.microsoft.com/en-us/sql/connect/ado-net/encryption-and-certificate-validation",
       "quote": "By setting your client to trust the certificate on the server, you might become vulnerable to man-in-the-middle attacks."
     }
-  }
+  },
+  "accepted_not_done": [
+    {
+      "item": "six-status taxonomy",
+      "detail": "VERIFIED_DIRECT, VERIFIED_DERIVED, CONFLICT, OPEN, DEPRECATED, STALE_REVIEW_REQUIRED. The current binary VERIFIED cannot express a fact derived from two pages, nor one whose review date has passed.",
+      "why": "A single status hid three P0s: a quote proving one cell was read as proving a row."
+    },
+    {
+      "item": "atomic facts with a composite key",
+      "detail": "target x endpoint_type x client_location x connection_policy x auth_mode x driver x driver_version x network_path.",
+      "why": "The claim that connectivity purely composes is too simple: the network path can force Proxy, the policy changes the ports, the target restricts auth modes, and the driver version gates redirect."
+    },
+    {
+      "item": "volatility-based review dates",
+      "detail": "Each fact carries review_by and a volatility class; high for Fabric, drivers and defaults.",
+      "why": "Nothing currently expires. 57 facts are asserted and none has a review date."
+    },
+    {
+      "item": "claims registry with drift detection",
+      "detail": "Reuse reference/claims-registry.json and tools/weekly-check/verify-claims.mjs, which already hash a source section weekly and fail the build on drift.",
+      "why": "The machinery exists for the migration knowledge base and covers 19 of 209 constants there. Nothing watches these 57 facts."
+    },
+    {
+      "item": "error table as candidate causes",
+      "detail": "Error or symptom -> candidate causes -> discriminating check, with Applies to, Retryable and Escalation columns.",
+      "why": "18456 without its state does not identify one cause, and 26/40/10053 are families rather than diagnoses."
+    },
+    {
+      "item": "close the gaps whose sources are already in the register",
+      "detail": "sqlcmd documents -G, --authentication-method and ActiveDirectoryDefault; the Go pages are listed; error 4060 is on the troubleshooting page already cited.",
+      "why": "The research pipeline does not distinguish source discovered, source opened, claim extracted and claim verified. Three gaps were declared while their sources were in hand."
+    }
+  ]
 }

@@ -1,6 +1,6 @@
 # SQL Server to Azure — connectivity knowledge base
 
-> **Version.** v0.3 — 12 August 2026. Draft. This document is **not** wired into the
+> **Version.** v0.4 — 12 August 2026. Draft. This document is **not** wired into the
 > `recommend-migration-path` skill and does not change any of its facts.
 >
 > **Scope.** How an application connects to an Azure SQL family target, and why a connection
@@ -204,11 +204,17 @@ follows from combining two documented facts; it is not stated in one place. Trea
 
 | Property | Value | Status |
 | --- | --- | --- |
-| FQDN | `<server-unique-identifier>.<tenant>.fabric.microsoft.com` | VERIFIED |
+| FQDN | **read it from the portal's Connection strings pane** | see below |
 | Port | 1433 | VERIFIED |
 
 > "The SQL connection string requires TCP port 1433 to be open. TCP 1433 is the standard SQL Server
 > port number." — [Warehouse connectivity](https://learn.microsoft.com/en-us/fabric/data-warehouse/connectivity)
+
+**The FQDN is not settled and must not be hard-coded.** v0.1 stated
+`<server-unique-identifier>.<tenant>.fabric.microsoft.com` and marked it VERIFIED, but the quote
+above proves the *port* and says nothing about the hostname — the same defect as the three P0s in
+§7.6. Another Microsoft page shows a `…datawarehouse.fabric.microsoft.com` form. Treat the Warehouse
+FQDN exactly like the Fabric SQL database one in §7.2: portal-derived, never asserted.
 
 Firewall clearance cannot be done by hostname.
 
@@ -352,15 +358,60 @@ Clients on a private endpoint do not need the gateway ranges.
 > "Clients connecting to private endpoints don't need connectivity to any of these ranges because a
 > private endpoint has direct connectivity to the gateways."
 
-### 5.2 A private endpoint does not change the FQDN, only its resolution
+### 5.2 Private endpoints — the FQDN stays, the ports do not
 
-The name stays the same; where it points does not. An endpoint that resolves to the public address
-is the classic silent failure — right name, wrong route — and it is not visible in the connection
-string.
+**Never connect to the `privatelink` name or to the private IP.** The private DNS zone is
+`privatelink.database.windows.net`, but that is the zone, not the name a client dials.
 
-**This is not universal across Fabric.** Workspace-level Private Link for Fabric alters the
-hostname, unlike the Azure SQL cases above. That behaviour is not researched here and is listed in
-§7.5; do not assume the Azure SQL rule carries over.
+> "Always use the fully qualified domain name (FQDN) of the server (`<server>.database.windows.net`)
+> in connection strings for all client drivers and tools. Login attempts made directly to the
+> private IP address or using the private link FQDN
+> (`<server>.privatelink.database.windows.net`) fail. This behavior is by design because the
+> private endpoint routes traffic to the SQL Gateway, which requires the correct FQDN to route
+> logins successfully."
+> — [Private Link for Azure SQL Database](https://learn.microsoft.com/en-us/azure/azure-sql/database/private-endpoint-overview)
+
+The name is unchanged; **DNS resolution** changes. An endpoint resolving to the public address is
+the classic silent failure — right name, wrong route.
+
+**The Redirect port range is different on a private endpoint.** This is the correction most likely
+to be got wrong, because the public-endpoint figure is the one everyone remembers:
+
+| Path | Redirect requires |
+| --- | --- |
+| Public endpoint | 1433 to the gateway **and 11000–11999** to regional Azure SQL IPs |
+| **Private endpoint** | **1433 to 65535**, inbound to the endpoint VNet and outbound from the client VNet |
+
+> "Allow **inbound** communication to the VNET hosting the private endpoint to port range 1433 to
+> 65535." / "Allow **outbound** communication from the VNET hosting the client to port range 1433
+> to 65535."
+
+Opening 11000–11999 for a private endpoint in Redirect is not a partial fix; the connection still
+fails.
+
+**Two consequences that decide the answer:**
+
+- **An existing private endpoint on `Default` is running Proxy on 1433**, not Redirect. Setting the
+  policy to Redirect before the endpoint existed may require toggling it afterwards.
+
+  > "Existing private endpoints using **Default** connection policy will be using the Proxy
+  > connection policy with port 1433."
+
+- **Redirect is driver-gated.** ODBC, OLE DB, .NET SqlClient and **JDBC 9.4 or above** support it;
+  everything else is proxied whatever the policy says.
+
+  > "Connections originating from all other drivers are proxied."
+
+If the 1433–65535 range cannot be opened, Microsoft's documented alternative is to set the policy
+to Proxy rather than to work around it.
+
+Clients on a private endpoint do not need the gateway ranges.
+
+> "Clients connecting to private endpoints don't need connectivity to any of these ranges because a
+> private endpoint has direct connectivity to the gateways."
+
+**This does not generalise to Fabric.** Workspace-level Private Link for Fabric alters the
+hostname, unlike the Azure SQL cases above. Not researched here; see §7.5.
 
 ### 5.3 TLS and certificate validation
 
@@ -516,29 +567,57 @@ documentation; nobody has retrieved and quoted them yet. They are listed rather 
 | **Token audience, and user vs service principal vs managed identity differences** | Not researched | no |
 | **Error `state`/sub-code detail** | The table keys on the error number alone. `18456` without its state does not identify a single cause, so the table narrows the search rather than ending it | no |
 
-### 7.6 What an external audit of v0.2 found
+### 7.6 What external audits of v0.1 and v0.2 found
 
 Recorded because the failure mode matters more than the individual errors.
 
-Three claims marked VERIFIED were wrong, and all three failed the same way: **a quote proving one
-cell was read as proving the whole row.**
+**Two independent audits reported the same three P0s**, which is itself evidence they are real.
+All three failed the same way: **a quote proving one cell was read as proving the whole row.**
 
-| Claim in v0.2 | Reality |
+| Claim | Reality |
 | --- | --- |
-| Fabric SQL database SQL auth "UNKNOWN — the documentation is silent" | The documentation is explicit: SQL authentication isn't supported. The page was already listed in §9 |
-| SQL VM: Windows auth via domain, otherwise SQL auth | Omits Microsoft Entra authentication, supported on SQL Server 2022 and later |
+| Fabric SQL database SQL auth "UNKNOWN — the documentation is silent" | Explicit: SQL authentication isn't supported. The page was already listed in §9 |
+| SQL VM: Windows auth via domain, otherwise SQL auth | Omits Microsoft Entra, supported on SQL Server 2022+ |
 | "Always allow the whole subnet range on **any** MI endpoint" | True of VNet-local and public. False of a private endpoint, which is a fixed address |
 
-Two further findings were process failures rather than fact errors:
+The second audit found two more of the same kind:
 
-- The register announced 102 URLs and listed 85. Both numbers were mine and they contradicted each
-  other.
-- The Go driver documentation sits in the register, yet §7.5 declared that no Go page had been
-  retrieved. **A gap was declared while the source was listed two sections below it.**
+| Claim | Reality |
+| --- | --- |
+| Azure SQL Database private endpoint inherits the 11000–11999 Redirect range | It is **1433–65535**. Opening 11000–11999 is not a partial fix; the connection still fails |
+| Fabric Warehouse FQDN, marked VERIFIED | The attached quote proves the port and says nothing about the hostname |
 
-The lesson is not "check more carefully". It is that *"silence in the documentation"* is only ever
-a statement about which pages were read. v0.2 twice mistook the edge of its own research for the
-edge of what Microsoft documents.
+Three findings were process failures rather than fact errors:
+
+- The register announced 102 URLs and listed 85. Both numbers were mine.
+- §7.5 declared that no Go page had been retrieved while the Go documentation sat in §9. The same
+  is true of `sqlcmd` and of error 4060, whose source is the troubleshooting page already cited
+  throughout §6.
+- **The research pipeline does not distinguish *source discovered* from *source opened*, *claim
+  extracted* and *claim verified*.** That single conflation explains every gap above.
+
+The lesson is not "check more carefully". It is that *"the documentation is silent"* is only ever a
+statement about which pages were read. This document twice mistook the edge of its own research for
+the edge of what Microsoft documents.
+
+### 7.7 Accepted and not done
+
+The second audit's structural recommendations are accepted and **not implemented**. They are listed
+so the gap is a decision rather than an oversight, and they are why this knowledge base is still
+not wired into the skill.
+
+| Item | Why it matters here |
+| --- | --- |
+| **Six-status taxonomy** — `VERIFIED_DIRECT`, `VERIFIED_DERIVED`, `CONFLICT`, `OPEN`, `DEPRECATED`, `STALE_REVIEW_REQUIRED` | A binary status hid five errors. It cannot express a fact derived from two pages, nor one whose review date has passed |
+| **Atomic facts on a composite key** — target × endpoint × client location × policy × auth × driver × version × network path | §1's claim that connectivity purely *composes* is too simple. The network path can force Proxy, the policy changes the ports, the target restricts auth modes, and the driver version gates Redirect |
+| **Volatility-based review dates** | Nothing here expires. 57 facts are asserted and not one carries a review date |
+| **Claims registry with drift detection** | The machinery already exists for the migration knowledge base — a weekly hash of each source section that fails the build on drift. It covers 19 of 209 constants there. It covers **0 of 57** here |
+| **Errors as candidate causes** | `18456` without its state does not identify one cause, and 26/40/10053 are families rather than diagnoses |
+
+The claims registry is the one that blocks. Until each fact carries a source hash and a review
+date, "verified" means "true on 12 August 2026" and nothing tells anyone when it stops being true —
+which is exactly how a wrong SQL Server 2014 ESU date survived months in the sibling knowledge
+base.
 
 ---
 
@@ -546,6 +625,7 @@ edge of what Microsoft documents.
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v0.4 | 2026-08-12 | **Second external audit. Two more rows failed the same way as the three P0s: a quote proving one cell was read as proving the row.** Azure SQL Database private endpoints had no row of their own, so the public-endpoint Redirect range would have been applied by default. It is **1433 to 65535**, not 11000–11999, and opening the wrong one leaves the connection failing rather than partly working. Connecting to the `privatelink` FQDN or to the private IP fails by design — something the private DNS zone table implied was fine. An existing private endpoint on `Default` runs Proxy on 1433, and Redirect is gated on the driver: JDBC needs 9.4 or above, and anything outside the documented list is proxied whatever the policy says. The Fabric Warehouse FQDN loses its VERIFIED status, because the quote behind it proved the port and said nothing about the hostname. §7.7 records the structural recommendations as accepted and not done, chief among them a claims registry with drift detection: that machinery already exists for the sibling knowledge base and watches 0 of the 57 facts here. |
 | v0.3 | 2026-08-12 | **External audit response. Three claims marked VERIFIED were wrong, and all three failed the same way: a quote proving one cell was read as proving the whole row.** Fabric SQL database was recorded as "SQL authentication UNKNOWN, the documentation is silent" — it is not silent, and the page saying so was already listed in the source register. SQL Server on Azure VM was described as Windows-auth-via-domain or SQL auth, omitting Microsoft Entra authentication on SQL Server 2022 and later; the quote used proved the Windows case only. "Always allow the whole subnet range on any MI endpoint" was true of VNet-local and public and false of a private endpoint, which is a fixed address — a stable IP and connecting by IP had been conflated. Added the TLS section whose absence was indefensible in a document about why connections fail: `Encrypt` defaults changed in SqlClient 4.0 and ODBC 18.0.1, certificate validation changed in SqlClient 2.0, and `TrustServerCertificate=True` is recorded as a diagnostic and never a production setting. Added Fabric's Read item permission and the service principal tenant setting. The header no longer claims that every fact is verified; it states what a quote does and does not prove. Two process failures are recorded rather than quietly fixed: the register announced 102 URLs while listing 85, and open research declared no Go page had been retrieved while the Go documentation sat in the register. |
 | v0.2 | 2026-08-12 | Removed the CONSENSUS tier. Connectivity is a closed domain, so agreement between research runs was rejected as evidence — two models agreeing usually means one shared training bias, and one run cited a page returning 404. ODBC and SQL Server on Azure VM were re-fetched and both proved more precise than the agreement they replaced. Go and sqlcmd were removed rather than guessed. Published the full source register after the first draft cited 9 URLs while the runs had consulted 103. |
 | v0.1 | 2026-08-12 | Initial draft, merged from six independent research runs against learn.microsoft.com. Five facts re-fetched and matched during the merge: MI public endpoint port 3342, MI redirect on 1433 across the subnet range, Fabric Warehouse SQL-authentication prohibition, the MI private DNS zone form, and the JDBC `ActiveDirectoryDefault` keyword. One inter-run contradiction resolved against the live page (§7.1) and two left open (§7.2, §7.5). Not wired into any skill; no fact in `sql-server-to-azure-migration.md` changed. |
