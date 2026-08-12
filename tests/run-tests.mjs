@@ -778,6 +778,20 @@ try {
         if (v !== expected) failures.push(`${file} declares version ${v}; version.json advertises ${manifest.latest}`);
       }
     }
+    // The on-demand fetch URL is pinned to a release tag. It sat on v2.1.0 while the skill shipped
+    // v2.4, so a user who asked for the live document was served the knowledge base from three
+    // releases back -- including a SQL Server 2014 ESU date that v2.4 corrected. Nothing watched it,
+    // so the drift survived every release in between. The bundled copy is checked above; this
+    // checks that the one document the skill may fetch is the one it claims to ship.
+    const pinned = [...skill.matchAll(/raw\.githubusercontent\.com\/fredgis\/sql-migration-advisor\/(v[\d]+\.[\d]+\.[\d]+)\//gu)];
+    if (pinned.length === 0) {
+      failures.push('SKILL.md pins no release tag for the knowledge-base fetch; a mutable branch means the facts can change under the reader with no version to cite');
+    }
+    for (const [, tag] of pinned) {
+      if (tag !== manifest.latest) {
+        failures.push(`SKILL.md fetches the knowledge base from tag ${tag}; version.json advertises ${manifest.latest}, so the fetched document is not the one the skill ships`);
+      }
+    }
   }
 
   add('version-manifest-current', failures.length === 0,
