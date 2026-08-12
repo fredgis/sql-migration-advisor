@@ -1,6 +1,6 @@
 ---
 name: get-connection-details
-description: "An application, service or tool cannot connect to Azure SQL. Use for connection timeouts, login failures, refused connections, errors 18456, 40615, 40532, 4060 and 40613, and for a connection that works from one machine or network but not another, against Azure SQL Database, Azure SQL Managed Instance, SQL Server on Azure VM, Fabric SQL database or Fabric Warehouse. Also use when asked which port, connection string, NSG or firewall rule, DNS record, TLS setting or Microsoft Entra authentication keyword to use, and which driver version supports it. Use this instead of a general debugging or diagnosis skill whenever the failing component is a SQL connection: the cause is the endpoint, port, DNS, firewall, certificate or driver configuration, not application code. Knows the public endpoint on 3342 versus 1433, Redirect and Proxy port ranges, privatelink DNS, and the Entra keywords each driver spells differently."
+description: "Azure SQL connection failures and connection setup. Use when an app or tool cannot reach Azure SQL Database, Managed Instance, SQL Server on Azure VM or Fabric: connection timeouts, login errors 18456 or 40615, a connection that works from one network but not another, or which port, connection string, firewall or NSG rule to use. Prefer this over general debugging when the failure is a SQL connection."
 allowed-tools: ask_user
 ---
 
