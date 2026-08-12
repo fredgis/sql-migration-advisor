@@ -898,6 +898,56 @@ try {
   add('audit-scenario-coverage', missing.length === 0, missing.length ? missing : [...expected].map(([ref, id]) => `${ref} => ${id}`));
 }
 
+{
+  // The connectivity knowledge base and its structured matrix state the same facts twice, which is
+  // the defect both audits of the migration knowledge base named as its central weakness. Here the
+  // matrix is canonical and the prose is written from it, so this gate exists to catch the two
+  // drifting apart before a reader trusts whichever one they opened.
+  const failures = [];
+  const kbPath = path.join('docs', 'sql-server-to-azure-migration-connectivity.md');
+  const matrixPath = path.join('skills', 'get-connection-details', 'reference', 'connectivity-matrix.json');
+  let matrix = null;
+  try { matrix = JSON.parse(readText(matrixPath)); }
+  catch { failures.push(`${matrixPath} is missing or is not valid JSON`); }
+  const kb = readText(kbPath);
+
+  if (matrix) {
+    if (!kb.includes(`**Version.** v${matrix.version}`)) {
+      failures.push(`${kbPath} does not carry version v${matrix.version}; the matrix and its prose would ship different vintages`);
+    }
+    // Load-bearing values. Each one has already been wrong once, in an audit or in a draft.
+    const mustAgree = [
+      ['3342', 'the Managed Instance public endpoint port'],
+      ['1433 to 65535', 'the Azure SQL Database private-endpoint Redirect range'],
+      ['11000', 'the Azure SQL Database public-endpoint Redirect range'],
+    ];
+    for (const [needle, what] of mustAgree) {
+      const inMatrix = JSON.stringify(matrix).includes(needle.replace(' to ', '-'));
+      if (!kb.includes(needle)) failures.push(`${kbPath} no longer states ${what} (${needle})`);
+      if (!inMatrix) failures.push(`${matrixPath} no longer states ${what} (${needle})`);
+    }
+    // A draft must say so. The skill ships in the plugin, so the status line is the only thing
+    // telling a user which facts are still under review.
+    const skill = readText(path.join('skills', 'get-connection-details', 'SKILL.md'));
+    if (!/Status: draft/u.test(skill)) {
+      failures.push('skills/get-connection-details/SKILL.md no longer declares itself a draft while its knowledge base is still under review');
+    }
+    if (!skill.includes(`v${matrix.version}`)) {
+      failures.push(`skills/get-connection-details/SKILL.md does not quote knowledge base v${matrix.version}`);
+    }
+    // Drift detection has to keep covering the volatile pages, or the facts silently stop expiring.
+    const registry = JSON.parse(readText(path.join('reference', 'claims-registry.json')));
+    const claims = Array.isArray(registry) ? registry : registry.claims;
+    const conn = claims.filter(c => String(c.claim_id).startsWith('conn-'));
+    if (conn.length < 10) failures.push(`only ${conn.length} connectivity claims are registered; the volatile pages are no longer all watched`);
+    const unhashed = conn.filter(c => !c.verification_hash).map(c => c.claim_id);
+    if (unhashed.length) failures.push(`connectivity claims carry no baseline hash, so they can never report drift: ${unhashed.join(', ')}`);
+  }
+
+  add('connectivity-kb-matches-matrix', failures.length === 0,
+    failures.length ? failures : [`Connectivity knowledge base and matrix agree at v${matrix?.version}, the skill declares itself a draft, and ${(JSON.parse(readText(path.join('reference', 'claims-registry.json'))).claims ?? JSON.parse(readText(path.join('reference', 'claims-registry.json')))).filter(c => String(c.claim_id).startsWith('conn-')).length} connectivity claims are hashed for drift.`]);
+}
+
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };
 if (jsonMode) {
   process.stdout.write(JSON.stringify({ summary, results }, null, 2) + '\n');

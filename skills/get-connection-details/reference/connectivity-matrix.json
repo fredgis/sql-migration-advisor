@@ -1,6 +1,6 @@
 {
   "$comment": "Canonical structured source for get-connection-details. Draft v0.3. Prose in docs/sql-server-to-azure-migration-connectivity.md is written FROM this file, never the reverse. Each row carries a source and a quote matched against the live page. That is the floor, not a guarantee: a quote proves the cell it supports, not the whole row, not the scope of the claim, and not that the page has no later section qualifying it. An external audit of v0.2 found three material errors that had all passed as verified for exactly that reason - see contradictions[v02-verification-overclaim]. Agreement between research runs is never used as evidence; anything unquotable is listed in open_research instead of being stated.",
-  "version": "0.5",
+  "version": "0.6",
   "retrieved": "2026-08-12",
   "vocabulary": {
     "target_id": [
