@@ -206,6 +206,44 @@ for (const { artifact, sources, rebuild } of DERIVED) {
   }
 }
 
+// The README carries a table of every surface that quotes a version. A table that claims
+// "everything is in sync" and is maintained by hand is the drift it exists to prevent, so the
+// versions inside it are checked against the knowledge base and the release manifest, and
+// rewritten under --fix-prose. The markers delimit the block so the rest of the README, which
+// legitimately quotes old versions in its changelog, is left alone.
+{
+  const readmePath = path.join(ROOT, 'README.md');
+  const readme = fs.readFileSync(readmePath, 'utf8');
+  const kb = currentKbVersion();
+  const release = JSON.parse(fs.readFileSync(path.join(ROOT, 'version.json'), 'utf8')).latest;
+  const block = readme.match(/<!-- surfaces:start -->[\s\S]*?<!-- surfaces:end -->/u);
+  if (!block) {
+    notes.push('README carries no surfaces table between its markers; skipped');
+  } else if (!kb || !release) {
+    notes.push('could not read the knowledge-base or release version; skipped the surfaces table');
+  } else {
+    // Release versions are three-part and knowledge-base versions two-part, so the three-part
+    // form is rewritten first and its result excluded from the two-part pass.
+    const retagged = block[0]
+      .replace(/\bv\d+\.\d+\.\d+\b/gu, release)
+      .replace(/\bv\d+\.\d+\b(?!\.\d)/gu, kb);
+    if (retagged !== block[0]) {
+      if (fixProse) {
+        fs.writeFileSync(readmePath, readme.replace(block[0], retagged));
+        notes.push(`README surfaces table rewritten to knowledge base ${kb} and release ${release}`);
+      } else {
+        const stale = [...new Set([...block[0].matchAll(/\bv\d+\.\d+(?:\.\d+)?\b/gu)].map(m => m[0]))]
+          .filter(v => v !== kb && v !== release);
+        problems.push({
+          kind: 'prose-version-mismatch', artifact: 'README.md', source: 'docs/sql-server-to-azure-migration.md',
+          fix: 'node tools/artifacts/check-artifacts.mjs --fix-prose',
+          detail: `the surfaces table quotes ${stale.join(', ')}; knowledge base is ${kb} and release ${release}`,
+        });
+      }
+    }
+  }
+}
+
 if (jsonMode) {
   console.log(JSON.stringify({ ok: problems.length === 0, problems, notes }, null, 2));
 } else {

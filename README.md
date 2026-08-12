@@ -68,19 +68,40 @@ version loaded and where it came from, so the advice is traceable.
 - **Freshness gates** — version bumps require substantive diffs; link checks classify bot-blocked pages; high-risk claims are tracked in [`reference/claims-registry.json`](reference/claims-registry.json).
 - **Regression protection** — [`tests/`](tests/) holds 110 golden scenarios and 25 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
 
-## Audit response
+## One version, eleven surfaces
 
-An external audit deliberately challenged the advisor before wider use. It found real P0 issues, and the project treated that as a strength: invite scrutiny, fix the facts, and make drift harder to miss.
+The knowledge base is quoted by a skill, three manifests, a PDF, a poster, this README and a docs site. Each is a place the version can drift, and drift here is not cosmetic: a reader who is served an old fact has no way to know it.
 
-| Audit finding | What changed |
-| --- | --- |
-| Over-confident final-advice framing | Repositioned as a discovery and pre-selection assistant with mandatory assessment-tool and architect validation. |
-| Factual inaccuracies in hard gates | Knowledge base v1.5 corrects PolyBase, DTC, LRS, replication and cross-cloud method constraints. |
-| Hidden uncertainty | Outputs carry confidence, assumptions, unknowns, hard blockers and evidence required. `validated` and `high` were later removed outright: the skill reads no artefact, so it cannot certify one. |
-| Weak freshness governance | Version-gated automation, consistency checks and a claims registry prevent unearned version bumps and catch source drift. |
-| Limited regression coverage | Golden scenarios and anti-regression gates now run in CI. |
+The table is checked, not decorative: `check-artifacts` compares every version below against the knowledge base and the release manifest, fails when one drifts, and rewrites them under `--fix-prose`. A surface that falls behind fails CI instead of waiting to be noticed.
 
-A second external audit, in v2.0.0, went after the design rather than the facts. Its charge was that the repository tested what was easy to test rather than what made the decision. The response is [`docs/NEWDESIGNv2.md`](docs/NEWDESIGNv2.md): input and output contracts, a self-check the skill runs before it answers, an ordered ranking in place of an unweighted table, and a rule index that makes every verdict addressable.
+<!-- surfaces:start -->
+
+| Surface | Version | Follows | Kept honest by |
+| --- | --- | --- | --- |
+| [Knowledge base](docs/sql-server-to-azure-migration.md) | v2.6 | — the source of truth | `version-consistency` · a version bump requires a substantive diff |
+| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | v2.6 | the knowledge base | `rules-data-consistency` · 187 constants re-checked against the prose |
+| `SKILL.md` and its pinned fetch URL | v2.6.0 | the release tag | `version-manifest-current` · the pinned tag must equal the shipped release |
+| `version.json`, `plugin.json`, `marketplace.json` | v2.6.0 | the release | `version-manifest-current` · a manifest left behind fails the build |
+| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | v2.6 | the knowledge base | the **Artifacts coherence** workflow rebuilds them and opens a pull request |
+| Poster caption and PNG | v2.6 | the knowledge base | `check-artifacts --fix-prose`, then the same workflow |
+| This README's badge and PDF sentence | v2.6 | the knowledge base and the PDF | `check-artifacts --fix-prose` · page count, version and month |
+| The six `blume/public/*.svg` mirrors | — | `howto/*.svg` | `check-artifacts` compares them byte for byte |
+| `howto/*.html` | — | nothing — they quote no version | n/a by design |
+| The developer pitch's sample failure block | — | nothing — its values are deliberately wrong, to show a failure | n/a by design |
+| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | v2.6.0 | the release tag | re-ported per release; the port script fails on a stale knowledge base |
+
+<!-- surfaces:end -->
+
+Ask the repository rather than trusting the table:
+
+```bash
+node tools/artifacts/check-artifacts.mjs   # every derived artifact, mirror and version claim
+node tests/run-tests.mjs                   # 25 gates, 110 scenarios
+```
+
+Two of these mechanisms exist because the drift they catch already happened: the poster and this README each advertised a knowledge base two releases old, and the skill once fetched its facts from a tag three releases behind. The table is watched for the same reason.
+
+**Where the audit history went.** Four external audits have now run against this repository. Their findings and the responses are recorded in [`howto/how-the-skill-works.md`](howto/how-the-skill-works.md#audit-response) and, for the design audit that produced the contracts and the self-check, in [`docs/NEWDESIGNv2.md`](docs/NEWDESIGNv2.md).
 
 ---
 
