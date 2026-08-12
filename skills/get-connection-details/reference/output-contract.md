@@ -1,6 +1,6 @@
 # Output contract — `get-connection-details`
 
-> **Draft, v0.6.** This contract belongs to `get-connection-details` only. The
+> **v0.6.** This contract belongs to `get-connection-details` only. The
 > `recommend-migration-path` contracts live at [`reference/output-contract.md`](../../../reference/output-contract.md)
 > and are not affected by anything here.
 
@@ -42,7 +42,7 @@ which in the cases this skill exists for points at the wrong layer.
 
 ## 2. Invariants
 
-Checked against the draft answer before it is shown.
+Checked against the candidate answer before it is shown.
 
 | # | Invariant |
 | --- | --- |
@@ -56,7 +56,7 @@ Checked against the draft answer before it is shown.
 | 8 | **A verification command is present**, or the reason it could not be produced |
 | 9 | **A check is only reported as run if it ran.** Proposing is not running |
 | 10 | **The knowledge-base version is stated**, so the answer is reproducible |
-| 11 | **The draft status is visible** while the knowledge base is under review |
+| 11 | **Open items are named when they apply.** A question landing on §7.5 or §7.1 is answered with the open item, not with a guess |
 | 12 | **Driver syntax is never ported between drivers.** SqlClient spells with spaces, JDBC and ODBC without |
 | 13 | **A version-gated answer states its version condition** — Entra on SQL Server 2022+, Redirect on JDBC 9.4+, ODBC service principal on 17.7+ |
 
@@ -94,7 +94,7 @@ When a consumer asks for structured output:
   "verification": { "command": "<string>", "executed": false, "result": null },
   "unknowns": ["<field or open-research item>"],
   "conflicts": [{ "id": "<contradiction id>", "readings": ["<string>"], "guidance": "<string>" }],
-  "knowledgeBase": { "version": "v0.6", "status": "draft" }
+  "knowledgeBase": { "version": "v0.6" }
 }
 ```
 

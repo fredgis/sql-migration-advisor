@@ -316,12 +316,14 @@ compareAcrossDocs('Azure Arc portal MI wizard database batch limit', consistency
         if (unhashed.length) errors.push(`connectivity claims without a baseline hash can never report drift: ${unhashed.join(', ')}`);
       }
 
-      // While the knowledge base is under review, the status line is the only thing telling a user
-      // which facts are provisional. It ships to every plugin installer.
+      // The skill must quote its knowledge-base version so an answer is reproducible, and must not
+      // tell the reading model it is unfit for use. A "must not be presented as ready" banner in the
+      // body made the model select the skill and then answer from its own knowledge instead, which
+      // is worse than either shipping it or removing it. The draft caveat belongs in the README.
       if (fs.existsSync(CONN_SKILL)) {
         const connSkill = read(CONN_SKILL);
-        if (!/Status: draft/.test(connSkill)) {
-          errors.push('get-connection-details no longer declares itself a draft while its knowledge base is under review');
+        if (/must not be presented|do not use this skill|under design/i.test(connSkill)) {
+          errors.push('get-connection-details tells the model not to use it, which prevents it from running once selected');
         }
         if (!connSkill.includes(`v${matrix.version}`)) {
           errors.push(`get-connection-details does not quote connectivity KB v${matrix.version}`);

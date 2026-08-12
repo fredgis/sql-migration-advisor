@@ -1,6 +1,6 @@
 # Input contract — `get-connection-details`
 
-> **Draft, v0.6.** This contract belongs to `get-connection-details` only. The
+> **v0.6.** This contract belongs to `get-connection-details` only. The
 > `recommend-migration-path` contracts live at [`reference/input-contract.md`](../../../reference/input-contract.md)
 > and are not affected by anything here.
 

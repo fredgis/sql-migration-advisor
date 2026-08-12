@@ -1,7 +1,9 @@
 # SQL Server to Azure — connectivity knowledge base
 
-> **Version.** v0.6 — 12 August 2026. Draft. This document is **not** wired into the
-> `recommend-migration-path` skill and does not change any of its facts.
+> **Version.** v0.6 — 12 August 2026. Ships in the `sql-migration-advisor` plugin as the
+> knowledge base for `get-connection-details`. It changes no fact in
+> [`sql-server-to-azure-migration.md`](sql-server-to-azure-migration.md), which serves the
+> migration skill and is maintained separately.
 >
 > **Scope.** How an application connects to an Azure SQL family target, and why a connection
 > fails. It deliberately excludes migration methods, tuning, pricing and licensing, which live in

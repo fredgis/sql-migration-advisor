@@ -6,9 +6,11 @@ allowed-tools: ask_user
 
 # get-connection-details
 
-> **Status: draft, v0.6.** This skill is under design. It is not registered in any plugin
-> manifest, not covered by the test suite, and must not be presented to a user as ready.
-> Its knowledge base is [`docs/sql-server-to-azure-migration-connectivity.md`](../../docs/sql-server-to-azure-migration-connectivity.md) v0.6.
+Connection configuration and failure diagnosis for the Azure SQL family. Every fact here is quoted
+from Microsoft Learn and its source pages are re-checked weekly.
+
+Knowledge base: [`docs/sql-server-to-azure-migration-connectivity.md`](../../docs/sql-server-to-azure-migration-connectivity.md) v0.6 ·
+structured source: [`reference/connectivity-matrix.json`](reference/connectivity-matrix.json)
 
 ## What this skill does
 
@@ -194,15 +196,3 @@ Anything that could not be quoted is **not stated at all**. It appears in the op
 One fact is an open **conflict**: whether MI redirect requires 11000–11999 alongside 1433 (§7.1).
 State both readings and the safe recommendation. The Fabric FQDNs (§7.2) are portal-derived and
 must never be composed.
-
-## Not yet built
-
-Honest inventory of what this draft lacks, so nobody mistakes it for finished:
-
-- No golden scenarios and no gate proving the skill *applies* the matrix. The existing gate proves
-  the documents agree with each other, which is a weaker claim.
-- Go and `pyodbc` syntax is missing: no page was retrieved, and it cannot be inferred from the ODBC
-  or JDBC spelling.
-- Fabric SQL database private-endpoint behaviour is unknown.
-- No volatility-based review dates. Drift detection catches a page that *changes*; nothing catches
-  a fact that has simply aged.

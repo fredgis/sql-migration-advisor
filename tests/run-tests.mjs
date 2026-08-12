@@ -926,11 +926,17 @@ try {
       if (!kb.includes(needle)) failures.push(`${kbPath} no longer states ${what} (${needle})`);
       if (!inMatrix) failures.push(`${matrixPath} no longer states ${what} (${needle})`);
     }
-    // A draft must say so. The skill ships in the plugin, so the status line is the only thing
-    // telling a user which facts are still under review.
+    // The skill must state its knowledge-base version so an answer is reproducible, and must point
+    // at the open items rather than claiming completeness. It must NOT tell the reading model that
+    // it is unfit for use: a "must not be presented as ready" banner in the body made the model
+    // select the skill and then answer from its own knowledge instead, which is worse than either
+    // shipping it or removing it.
     const skill = readText(path.join('skills', 'get-connection-details', 'SKILL.md'));
-    if (!/Status: draft/u.test(skill)) {
-      failures.push('skills/get-connection-details/SKILL.md no longer declares itself a draft while its knowledge base is still under review');
+    if (/must not be presented|do not use this skill|under design/iu.test(skill)) {
+      failures.push('skills/get-connection-details/SKILL.md tells the model not to use it, which makes it select the skill and then answer from its own knowledge instead');
+    }
+    if (!/§7\.5|open item|unresolved conflict/iu.test(skill)) {
+      failures.push('skills/get-connection-details/SKILL.md no longer points at its open items, so it reads as complete when it is not');
     }
     if (!skill.includes(`v${matrix.version}`)) {
       failures.push(`skills/get-connection-details/SKILL.md does not quote knowledge base v${matrix.version}`);
