@@ -167,30 +167,41 @@ falsifiable:
 If a tool is missing or the network is unavailable, say the check could not be run. Never report a
 check that did not execute.
 
-## Sources
+## Sources and contracts
 
 All facts come from [`docs/sql-server-to-azure-migration-connectivity.md`](../../docs/sql-server-to-azure-migration-connectivity.md)
 and its structured source [`reference/connectivity-matrix.json`](reference/connectivity-matrix.json).
 
-**Every stated fact is VERIFIED** — its supporting sentence was matched against the live Microsoft
-page. There is no middle tier of confidence, because connectivity is a closed domain: a port is
-3342 or it is not. Agreement between research runs was rejected as evidence, since two models
-agreeing usually means one shared training bias.
+The interview and the answer are governed by this skill's own contracts:
 
-Anything that could not be quoted is **not stated at all**. It appears in the knowledge base's
-open-research list (§7.5), and the skill must say it does not know rather than reason towards a
-plausible answer.
+- [`reference/input-contract.md`](reference/input-contract.md) — the identifiers the interview may
+  produce, the three absence markers, question order, and the combinations that are invalid rather
+  than merely unusual.
+- [`reference/output-contract.md`](reference/output-contract.md) — the two card shapes, the 13
+  invariants checked before an answer is shown, the machine-readable form, and when to refuse.
 
-Open contradictions are in §7. The Fabric SQL database FQDN (§7.2) is unresolved and must be
-surfaced to the user rather than decided.
+These are **separate from** the `recommend-migration-path` contracts at the repository root. The
+two skills share a repository and a plugin, not a vocabulary.
+
+**Every stated fact carries a source and a matched quote.** That is the floor, not a guarantee: a
+quote proves the cell it supports, not the whole row, not the scope of the claim. Three external
+audits each found rows where that distinction had been lost — see §7.6 of the knowledge base.
+
+Anything that could not be quoted is **not stated at all**. It appears in the open-research list
+(§7.5), and the skill says it does not know rather than reasoning towards a plausible answer.
+
+One fact is an open **conflict**: whether MI redirect requires 11000–11999 alongside 1433 (§7.1).
+State both readings and the safe recommendation. The Fabric FQDNs (§7.2) are portal-derived and
+must never be composed.
 
 ## Not yet built
 
 Honest inventory of what this draft lacks, so nobody mistakes it for finished:
 
-- No input contract, no output contract.
-- No golden scenarios, no CI gate, no entry in the plugin manifests. Nothing yet guarantees that
-  the prose and the structured matrix agree.
-- Go and `sqlcmd` syntax is missing and **blocking** for those clients: no page was retrieved, and
-  it cannot be inferred from the ODBC or JDBC spelling.
-- Fabric SQL database private-endpoint behaviour and SQL-authentication support are unknown.
+- No golden scenarios and no gate proving the skill *applies* the matrix. The existing gate proves
+  the documents agree with each other, which is a weaker claim.
+- Go and `pyodbc` syntax is missing: no page was retrieved, and it cannot be inferred from the ODBC
+  or JDBC spelling.
+- Fabric SQL database private-endpoint behaviour is unknown.
+- No volatility-based review dates. Drift detection catches a page that *changes*; nothing catches
+  a fact that has simply aged.

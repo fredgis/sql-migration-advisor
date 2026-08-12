@@ -75,6 +75,11 @@ The runtime process:
 
 ## 3. The three main parts
 
+> **Two skills ship in this plugin.** Everything in sections 3 to 7 describes
+> `recommend-migration-path`, which is production. The second skill,
+> `get-connection-details`, is a **draft under review** and is described in §15. It is installed
+> alongside this one because skills are discovered from `skills/`, not declared in a manifest.
+
 ### `skills/recommend-migration-path/SKILL.md`
 
 `SKILL.md` controls the behaviour of the agent. It is the skill the CLI activates, and it defers the
@@ -1148,6 +1153,95 @@ Pull requests
 ```
 
 Together, these parts transform a general Copilot agent into a safer, current and explainable SQL Server migration advisor.
+
+---
+
+## 15. The second skill — `get-connection-details`
+
+**Status: draft.** It ships in the plugin and is reachable by a user, so it is documented here
+rather than hidden. Its own status line says the same thing.
+
+### What it is for
+
+The advisor answers *where should this estate go* and stops at the recommendation. The question
+that immediately follows — *how do I connect to it, and why is it refusing me* — is a different
+problem with a different shape.
+
+Two real tickets illustrate it:
+
+- The same code times out on App Service and works from a laptop. They reach different Managed
+  Instance endpoints: VNet-local on 1433 over VPN, public endpoint on **3342** from outside. The
+  string names 1433 in both, so it resolves the right server on a port nothing listens on. A
+  timeout rather than an authentication error, which is why the port is the last suspect.
+- Error 18456 from one network only. Every signal says credentials; the cause is a DNS override
+  pinning the FQDN to a retired gateway, rejected by design.
+
+The pattern is constant: **the symptom points at the wrong layer.** That is where an untooled model
+answers confidently and wrongly.
+
+### Why it composes, and the advisor does not
+
+Migration rules interact: size changes the target, which changes the eligible methods, which
+reopens the network question. That is why §5 needs an ordered Phase A and Phase B.
+
+Connectivity does not interact that way. Each element of the answer depends on a small independent
+slice of the input:
+
+| Output | Depends on |
+| --- | --- |
+| FQDN | target × network path |
+| Ports | target × connection policy |
+| Auth keyword | auth mode × driver |
+| Network prerequisites | network path |
+| Identity prerequisites | auth mode × target |
+
+Small tables that compose, rather than a graph of rules that influence one another. That is what
+makes the domain exhaustively testable — and it is the strongest argument for building this skill
+before the harder ones on the board.
+
+### Structured source first
+
+The canonical source is
+[`connectivity-matrix.json`](../skills/get-connection-details/reference/connectivity-matrix.json)
+and the prose is written from it, never the reverse.
+
+This is a deliberate correction of how the first skill grew. `recommend-migration-path` reached
+canonical constants only after its prose existed, which left the same logic expressed twice — the
+central structural finding of both external audits of this repository. Starting structured costs
+nothing now and avoids inheriting that debt.
+
+The two skills share a repository and a plugin, **not a vocabulary**. The connectivity contracts
+live in the skill's own folder and are independent of the root contracts.
+
+### What protects it
+
+| Mechanism | What it catches |
+| --- | --- |
+| `connectivity-kb-matches-matrix` (CI gate) | Prose and matrix disagreeing on version or on three load-bearing values; the draft status disappearing; claims losing their baseline hash |
+| 10 claims in the weekly check | The Microsoft pages behind the volatile facts changing under us |
+| Input contract | Free text promoted to a decision input; invalid combinations accepted silently |
+| Output contract, 13 invariants | A credential emitted, a value not traceable to the matrix, a check reported as run when it was proposed |
+
+The gate earned its place on its first run by catching the matrix left at v0.5 while the prose moved
+to v0.6.
+
+### What it still lacks
+
+- **No golden scenarios.** The gate proves the documents agree with each other, which is weaker
+  than proving the skill applies them.
+- **No review dates.** Drift detection catches a page that *changes*; nothing catches a fact that
+  has simply aged — and §7.1 of its knowledge base carries the words "until further notice".
+- **One open conflict**: whether MI redirect needs 11000–11999 alongside 1433. The guidance opens
+  both, because being wrong that way costs unused ports inside the customer's own subnet, while
+  being wrong the other way costs a failed production connection.
+- Go and pyodbc syntax, Fabric private-endpoint behaviour, and the firewall layer that gates the
+  connection before any endpoint rule applies.
+
+### Why it is not in the Microsoft repository
+
+The port script copies **named files** under `recommend-migration-path` only. It is a whitelist,
+not a directory sweep, so nothing here can reach `microsoft/sql-migration-agent` without an
+explicit change to that script.
 
 ---
 

@@ -86,15 +86,24 @@ A second external audit, in v2.0.0, went after the design rather than the facts.
 
 ## What's inside
 
+**Two skills ship in this plugin.** `recommend-migration-path` is production. `get-connection-details`
+is a **draft under review** — it is installed alongside the other one because skills are discovered
+from `skills/`, and it says so in its own status line. Its facts are sourced and gated, but three
+external audits have open findings against them, so treat its answers as a reference rather than a
+verdict. See [§ The connectivity draft](#the-connectivity-draft).
+
 | Path | Purpose |
 | --- | --- |
 | [`skills/recommend-migration-path/SKILL.md`](skills/recommend-migration-path/SKILL.md) | The skill — trigger description, principles, the two-tier interview (triage, then confirmation), and the output-card template. |
+| [`skills/get-connection-details/SKILL.md`](skills/get-connection-details/SKILL.md) | **Draft.** The second skill: how to connect an application to an Azure SQL family target, and why a connection is failing. Picks up where the advisor stops. |
+| [`skills/get-connection-details/reference/connectivity-matrix.json`](skills/get-connection-details/reference/connectivity-matrix.json) | **Draft.** The canonical structured source for connectivity facts. The prose is written from this file, not the reverse. |
 | [`reference/input-contract.md`](reference/input-contract.md) | What the interview may produce: 30 stable option IDs, 20 canonical field names, and the difference between *confirmed none* and *nobody checked*. |
 | [`reference/output-contract.md`](reference/output-contract.md) | What an answer must look like, and the 13 invariants the skill checks against its own draft before showing it. |
 | [`reference/decision-rules.md`](reference/decision-rules.md) | The decision policy: Phase A eligibility filter, Phase B ordered ranking and tier selection, and the index of all 28 addressable rules. |
 | [`examples/sample-recommendation.md`](examples/sample-recommendation.md) | A worked end-to-end example (SQL 2014 → Azure SQL MI via LRS). |
 | [`docs/sql-server-to-azure-migration.md`](docs/sql-server-to-azure-migration.md) | The knowledge base — every target family, method, tool, and commercial lever, with Microsoft Learn links. |
-| [`reference/claims-registry.json`](reference/claims-registry.json) | Hashes and source pointers for high-risk claims, used by weekly drift detection. |
+| [`docs/sql-server-to-azure-migration-connectivity.md`](docs/sql-server-to-azure-migration-connectivity.md) | **Draft.** The connectivity knowledge base: endpoints, ports, authentication, driver syntax, TLS, DNS and error diagnosis, with a source register and an open-questions section. |
+| [`reference/claims-registry.json`](reference/claims-registry.json) | Hashes and source pointers for high-risk claims, used by weekly drift detection. 29 claims: 19 for the migration knowledge base, 10 for connectivity. |
 | [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) | The same knowledge base as a branded, partner-ready PDF. |
 | [`lab/`](lab/) | A self-contained, hands-on lab: take a legacy SQL Server 2016 workload to a SQL Server on Azure VM, driven by the advisor and the HVE Squad (VM-to-VM migration). |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Deep dive: what the plugin is, how a session runs end to end, what the 24 gates defend, and where it can still be wrong. |
@@ -103,7 +112,37 @@ A second external audit, in v2.0.0, went after the design rather than the facts.
 | [`blume/`](blume/) | Source for the online docs page — [fredgis.github.io/sql-migration-advisor](https://fredgis.github.io/sql-migration-advisor/) — a friendly overview of how the skill works and stays up to date. |
 | [`tests/`](tests/) | Golden scenarios and anti-regression gates that keep the decision policy honest. |
 
-The skill is prompt-driven markdown — no build step, no dependencies.
+The skills are prompt-driven markdown — no build step, no dependencies.
+
+---
+
+## The connectivity draft
+
+`get-connection-details` answers the question that follows a migration: *how do I connect to this
+thing, and why is it refusing me?* It is deliberately a different shape from the advisor. Migration
+rules interact — size changes the target, which changes the eligible methods. Connectivity
+**composes**: the FQDN comes from target × network path, the ports from target × connection policy,
+the auth keyword from auth mode × driver.
+
+**Two examples of what it is for**, both real support tickets:
+
+- The same code times out on App Service and works from a laptop. The two reach different Managed
+  Instance endpoints — VNet-local on 1433 over VPN, public endpoint on **3342** from outside. The
+  connection string names 1433 in both, so it resolves the right server on a port nothing listens
+  on. A timeout, not an auth error, which is why the port is the last thing anyone suspects.
+- Error 18456 from one network only. Every signal says credentials; the cause is a DNS override
+  pinning the FQDN to a retired gateway, which the gateway rejects by design.
+
+**Why it is still a draft.** Three external audits have run against it. All three found real errors,
+and all three failed the same way: a quote proving one cell was read as proving a whole row. The
+corrections are in, the reasoning is recorded in §7.6 of the knowledge base, and the open items are
+listed in §7.7 — chiefly volatility-based review dates, atomic facts, and errors expressed as
+candidate causes rather than single diagnoses. One fact remains an open **conflict**: whether MI
+redirect needs 11000–11999 alongside 1433. The guidance opens both, because being wrong that way
+costs unused ports while being wrong the other way costs a failed production connection.
+
+**What protects it today.** Ten claims watch the volatile source pages weekly and fail the build on
+drift, and a CI gate keeps the prose and the structured matrix from disagreeing.
 
 ---
 
