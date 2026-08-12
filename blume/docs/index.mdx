@@ -68,6 +68,20 @@ The agent reads them at runtime.
 
 ---
 
+## Explore the rules
+
+<a href={`${import.meta.env.BASE_URL}/rule-graph.html`}>Open the interactive rule graph →</a>
+
+Three views over the same policy: the documented paths to each target, the 28 addressable rules with
+the fields each one consumes, and the coverage of the 110 scenarios replayed on every commit. Select a
+node to isolate its relations.
+
+Enumerating the profiles literally is not an option — more than 13.9 billion combinations before the
+conditional fields, and free-text fields make the space unbounded — so the graph shows the relations in
+compressed form instead.
+
+---
+
 ## How the agent uses it
 
 <img src={`${import.meta.env.BASE_URL}/runtime-loop.svg`} alt="Runtime loop: user request to skill, guided interview, scoring against the knowledge base, and a grounded recommendation card" />

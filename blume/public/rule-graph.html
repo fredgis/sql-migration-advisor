@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sql-migration-advisor — graphe des règles</title>
+<meta name="description" content="Cibles, méthodes, 28 règles adressables, 73 identifiants canoniques et 110 scénarios testés, sous forme de graphe interactif.">
+<style>
+  body {
+    margin: 0;
+    padding: 2rem 1.25rem 3rem;
+    background: #ffffff;
+    color: #1c2024;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 68rem; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin: 0 0 0.35rem; }
+  .lede { margin: 0 0 1.5rem; color: #6b7280; max-width: 46rem; line-height: 1.55; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #0f1216; color: #e6e8ea; }
+    .lede { color: #9aa3ad; }
+    #sql-migration-rule-graph {
+      --foreground: #e6e8ea; --muted-foreground: #9aa3ad; --border: #2a3038;
+      --card: #151a20; --green: #3fb950; --destructive: #f85149;
+    }
+  }
+</style>
+</head>
+<body>
+<main>
+<h1>Règles et chemins de migration SQL Server vers Azure</h1>
+<p class="lede">Trois vues : les chemins documentés vers chaque cible, les 28 règles adressables avec les champs qu’elles consomment, et la couverture des 110 scénarios rejoués à chaque commit. Sélectionnez un nœud pour isoler ses relations.</p>
+<div id="sql-migration-rule-graph">
+  <div class="viz-controls" aria-label="Vue du graphe">
+    <button type="button" class="btn" data-view="paths" aria-pressed="true">Chemins documentés</button>
+    <button type="button" class="btn" data-view="rules" aria-pressed="false">Règles</button>
+    <button type="button" class="btn" data-view="coverage" aria-pressed="false">Couverture testée</button>
+  </div>
+
+  <div class="smg-meta text-small text-muted" aria-live="polite"></div>
+  <div class="smg-network" data-network role="img" aria-label="Graphe des règles et chemins de migration SQL Server vers Azure"></div>
+  <div class="smg-legend viz-row text-small" aria-label="Légende"></div>
+  <p class="smg-detail text-small" aria-live="polite">Sélectionnez un nœud pour isoler ses relations.</p>
+  <p class="sr-only">Le graphe comporte trois vues : chemins documentés, dépendances des règles, et couverture des scénarios de test.</p>
+</div>
+
+<style>
+  /* Every custom property carries a fallback, so the graph renders on its own as a file
+     and still adopts the host theme when embedded in a page that defines them. */
+  #sql-migration-rule-graph {
+    --smg-fg: var(--foreground, #1c2024);
+    --smg-muted: var(--muted-foreground, #6b7280);
+    --smg-border: var(--border, #d7dbe0);
+    --smg-surface: var(--card, #ffffff);
+    --smg-primary: var(--primary, #2f6feb);
+    --smg-green: var(--green, #1f9254);
+    --smg-destructive: var(--destructive, #d1495b);
+    --smg-s1: var(--viz-series-1, #2f6feb);
+    --smg-s2: var(--viz-series-2, #6f42c1);
+    --smg-s3: var(--viz-series-3, #0e7490);
+    --smg-s4: var(--viz-series-4, #b45309);
+    --smg-s5: var(--viz-series-5, #c2410c);
+    --smg-s6: var(--viz-series-6, #4b5563);
+
+    width: 100%;
+    color: var(--smg-fg);
+    font-family: var(--font-sans, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+    font-size: var(--font-size-base, 15px);
+    line-height: 1.5;
+  }
+  #sql-migration-rule-graph .viz-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  #sql-migration-rule-graph .btn {
+    appearance: none;
+    cursor: pointer;
+    padding: 0.4rem 0.85rem;
+    border: 1px solid var(--smg-border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--smg-muted);
+    font: inherit;
+    font-size: 0.9em;
+    transition: color 120ms ease, border-color 120ms ease, background-color 120ms ease;
+  }
+  #sql-migration-rule-graph .btn:hover {
+    color: var(--smg-fg);
+    border-color: var(--smg-fg);
+  }
+  #sql-migration-rule-graph .btn[aria-pressed="true"] {
+    color: var(--smg-surface);
+    background: var(--smg-fg);
+    border-color: var(--smg-fg);
+  }
+  #sql-migration-rule-graph .btn:focus-visible {
+    outline: 2px solid var(--smg-primary);
+    outline-offset: 2px;
+  }
+  #sql-migration-rule-graph .smg-meta {
+    margin-block: 0.75rem 0.5rem;
+    color: var(--smg-muted);
+    font-size: 0.875em;
+  }
+  #sql-migration-rule-graph .smg-network {
+    width: 100%;
+    height: 620px;
+    min-height: 520px;
+    position: relative;
+    border: 1px solid var(--smg-border);
+    border-radius: 0.75rem;
+    background: var(--smg-surface);
+  }
+  #sql-migration-rule-graph .smg-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem 1.25rem;
+    margin-top: 0.75rem;
+    font-size: 0.875em;
+    color: var(--smg-muted);
+  }
+  #sql-migration-rule-graph .smg-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  #sql-migration-rule-graph .smg-swatch {
+    width: 1.25rem;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: var(--smg-border);
+  }
+  #sql-migration-rule-graph .smg-swatch.is-dashed {
+    height: 0;
+    border-top: 2px dashed var(--smg-destructive);
+    background: transparent;
+  }
+  #sql-migration-rule-graph .smg-detail {
+    min-height: 3rem;
+    margin: 0.75rem 0 0;
+    padding: 0.6rem 0.8rem;
+    border-left: 3px solid var(--smg-border);
+    background: color-mix(in srgb, var(--smg-border) 18%, transparent);
+    border-radius: 0 0.4rem 0.4rem 0;
+    color: var(--smg-fg);
+    font-size: 0.9em;
+  }
+  #sql-migration-rule-graph .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  @media (max-width: 480px) {
+    #sql-migration-rule-graph .smg-network {
+      height: 700px;
+    }
+  }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
+<script>
+(() => {
+  const root = document.getElementById("sql-migration-rule-graph");
+  if (!root) return;
+
+  const graphEl = root.querySelector("[data-network]");
+  const detailEl = root.querySelector(".smg-detail");
+  const metaEl = root.querySelector(".smg-meta");
+  const legendEl = root.querySelector(".smg-legend");
+  const buttons = Array.from(root.querySelectorAll("[data-view]"));
+
+  // Read the scoped variables, which already carry their own fallbacks in CSS, so the
+  // palette is never empty even when no host theme is present.
+  const css = getComputedStyle(root);
+  const token = (name, fallback) => css.getPropertyValue(name).trim() || fallback;
+  const palette = {
+    foreground: token("--smg-fg", "#1c2024"),
+    mutedForeground: token("--smg-muted", "#6b7280"),
+    border: token("--smg-border", "#d7dbe0"),
+    primary: token("--smg-primary", "#2f6feb"),
+    primaryForeground: token("--primary-foreground", "#ffffff"),
+    destructive: token("--smg-destructive", "#d1495b"),
+    green: token("--smg-green", "#1f9254"),
+    s1: token("--smg-s1", "#2f6feb"),
+    s2: token("--smg-s2", "#6f42c1"),
+    s3: token("--smg-s3", "#0e7490"),
+    s4: token("--smg-s4", "#b45309"),
+    s5: token("--smg-s5", "#c2410c"),
+    s6: token("--smg-s6", "#4b5563")
+  };
+  const fontSize = Math.max(12, parseFloat(token("--font-size-base", "15")) || 15);
+
+  const colorProbe = document.createElement("span");
+  colorProbe.hidden = true;
+  root.appendChild(colorProbe);
+  function alpha(color, opacity) {
+    colorProbe.style.color = "";
+    colorProbe.style.color = color;
+    const resolved = getComputedStyle(colorProbe).color;
+    const nums = resolved.match(/[\d.]+/g);
+    if (nums && nums.length >= 3 && !resolved.startsWith("oklch") && !resolved.startsWith("lab")) {
+      return "rgba(" + nums[0] + "," + nums[1] + "," + nums[2] + "," + opacity + ")";
+    }
+    return "color-mix(in srgb, " + color + " " + Math.round(opacity * 100) + "%, transparent)";
+  }
+
+  const PATHS = [
+    ["SQL Server on Azure VM", "Distributed AG / Always On AG", "observed", 2, "Near-zero ; AG 2012+, DAG 2016+."],
+    ["SQL Server on Azure VM", "Log shipping", "observed", 4, "Fenêtre minimale ; source Windows et chaîne de logs viable."],
+    ["SQL Server on Azure VM", "Native backup/restore", "observed", 8, "Hors ligne ; chemin Blob et certificat TDE à valider."],
+    ["SQL Server on Azure VM", "Azure Migrate replication", "rules_only", 0, "Rehost VM/instance ; documenté mais non émis comme méthode primaire par le miroir."],
+    ["SQL Server on Azure VM", "Data Box seed → sync delta", "rules_only", 0, "Seed multi-TB puis synchronisation du delta."],
+
+    ["Azure VMware Solution", "VMware HCX / vMotion", "observed", 2, "Continuité du modèle VMware."],
+
+    ["Azure SQL Managed Instance", "MI Link", "observed", 9, "2016+ ; édition, OS, sysadmin, AG, ports et capacité."],
+    ["Azure SQL Managed Instance", "LRS", "observed", 15, "2008–2022 ; cible indisponible pendant le replay ; fenêtre maximale 30 jours."],
+    ["Azure SQL Managed Instance", "Native backup/restore", "observed", 12, "2008+ ; chemin Blob et certificat TDE."],
+    ["Azure SQL Managed Instance", "Transactional replication", "rules_only", 0, "Sous-ensemble en ligne ; droits publisher requis."],
+    ["Azure SQL Managed Instance", "bcp / Smart Bulk Copy / BACPAC / ADF", "rules_only", 0, "Mouvement de données ; schéma et fonctions à valider séparément."],
+
+    ["Azure SQL Database", "modern DMS (offline)", "observed", 20, "SQL Server 2008+ ; chemin hors ligne."],
+    ["Azure SQL Database", "BACPAC / SqlPackage", "observed", 4, "Petits/moyens workloads compatibles ; export/import à tester."],
+    ["Azure SQL Database", "Transactional replication", "observed", 5, "Publisher SQL Server 2016+ ; push subscriber."],
+    ["Azure SQL Database", "Striim", "rules_only", 0, "CDC en ligne tiers ; documenté, absent des sorties du miroir."],
+    ["Azure SQL Database", "bcp / Smart Bulk Copy / BACPAC / ADF", "rules_only", 0, "Bulk ou intégration ; data-only."],
+    ["Azure SQL Database", "Data Box seed → sync delta", "observed", 1, "Seed multi-TB / WAN limité, puis delta."],
+
+    ["SQL database in Fabric", "Fabric Migration Assistant", "observed", 2, "Méthode Preview ; DACPAC ≤ 20 MB, gateway accepté, pas de Private Link."],
+    ["SQL database in Fabric", "T-SQL", "rules_only", 0, "Chemin d’ingestion alternatif documenté."],
+    ["SQL database in Fabric", "Transactional replication", "rules_only", 0, "Publisher SQL Server 2022 RTM CU12+ ; pas de Private Link."],
+    ["SQL database in Fabric", "Fabric pipelines / Data Factory", "rules_only", 0, "Chemin d’ingestion alternatif documenté."],
+    ["SQL database in Fabric", "Dataflow Gen2", "rules_only", 0, "Chemin d’ingestion alternatif documenté."],
+    ["SQL database in Fabric", "Outil compatible TDS", "rules_only", 0, "Chemin d’ingestion alternatif documenté."],
+
+    ["Arc-enabled SQL Managed Instance", "Native backup/restore via endpoint Arc", "observed", 3, "Endpoint SQL MI disponible après déploiement du data controller."],
+
+    ["SQL Server in a container", "Backup/restore via mounted volume", "observed", 1, "Le client possède HA, patch, sauvegarde et runbooks."],
+    ["SQL Server in a container", "Detach / attach", "rules_only", 0, "Cas appropriés seulement."],
+    ["SQL Server in a container", "BACPAC / bcp / ADF", "rules_only", 0, "Chemins documentés, non émis comme méthodes primaires par le miroir."],
+
+    ["SQL Server enabled by Azure Arc", "Arc best-practices assessment", "observed", 3, "Plan de contrôle in-place, pas une cible runtime."]
+  ];
+
+  const RULES = [
+    { id: "MI-LINK-SOURCE", type: "hard method gate", fields: ["source_location"], impacts: ["MI Link"], status: "partial", note: "Les sources managées sont bloquées, mais une source inconnue n’est pas tenue en assessment." },
+    { id: "MI-LINK-VERSION", type: "hard method gate", fields: ["source_version"], impacts: ["MI Link"], status: "partial", note: "Le plancher 2016 est appliqué ; une version inconnue peut basculer silencieusement vers LRS." },
+    { id: "MI-LINK-HOST", type: "hard method gate", fields: ["source_os", "source_edition", "source_version"], impacts: ["MI Link"], status: "ok", note: "Fail-closed sur OS et édition." },
+    { id: "MI-LINK-PORTS", type: "hard method gate", fields: ["mi_link_ports"], impacts: ["MI Link"], status: "ok", note: "5022 et 11000–11999 doivent être confirmés." },
+    { id: "BACKUP-BLOB-PATH", type: "hard method gate", fields: ["blob_https_reachability"], impacts: ["Native backup/restore", "LRS", "BACPAC / SqlPackage", "Data Box seed \u2192 sync delta"], status: "ok", note: "Un chemin bloque retire la methode au lieu de l\u2019afficher refusee ; LRS est couvert car il rejoue des sauvegardes deposees dans Blob." },
+    { id: "SOURCE-PERMISSIONS", type: "hard method gate", fields: ["source_permissions"], impacts: ["MI Link", "Transactional replication", "Distributed AG / Always On AG"], status: "ok", note: "Droits limites : methode refusee. Droits non declares : inconnu. Le champ etait declare au contrat et lu par personne." },
+    { id: "MI-LINK-CAPACITY", type: "hard method gate", fields: ["database_count", "performance"], impacts: ["MI Link"], status: "ok", note: "100 liens GP/BC, 500 Next-gen GP." },
+    { id: "LRS-VERSION", type: "hard method gate", fields: ["source_version"], impacts: ["LRS"], status: "ok", note: "2008–2022." },
+    { id: "LRS-WINDOW", type: "hard method gate", fields: ["size", "network_bandwidth"], impacts: ["LRS"], status: "ok", note: "La contrainte des 30 jours est toujours consignee, et devient un inconnu des que la taille ou la bande passante en font un risque reel." },
+    { id: "AG-VERSION", type: "hard method gate", fields: ["source_version"], impacts: ["Distributed AG / Always On AG"], status: "ok", note: "AG 2012+, DAG 2016+." },
+    { id: "REPL-PUBLISHER", type: "hard method gate", fields: ["source_version", "source_location", "source_permissions"], impacts: ["Transactional replication"], status: "ok", note: "Version, sources cloud managees et droits du publisher sont tous appliques." },
+    { id: "FILESTREAM-PAAS", type: "hard target gate", fields: ["feature_dependencies"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "MI et SQL DB refusés." },
+    { id: "POLYBASE-KIND", type: "hard target gate", fields: ["feature_dependencies"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "Cloud files, RDBMS externe et inconnu sont distingués." },
+    { id: "DTC-TOPOLOGY", type: "hard target gate", fields: ["feature_dependencies"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "Homogène, hétérogène et inconnu sont distingués." },
+    { id: "LINKED-SERVERS", type: "hard target gate", fields: ["feature_dependencies"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "MI avec remédiation ; SQL DB refusé." },
+    { id: "CLR-PERMISSION", type: "hard target gate", fields: ["feature_dependencies", "clr_permission_set"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "SAFE/EXTERNAL_ACCESS demandent signature ou hash ; UNSAFE/inconnu restent à évaluer." },
+    { id: "DEPENDENCY-INVENTORY", type: "hard target gate", fields: ["feature_dependencies"], impacts: ["Azure SQL Managed Instance", "Azure SQL Database"], status: "ok", note: "Une liste vide ou inconnue ne vaut pas absence." },
+    { id: "MANAGEMENT-MODEL", type: "hard target gate", fields: ["management_model", "kubernetes_model"], impacts: ["SQL Server on Azure VM", "Azure SQL Managed Instance", "Azure SQL Database", "Arc-enabled SQL Managed Instance", "SQL Server in a container"], status: "partial", note: "Le miroir choisit excluded_by_preference ; la table A2 dit encore unsupported." },
+    { id: "ARC-IN-PLACE", type: "hard target gate", fields: ["intent", "source_version"], impacts: ["SQL Server enabled by Azure Arc"], status: "ok", note: "Assess-first / modernisation in-place." },
+    { id: "ARC-WIZARD-BATCH", type: "hard method gate", fields: ["migration_batch_size", "arc_extension_version"], impacts: ["Azure SQL Managed Instance"], status: "ok", note: "1 base avant l’extension minimale, 10 à partir de 1.1.3348.364." },
+    { id: "FABRIC-TARGET", type: "hard target gate", fields: ["driver"], impacts: ["SQL database in Fabric"], status: "partial", note: "La cible GA survit, mais le miroir ne conserve pas toujours Fabric quand l’assistant Preview est refusé." },
+    { id: "FABRIC-ASSISTANT", type: "hard method gate", fields: ["fabric_constraints"], impacts: ["Fabric Migration Assistant"], status: "partial", note: "Les gates Assistant sont présentes ; les autres chemins Fabric ne sont pas sélectionnables." },
+    { id: "HYPERSCALE-CEILING", type: "hard target gate", fields: ["size"], impacts: ["Azure SQL Database", "Azure SQL Managed Instance", "SQL Server on Azure VM"], status: "ok", note: "Au-dela du plafond de 128 To pour une base unique, les deux familles PaaS sont refusees : sharding ou SQL VM." },
+    { id: "MI-TIER", type: "tier rule", fields: ["performance", "size", "database_count"], impacts: ["Azure SQL Managed Instance"], status: "partial", note: "Les tiers principaux sont couverts ; le plan multi-instance >500 n’est pas modélisé." },
+    { id: "SQLDB-TIER", type: "tier rule", fields: ["performance", "size", "tenant_count"], impacts: ["Azure SQL Database"], status: "ok", note: "GP, BC, Serverless, Elastic Pool et Hyperscale sont choisis selon les signaux." },
+    { id: "DOWNTIME-CLASS", type: "consistency rule", fields: ["downtime"], impacts: ["Classe de coupure"], status: "ok", note: "Une tolérance inconnue produit unknown_requires_assessment." },
+    { id: "RANK-ORDER", type: "ranking", fields: ["surviving_candidates", "rpo", "rto", "compliance"], impacts: ["Classement final"], status: "partial", note: "Le miroir est une cascade de branches ; il n’émet pas la trace des 10 étapes documentées." },
+    { id: "OUTPUT-CONSISTENCY", type: "consistency rule", fields: ["eligibility", "method", "tier"], impacts: ["Recommandation finale"], status: "ok", note: "Les gates de prerequis tournent apres la passe de coherence ; une methode refusee est retiree avec ses constats." }
+  ];
+
+  const OPTIONS = {
+    scope: ["SINGLE_DB", "FEW_DATABASES", "LARGE_ESTATE"],
+    source_location: ["ON_PREM", "AWS_EC2", "AWS_RDS", "GCP_COMPUTE", "GCP_CLOUD_SQL", "UNKNOWN"],
+    source_version: ["SQL2008", "SQL2012", "SQL2014", "SQL2016", "SQL2017_2019", "SQL2022", "SQL2025", "UNKNOWN"],
+    intent: ["MIGRATE_NOW", "MODERNIZE_IN_PLACE", "ASSESSMENT_ONLY", "REHOST_FIRST", "UNKNOWN"],
+    driver: ["EOS_ESU", "COST", "APP_MODERNIZATION", "DATACENTER_EXIT", "FABRIC_ANALYTICS", "SOVEREIGNTY_EDGE", "UNKNOWN"],
+    management_model: ["MANAGED_PAAS", "OS_CONTROL", "KUBERNETES", "UNKNOWN"],
+    kubernetes_model: ["ARC_MANAGED_ENGINE", "DIY_CONTAINER", "UNKNOWN"],
+    feature_dependencies_intent: ["NONE_CONFIRMED", "LIST_FEATURES", "UNKNOWN"],
+    ancillary_services_intent: ["NONE_CONFIRMED", "LIST_SERVICES", "UNKNOWN"],
+    tier_drivers_intent: ["NONE_CONFIRMED", "LIST_TIER_DRIVERS", "UNKNOWN"],
+    feature_dependencies: ["NONE_CONFIRMED", "FILESTREAM / FileTable", "PolyBase/cloud files", "PolyBase/external RDBMS", "PolyBase/unknown", "DTC SQL↔SQL", "DTC hétérogène", "DTC/unknown", "linked servers", "SQL Agent", "SQL CLR", "Service Broker", "cross-DB", "UNKNOWN"],
+    size: ["UNDER_150_GB", "FROM_150_GB_TO_4_TB", "FROM_4_TB_TO_128_TB", "OVER_128_TB", "UNKNOWN"],
+    downtime: ["NEAR_ZERO", "MINIMAL", "OFFLINE", "UNKNOWN"],
+    network_bandwidth: ["GOOD_BANDWIDTH", "LIMITED_WAN", "VERY_LARGE_MULTI_TB", "UNKNOWN"],
+    mi_link_ports: ["PORTS_CONFIRMED_OPEN", "PORTS_BLOCKED", "UNKNOWN"],
+    blob_https_reachability: ["BLOB_HTTPS_CONFIRMED", "BLOB_HTTPS_BLOCKED", "BLOB_HTTPS_UNKNOWN"],
+    compliance: ["STANDARD_COMMERCIAL", "EU_DATA_BOUNDARY", "GOVERNMENT_SOVEREIGN", "EDGE_AIR_GAPPED", "UNKNOWN"],
+    source_os: ["WINDOWS_SERVER_2012_OR_LATER", "WINDOWS_SERVER_BELOW_2012", "WINDOWS_CLIENT", "LINUX", "UNKNOWN"],
+    source_edition: ["ENTERPRISE", "STANDARD", "DEVELOPER", "EXPRESS", "WEB", "UNKNOWN"],
+    tde_status: ["TDE_ENABLED", "TDE_NOT_ENABLED", "UNKNOWN"],
+    clr_permission_set: ["CLR_SAFE", "CLR_EXTERNAL_ACCESS", "CLR_UNSAFE", "UNKNOWN"],
+    source_permissions: ["SYSADMIN_AVAILABLE", "LIMITED_RIGHTS", "UNKNOWN"],
+    authentication: ["SQL_LOGINS_ONLY", "WINDOWS_LOGINS", "ENTRA_ID", "MIXED_AUTH", "UNKNOWN"],
+    performance: ["BC signals", "GP signals", "Serverless signals", "UNKNOWN"],
+    database_count: ["1–100", "101–500", ">500", "UNKNOWN"],
+    tenant_count: ["single/few", "many tenants", "UNKNOWN"],
+    fabric_constraints: ["Assistant gates confirmed", "Preview refused", "Private Link required", "DACPAC >20 MB", "UNKNOWN"],
+    migration_batch_size: ["1", "2–10", ">10", "UNKNOWN"],
+    arc_extension_version: ["<1.1.3348.364", "≥1.1.3348.364", "UNKNOWN"],
+    evidence: ["dependenciesToolConfirmed", "performanceMeasured", "regionAvailabilityConfirmed", "architectSignedOff"],
+    target_region: ["free text / UNKNOWN"],
+    rpo: ["free text / UNKNOWN"],
+    rto: ["free text / UNKNOWN"],
+    "migration_duration (champ absent)": ["≤30 jours", ">30 jours", "UNKNOWN"],
+    surviving_candidates: ["eligible", "eligible_with_remediation", "tie / UNKNOWN"],
+    eligibility: ["eligible", "eligible_with_remediation", "unsupported", "excluded_by_preference", "unknown_requires_assessment"],
+    method: ["méthode sélectionnée"],
+    tier: ["tier sélectionné"]
+  };
+
+  const TARGET_METHODS = [
+    ["Arc-enabled SQL Managed Instance", "Native backup/restore", 2],
+    ["Arc-enabled SQL Managed Instance", "Native backup/restore after endpoint is available", 1],
+    ["Azure SQL Database", "modern DMS (offline)", 20],
+    ["Azure SQL Database", "Transactional replication", 5],
+    ["Azure SQL Database", "BACPAC/SqlPackage", 4],
+    ["Azure SQL Database", "Data Box seed → sync delta", 1],
+    ["Azure SQL Managed Instance", "LRS", 15],
+    ["Azure SQL Managed Instance", "Native backup/restore", 12],
+    ["Azure SQL Managed Instance", "MI Link", 9],
+    ["Azure VMware Solution", "VMware HCX / vMotion", 2],
+    ["provisional shortlist only", "Assessment and dependency discovery first", 6],
+    ["provisional shortlist only", "Confirm a Fabric ingestion path first", 3],
+    ["provisional shortlist only", "Clarify Kubernetes engine model first", 2],
+    ["provisional shortlist only", "Azure Migrate appliance/import/Arc discovery", 1],
+    ["SQL database in Fabric", "Fabric Migration Assistant", 2],
+    ["SQL Server enabled by Azure Arc", "Arc best-practices assessment", 3],
+    ["SQL Server in a container", "Backup/restore via mounted volume", 1],
+    ["SQL Server on Azure VM", "Native backup/restore", 8],
+    ["SQL Server on Azure VM", "Log shipping", 4],
+    ["SQL Server on Azure VM", "Standalone assessment / native backup/restore", 3],
+    ["SQL Server on Azure VM", "Distributed AG or Always On AG", 2]
+  ];
+
+  const SOURCE_TARGETS = [
+    ["AWS EC2", "Azure SQL Managed Instance", 6],
+    ["AWS EC2", "provisional shortlist only", 2],
+    ["AWS EC2", "SQL Server on Azure VM", 2],
+    ["AWS EC2", "Azure SQL Database", 1],
+    ["AWS RDS", "Azure SQL Managed Instance", 1],
+    ["AWS RDS", "provisional shortlist only", 1],
+    ["GCP Cloud SQL", "Azure SQL Managed Instance", 1],
+    ["GCP Compute Engine", "Azure SQL Database", 1],
+    ["On-prem / Azure VM", "Azure SQL Managed Instance", 28],
+    ["On-prem / Azure VM", "Azure SQL Database", 28],
+    ["On-prem / Azure VM", "SQL Server on Azure VM", 15],
+    ["On-prem / Azure VM", "provisional shortlist only", 9],
+    ["On-prem / Azure VM", "SQL Server enabled by Azure Arc", 3],
+    ["On-prem / Azure VM", "Arc-enabled SQL Managed Instance", 3],
+    ["On-prem / Azure VM", "Azure VMware Solution", 2],
+    ["On-prem / Azure VM", "SQL database in Fabric", 2],
+    ["On-prem / Azure VM", "SQL Server in a container", 1]
+  ];
+
+  function safeId(prefix, label) {
+    let hash = 0;
+    const text = String(label);
+    for (let i = 0; i < text.length; i += 1) hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
+    return prefix + ":" + Math.abs(hash) + ":" + text.slice(0, 12);
+  }
+
+  function short(text, max = 32) {
+    return text.length <= max ? text : text.slice(0, max - 1) + "…";
+  }
+
+  function makeNode(id, label, group, detail, level, extra = {}) {
+    return {
+      id,
+      label: short(label),
+      fullLabel: label,
+      group,
+      detail,
+      level,
+      shape: "box",
+      margin: 8,
+      ...extra
+    };
+  }
+
+  function makeEdge(from, to, state = "neutral", label = "", width = 1) {
+    const edge = {
+      from,
+      to,
+      state,
+      label,
+      width,
+      arrows: { to: { enabled: true, scaleFactor: 0.45 } },
+      smooth: { enabled: true, type: "cubicBezier", forceDirection: "horizontal", roundness: 0.35 }
+    };
+    if (state === "rules_only" || state === "missing") edge.dashes = [7, 6];
+    return edge;
+  }
+
+  function pathGraph() {
+    const nodes = [];
+    const edges = [];
+    const targetIds = new Map();
+    const methodIds = new Map();
+    const methodDetails = new Map();
+
+    for (const [target, method, state, count, detail] of PATHS) {
+      if (!targetIds.has(target)) {
+        const id = safeId("target", target);
+        targetIds.set(target, id);
+        nodes.push(makeNode(id, target, "target", "Cible ou plan de contrôle documenté.", 0));
+      }
+      if (!methodIds.has(method)) {
+        const id = safeId("method", method);
+        methodIds.set(method, id);
+        methodDetails.set(method, []);
+        nodes.push(makeNode(id, method, "method", "", 1));
+      }
+      methodDetails.get(method).push(target + (count ? " · " + count + " scénario(s)" : " · non émis dans le corpus"));
+      const edgeLabel = count ? String(count) : "";
+      edges.push(makeEdge(targetIds.get(target), methodIds.get(method), state, edgeLabel, count ? 1 + Math.sqrt(count) * 0.35 : 1));
+    }
+
+    for (const n of nodes) {
+      if (n.group === "method") {
+        const details = methodDetails.get(n.fullLabel) || [];
+        n.detail = details.join(" | ");
+      }
+    }
+
+    return {
+      nodes,
+      edges,
+      meta: "8 destinations · 23 familles de méthodes · trait plein = sortie observée dans les 110 scenarios",
+      legend: [
+        ["observed", "Émis par le miroir testé"],
+        ["rules_only", "Documenté, non émis dans le corpus"],
+        ["target", "Cible / plan de contrôle"],
+        ["method", "Méthode"]
+      ]
+    };
+  }
+
+  function rulesGraph() {
+    const nodes = [];
+    const edges = [];
+    const fields = new Map();
+    const rules = new Map();
+    const impacts = new Map();
+
+    // Field nodes carry their canonical values as hover detail rather than as nodes of their
+    // own: expanding 73 identifiers turned the graph into a hairball nobody could read.
+    const indexedFields = new Set(RULES.flatMap((rule) => rule.fields));
+    for (const field of indexedFields) {
+      const id = safeId("field", field);
+      fields.set(field, id);
+      const values = OPTIONS[field] || [];
+      const detail = values.length ? values.join(" · ") : "Champ libre ou structure interne.";
+      nodes.push(makeNode(id, field, field.includes("absent") ? "field_missing" : "field", detail, 0));
+    }
+
+    for (const rule of RULES) {
+      const id = safeId("rule", rule.id);
+      rules.set(rule.id, id);
+      nodes.push(makeNode(id, rule.id, "rule_" + rule.status, rule.type + " · " + rule.note, 1));
+      for (const field of rule.fields) edges.push(makeEdge(fields.get(field), id, rule.status === "missing" ? "missing" : "neutral"));
+      for (const impact of rule.impacts) {
+        if (!impacts.has(impact)) {
+          const impactId = safeId("impact", impact);
+          impacts.set(impact, impactId);
+          const isMethod = PATHS.some((row) => row[1] === impact);
+          nodes.push(makeNode(impactId, impact, isMethod ? "method" : "target", "Élément affecté par une ou plusieurs règles.", 2));
+        }
+        edges.push(makeEdge(id, impacts.get(impact), rule.status === "missing" ? "missing" : rule.status === "partial" ? "partial" : "neutral"));
+      }
+    }
+
+    return {
+      nodes,
+      edges,
+      meta: "28 regles adressables \u00b7 " + indexedFields.size + " champs consommes \u00b7 orange = partiellement implementee" + indexedFields.size + " champs consommés · rouge = règle écrite mais non exécutée",
+      legend: [
+        ["rule_ok", "Implémentée"],
+        ["rule_partial", "Partielle"],
+        ["rule_missing", "Absente"],
+        ["field", "Champ"],
+        ["target", "Impact"]
+      ]
+    };
+  }
+
+  function coverageGraph() {
+    const nodes = [];
+    const edges = [];
+    const sources = new Map();
+    const targets = new Map();
+    const methods = new Map();
+    const sourceTotals = new Map();
+    const targetTotals = new Map();
+    const methodTotals = new Map();
+
+    for (const [source, target, count] of SOURCE_TARGETS) {
+      sourceTotals.set(source, (sourceTotals.get(source) || 0) + count);
+      targetTotals.set(target, (targetTotals.get(target) || 0) + count);
+    }
+    for (const [target, method, count] of TARGET_METHODS) {
+      methodTotals.set(method, (methodTotals.get(method) || 0) + count);
+    }
+
+    for (const [source, total] of sourceTotals) {
+      const id = safeId("source", source);
+      sources.set(source, id);
+      nodes.push(makeNode(id, source, "source", total + " scénario(s) du corpus.", 0));
+    }
+    for (const [target, total] of targetTotals) {
+      const id = safeId("target", target);
+      targets.set(target, id);
+      nodes.push(makeNode(id, target, "target", total + " sortie(s) primaires.", 1));
+    }
+    for (const [method, total] of methodTotals) {
+      const id = safeId("method", method);
+      methods.set(method, id);
+      nodes.push(makeNode(id, method, "method", total + " émission(s) dans le corpus.", 2));
+    }
+
+    for (const [source, target, count] of SOURCE_TARGETS) {
+      edges.push(makeEdge(sources.get(source), targets.get(target), "observed", String(count), 1 + Math.sqrt(count) * 0.4));
+    }
+    for (const [target, method, count] of TARGET_METHODS) {
+      edges.push(makeEdge(targets.get(target), methods.get(method), "observed", String(count), 1 + Math.sqrt(count) * 0.4));
+    }
+
+    return {
+      nodes,
+      edges,
+      meta: "110 scenarios golden · 9 sorties primaires · 19 méthodes distinctes · 23/23 gates au vert",
+      legend: [
+        ["source", "Source"],
+        ["target", "Sortie primaire"],
+        ["method", "Méthode"],
+        ["observed", "Nombre de scénarios"]
+      ]
+    };
+  }
+
+
+  function groups() {
+    const soft = (series) => ({
+      color: {
+        background: alpha(series, 0.14),
+        border: alpha(series, 0.08),
+        highlight: { background: palette.primary, border: palette.primary },
+        hover: { background: alpha(series, 0.22), border: alpha(series, 0.12) }
+      },
+      font: { color: palette.foreground, size: fontSize, face: "inherit" },
+      borderWidth: 0
+    });
+    return {
+      option: soft(palette.s1),
+      field: soft(palette.s2),
+      field_missing: soft(palette.destructive),
+      rule_ok: soft(palette.green),
+      rule_partial: soft(palette.s5),
+      rule_missing: soft(palette.destructive),
+      target: soft(palette.s4),
+      method: soft(palette.s3),
+      source: soft(palette.s6),
+      artifact: soft(palette.s2),
+      test_ok: soft(palette.green),
+      gap: soft(palette.destructive)
+    };
+  }
+
+  function edgeColor(state) {
+    if (state === "observed") return palette.green;
+    if (state === "rules_only" || state === "missing") return palette.destructive;
+    if (state === "partial") return palette.s5;
+    return palette.border;
+  }
+
+  function legendMarkup(entries) {
+    return entries.map(([kind, label]) => {
+      const dashed = kind === "rules_only" || kind === "rule_missing" || kind === "gap";
+      // Use the resolved palette rather than raw custom properties, so the legend keeps its
+      // colours when the graph is opened on its own instead of inside a themed page.
+      let color = palette.border;
+      if (kind === "observed" || kind === "rule_ok" || kind === "test_ok") color = palette.green;
+      else if (dashed) color = palette.destructive;
+      else if (kind === "rule_partial") color = palette.s5;
+      else if (kind === "target") color = palette.s4;
+      else if (kind === "method") color = palette.s3;
+      else if (kind === "source") color = palette.s6;
+      else if (kind === "field" || kind === "artifact") color = palette.s2;
+      return '<span class="smg-key"><span class="smg-swatch' + (dashed ? ' is-dashed' : '') + '" style="background:' + color + ';' + (dashed ? 'border-color:' + color : '') + '"></span>' + label + '</span>';
+    }).join("");
+  }
+
+  let currentView = "paths";
+  let network = null;
+  let currentData = null;
+
+  function dataForView() {
+    if (currentView === "rules") return rulesGraph();
+    if (currentView === "coverage") return coverageGraph();
+    return pathGraph();
+  }
+
+  function render() {
+    currentData = dataForView();
+    if (network) network.destroy();
+
+    currentData.edges = currentData.edges.map((edge) => ({
+      ...edge,
+      color: {
+        color: edgeColor(edge.state),
+        highlight: palette.primary,
+        hover: palette.primary,
+        opacity: edge.state === "neutral" ? 0.72 : 0.88
+      },
+      font: {
+        color: palette.mutedForeground,
+        size: Math.max(11, fontSize - 1),
+        strokeWidth: 0,
+        align: "middle"
+      }
+    }));
+
+    metaEl.textContent = currentData.meta;
+    legendEl.innerHTML = legendMarkup(currentData.legend);
+    detailEl.textContent = "Sélectionnez un nœud pour isoler ses relations.";
+
+    if (!window.vis || !window.vis.Network) {
+      graphEl.textContent = "Le graphe interactif n’a pas pu être chargé.";
+      return;
+    }
+
+    network = new window.vis.Network(
+      graphEl,
+      {
+        nodes: new window.vis.DataSet(currentData.nodes),
+        edges: new window.vis.DataSet(currentData.edges)
+      },
+      {
+        autoResize: true,
+        groups: groups(),
+        nodes: {
+          chosen: true,
+          widthConstraint: { maximum: 190 },
+          font: { multi: false }
+        },
+        edges: {
+          selectionWidth: 2,
+          hoverWidth: 1.5
+        },
+        layout: {
+          hierarchical: {
+            enabled: true,
+            direction: "LR",
+            sortMethod: "directed",
+            levelSeparation: 215,
+            nodeSpacing: 32,
+            treeSpacing: 70,
+            blockShifting: true,
+            edgeMinimization: true,
+            parentCentralization: true
+          }
+        },
+        physics: false,
+        interaction: {
+          dragNodes: true,
+          dragView: true,
+          zoomView: true,
+          hover: true,
+          tooltipDelay: 0,
+          multiselect: false,
+          navigationButtons: false,
+          keyboard: false
+        }
+      }
+    );
+
+    network.once("afterDrawing", () => {
+      network.fit({ animation: false });
+    });
+
+    network.on("selectNode", (params) => {
+      const selected = currentData.nodes.find((node) => node.id === params.nodes[0]);
+      if (!selected) return;
+      detailEl.textContent = selected.fullLabel + " — " + selected.detail;
+      const connected = network.getConnectedNodes(selected.id);
+      network.selectNodes([selected.id, ...connected], false);
+    });
+
+    network.on("deselectNode", () => {
+      detailEl.textContent = "Sélectionnez un nœud pour isoler ses relations.";
+    });
+  }
+
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => {
+      currentView = button.dataset.view;
+      buttons.forEach((peer) => peer.setAttribute("aria-pressed", String(peer === button)));
+      render();
+    });
+  });
+
+  render();
+})();
+</script>
+
+</main>
+</body>
+</html>
