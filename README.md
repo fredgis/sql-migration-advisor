@@ -26,7 +26,7 @@
 
 ### 🎬 See it in action
 
-A short screen recording of the skill at work: you ask in plain language, answer the guided interview, and it returns a preliminary assessment path (target, method, downtime, blockers, confidence, and cost levers) sourced live from the knowledge base.
+A short screen recording of the skill at work: you ask in plain language, answer the guided interview, and it returns a preliminary assessment path (target, method, downtime, blockers, confidence, and cost levers), grounded in the bundled knowledge base.
 
 <video src="https://github.com/user-attachments/assets/5594fc75-4fb7-40a9-b9a1-0cc761c8aebe" poster="https://github.com/fredgis/sql-migration-advisor/raw/main/images/sql-migration-advisor-demo-poster.jpg" controls muted></video>
 
@@ -292,7 +292,7 @@ them.
 ## Poster Skill AI
 
 The whole engine on one page — not just the target choice, but everything the skill reasons
-through: the **agentic loop** (grounds itself in the live knowledge base, interviews, applies the
+through: the **agentic loop** (loads the bundled knowledge base, interviews, applies the
 rules in a fixed order, checks its own answer, then acts), the Tier 1/Tier 2 interview, Phase A
 eligibility, Phase B ranking and tier selection, cutover downtime classes + blockers & remediations,
 confidence and evidence requirements, cost levers, Microsoft program and the assessment tool to run
