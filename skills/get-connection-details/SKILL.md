@@ -72,12 +72,72 @@ wants ports.
 
 ## Answer shape
 
-1. **Connection string**, with placeholders, never secrets.
-2. **Ports that must be open**, stated as a firewall or NSG rule, not as a number in prose.
-3. **DNS requirement**, including the private DNS zone when a private endpoint is in play.
-4. **Identity prerequisites** — the Entra admin, the contained database user, the role assignment.
-5. **A verification command the user can run**, so the answer is falsifiable.
-6. **Confidence and source**, naming the knowledge-base section behind each claim.
+One card, always in the same order, so a reader can find the port without reading prose:
+
+1. **Verdict line** — the target, the endpoint and the port, stated before anything else.
+2. **Connection string**, with placeholders, never secrets.
+3. **A table of what must be true** — ports, DNS, identity — each row actionable as written.
+4. **What will break it**, when a documented trap applies to this combination.
+5. **A verification command**, so the answer is falsifiable in seconds.
+6. **Knowledge-base version**, so the answer is reproducible and citable.
+
+State the knowledge-base version in every card. A reader who cannot tell which facts answered
+cannot judge how much to trust the advice, nor reproduce it later.
+
+**Representative output — composing a connection**
+
+> **Azure SQL Managed Instance** · public endpoint · **port 3342** · connection type **Proxy (forced)**
+> KB **v0.2** · all rows VERIFIED
+>
+> The public endpoint does not listen on 1433. A string naming 1433 resolves the right server and
+> times out, which is why this reads as a network fault rather than a configuration one.
+>
+> ```text
+> Server = <mi-name>.public.<dns-zone>.database.windows.net,3342
+> authentication=ActiveDirectoryManagedIdentity
+> ```
+>
+> | | Requirement |
+> | --- | --- |
+> | Port | 3342 inbound, **across the entire subnet range** — never a single IP, it can change |
+> | Connection type | Proxy, forced. The instance-level setting is ignored on this endpoint |
+> | DNS | `<mi-name>.public.<dns-zone>.database.windows.net` — always the name, never the address |
+> | Identity | The App Service managed identity must exist **as a user inside the database** |
+> | Not usable for | Failover groups and Managed Instance link — client traffic only |
+>
+> **What will break it** — setting the instance connection type to Redirect. It is ignored here, so
+> the change looks applied and does nothing.
+>
+> **Verify** — `Test-NetConnection <mi-name>.public.<dns-zone>.database.windows.net -Port 3342`
+
+**Representative output — diagnosing a failure**
+
+> **Error 18456 from one network only** · probable cause **DNS override**, not credentials
+> KB **v0.2** · all rows VERIFIED
+>
+> The gateway validates the FQDN it receives against the target server. A name pinned to a retired
+> gateway address is rejected by design, and the rejection is reported as a login failure. The same
+> cause produces **40532** and **40615**.
+>
+> | | Check |
+> | --- | --- |
+> | First | `hosts` file, static CNAME, or a private DNS zone pinning the server FQDN |
+> | Then | Client resolution against authoritative DNS — a mismatch confirms the override |
+> | Not this | The credential. It is correct, which is why it works from every other network |
+>
+> **Why every instinct is wrong here** — the symptom names authentication, so the natural next
+> steps are resetting the secret and re-granting the user. Both find nothing, because nothing is
+> wrong with either.
+>
+> **Verify** — `Resolve-DnsName -Name "<server>.database.windows.net" -DnsOnly`, compared with
+> authoritative DNS.
+
+Examples use sanitised placeholders. Keep customer names, tenant details, server names and
+subscription identifiers out of them.
+
+**When a fact is missing, say so in the same card.** A row the knowledge base lists as open
+research is reported as unknown with the page to read, never filled with a plausible value. An
+invented connection keyword fails at runtime and costs more than an admitted gap.
 
 ## The traps this skill exists to catch
 
