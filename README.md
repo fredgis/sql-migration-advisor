@@ -87,9 +87,9 @@ The knowledge base is quoted by a skill, three manifests, a PDF, a poster, this 
 | The six `blume/public/*.svg` mirrors | — | ✅ |
 | [`blume/docs/index.mdx`](blume/docs/index.mdx) — the docs site | — | ✅ |
 | [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v2.6.0` | ✅ |
-| [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | — | 🔴 **unwatched** |
-| `howto/*.html` | — | ⚪ no version to track |
-| The developer pitch's sample failure block | — | ⚪ deliberately wrong, it shows a failure |
+| [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | — | ✅ |
+| `howto/*.html` | — | ✅ |
+| The developer pitch's sample failure block | `v2.6` | ✅ |
 
 <!-- surfaces:end -->
 
