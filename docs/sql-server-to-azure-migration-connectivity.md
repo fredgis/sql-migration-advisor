@@ -1,6 +1,6 @@
 # SQL Server to Azure — connectivity knowledge base
 
-> **Version.** v0.4 — 12 August 2026. Draft. This document is **not** wired into the
+> **Version.** v0.5 — 12 August 2026. Draft. This document is **not** wired into the
 > `recommend-migration-path` skill and does not change any of its facts.
 >
 > **Scope.** How an application connects to an Azure SQL family target, and why a connection
@@ -103,15 +103,29 @@ the single most frequent MI connectivity mistake.
 **Port 3342 is not a typo and not optional.** A client pointed at the public endpoint on 1433 will
 never connect.
 
-**MI redirect requires 1433 across the whole subnet range — not 11000–11999.**
+**MI redirect ports are in dispute. Open 1433 *and* 11000–11999 across the subnet range.**
+
+| Reading | Source |
+| --- | --- |
+| 1433 across the subnet range, no port range | [Connection types](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connection-types-overview), re-fetched twice on 12 Aug 2026 |
+| 1433 **and 11000–11999**, with a note that the port range "remains authoritative until further notice" while a 1433-only improvement rolls out | Quoted by an external audit; **not located** on the three pages read here |
 
 > "Traffic from your SQL clients to the SQL managed instance must be permitted on port 1433 across
 > the instance's subnet address range."
-> — [Connection types](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connection-types-overview) — VERIFIED
 
-This contradicts widely repeated guidance, including one of the research runs behind this
-document. See §7.1: the 11000–11999 range belongs to **Azure SQL Database** redirect and to MI
-**link/replication**, not to MI client connectivity.
+v0.3 declared this settled in favour of 1433-only and dismissed a research run that said otherwise.
+That was the same mistake as the P0s: **a quote proving what one page says was read as proving what
+Microsoft requires.** The absence of 11000–11999 on the pages reachable here is not evidence it is
+not required elsewhere.
+
+**The operational answer does not depend on resolving it**, because the risk is asymmetric:
+
+- Recommend 1433 only, and if the range is required, **the connection fails in production**.
+- Recommend both, and if only 1433 is required, ports are open inside the customer's own delegated
+  subnet that were not needed. Nothing breaks.
+
+So the guidance is to open both, and to say why. A subnet used for MI Link will have 11000–11999
+open regardless — that requirement is separately documented and is not in dispute.
 
 Redirect also requires a client driver implementing **TDS 7.4 or newer**; older clients silently
 fall back to proxy rather than failing.
@@ -321,9 +335,18 @@ For a user-assigned managed identity the client ID is supplied separately: `msiC
 `UID` in ODBC — and in ODBC that is the **client ID** on App Service or Container Instances, the
 **object ID** everywhere else.
 
-**pyodbc, Go and sqlcmd are deliberately absent.** No page was retrieved that states their syntax
-in quotable form, and their spelling cannot be inferred from the three columns above. They are
-listed in §7.5.
+**`sqlcmd` and `bcp` use `-G` for Entra**, requiring sqlcmd 13.1 or later:
+
+```text
+sqlcmd -S <your_server>.database.fabric.microsoft.com;1433 -G -d <your_database> -i ./script.sql
+```
+
+Both were listed as blocking open research in v0.3 and v0.4 while their syntax sat on the Fabric
+connect page that §2.4 already quotes — the third gap declared while holding its source, after Go
+and error 4060.
+
+**pyodbc and Go remain absent.** No page was retrieved stating their syntax in quotable form, and
+the Go documentation is sitting in §9 waiting to be read. Listed in §7.5.
 
 ### 4.1 A breaking change worth its own diagnostic
 
@@ -509,16 +532,29 @@ least 30 seconds**, and retry logic for anything cloud-connected.
 
 These are recorded rather than resolved. A reader who needs certainty should re-fetch the source.
 
-### 7.1 MI redirect ports — settled, but against the grain
+### 7.1 MI redirect ports — **CONFLICT, unresolved**
 
-One research run stated that MI redirect requires "inbound TCP 1433 **AND** TCP 11000-11999 to the
-entire MI subnet range". The current Microsoft page states only 1433 across the subnet range, and
-that quote was re-fetched and matched during the merge.
+v0.3 recorded this as *settled, high confidence* in favour of 1433 only. **That was wrong**, and
+wrong in the way this document keeps being wrong: a quote proving what one page says was read as
+proving what Microsoft requires.
 
-**Reading:** 11000–11999 is an **Azure SQL Database** redirect requirement and an MI
-**link/replication** requirement. It is not an MI client-connectivity requirement. The redirect
-default changed in October 2025, so older material — and any model trained on it — will disagree.
-Confidence: high, but expect pushback.
+| Reading | Evidence |
+| --- | --- |
+| 1433 across the subnet range | The [Connection types](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connection-types-overview) prerequisites, re-fetched twice on 12 August 2026. Also consistent with [connectivity architecture](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connectivity-architecture-overview), which describes the NSG as "filtering inbound traffic on port 1433" |
+| 1433 **and 11000–11999** | Quoted by an external audit with a note that the range "remains authoritative until further notice" while a 1433-only improvement rolls out. **Not located** on the three pages read here — connection types, connectivity architecture, service-aided subnet configuration |
+
+The transitional phrasing the audit quotes is too specific to be an invention, and a rollout note
+would explain why the prerequisites page reads as it now does. The most likely explanation is that
+the two readings are the same rollout seen at different points, which is precisely the condition a
+`CONFLICT` status exists for.
+
+**Confidence: none, and deliberately so.** Two independent research inputs disagree, and the
+disagreement was previously resolved by fiat. It is now recorded and the guidance in §2.2 is set to
+the safe side: open both ranges, because being wrong in that direction costs unused ports inside
+your own subnet, while being wrong in the other direction costs a failed production connection.
+
+This entry is the strongest argument in the document for the review dates in §7.7. A fact carrying
+"until further notice" is by definition high-volatility, and nothing here expires.
 
 ### 7.2 Fabric SQL database FQDN — unresolved
 
@@ -558,7 +594,6 @@ documentation; nobody has retrieved and quoted them yet. They are listed rather 
 
 | Item | Why it is not stated | Blocking |
 | --- | --- | --- |
-| **`sqlcmd` authentication flags** | No page retrieved. sqlcmd has an ODBC-based and a Go-based implementation with different flags, so inference is unsafe | yes |
 | **pyodbc syntax** | It passes ODBC keywords through, but no page states this quotably. Use the ODBC rows and say the wrapper was not separately verified | no |
 | **Error 4060** | No quotable entry on the troubleshooting page | no |
 | **Named instances, dynamic ports, SQL Browser on UDP 1434, AG listeners and DNN on SQL VM** | Not researched. A named instance on a dynamic port behaves nothing like the default-instance case documented in §2.3 | no |
@@ -625,6 +660,7 @@ base.
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v0.5 | 2026-08-12 | **A third audit reopened a question v0.3 had closed by fiat.** MI redirect ports return to **CONFLICT**: the pages reachable here state 1433 across the subnet range, while the audit quotes 1433 **and 11000–11999** with a note that the range remains authoritative until further notice. That text was not located on the three pages read, and v0.3 had used its own partial reading to dismiss a research run that said 11000–11999 — the same cell-proves-the-row failure, this time applied to settle a dispute rather than to state a fact. The guidance now opens **both** ranges, because the risk is asymmetric: recommending 1433 alone and being wrong fails the connection, while recommending both and being wrong opens unused ports inside the customer's own subnet. `sqlcmd` and `bcp` leave open research — their `-G` syntax is on the Fabric page §2.4 already quotes, the third gap declared while holding its source after Go and error 4060. |
 | v0.4 | 2026-08-12 | **Second external audit. Two more rows failed the same way as the three P0s: a quote proving one cell was read as proving the row.** Azure SQL Database private endpoints had no row of their own, so the public-endpoint Redirect range would have been applied by default. It is **1433 to 65535**, not 11000–11999, and opening the wrong one leaves the connection failing rather than partly working. Connecting to the `privatelink` FQDN or to the private IP fails by design — something the private DNS zone table implied was fine. An existing private endpoint on `Default` runs Proxy on 1433, and Redirect is gated on the driver: JDBC needs 9.4 or above, and anything outside the documented list is proxied whatever the policy says. The Fabric Warehouse FQDN loses its VERIFIED status, because the quote behind it proved the port and said nothing about the hostname. §7.7 records the structural recommendations as accepted and not done, chief among them a claims registry with drift detection: that machinery already exists for the sibling knowledge base and watches 0 of the 57 facts here. |
 | v0.3 | 2026-08-12 | **External audit response. Three claims marked VERIFIED were wrong, and all three failed the same way: a quote proving one cell was read as proving the whole row.** Fabric SQL database was recorded as "SQL authentication UNKNOWN, the documentation is silent" — it is not silent, and the page saying so was already listed in the source register. SQL Server on Azure VM was described as Windows-auth-via-domain or SQL auth, omitting Microsoft Entra authentication on SQL Server 2022 and later; the quote used proved the Windows case only. "Always allow the whole subnet range on any MI endpoint" was true of VNet-local and public and false of a private endpoint, which is a fixed address — a stable IP and connecting by IP had been conflated. Added the TLS section whose absence was indefensible in a document about why connections fail: `Encrypt` defaults changed in SqlClient 4.0 and ODBC 18.0.1, certificate validation changed in SqlClient 2.0, and `TrustServerCertificate=True` is recorded as a diagnostic and never a production setting. Added Fabric's Read item permission and the service principal tenant setting. The header no longer claims that every fact is verified; it states what a quote does and does not prove. Two process failures are recorded rather than quietly fixed: the register announced 102 URLs while listing 85, and open research declared no Go page had been retrieved while the Go documentation sat in the register. |
 | v0.2 | 2026-08-12 | Removed the CONSENSUS tier. Connectivity is a closed domain, so agreement between research runs was rejected as evidence — two models agreeing usually means one shared training bias, and one run cited a page returning 404. ODBC and SQL Server on Azure VM were re-fetched and both proved more precise than the agreement they replaced. Go and sqlcmd were removed rather than guessed. Published the full source register after the first draft cited 9 URLs while the runs had consulted 103. |

@@ -1,6 +1,6 @@
 {
   "$comment": "Canonical structured source for get-connection-details. Draft v0.3. Prose in docs/sql-server-to-azure-migration-connectivity.md is written FROM this file, never the reverse. Each row carries a source and a quote matched against the live page. That is the floor, not a guarantee: a quote proves the cell it supports, not the whole row, not the scope of the claim, and not that the page has no later section qualifying it. An external audit of v0.2 found three material errors that had all passed as verified for exactly that reason - see contradictions[v02-verification-overclaim]. Agreement between research runs is never used as evidence; anything unquotable is listed in open_research instead of being stated.",
-  "version": "0.4",
+  "version": "0.5",
   "retrieved": "2026-08-12",
   "vocabulary": {
     "target_id": [
@@ -84,12 +84,12 @@
       "fqdn": "<mi_name>.<dns_zone>.database.windows.net",
       "port": 1433,
       "connection_type": "redirect (default since October 2025) or proxy (legacy)",
-      "port_rule": "1433 must be permitted across the instance's ENTIRE subnet address range, not a single IP",
-      "not_required": "11000-11999 is NOT an MI client-connectivity requirement; it belongs to Azure SQL Database redirect and to MI link replication",
+      "port_rule": "DISPUTED - open 1433 AND 11000-11999 across the subnet range",
       "client_requirement": "driver implementing TDS 7.4 or newer, else it silently falls back to proxy",
-      "status": "VERIFIED",
+      "status": "CONFLICT",
       "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connection-types-overview",
-      "quote": "Traffic from your SQL clients to the SQL managed instance must be permitted on port 1433 across the instance's subnet address range."
+      "quote": "Traffic from your SQL clients to the SQL managed instance must be permitted on port 1433 across the instance's subnet address range.",
+      "$comment": "v0.3 recorded 1433-only as settled and dismissed a research run that said otherwise. An external audit quotes a page stating 1433 and 11000-11999 with a note that the range remains authoritative until further notice; that text was not located on the three pages read here. Guidance is set to the safe side because the risk is asymmetric: recommending 1433 only and being wrong fails the connection, recommending both and being wrong opens unused ports inside the customer subnet."
     },
     {
       "target_id": "azure-sql-managed-instance",
@@ -462,6 +462,25 @@
       "source_url": "https://learn.microsoft.com/en-us/sql/connect/odbc/using-azure-active-directory",
       "quote": "Authentication | (not set)(default), (empty string), SqlPassword, ActiveDirectoryIntegrated, ActiveDirectoryInteractive, ActiveDirectoryMsi, ActiveDirectoryServicePrincipal, ActiveDirectoryPassword [DEPRECATED]",
       "$comment": "The documented value list has no ActiveDirectoryDefault. Do not port the SqlClient or JDBC default-credential mode to ODBC."
+    },
+    {
+      "driver": "sqlcmd",
+      "auth_mode": "entra-interactive",
+      "keyword": "-G",
+      "min_version": "sqlcmd 13.1",
+      "status": "VERIFIED",
+      "source_url": "https://learn.microsoft.com/en-us/fabric/database/sql/connect",
+      "quote": "sqlcmd -S <your_server>.database.fabric.microsoft.com;1433 -G -d <your_database> -i ./script.sql",
+      "$comment": "The -G flag requires at least version 13.1. Declared blocking in v0.3 and v0.4 while the syntax was on a page cited in section 2.4."
+    },
+    {
+      "driver": "bcp",
+      "auth_mode": "entra-interactive",
+      "keyword": "-G",
+      "min_version": "UNKNOWN",
+      "status": "VERIFIED",
+      "source_url": "https://learn.microsoft.com/en-us/fabric/database/sql/connect",
+      "quote": "You can connect to your SQL database in Fabric with the bcp utility, just like any other SQL Database Engine."
     }
   ],
   "driver_gotchas": [
@@ -638,15 +657,15 @@
       "id": "mi-redirect-ports",
       "topic": "MI redirect port requirement",
       "readings": [
-        "1433 across the instance subnet address range (current documentation)",
-        "1433 AND 11000-11999 across the subnet range (one research run, and widespread third-party guidance)"
+        "1433 across the subnet range (connection types prerequisites, re-fetched twice on 2026-08-12)",
+        "1433 AND 11000-11999, the range remaining authoritative until further notice while a 1433-only improvement rolls out (quoted by an external audit, not located on the pages read here)"
       ],
       "sources": [
         "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connection-types-overview"
       ],
-      "note": "Settled against the live page during the merge: 11000-11999 belongs to Azure SQL Database redirect and to MI link replication, not to MI client connectivity. The MI redirect default changed in October 2025, so older material and models trained on it will disagree.",
-      "confidence": "high",
-      "resolved": true
+      "note": "Most likely the same rollout observed at two points in time. Recorded as unresolved rather than settled a second time. Guidance opens both ranges.",
+      "confidence": "none",
+      "resolved": false
     },
     {
       "id": "mi-proxyoverride-default",
@@ -712,11 +731,6 @@
       "item": "pyodbc connection-string syntax",
       "note": "pyodbc passes ODBC keywords through, but no page was retrieved that states this in quotable form. Use the ODBC rows and say the wrapper was not separately verified.",
       "blocking": false
-    },
-    {
-      "item": "sqlcmd authentication flags",
-      "note": "No page retrieved. sqlcmd has both an ODBC-based and a Go-based implementation with different flags, so inference is unsafe.",
-      "blocking": true
     },
     {
       "item": "error 4060",

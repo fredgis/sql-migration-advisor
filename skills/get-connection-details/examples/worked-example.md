@@ -46,7 +46,7 @@ endpoint is in play, not to build a profile.
 ## The card
 
 > **Azure SQL Managed Instance** · public endpoint · **port 3342** · connection type **Proxy (forced)**
-> KB **v0.4** · sourced and quoted
+> KB **v0.5** · sourced and quoted
 >
 > Your laptop and your App Service are not reaching the same endpoint. Over VPN you reach the
 > **VNet-local endpoint on 1433**. From App Service outside the VNet you reach the **public
@@ -98,7 +98,7 @@ resetting the secret and re-granting the user. Both find nothing.
 ## The card
 
 > **Error 18456 from one network only** · probable cause **DNS override**, not credentials
-> KB **v0.4** · sourced and quoted
+> KB **v0.5** · sourced and quoted
 >
 > The gateway validates the FQDN it receives against the target server. A name pinned to a retired
 > gateway address is rejected by design, and the rejection is reported as a login failure. The same
@@ -130,7 +130,7 @@ anyway, because that is what the error says.
 
 1. **The facts are counter-intuitive.** Port 3342. TCP/IP disabled by default on Developer and
    Express VM images. No `ActiveDirectoryDefault` in ODBC.
-2. **They are sourced and quoted**, not produced by plausibility. The stamp `KB v0.4 · sourced and
+2. **They are sourced and quoted**, not produced by plausibility. The stamp `KB v0.5 · sourced and
    quoted` promises exactly that and no more: every value in the card has a Microsoft page and a
    matched sentence behind it. It does not promise the claim is correctly scoped — an audit of
    v0.2 found three rows where a quote proving one cell had been read as proving the whole row.
