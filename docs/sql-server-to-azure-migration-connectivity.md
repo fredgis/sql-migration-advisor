@@ -9,9 +9,14 @@
 >
 > **Provenance.** Built from six independent research runs against learn.microsoft.com, merged and
 > cross-checked. Where the runs disagreed, the disagreement is recorded in §7 rather than averaged
-> away. Rows marked **VERIFIED** were re-fetched and matched against the live page during the
-> merge; rows marked **CONSENSUS** were reported identically by two or more independent runs but
-> not individually re-fetched.
+> away.
+>
+> **Every fact below is VERIFIED**: its supporting sentence was matched against the live Microsoft
+> page. There is no middle tier of confidence, because connectivity is a closed domain — a port is
+> 3342 or it is not. Agreement between research runs was explicitly rejected as evidence: two
+> models agreeing usually means one shared training bias, and one run in this batch cited a page
+> that returns 404. Anything that could not be quoted is not stated here at all; it is listed as
+> open research in §7.5.
 
 ---
 
@@ -124,13 +129,38 @@ The public endpoint carries client traffic only.
 
 | Property | Value | Status |
 | --- | --- | --- |
-| FQDN with a public DNS label | `<dns-label>.<region>.cloudapp.azure.com` | CONSENSUS (2 runs) |
-| Port, default instance | 1433 | CONSENSUS |
-| Connection policy | Not applicable — no gateway, no Redirect/Proxy concept | CONSENSUS |
+| FQDN | `<dns-label>.<region>.cloudapp.azure.com`, or the VM public IP | VERIFIED |
+| Port, default instance | 1433 | VERIFIED |
+| Custom port | append it to the server name: `<dns-label>.<region>.cloudapp.azure.com,1500` | VERIFIED |
+| Connection policy | Not applicable — no gateway, so no Redirect/Proxy concept | VERIFIED |
 
-This is an IaaS target: the connection reaches the guest operating system, so the SQL Server
+> "Any client with internet access can connect to the SQL Server instance by specifying either the
+> public IP address of the virtual machine or any DNS label assigned to that IP address. If the SQL
+> Server port is 1433, you don't need to specify it in the connection string."
+> — [Connect to a SQL Server virtual machine](https://learn.microsoft.com/en-us/azure/azure-sql/virtual-machines/windows/ways-to-connect-to-sql)
+
+This is an IaaS target: the connection reaches the guest operating system, so SQL Server's own
 configuration, the Windows firewall and the NSG all apply, and none of the PaaS gateway behaviour
-does. Named instances and non-default ports behave exactly as they do on-premises.
+does. The portal offers three connectivity types — **Public** (over the internet), **Private**
+(same virtual network) and **Local** (on the VM itself).
+
+**Three traps specific to this target:**
+
+- **Developer and Express images do not enable TCP/IP.** The connection fails before any firewall
+  question arises, and nothing in the network configuration explains why.
+
+  > "The virtual machine images for the SQL Server Developer and Express editions don't
+  > automatically enable the TCP/IP protocol."
+
+- **Windows authentication requires a domain-joined VM inside a virtual network.** There is no
+  other route to it.
+
+  > "Virtual networks also enable you to join your Azure VMs to a domain. This is the only way to
+  > use Windows authentication to SQL Server. The other connection scenarios require SQL
+  > authentication with user names and passwords."
+
+- **Choosing Public enables SQL authentication**, because public access requires it. Anyone
+  planning Entra-only should not select it.
 
 ### 2.4 Fabric SQL database
 
@@ -170,7 +200,7 @@ Firewall clearance cannot be done by hostname.
 | --- | --- | --- | --- |
 | Azure SQL Database | supported | supported | VERIFIED |
 | Azure SQL Managed Instance | supported | supported | VERIFIED |
-| SQL Server on Azure VM | supported when Entra is configured | supported | CONSENSUS |
+| SQL Server on Azure VM | Windows auth only when domain-joined in a VNet | supported, and required outside that case | VERIFIED |
 | Fabric SQL database | supported | **UNKNOWN — do not assume** | — |
 | Fabric Warehouse | user principals and service principals only | **not supported** | VERIFIED |
 
@@ -194,26 +224,42 @@ that looks like a credential problem.
 The same concept is spelled differently by every driver. This table exists because that difference
 is the actual cause of the failure, not the concept.
 
-| Auth mode | .NET SqlClient | JDBC | ODBC / pyodbc |
+| Auth mode | .NET SqlClient | JDBC | ODBC |
 | --- | --- | --- | --- |
-| Default credential chain | `Active Directory Default` (3.0.0+) | `ActiveDirectoryDefault` (12.2+) | UNKNOWN |
-| Interactive | `Active Directory Interactive` (2.0.0+) | `ActiveDirectoryInteractive` (9.2+) | `Authentication=ActiveDirectoryInteractive` |
-| Integrated | `Active Directory Integrated` (2.0.0+) | `ActiveDirectoryIntegrated` (6.0+) | `Authentication=ActiveDirectoryIntegrated` |
-| Service principal | `Active Directory Service Principal` (2.0.0+) | `ActiveDirectoryServicePrincipal` (9.2+) | `Authentication=ActiveDirectoryServicePrincipal` |
-| Service principal, certificate | UNKNOWN | `ActiveDirectoryServicePrincipalCertificate` (12.4+) | UNKNOWN |
-| Managed identity | `Active Directory Managed Identity` / `Active Directory MSI` (2.1.0+) | `ActiveDirectoryManagedIdentity` (12.2+), `ActiveDirectoryMSI` (8.3.1+) | `Authentication=ActiveDirectoryMsi` |
-| Device code | `Active Directory Device Code Flow` (2.1.0+) | UNKNOWN | UNKNOWN |
-| Workload identity | `Active Directory Workload Identity` (5.2.0+) | UNKNOWN | UNKNOWN |
+| Default credential chain | `Active Directory Default` (3.0.0+) | `ActiveDirectoryDefault` (12.2+) | **not available** |
+| Interactive | `Active Directory Interactive` (2.0.0+) | `ActiveDirectoryInteractive` (9.2+) | `Authentication=ActiveDirectoryInteractive` (17.1+, **Windows only**) |
+| Integrated | `Active Directory Integrated` (2.0.0+) | `ActiveDirectoryIntegrated` (6.0+) | `Authentication=ActiveDirectoryIntegrated` (Windows; Linux/macOS 17.6+) |
+| Service principal | `Active Directory Service Principal` (2.0.0+) | `ActiveDirectoryServicePrincipal` (9.2+) | `Authentication=ActiveDirectoryServicePrincipal` (17.7+) |
+| Service principal, certificate | — | `ActiveDirectoryServicePrincipalCertificate` (12.4+) | — |
+| Managed identity | `Active Directory Managed Identity` / `Active Directory MSI` (2.1.0+) | `ActiveDirectoryManagedIdentity` (12.2+), `ActiveDirectoryMSI` (8.3.1+) | `Authentication=ActiveDirectoryMsi` (17.3.1.1+) |
+| Device code | `Active Directory Device Code Flow` (2.1.0+) | — | — |
+| Workload identity | `Active Directory Workload Identity` (5.2.0+) | — | — |
 | SQL authentication | user id / password | user / password | `Authentication=SqlPassword` |
 
-.NET values carry **spaces**; JDBC and ODBC values do not. Sources: the
-[SqlClient](https://learn.microsoft.com/en-us/sql/connect/ado-net/sql/azure-active-directory-authentication)
-and [JDBC](https://learn.microsoft.com/en-us/sql/connect/jdbc/connecting-using-azure-active-directory-authentication)
-Entra authentication pages — both VERIFIED. ODBC values are CONSENSUS from the research runs and
-should be re-verified before they are relied on.
+All three columns are VERIFIED against the driver documentation:
+[SqlClient](https://learn.microsoft.com/en-us/sql/connect/ado-net/sql/azure-active-directory-authentication),
+[JDBC](https://learn.microsoft.com/en-us/sql/connect/jdbc/connecting-using-azure-active-directory-authentication),
+[ODBC](https://learn.microsoft.com/en-us/sql/connect/odbc/using-azure-active-directory).
 
-For a user-assigned managed identity, the client ID is supplied separately: `msiClientId` in JDBC,
-`UID` in ODBC.
+**.NET values carry spaces; JDBC and ODBC values do not.** That single difference produces a large
+share of real failures, and it is why this table exists rather than a description of the concepts.
+
+**ODBC has no default-credential mode.** Its documented value list is closed —
+`SqlPassword`, `ActiveDirectoryIntegrated`, `ActiveDirectoryInteractive`, `ActiveDirectoryMsi`,
+`ActiveDirectoryServicePrincipal`, `ActiveDirectoryPassword` (deprecated) — so porting
+`Active Directory Default` from SqlClient produces a value the driver rejects.
+
+**Platform limits are part of the answer.** `ActiveDirectoryInteractive` is Windows-driver only,
+and `ActiveDirectoryIntegrated` needs 17.6+ on Linux and macOS. A connection string that is correct
+on a developer's laptop can be invalid in the Linux container that runs it.
+
+For a user-assigned managed identity the client ID is supplied separately: `msiClientId` in JDBC,
+`UID` in ODBC — and in ODBC that is the **client ID** on App Service or Container Instances, the
+**object ID** everywhere else.
+
+**pyodbc, Go and sqlcmd are deliberately absent.** No page was retrieved that states their syntax
+in quotable form, and their spelling cannot be inferred from the three columns above. They are
+listed in §7.5.
 
 ### 4.1 A breaking change worth its own diagnostic
 
@@ -337,11 +383,19 @@ Three authentication modes have no canonical token yet, and all three are docume
 - **service principal with certificate** — JDBC 12.4+.
 - **workload identity** — SqlClient 5.2.0+.
 
-### 7.5 Unverified areas
+### 7.5 Open research — not stated as fact anywhere above
 
-ODBC, pyodbc, Go and sqlcmd syntax is CONSENSUS only. Errors 4060 and 40532 lack a dedicated
-quotable entry. Fabric SQL database private-endpoint behaviour was not retrieved. Fabric SQL
-database SQL-authentication support is unknown and must not be inferred from Fabric Warehouse.
+These are gaps in *our* research, not genuine uncertainty. The answers exist in Microsoft's
+documentation; nobody has retrieved and quoted them yet. They are listed rather than guessed.
+
+| Item | Why it is not stated | Blocking |
+| --- | --- | --- |
+| **Go (`go-mssqldb`) syntax** | No page retrieved. Cannot be inferred from ODBC or JDBC spelling | yes |
+| **`sqlcmd` authentication flags** | No page retrieved. sqlcmd has an ODBC-based and a Go-based implementation with different flags, so inference is unsafe | yes |
+| **pyodbc syntax** | It passes ODBC keywords through, but no page states this quotably. Use the ODBC rows and say the wrapper was not separately verified | no |
+| **Error 4060** | No quotable entry on the troubleshooting page | no |
+| **Fabric SQL database private endpoint** | Not retrieved | no |
+| **Fabric SQL database SQL authentication** | The documentation is silent, and silence is not a prohibition. Must not be inferred from Fabric Warehouse | no |
 
 ---
 

@@ -1,6 +1,6 @@
 {
-  "$comment": "Canonical structured source for get-connection-details. Draft v0.1. Prose in docs/sql-server-to-azure-migration-connectivity.md is written FROM this file, never the reverse: the recommend-migration-path skill arrived at canonical constants only after its prose existed, which left the same logic expressed twice. status is VERIFIED when the quote was re-fetched and matched against the live page during the merge, CONSENSUS when two or more independent research runs agreed but the row was not individually re-fetched, UNKNOWN when no quotable source was found. UNKNOWN rows are kept on purpose so gaps stay visible.",
-  "version": "0.1",
+  "$comment": "Canonical structured source for get-connection-details. Draft v0.1. Prose in docs/sql-server-to-azure-migration-connectivity.md is written FROM this file, never the reverse: the recommend-migration-path skill arrived at canonical constants only after its prose existed, which left the same logic expressed twice. Connectivity is a closed, deterministic domain: a port is 3342 or it is not, so there is no middle tier of confidence. Every row is VERIFIED, meaning its quote was matched against the live Microsoft page, or it does not appear here at all and is listed in open_research instead. Agreement between research runs was explicitly rejected as evidence: two models agreeing usually means one shared training bias, and one run in this batch cited a page that returns 404. UNKNOWN when no quotable source was found. UNKNOWN rows are kept on purpose so gaps stay visible.",
+  "version": "0.2",
   "retrieved": "2026-08-12",
   "vocabulary": {
     "target_id": [
@@ -22,12 +22,29 @@
       "entra-integrated",
       "sql-authentication"
     ],
-    "network_path": ["public-endpoint", "private-endpoint", "vnet-local", "service-endpoint"],
-    "driver": ["dotnet-sqlclient", "jdbc", "odbc", "pyodbc", "go-mssqldb", "sqlcmd", "ssms"],
-    "support": ["supported", "not-supported", "conditional", "UNKNOWN"],
+    "network_path": [
+      "public-endpoint",
+      "private-endpoint",
+      "vnet-local",
+      "service-endpoint"
+    ],
+    "driver": [
+      "dotnet-sqlclient",
+      "jdbc",
+      "odbc",
+      "pyodbc",
+      "go-mssqldb",
+      "sqlcmd",
+      "ssms"
+    ],
+    "support": [
+      "supported",
+      "not-supported",
+      "conditional",
+      "UNKNOWN"
+    ],
     "$comment": "entra-default, entra-service-principal-certificate and entra-workload-identity were added during the merge. The original research vocabulary omitted them, yet entra-default is the mode both SqlClient and JDBC document most prominently. It is NOT a synonym for managed identity: it is a credential chain that also covers developer tooling and the CLI."
   },
-
   "endpoints": [
     {
       "target_id": "azure-sql-database",
@@ -35,11 +52,28 @@
       "fqdn": "<server>.database.windows.net",
       "port": 1433,
       "policies": {
-        "redirect": { "ports": ["1433 outbound to gateway IPs", "11000-11999 outbound to all Azure SQL IPs in the region"], "both_required": true },
-        "proxy": { "ports": ["1433 outbound to gateway IPs"], "both_required": false },
-        "default": { "inside_azure": "redirect", "outside_azure": "proxy" }
+        "redirect": {
+          "ports": [
+            "1433 outbound to gateway IPs",
+            "11000-11999 outbound to all Azure SQL IPs in the region"
+          ],
+          "both_required": true
+        },
+        "proxy": {
+          "ports": [
+            "1433 outbound to gateway IPs"
+          ],
+          "both_required": false
+        },
+        "default": {
+          "inside_azure": "redirect",
+          "outside_azure": "proxy"
+        }
       },
-      "dac_ports": ["1434", "14000-14999"],
+      "dac_ports": [
+        "1434",
+        "14000-14999"
+      ],
       "status": "VERIFIED",
       "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/connectivity-architecture",
       "quote": "Clients connect to the gateway that has a public IP address and listens on port 1433."
@@ -81,13 +115,28 @@
     {
       "target_id": "sql-server-on-azure-vm",
       "network_path": "public-endpoint",
-      "fqdn": "<dns-label>.<region>.cloudapp.azure.com",
+      "fqdn": "<dns-label>.<region>.cloudapp.azure.com, or the VM public IP address",
       "port": 1433,
       "connection_policy": "not applicable - no gateway, so no redirect/proxy concept",
-      "also_applies": ["guest OS firewall", "network security group", "SQL Server network configuration"],
-      "status": "CONSENSUS",
-      "source_url": "UNKNOWN",
-      "quote": "UNKNOWN"
+      "also_applies": [
+        "guest OS firewall",
+        "network security group",
+        "SQL Server network configuration"
+      ],
+      "status": "VERIFIED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/virtual-machines/windows/ways-to-connect-to-sql",
+      "quote": "Any client with internet access can connect to the SQL Server instance by specifying either the public IP address of the virtual machine or any DNS label assigned to that IP address. If the SQL Server port is 1433, you don’t need to specify it in the connection string.",
+      "custom_port_syntax": "append the port to the server name, for example <dns-label>.<region>.cloudapp.azure.com,1500",
+      "connectivity_options": [
+        "Public - over the internet",
+        "Private - same virtual network",
+        "Local - on the VM itself"
+      ],
+      "traps": [
+        "SQL Server Developer and Express VM images do NOT enable TCP/IP automatically; it must be enabled in SQL Server Configuration Manager after creation",
+        "Windows authentication requires the VM to be domain-joined inside a virtual network; every other scenario requires SQL authentication",
+        "the Public option enables SQL Server authentication because public access requires it"
+      ]
     },
     {
       "target_id": "fabric-sql-database",
@@ -110,11 +159,27 @@
       "quote": "The SQL connection string requires TCP port 1433 to be open. TCP 1433 is the standard SQL Server port number."
     }
   ],
-
   "auth_support": [
-    { "target_id": "azure-sql-database", "auth_mode": "sql-authentication", "support": "supported", "status": "VERIFIED" },
-    { "target_id": "azure-sql-managed-instance", "auth_mode": "sql-authentication", "support": "supported", "status": "VERIFIED" },
-    { "target_id": "sql-server-on-azure-vm", "auth_mode": "sql-authentication", "support": "supported", "status": "CONSENSUS" },
+    {
+      "target_id": "azure-sql-database",
+      "auth_mode": "sql-authentication",
+      "support": "supported",
+      "status": "VERIFIED"
+    },
+    {
+      "target_id": "azure-sql-managed-instance",
+      "auth_mode": "sql-authentication",
+      "support": "supported",
+      "status": "VERIFIED"
+    },
+    {
+      "target_id": "sql-server-on-azure-vm",
+      "auth_mode": "sql-authentication",
+      "support": "supported",
+      "status": "VERIFIED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/virtual-machines/windows/ways-to-connect-to-sql",
+      "quote": "Virtual networks also enable you to join your Azure VMs to a domain. This is the only way to use Windows authentication to SQL Server. The other connection scenarios require SQL authentication with user names and passwords."
+    },
     {
       "target_id": "fabric-warehouse",
       "auth_mode": "sql-authentication",
@@ -132,45 +197,192 @@
       "$comment": "Deliberately unknown. Silence in the docs is not a prohibition, and inferring from fabric-warehouse would be the single most likely source of a wrong answer here."
     }
   ],
-
   "driver_syntax": [
-    { "driver": "dotnet-sqlclient", "auth_mode": "entra-default", "keyword": "Active Directory Default", "min_version": "Microsoft.Data.SqlClient 3.0.0", "status": "VERIFIED" },
-    { "driver": "dotnet-sqlclient", "auth_mode": "entra-interactive", "keyword": "Active Directory Interactive", "min_version": "2.0.0", "status": "VERIFIED" },
-    { "driver": "dotnet-sqlclient", "auth_mode": "entra-integrated", "keyword": "Active Directory Integrated", "min_version": "2.0.0", "status": "VERIFIED" },
-    { "driver": "dotnet-sqlclient", "auth_mode": "entra-service-principal", "keyword": "Active Directory Service Principal", "min_version": "2.0.0", "status": "VERIFIED" },
-    { "driver": "dotnet-sqlclient", "auth_mode": "entra-device-code", "keyword": "Active Directory Device Code Flow", "min_version": "2.1.0", "status": "VERIFIED" },
-    { "driver": "dotnet-sqlclient", "auth_mode": "entra-managed-identity-system", "keyword": "Active Directory Managed Identity", "alias": "Active Directory MSI", "min_version": "2.1.0", "status": "VERIFIED" },
-    { "driver": "dotnet-sqlclient", "auth_mode": "entra-managed-identity-user", "keyword": "Active Directory Managed Identity", "alias": "Active Directory MSI", "min_version": "2.1.0", "status": "VERIFIED" },
-    { "driver": "dotnet-sqlclient", "auth_mode": "entra-workload-identity", "keyword": "Active Directory Workload Identity", "min_version": "5.2.0", "status": "VERIFIED" },
-
-    { "driver": "jdbc", "auth_mode": "entra-default", "keyword": "authentication=ActiveDirectoryDefault", "min_version": "12.2", "status": "VERIFIED" },
-    { "driver": "jdbc", "auth_mode": "entra-interactive", "keyword": "authentication=ActiveDirectoryInteractive", "min_version": "9.2", "status": "VERIFIED" },
-    { "driver": "jdbc", "auth_mode": "entra-integrated", "keyword": "authentication=ActiveDirectoryIntegrated", "min_version": "6.0", "status": "VERIFIED" },
-    { "driver": "jdbc", "auth_mode": "entra-service-principal", "keyword": "authentication=ActiveDirectoryServicePrincipal", "min_version": "9.2", "status": "VERIFIED" },
-    { "driver": "jdbc", "auth_mode": "entra-service-principal-certificate", "keyword": "authentication=ActiveDirectoryServicePrincipalCertificate", "min_version": "12.4", "status": "VERIFIED" },
-    { "driver": "jdbc", "auth_mode": "entra-managed-identity-system", "keyword": "authentication=ActiveDirectoryManagedIdentity", "alias": "authentication=ActiveDirectoryMSI", "min_version": "12.2 (MSI alias since 8.3.1)", "status": "VERIFIED" },
-    { "driver": "jdbc", "auth_mode": "entra-managed-identity-user", "keyword": "authentication=ActiveDirectoryManagedIdentity", "extra_property": "msiClientId=<client-id>", "min_version": "12.2", "status": "VERIFIED" },
-
-    { "driver": "odbc", "auth_mode": "entra-interactive", "keyword": "Authentication=ActiveDirectoryInteractive", "min_version": "UNKNOWN", "status": "CONSENSUS" },
-    { "driver": "odbc", "auth_mode": "entra-integrated", "keyword": "Authentication=ActiveDirectoryIntegrated", "min_version": "UNKNOWN", "status": "CONSENSUS" },
-    { "driver": "odbc", "auth_mode": "entra-service-principal", "keyword": "Authentication=ActiveDirectoryServicePrincipal", "min_version": "UNKNOWN", "status": "CONSENSUS" },
-    { "driver": "odbc", "auth_mode": "entra-managed-identity-system", "keyword": "Authentication=ActiveDirectoryMsi", "min_version": "UNKNOWN", "status": "CONSENSUS" },
-    { "driver": "odbc", "auth_mode": "entra-managed-identity-user", "keyword": "Authentication=ActiveDirectoryMsi;UID=<client-id>", "min_version": "UNKNOWN", "status": "CONSENSUS" },
-    { "driver": "odbc", "auth_mode": "sql-authentication", "keyword": "Authentication=SqlPassword", "min_version": "UNKNOWN", "status": "CONSENSUS" },
-    { "driver": "pyodbc", "auth_mode": "all", "keyword": "same ODBC keywords, passed through pyodbc", "min_version": "UNKNOWN", "status": "CONSENSUS" },
-    { "driver": "go-mssqldb", "auth_mode": "all", "keyword": "sqlserver://<server>?database=<db> with the azuresql driver name", "min_version": "UNKNOWN", "status": "CONSENSUS" },
-    { "driver": "sqlcmd", "auth_mode": "entra-managed-identity-system", "keyword": "--authentication-method=ActiveDirectoryManagedIdentity", "min_version": "UNKNOWN", "status": "CONSENSUS" },
-    { "driver": "ssms", "auth_mode": "entra-interactive", "keyword": "Microsoft Entra ID - Universal with MFA support", "min_version": "UNKNOWN", "status": "VERIFIED" },
-
     {
-      "$comment": "The reason this table exists: the SAME concept is spelled with spaces in SqlClient and without in JDBC and ODBC. Never infer one from another.",
-      "driver": "ALL",
-      "auth_mode": "ALL",
-      "keyword": "N/A",
-      "status": "UNKNOWN"
+      "driver": "dotnet-sqlclient",
+      "auth_mode": "entra-default",
+      "keyword": "Active Directory Default",
+      "min_version": "Microsoft.Data.SqlClient 3.0.0",
+      "status": "VERIFIED"
+    },
+    {
+      "driver": "dotnet-sqlclient",
+      "auth_mode": "entra-interactive",
+      "keyword": "Active Directory Interactive",
+      "min_version": "2.0.0",
+      "status": "VERIFIED"
+    },
+    {
+      "driver": "dotnet-sqlclient",
+      "auth_mode": "entra-integrated",
+      "keyword": "Active Directory Integrated",
+      "min_version": "2.0.0",
+      "status": "VERIFIED"
+    },
+    {
+      "driver": "dotnet-sqlclient",
+      "auth_mode": "entra-service-principal",
+      "keyword": "Active Directory Service Principal",
+      "min_version": "2.0.0",
+      "status": "VERIFIED"
+    },
+    {
+      "driver": "dotnet-sqlclient",
+      "auth_mode": "entra-device-code",
+      "keyword": "Active Directory Device Code Flow",
+      "min_version": "2.1.0",
+      "status": "VERIFIED"
+    },
+    {
+      "driver": "dotnet-sqlclient",
+      "auth_mode": "entra-managed-identity-system",
+      "keyword": "Active Directory Managed Identity",
+      "alias": "Active Directory MSI",
+      "min_version": "2.1.0",
+      "status": "VERIFIED"
+    },
+    {
+      "driver": "dotnet-sqlclient",
+      "auth_mode": "entra-managed-identity-user",
+      "keyword": "Active Directory Managed Identity",
+      "alias": "Active Directory MSI",
+      "min_version": "2.1.0",
+      "status": "VERIFIED"
+    },
+    {
+      "driver": "dotnet-sqlclient",
+      "auth_mode": "entra-workload-identity",
+      "keyword": "Active Directory Workload Identity",
+      "min_version": "5.2.0",
+      "status": "VERIFIED"
+    },
+    {
+      "driver": "jdbc",
+      "auth_mode": "entra-default",
+      "keyword": "authentication=ActiveDirectoryDefault",
+      "min_version": "12.2",
+      "status": "VERIFIED"
+    },
+    {
+      "driver": "jdbc",
+      "auth_mode": "entra-interactive",
+      "keyword": "authentication=ActiveDirectoryInteractive",
+      "min_version": "9.2",
+      "status": "VERIFIED"
+    },
+    {
+      "driver": "jdbc",
+      "auth_mode": "entra-integrated",
+      "keyword": "authentication=ActiveDirectoryIntegrated",
+      "min_version": "6.0",
+      "status": "VERIFIED"
+    },
+    {
+      "driver": "jdbc",
+      "auth_mode": "entra-service-principal",
+      "keyword": "authentication=ActiveDirectoryServicePrincipal",
+      "min_version": "9.2",
+      "status": "VERIFIED"
+    },
+    {
+      "driver": "jdbc",
+      "auth_mode": "entra-service-principal-certificate",
+      "keyword": "authentication=ActiveDirectoryServicePrincipalCertificate",
+      "min_version": "12.4",
+      "status": "VERIFIED"
+    },
+    {
+      "driver": "jdbc",
+      "auth_mode": "entra-managed-identity-system",
+      "keyword": "authentication=ActiveDirectoryManagedIdentity",
+      "alias": "authentication=ActiveDirectoryMSI",
+      "min_version": "12.2 (MSI alias since 8.3.1)",
+      "status": "VERIFIED"
+    },
+    {
+      "driver": "jdbc",
+      "auth_mode": "entra-managed-identity-user",
+      "keyword": "authentication=ActiveDirectoryManagedIdentity",
+      "extra_property": "msiClientId=<client-id>",
+      "min_version": "12.2",
+      "status": "VERIFIED"
+    },
+    {
+      "driver": "ssms",
+      "auth_mode": "entra-interactive",
+      "keyword": "Microsoft Entra ID - Universal with MFA support",
+      "min_version": "UNKNOWN",
+      "status": "VERIFIED"
+    },
+    {
+      "driver": "odbc",
+      "auth_mode": "sql-authentication",
+      "keyword": "Authentication=SqlPassword",
+      "min_version": "ODBC Driver 13.1",
+      "status": "VERIFIED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/odbc/using-azure-active-directory",
+      "quote": "The `Authentication` keyword can be used when connecting with a DSN or connection string to control the authentication mode."
+    },
+    {
+      "driver": "odbc",
+      "auth_mode": "entra-integrated",
+      "keyword": "Authentication=ActiveDirectoryIntegrated",
+      "min_version": "ODBC Driver 13.1 (Windows); 17.6 on Linux/macOS",
+      "status": "VERIFIED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/odbc/using-azure-active-directory",
+      "quote": "The `Authentication` keyword can be used when connecting with a DSN or connection string to control the authentication mode.",
+      "platform_note": "Windows, and Linux/Mac 17.6+, driver only"
+    },
+    {
+      "driver": "odbc",
+      "auth_mode": "entra-interactive",
+      "keyword": "Authentication=ActiveDirectoryInteractive",
+      "min_version": "ODBC Driver 17.1",
+      "status": "VERIFIED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/odbc/using-azure-active-directory",
+      "quote": "The `Authentication` keyword can be used when connecting with a DSN or connection string to control the authentication mode.",
+      "platform_note": "Windows driver only"
+    },
+    {
+      "driver": "odbc",
+      "auth_mode": "entra-managed-identity-system",
+      "keyword": "Authentication=ActiveDirectoryMsi",
+      "min_version": "ODBC Driver 17.3.1.1",
+      "status": "VERIFIED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/odbc/using-azure-active-directory",
+      "quote": "The `Authentication` keyword can be used when connecting with a DSN or connection string to control the authentication mode.",
+      "platform_note": "UID is not required for a system-assigned identity"
+    },
+    {
+      "driver": "odbc",
+      "auth_mode": "entra-managed-identity-user",
+      "keyword": "Authentication=ActiveDirectoryMsi;UID=<client-id-or-object-id>",
+      "min_version": "ODBC Driver 17.3.1.1",
+      "status": "VERIFIED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/odbc/using-azure-active-directory",
+      "quote": "The `Authentication` keyword can be used when connecting with a DSN or connection string to control the authentication mode.",
+      "platform_note": "UID is the client ID on Azure App Service or Azure Container Instance, otherwise the object ID"
+    },
+    {
+      "driver": "odbc",
+      "auth_mode": "entra-service-principal",
+      "keyword": "Authentication=ActiveDirectoryServicePrincipal;UID=<client-id>;PWD=<client-secret-placeholder>",
+      "min_version": "ODBC Driver 17.7",
+      "status": "VERIFIED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/odbc/using-azure-active-directory",
+      "quote": "The `Authentication` keyword can be used when connecting with a DSN or connection string to control the authentication mode.",
+      "platform_note": "UID is the client ID, PWD the client secret"
+    },
+    {
+      "driver": "odbc",
+      "auth_mode": "entra-default",
+      "keyword": "NOT AVAILABLE",
+      "status": "VERIFIED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/odbc/using-azure-active-directory",
+      "quote": "Authentication | (not set)(default), (empty string), SqlPassword, ActiveDirectoryIntegrated, ActiveDirectoryInteractive, ActiveDirectoryMsi, ActiveDirectoryServicePrincipal, ActiveDirectoryPassword [DEPRECATED]",
+      "$comment": "The documented value list has no ActiveDirectoryDefault. Do not port the SqlClient or JDBC default-credential mode to ODBC."
     }
   ],
-
   "driver_gotchas": [
     {
       "driver": "dotnet-sqlclient",
@@ -195,18 +407,36 @@
       "status": "VERIFIED"
     }
   ],
-
   "private_dns_zones": [
-    { "target_id": "azure-sql-database", "zone": "privatelink.database.windows.net", "forwarder": "database.windows.net", "status": "VERIFIED" },
-    { "target_id": "azure-sql-managed-instance", "zone": "privatelink.{dnsPrefix}.database.windows.net", "forwarder": "{dnsPrefix}.database.windows.net", "status": "VERIFIED" },
-    { "target_id": "fabric-warehouse", "zone": "privatelink.fabric.microsoft.com", "forwarder": "fabric.microsoft.com", "subresource": "workspace", "status": "VERIFIED" }
+    {
+      "target_id": "azure-sql-database",
+      "zone": "privatelink.database.windows.net",
+      "forwarder": "database.windows.net",
+      "status": "VERIFIED"
+    },
+    {
+      "target_id": "azure-sql-managed-instance",
+      "zone": "privatelink.{dnsPrefix}.database.windows.net",
+      "forwarder": "{dnsPrefix}.database.windows.net",
+      "status": "VERIFIED"
+    },
+    {
+      "target_id": "fabric-warehouse",
+      "zone": "privatelink.fabric.microsoft.com",
+      "forwarder": "fabric.microsoft.com",
+      "subresource": "workspace",
+      "status": "VERIFIED"
+    }
   ],
-
   "dns_rules": [
     {
       "rule": "never pin an Azure SQL FQDN to an IP address",
       "why": "gateways are retired and replaced; a pinned IP produces login failures that look like credential problems",
-      "symptoms": [18456, 40532, 40615],
+      "symptoms": [
+        18456,
+        40532,
+        40615
+      ],
       "status": "VERIFIED",
       "quote": "Never pin Azure SQL server FQDNs to specific IP addresses in hosts files, static CNAME records, or private DNS zones. Azure SQL gateways are dynamic and change over time."
     },
@@ -216,25 +446,98 @@
       "status": "VERIFIED"
     }
   ],
-
   "errors": [
-    { "error": 40615, "cause": "server firewall rejected the client IP", "check_first": "firewall rules on the logical server", "status": "VERIFIED" },
-    { "error": 18456, "cause": "login failed - credential, disabled login, missing contained user, or a DNS override", "check_first": "login exists and is enabled; then dns_rules", "status": "VERIFIED" },
-    { "error": 40532, "cause": "login failed, routing form - same DNS-override family as 18456", "check_first": "dns_rules", "status": "VERIFIED" },
-    { "error": 5, "cause": "outbound 1433 blocked between client and internet", "check_first": "every firewall on the path", "status": "VERIFIED" },
-    { "error": 26, "cause": "server not found or unreachable", "check_first": "server name; remote connections enabled", "status": "VERIFIED" },
-    { "error": 40, "cause": "could not open a connection to SQL Server", "check_first": "same as 26", "status": "VERIFIED" },
-    { "error": 10053, "cause": "transport-level error, connection aborted by host software", "check_first": "client-side interception, proxy or network appliance", "status": "VERIFIED" },
-    { "error": 40613, "cause": "database not currently available, or an existing DAC session", "check_first": "retry with backoff", "status": "VERIFIED" },
-    { "error": 40197, "cause": "service error during upgrade or failover", "check_first": "the embedded sub-code", "status": "VERIFIED" },
-    { "error": 40501, "cause": "service busy", "check_first": "resource limits for the tier", "status": "VERIFIED" },
-    { "error": 49918, "cause": "not enough resources to process request", "check_first": "resource limits", "status": "VERIFIED" },
-    { "error": 4221, "cause": "read-secondary login failed on an HADR wait", "check_first": "long write transactions on the primary", "status": "VERIFIED" },
-    { "error": 24804, "cause": "Fabric transient loss during a system update", "check_first": "sign in again and retry", "status": "VERIFIED" },
-    { "error": 6008, "cause": "Fabric workspace temporarily unavailable", "check_first": "re-establish the connection", "status": "VERIFIED" },
-    { "error": 4060, "cause": "UNKNOWN", "check_first": "UNKNOWN", "status": "UNKNOWN" }
+    {
+      "error": 40615,
+      "cause": "server firewall rejected the client IP",
+      "check_first": "firewall rules on the logical server",
+      "status": "VERIFIED"
+    },
+    {
+      "error": 18456,
+      "cause": "login failed - credential, disabled login, missing contained user, or a DNS override",
+      "check_first": "login exists and is enabled; then dns_rules",
+      "status": "VERIFIED"
+    },
+    {
+      "error": 40532,
+      "cause": "login failed, routing form - same DNS-override family as 18456",
+      "check_first": "dns_rules",
+      "status": "VERIFIED"
+    },
+    {
+      "error": 5,
+      "cause": "outbound 1433 blocked between client and internet",
+      "check_first": "every firewall on the path",
+      "status": "VERIFIED"
+    },
+    {
+      "error": 26,
+      "cause": "server not found or unreachable",
+      "check_first": "server name; remote connections enabled",
+      "status": "VERIFIED"
+    },
+    {
+      "error": 40,
+      "cause": "could not open a connection to SQL Server",
+      "check_first": "same as 26",
+      "status": "VERIFIED"
+    },
+    {
+      "error": 10053,
+      "cause": "transport-level error, connection aborted by host software",
+      "check_first": "client-side interception, proxy or network appliance",
+      "status": "VERIFIED"
+    },
+    {
+      "error": 40613,
+      "cause": "database not currently available, or an existing DAC session",
+      "check_first": "retry with backoff",
+      "status": "VERIFIED"
+    },
+    {
+      "error": 40197,
+      "cause": "service error during upgrade or failover",
+      "check_first": "the embedded sub-code",
+      "status": "VERIFIED"
+    },
+    {
+      "error": 40501,
+      "cause": "service busy",
+      "check_first": "resource limits for the tier",
+      "status": "VERIFIED"
+    },
+    {
+      "error": 49918,
+      "cause": "not enough resources to process request",
+      "check_first": "resource limits",
+      "status": "VERIFIED"
+    },
+    {
+      "error": 4221,
+      "cause": "read-secondary login failed on an HADR wait",
+      "check_first": "long write transactions on the primary",
+      "status": "VERIFIED"
+    },
+    {
+      "error": 24804,
+      "cause": "Fabric transient loss during a system update",
+      "check_first": "sign in again and retry",
+      "status": "VERIFIED"
+    },
+    {
+      "error": 6008,
+      "cause": "Fabric workspace temporarily unavailable",
+      "check_first": "re-establish the connection",
+      "status": "VERIFIED"
+    },
+    {
+      "error": 4060,
+      "cause": "UNKNOWN",
+      "check_first": "UNKNOWN",
+      "status": "UNKNOWN"
+    }
   ],
-
   "contradictions": [
     {
       "id": "fabric-sql-database-fqdn",
@@ -243,7 +546,9 @@
         "<server-unique-identifier>.database.windows.net",
         "tcp:<servername>.database.fabric.microsoft.com,1433"
       ],
-      "sources": ["https://learn.microsoft.com/en-us/fabric/database/sql/connect"],
+      "sources": [
+        "https://learn.microsoft.com/en-us/fabric/database/sql/connect"
+      ],
       "note": "Both forms appear on the SAME Microsoft page. The skill must not pick one silently; tell the user to read the value from the portal Connection strings pane.",
       "confidence": "low",
       "resolved": false
@@ -255,7 +560,9 @@
         "1433 across the instance subnet address range (current documentation)",
         "1433 AND 11000-11999 across the subnet range (one research run, and widespread third-party guidance)"
       ],
-      "sources": ["https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connection-types-overview"],
+      "sources": [
+        "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connection-types-overview"
+      ],
       "note": "Settled against the live page during the merge: 11000-11999 belongs to Azure SQL Database redirect and to MI link replication, not to MI client connectivity. The MI redirect default changed in October 2025, so older material and models trained on it will disagree.",
       "confidence": "high",
       "resolved": true
@@ -267,7 +574,9 @@
         "set after October 2025 - interpreted as Redirect",
         "set before October 2025 - converted to Proxy"
       ],
-      "sources": ["https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connection-types-overview"],
+      "sources": [
+        "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connection-types-overview"
+      ],
       "note": "The same stored value maps to opposite behaviours depending on when it was set. Always read the effective value; never infer from Default.",
       "confidence": "high",
       "resolved": true
@@ -285,6 +594,38 @@
       "note": "Follows from combining two documented facts but is stated nowhere as such. Inferred, not verified. Do not assert without re-checking.",
       "confidence": "low",
       "resolved": false
+    }
+  ],
+  "open_research": [
+    {
+      "item": "pyodbc connection-string syntax",
+      "note": "pyodbc passes ODBC keywords through, but no page was retrieved that states this in quotable form. Use the ODBC rows and say the wrapper was not separately verified.",
+      "blocking": false
+    },
+    {
+      "item": "go-mssqldb connection-string syntax",
+      "note": "No page retrieved. Do not infer from the ODBC or JDBC spelling.",
+      "blocking": true
+    },
+    {
+      "item": "sqlcmd authentication flags",
+      "note": "No page retrieved. sqlcmd has both an ODBC-based and a Go-based implementation with different flags, so inference is unsafe.",
+      "blocking": true
+    },
+    {
+      "item": "error 4060",
+      "note": "No quotable entry found on the troubleshooting page.",
+      "blocking": false
+    },
+    {
+      "item": "Fabric SQL database private-endpoint behaviour",
+      "note": "Not retrieved.",
+      "blocking": false
+    },
+    {
+      "item": "Fabric SQL database SQL-authentication support",
+      "note": "Documentation is silent. Silence is not a prohibition and must not be read as one.",
+      "blocking": false
     }
   ]
 }

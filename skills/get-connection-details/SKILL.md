@@ -109,20 +109,28 @@ check that did not execute.
 
 ## Sources
 
-All facts come from [`docs/sql-server-to-azure-migration-connectivity.md`](../../docs/sql-server-to-azure-migration-connectivity.md),
-which cites learn.microsoft.com per fact and marks each as VERIFIED or CONSENSUS. Facts marked
-CONSENSUS were reported by two or more independent research runs but not individually re-fetched;
-treat them as good but not certain, and say so when they carry the answer.
+All facts come from [`docs/sql-server-to-azure-migration-connectivity.md`](../../docs/sql-server-to-azure-migration-connectivity.md)
+and its structured source [`reference/connectivity-matrix.json`](reference/connectivity-matrix.json).
 
-Open questions are listed in §7 of that document. The Fabric SQL database FQDN contradiction
-(§7.2) is unresolved and must be surfaced to the user rather than decided.
+**Every stated fact is VERIFIED** — its supporting sentence was matched against the live Microsoft
+page. There is no middle tier of confidence, because connectivity is a closed domain: a port is
+3342 or it is not. Agreement between research runs was rejected as evidence, since two models
+agreeing usually means one shared training bias.
+
+Anything that could not be quoted is **not stated at all**. It appears in the knowledge base's
+open-research list (§7.5), and the skill must say it does not know rather than reason towards a
+plausible answer.
+
+Open contradictions are in §7. The Fabric SQL database FQDN (§7.2) is unresolved and must be
+surfaced to the user rather than decided.
 
 ## Not yet built
 
 Honest inventory of what this draft lacks, so nobody mistakes it for finished:
 
 - No input contract, no output contract.
-- No golden scenarios, no CI gate, no entry in the plugin manifests.
-- ODBC, pyodbc, Go and sqlcmd syntax is CONSENSUS only and needs re-verification.
-- SQL Server on Azure VM coverage is thin.
+- No golden scenarios, no CI gate, no entry in the plugin manifests. Nothing yet guarantees that
+  the prose and the structured matrix agree.
+- Go and `sqlcmd` syntax is missing and **blocking** for those clients: no page was retrieved, and
+  it cannot be inferred from the ODBC or JDBC spelling.
 - Fabric SQL database private-endpoint behaviour and SQL-authentication support are unknown.
