@@ -975,8 +975,14 @@ try {
     }
 
     const desc = front.match(/^description:\s*(.+)$/mu)?.[1] ?? '';
-    if (!desc) failures.push(`${file} declares no description, so nothing can route to it`);
-    else if (desc.length < 120) failures.push(`${file} has a ${desc.length}-character description; too thin to win routing against a general-purpose skill`);
+    const bare = desc.replace(/^"/u, '').replace(/"$/u, '');
+    if (!bare) failures.push(`${file} declares no description, so nothing can route to it`);
+    // The CLI refuses to load a skill whose description exceeds 1024 characters. This is not a
+    // style limit: the skill silently does not exist, so no amount of routing work can save it.
+    // get-connection-details shipped at 1256 characters and failed to load for two releases while
+    // the description was being tuned for routing -- tuning something that was never registered.
+    else if (bare.length > 1024) failures.push(`${file} has a ${bare.length}-character description; the CLI refuses to load any skill above 1024, so it will not exist at all`);
+    else if (bare.length < 120) failures.push(`${file} has a ${bare.length}-character description; too thin to win routing against a general-purpose skill`);
 
     // The interview is the shape of both skills. Without ask_user it cannot happen, and a skill that
     // cannot execute its own pattern is a poor routing candidate as well as a broken one.
