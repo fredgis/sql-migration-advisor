@@ -6,7 +6,7 @@
 >
 > **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of August 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
 >
-> **Version.** v2.5 — 12 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
+> **Version.** v2.6 — 12 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**
@@ -368,7 +368,17 @@ Microsoft describes LRS as an online migration with expected downtime during cut
 | Fabric Migration Assistant | Preview tool; DACPAC ≤ 20 MB, on-prem gateway only, no Private Link. These are assistant limits; Fabric SQL database also supports T-SQL, transactional replication, Fabric pipelines / Data Factory copy jobs, Dataflow Gen2, and TDS-capable tools. |
 | Always On AG → SQL VM | SQL Server 2012+ (availability groups start with SQL Server 2012) |
 | Distributed AG → SQL VM | SQL Server 2016+ (distributed availability groups start with SQL Server 2016) |
-| SQL Server 2025 (source) | GA 18 Nov 2025 — native vector/JSON, improved DAG |
+| SQL Server 2025 (source) | GA 18 Nov 2025 — native vector/JSON, improved DAG, Entra managed identity when Arc-connected (see below) |
+
+> [!NOTE]
+> **Microsoft Entra managed identity — SQL Server 2025 + Azure Arc only.** Connect a SQL Server 2025 instance to Azure Arc and a system-assigned managed identity is created for the SQL Server hostname; associating it with the instance lets SQL Server *"authenticate to Azure services without needing to manage credentials"*. Two directions, and the second is the one that matters for a migration runbook:
+>
+> - **Inbound** — Entra logins and users connecting *to* SQL Server. Also reachable through an app registration since SQL Server 2022, so this is not the differentiator.
+> - **Outbound** — SQL Server connecting *to* Azure resources, *"like backup to URL, or connecting to Azure Key Vault"*. An app registration **cannot** do this: outbound needs a primary managed identity. This is the credential-free alternative to the storage-account key or SAS credential that [§5 Backup to URL](#5-migration-methods-per-target) otherwise requires.
+>
+> **Limits, all disqualifying if missed.** Arc-enabled **SQL Server 2025 on Windows Server** only — not Linux, not 2022 or earlier. Requires access to the **Azure public cloud**, so it does not apply to the air-gapped and sovereign profiles in §12. **Not supported with failover cluster instances**, which rules out a large share of on-prem estates. Only **system-assigned** identities. Once Entra authentication is enabled, disabling it is not advisable — deleting the registry entries by force *"can result in unpredictable behavior"*.
+>
+> This is a modernization and credential-hygiene argument for an Arc-connected 2025 estate. It is **not** a migration method, and it does not apply to the older disconnected estates that make up most migration pipelines.
 
 ---
 
@@ -542,6 +552,8 @@ flowchart LR
 - SQL migration to SQL Server on Azure VMs in Azure Arc (GA how-to) — <https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migrate-to-sql-server-on-azure-vms?view=sql-server-ver17>
 - Migrate to Azure SQL Managed Instance in Azure Arc — <https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migrate-to-azure-sql-managed-instance>
 - GA announcement — SQL migration to SQL Server on Azure Virtual Machines in Azure Arc — <https://techcommunity.microsoft.com/blog/microsoftdatamigration/generally-available-sql-migration-to-sql-server-on-azure-virtual-machines-in-azu/4536940>
+- Managed identity overview — SQL Server enabled by Azure Arc — <https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/managed-identity?view=sql-server-ver17>
+- Set up managed identity and Microsoft Entra authentication — SQL Server enabled by Azure Arc — <https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/microsoft-entra-authentication-with-managed-identity?view=sql-server-ver17>
 - SSMS (download/overview) — <https://learn.microsoft.com/en-us/sql/ssms/sql-server-management-studio-ssms>
 - Azure Database Migration Service — <https://learn.microsoft.com/en-us/azure/dms/dms-overview>
 - DMS supported scenarios (offline/online per target) — <https://learn.microsoft.com/en-us/azure/dms/resource-scenario-status>
@@ -616,13 +628,14 @@ flowchart LR
 
 ## 17. Document version & changelog
 
-Current version: **v2.5** (2026-08-12).
+Current version: **v2.6** (2026-08-12).
 
 <details>
-<summary><b>Version history</b> (current: v2.5)</summary>
+<summary><b>Version history</b> (current: v2.6)</summary>
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v2.6 | 2026-08-12 | **One addition, from an external review of the knowledge base against public Microsoft sources.** Microsoft Entra **managed identity** was absent entirely, and it is the only capability in that review the document did not already carry. It is recorded where a reader looks up what a source version buys them (§9), scoped exactly as the sources scope it — Arc-connected **SQL Server 2025 on Windows Server**, system-assigned only. The migration-relevant half is the **outbound** direction: an app registration cannot make outbound connections, so a managed identity is what lets `BACKUP TO URL` and Key Vault access work without a storage-account key or SAS credential. The limits are recorded with the same weight as the capability, because each one disqualifies it outright: no Linux, no SQL Server 2022 or earlier, no failover cluster instances, and Azure public cloud required — which excludes the air-gapped and sovereign profiles in §12. |
 | v2.5 | 2026-08-12 | **A knowledge-base fact changed, and it was a rule that contradicted this document’s own table.** The AzCopy row stated a blanket *"for DBs > 1 TB, local backup + AzCopy is faster/safer than direct Backup-to-URL"*, while the Backup to URL row four sections earlier records the real constraint: 1 TB is the **page-blob cap on SQL Server 2012 SP1 CU2–2014**, and SQL Server 2016+ writes block blobs reaching **12.8 TB striped**. Read alone, the AzCopy row pushed a reader on a supported 2019 source off a direct path for a limit that does not apply to it. The row now scopes the cutoff to the builds it belongs to and states that above them the choice is throughput and retry behaviour, not a size limit. Found by the weekly review. |
 | v2.4 | 2026-08-12 | **A factual correction, and the first knowledge-base fact to change since v1.18.** SQL Server 2014 was documented with ESUs *"until 8 July 2027"*. Microsoft Lifecycle records Extended Security Updates Year 3 for SQL Server 2014 ending **13 July 2027** — a five-day error on a date that drives stay-versus-migrate economics for the estates most likely to be assessed. The end-of-support dates for 2014 and 2016 also used the Patch Tuesday convention (9 July 2024, 14 July 2026) while Microsoft publishes the Extended End Date (10 July 2024, 15 July 2026). Both are defensible in isolation and contradictory side by side, which is exactly how a customer conversation goes wrong. The Lifecycle dates are now quoted as published, and a note records why the Patch Tuesday differs, so the two never look like a mistake again. Found while verifying a third-party audit that had raised the 2016 date as a nuance; the 2014 error it did not see was the one that mattered. Applying the convention then exposed the same off-by-one in three further rows, all quoting the Patch Tuesday: SQL Server 2017 (12 -> 13 Oct 2027), 2019 (8 -> 9 Jan 2030), 2022 (11 -> 12 Jan 2033), and SSRS 2022, which inherits the SQL Server 2022 lifecycle. Every row of the table is now verified against its Microsoft Lifecycle page, and the table links to those pages so a reader can check the dates without trusting us. |
 | v2.3 | 2026-08-11 | **No knowledge-base fact changed. Four rules that were written and applied nowhere are now executed.** An interactive graph of the rule set made them visible: each appeared in the index, was described in the prose, and decided nothing. **`HYPERSCALE-CEILING`** was the one that could mislead a customer — a database above the 128 TB single-database ceiling was recommended onto Azure SQL Database at medium confidence with its method gate reported as passed. Past that ceiling neither PaaS family holds the workload as it stands, so both are refused and the answer becomes SQL Server on Azure VM with sharding named as the alternative. **A refused gate now removes its method:** printing `refused` beside the method it refused left the card contradicting itself. **`SOURCE-PERMISSIONS`** is consumed — MI Link configures an availability group and a publisher needs its own rights, so limited rights refuse the method and unstated rights hold it at unknown. **`LRS-WINDOW`** is executed: the 30-day maximum existed only as a guard scenario in the data file, and the constraint is now always recorded, becoming an unknown once size or bandwidth make 30 days a real risk. Ordering caught us a third time and a gate caught it: these gates first ran before the consistency pass, judging a method that pass then replaced. They run after it now, and findings raised against a rejected method are dropped with it. The rule count had drifted to 26 in five documents since v2.1, so CI checks it alongside gates, scenarios and invariants. 23 gates, 110 scenarios, 28 addressable rules. |

@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Knowledge base v2.5" src="https://img.shields.io/badge/knowledge%20base-v2.5-2b8a3e">
+  <img alt="Knowledge base v2.6" src="https://img.shields.io/badge/knowledge%20base-v2.6-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml/badge.svg"></a>
 </p>
@@ -60,7 +60,7 @@ version loaded and where it came from, so the advice is traceable.
 
 ## Why it is trustworthy
 
-- **Verified knowledge** — the v2.5 knowledge base is source-backed and corrected against Microsoft Learn.
+- **Verified knowledge** — the v2.6 knowledge base is source-backed and corrected against Microsoft Learn.
 - **Rules under regression test** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers. An executable mirror in `tests/` replays 110 scenarios through those rules on every commit. The mirror is not what runs in your session: an agent reads the rules and applies them, so this is a tested policy rather than a byte-identical guarantee.
 - **Every decision is addressable** — the card cites a rule ID for each verdict, and [`reference/decision-rules.md`](reference/decision-rules.md) ends with an index of all 28. Look one up, read what it consumes and how it treats an unknown, and argue with it.
 - **Explicit uncertainty** — every recommendation is `provisional`, and `medium` is the confidence ceiling. Nothing higher is reachable from an interview, because the skill reads no artefact from your estate. It carries assumptions, unknowns, blockers and the evidence a tool would have to produce.
@@ -384,7 +384,7 @@ Mermaid decision diagrams. The `SKILL.md` mirrors its AI Migration Agent I/O con
 
 The same knowledge base ships as a polished, branded PDF —
 [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (25 pages,
-v2.4, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
+v2.6, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
 
@@ -446,10 +446,11 @@ base and this README on the same version. Last verified: August 2026.
 
 <!-- CHANGELOG:START -->
 <details>
-<summary><b>📓 Changelog</b> — current: <b>v2.5</b> (August 2026)</summary>
+<summary><b>📓 Changelog</b> — current: <b>v2.6</b> (August 2026)</summary>
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| v2.6.0 | 2026-08-12 | **An external review checked the knowledge base against public Microsoft Learn sources; eleven of its twelve technical points were already covered, several with the same source URL.** The twelfth was a real gap: **Microsoft Entra managed identity** for Arc-connected SQL Server 2025, absent from the document entirely. Added in §9 with both Learn sources, scoped to what they actually support — Windows Server only, system-assigned only, no failover cluster instances, Azure public cloud required. The point that earns its place in a *migration* knowledge base is the outbound direction: an app registration cannot make outbound connections, so this is the credential-free alternative to the SAS or storage-account credential that Backup to URL otherwise needs. Nothing else from the review was applied — the rest described a state the document had already passed. |
 | v2.5.0 | 2026-08-12 | **Three internal contradictions, found by the weekly review and none of them caught by a gate.** The executable mirror marked the losing Kubernetes engine option `unsupported` on both branches, while `decision-rules.md` states that `excluded_by_preference` is not `unsupported` — the golden scenarios asserted only the *winning* option, so the contradiction was invisible. `BACKUP-BLOB-PATH` gated **Data Box**, the one transport that exists because the network path is blocked, so a blocked Blob path refused the method that survives it. The knowledge base carried a blanket *"> 1 TB use AzCopy"* rule contradicting its own version-specific table. Log shipping was documented `unavailable` for both restore modes, though `WITH STANDBY` leaves the secondary readable between restore jobs. Both Kubernetes scenarios now pin the losing option, and the sabotage test confirms the assertion fails when the old value returns. |
 | v2.4.2 | 2026-08-12 | **The one path that still served a wrong fact.** The on-demand knowledge-base fetch in `SKILL.md` was pinned to tag `v2.1.0` while the skill shipped v2.4, so a user who asked for the live document was handed the knowledge base from three releases back — including the SQL Server 2014 ESU date that v2.4 had just corrected. The bundled copy was right; the fetched one was not. The pin now follows the release, and `version-manifest-current` fails the build when it does not, or when the URL points at a mutable branch instead of a tag. Sabotage-tested in both directions. Found while assessing a third-party audit, which did not report it. |
 | v2.4 | 2026-08-12 | **A factual correction — the first knowledge-base fact to change since v1.18.** SQL Server 2014 was documented with ESUs *"until 8 July 2027"*; Microsoft Lifecycle records ESU Year 3 ending **13 July 2027**. Five days, on a date that drives stay-versus-migrate economics for exactly the estates this skill is pointed at. The 2014 and 2016 end-of-support dates also quoted the Patch Tuesday (9 July 2024, 14 July 2026) where Microsoft publishes the Extended End Date (10 July 2024, 15 July 2026) — both defensible alone, contradictory side by side. Lifecycle dates are now quoted as published, with a note explaining why the last covered update ships the day before. Found while verifying a third-party audit that had flagged the 2016 date; the 2014 error it missed was the one that mattered. Applying the convention then exposed the same off-by-one in three further rows, all quoting the Patch Tuesday: SQL Server 2017 (12 -> 13 Oct 2027), 2019 (8 -> 9 Jan 2030), 2022 (11 -> 12 Jan 2033), and SSRS 2022, which inherits the SQL Server 2022 lifecycle. Every row of the table is now verified against its Microsoft Lifecycle page, and the table links to those pages so a reader can check the dates without trusting us. |
