@@ -312,7 +312,7 @@ Rules:
 | **SQL Agent jobs** | MI: native SQL Agent. SQL DB: refactor to Elastic Jobs, Automation, Functions, or external scheduler. |
 | **Linked servers / cross-DB** | OK on VM and often MI after provider validation; not on SQL DB; refactor or choose MI/VM. |
 | **SSIS** | Migrate to Azure-SSIS Integration Runtime; handle SSISDB separately. |
-| **SSRS** | Move RDL workloads to **Power BI paginated reports** for managed cloud, or use **Power BI Report Server on a VM** when the managed service does not fit. Starting with SQL Server 2025 (17.x), on-premises reporting services is consolidated under Power BI Report Server; no new SSRS versions after SSRS 2022, which is supported until 11 Jan 2033. |
+| **SSRS** | Move RDL workloads to **Power BI paginated reports** for managed cloud, or use **Power BI Report Server on a VM** when the managed service does not fit. Starting with SQL Server 2025 (17.x), on-premises reporting services is consolidated under Power BI Report Server; no new SSRS versions after SSRS 2022, which follows the SQL Server 2022 lifecycle and is supported until 12 Jan 2033. |
 | **SSAS** | Move to Azure Analysis Services or Power BI Premium/Fabric semantic models. |
 | Dependency gap | Undocumented linked servers, jobs, file access, CLR, DTC, and external data sources commonly derail migrations; run dependency discovery before committing. |
 
