@@ -235,7 +235,7 @@ Examples, all now declared as canonical fields rather than asked ad hoc:
 - rollback plan;
 - Azure Hybrid Benefit eligibility.
 
-This avoids asking unnecessary questions. Until v2.3 these were asked in prose and declared nowhere,
+This avoids asking unnecessary questions. Until v2.4 these were asked in prose and declared nowhere,
 so a session collected answers no contract knew about and no gate could check.
 
 ---
@@ -550,8 +550,8 @@ It compares:
 #### Example failure
 
 ```text
-KB version:              v2.3
-decision-rules version:  v2.3
+KB version:              v2.4
+decision-rules version:  v2.4
 README badge:            v1.6
 ```
 
@@ -675,7 +675,7 @@ A simplified scenario looks like this:
 }
 ```
 
-Inputs are written as contract IDs. Scenarios predating v2.3 still use prose and the composite
+Inputs are written as contract IDs. Scenarios predating v2.4 still use prose and the composite
 `network_ports` field, which the mirror keeps reading, so the split did not force a rewrite of ninety
 files.
 

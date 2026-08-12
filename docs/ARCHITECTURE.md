@@ -230,7 +230,7 @@ A version bump is refused unless a substantive content diff exists, so stamps ca
 Stated plainly, because overselling is the failure mode this project keeps correcting.
 
 - **The mirror is not the model.** Nothing proves a session reaches the mirror's answer. Runtime evaluation across models is designed and unbuilt.
-- **The rules are prose, mirrored by hand.** A rule can be written correctly and mirrored wrongly, or written and never mirrored at all. Two such cases were found and fixed in v2.3, which is evidence the class exists, not evidence it is exhausted.
+- **The rules are prose, mirrored by hand.** A rule can be written correctly and mirrored wrongly, or written and never mirrored at all. Two such cases were found and fixed in v2.4, which is evidence the class exists, not evidence it is exhausted.
 - **110 scenarios sample an enormous input space.**
 - **A shared error scores perfectly.** The Windows Server 2012 floor was wrong for five versions and every test agreed with it, because the tests were written from the same mistaken document.
 - **The skill reads no artefact from your estate.** It opens no report, runs no tool, queries no service. `provisional` is the only status it can produce and `medium` the highest confidence, and no answer it gives replaces an assessment tool or an architect.

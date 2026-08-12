@@ -5,7 +5,7 @@ Apply Steps **A → D** in order. Steps map to the two engine phases:
 - **Phase B — Ranking and plan:** Steps B → D. Rank only surviving targets, then choose method, tier, blockers, cost, and assessment.
 
 Regression contract: these rules are a **prompt policy under regression test**. Replaying the same inputs through the rules mirror in `tests/` gives the same result, and 90 golden scenarios enforce it on every commit. The mirror is not what runs in a session: an agent reads these rules and applies them. Treat the contract as a tested policy, not as a guarantee that two runs produce identical wording. Every recommendation must carry the KB version, engine version, and, when available, the source commit SHA and fetch timestamp.
-Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v2.3**, verified August 2026.
+Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v2.4**, verified August 2026.
 
 Three layers, never mixed:
 - **Target** = where the DB ends up (runtime).
@@ -32,7 +32,7 @@ Normalize questionnaire/free-form answers into these fields before filtering:
 | `kubernetes_model` | managed engine via Arc data controller · full DIY container · unknown |
 | `feature_dependencies` | FILESTREAM/FileTable · PolyBase/cloud files · PolyBase/external RDBMS · PolyBase/unknown · homogeneous SQL↔SQL DTC · heterogeneous DTC · DTC/unknown · linked servers · SQL Agent · SQL CLR · Service Broker/intra-instance · Service Broker/cross-instance · Service Broker/unknown · cross-DB queries |
 | `scope` | single database · a few databases (2-10) · large estate. Routes the estate-discovery branch. |
-| `size` | `UNDER_150_GB` · `FROM_150_GB_TO_4_TB` · `FROM_4_TB_TO_128_TB` · `OVER_128_TB` · unknown. The classes do not overlap: until v2.3 a 200 TB database matched two of them. |
+| `size` | `UNDER_150_GB` · `FROM_150_GB_TO_4_TB` · `FROM_4_TB_TO_128_TB` · `OVER_128_TB` · unknown. The classes do not overlap: until v2.4 a 200 TB database matched two of them. |
 | `downtime` | `NEAR_ZERO` · `MINIMAL` · `OFFLINE` · unknown. Never inferred from the chosen method. |
 | `compliance` | `STANDARD_COMMERCIAL` · `EU_DATA_BOUNDARY` · `GOVERNMENT_SOVEREIGN` · `EDGE_AIR_GAPPED` · unknown |
 | `network_bandwidth` | `GOOD_BANDWIDTH` · `LIMITED_WAN` · `VERY_LARGE_MULTI_TB` · unknown. Drives seeding strategy only. |
@@ -350,7 +350,7 @@ Rules:
 ### D1. Cost and sizing levers
 
 - **Azure Hybrid Benefit (AHB):** applies to Azure SQL Database General Purpose / Business Critical in the vCore provisioned compute tier, SQL MI, and SQL VM; not Fabric SQL DB, DTU, serverless, or new Hyperscale databases. Hyperscale carries a **creation-date cohort**: AHB can only be applied to Hyperscale single databases with provisioned compute **created before 15 December 2023**, and only until December 2026, after which they too move to the simplified pricing. A Hyperscale database created on or after that date is **not** AHB-eligible, because the simplified pricing already removed the software licence fee.
-- **ESU:** the SQL Server ESU programme now covers **SQL Server 2014 and SQL Server 2016 only**. SQL Server 2014 reached end of support on 9 July 2024 with ESUs available until 8 July 2027; SQL Server 2016 reached end of support on 14 July 2026 with ESUs available until 17 July 2029. ESU is free on Azure VMs / AVS for SQL Server 2014; SQL Server 2016 is paid everywhere, including Azure VM, and materially changes stay-vs-migrate maths. SQL Server 2012 and earlier have no ESU path left at all, so do not describe them as covered: upgrade or migrate. Non-Azure/on-prem/hosted environments subscribe after connecting to Azure Arc, either with Software Assurance under eligible agreements or via Arc-connected PAYG billing without SA.
+- **ESU:** the SQL Server ESU programme now covers **SQL Server 2014 and SQL Server 2016 only**. SQL Server 2014 reached end of support on 10 July 2024 with ESUs available until 13 July 2027; SQL Server 2016 reached end of support on 15 July 2026 with ESUs available until 17 July 2029. ESU is free on Azure VMs / AVS for SQL Server 2014; SQL Server 2016 is paid everywhere, including Azure VM, and materially changes stay-vs-migrate maths. SQL Server 2012 and earlier have no ESU path left at all, so do not describe them as covered: upgrade or migrate. Non-Azure/on-prem/hosted environments subscribe after connecting to Azure Arc, either with Software Assurance under eligible agreements or via Arc-connected PAYG billing without SA.
 - Set `ahbEligible=true` only for eligible compute models: SQL MI, SQL VM, SQL DB GP/BC vCore provisioned, and the documented pre-15-December-2023 Hyperscale provisioned exception; set `ahbEligible=false` for DTU, serverless, Fabric SQL DB, and any Hyperscale database created on or after 15 December 2023. Combine AHB + reservations + ESU where eligible; state that savings depend on license position and commitment.
 - **Sizing:** never size MI/SQL DB on average CPU alone. Require Perfmon/DMV baseline for at least 7 days, peak windows, storage latency, IOPS, log generation, tempdb, and about 20% headroom.
 
