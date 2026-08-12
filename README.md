@@ -78,17 +78,20 @@ The table is checked, not decorative: `check-artifacts` compares every version b
 
 | Surface | Version | Follows | Kept honest by |
 | --- | --- | --- | --- |
-| [Knowledge base](docs/sql-server-to-azure-migration.md) | v2.6 | — the source of truth | `version-consistency` · a version bump requires a substantive diff |
-| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | v2.6 | the knowledge base | `rules-data-consistency` · 187 constants re-checked against the prose |
-| `SKILL.md` and its pinned fetch URL | v2.6.0 | the release tag | `version-manifest-current` · the pinned tag must equal the shipped release |
-| `version.json`, `plugin.json`, `marketplace.json` | v2.6.0 | the release | `version-manifest-current` · a manifest left behind fails the build |
-| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | v2.6 | the knowledge base | the **Artifacts coherence** workflow rebuilds them and opens a pull request |
-| Poster caption and PNG | v2.6 | the knowledge base | `check-artifacts --fix-prose`, then the same workflow |
-| This README's badge and PDF sentence | v2.6 | the knowledge base and the PDF | `check-artifacts --fix-prose` · page count, version and month |
-| The six `blume/public/*.svg` mirrors | — | `howto/*.svg` | `check-artifacts` compares them byte for byte |
-| `howto/*.html` | — | nothing — they quote no version | n/a by design |
-| The developer pitch's sample failure block | — | nothing — its values are deliberately wrong, to show a failure | n/a by design |
-| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | v2.6.0 | the release tag | re-ported per release; the port script fails on a stale knowledge base |
+| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v2.6` | — the source of truth | 🟢 `version-consistency` · a version bump requires a substantive diff |
+| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v2.6` | the knowledge base | 🟢 `rules-data-consistency` · 187 constants re-checked against the prose |
+| `SKILL.md` and its pinned fetch URL | `v2.6.0` | the release tag | 🟢 `version-manifest-current` · the pinned tag must equal the shipped release |
+| `version.json`, `plugin.json`, `marketplace.json` | `v2.6.0` | the release | 🟢 `version-manifest-current` · a manifest left behind fails the build |
+| The six `blume/public/*.svg` mirrors | — | `howto/*.svg` | 🟢 `check-artifacts` compares them byte for byte |
+| **This table** | `v2.6` | the knowledge base and the release | 🟢 `check-artifacts` reads every version between its markers |
+| This README's badge and PDF sentence | `v2.6` | the knowledge base and the PDF | 🔵 `check-artifacts --fix-prose` · page count, version and month |
+| Poster caption and PNG | `v2.6` | the knowledge base | 🔵 rewritten by `--fix-prose`, then rebuilt by the workflow |
+| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v2.6` | the knowledge base | 🟠 the **Artifacts coherence** workflow rebuilds them and opens a pull request |
+| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v2.6.0` | the release tag | 🟠 re-ported per release; the port script fails on a stale knowledge base |
+| `howto/*.html` | — | nothing — they quote no version | ⚪ n/a by design |
+| The developer pitch's sample failure block | — | nothing — its values are deliberately wrong, to show a failure | ⚪ n/a by design |
+
+🟢 **gated** — a drift fails the build · 🔵 **self-repairing** — `--fix-prose` rewrites it · 🟠 **rebuilt** — a workflow or a release step regenerates it · ⚪ **untracked by design**
 
 <!-- surfaces:end -->
 
