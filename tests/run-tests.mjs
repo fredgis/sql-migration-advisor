@@ -931,15 +931,41 @@ try {
     // it is unfit for use: a "must not be presented as ready" banner in the body made the model
     // select the skill and then answer from its own knowledge instead, which is worse than either
     // shipping it or removing it.
+    // P0-5: the pass message asserted a draft declaration that had already been removed, so a green
+    // build was reporting something untrue. It now describes what was actually checked.
+    // The audit also showed these checks are lexical: they prove a string is present, not that the
+    // fact is right. Treat a pass as "nothing obviously drifted", never as "the content is correct".
     const skill = readText(path.join('skills', 'get-connection-details', 'SKILL.md'));
     if (/must not be presented|do not use this skill|under design/iu.test(skill)) {
       failures.push('skills/get-connection-details/SKILL.md tells the model not to use it, which makes it select the skill and then answer from its own knowledge instead');
     }
-    if (!/§7\.5|open item|unresolved conflict/iu.test(skill)) {
-      failures.push('skills/get-connection-details/SKILL.md no longer points at its open items, so it reads as complete when it is not');
+    // An audit found the skill emitting an ADO.NET keyword list under a JDBC heading. A JDBC answer
+    // is a URL; anything else fails at runtime with a syntax the user cannot debug.
+    if (/\bjdbc\b/iu.test(skill) && !/jdbc:sqlserver:\/\//u.test(skill)) {
+      failures.push('skills/get-connection-details/SKILL.md mentions JDBC without showing a jdbc:sqlserver:// URL; the previous card mixed ADO.NET keywords into a JDBC answer');
+    }
+    // Exonerating a cause by assertion turns an inference into a verdict.
+    if (/\|\s*Not this\s*\|/u.test(skill)) {
+      failures.push('skills/get-connection-details/SKILL.md still exonerates a cause by assertion; diagnosis states a hypothesis and its discriminating test');
+    }
+    // The header claimed every fact was quoted while most rows carried no quote.
+    if (/Every fact here is quoted/u.test(skill)) {
+      failures.push('skills/get-connection-details/SKILL.md claims every fact is quoted, which the matrix does not support');
     }
     if (!skill.includes(`v${matrix.version}`)) {
       failures.push(`skills/get-connection-details/SKILL.md does not quote knowledge base v${matrix.version}`);
+    }
+    // A VERIFIED row without its own source and quote is a claim the document cannot back.
+    const unproven = [];
+    for (const key of ['endpoints', 'auth_support', 'driver_syntax', 'private_dns_zones', 'errors']) {
+      for (const r of matrix[key] ?? []) {
+        if (r.status === 'VERIFIED' && !(r.source_url && r.quote)) {
+          unproven.push(`${key}:${r.target_id ?? r.driver ?? r.error}`);
+        }
+      }
+    }
+    if (unproven.length) {
+      failures.push(`${unproven.length} rows claim VERIFIED without both a source and a quote: ${unproven.slice(0, 5).join(', ')}`);
     }
     // Drift detection has to keep covering the volatile pages, or the facts silently stop expiring.
     const registry = JSON.parse(readText(path.join('reference', 'claims-registry.json')));
@@ -951,7 +977,7 @@ try {
   }
 
   add('connectivity-kb-matches-matrix', failures.length === 0,
-    failures.length ? failures : [`Connectivity knowledge base and matrix agree at v${matrix?.version}, the skill declares itself a draft, and ${(JSON.parse(readText(path.join('reference', 'claims-registry.json'))).claims ?? JSON.parse(readText(path.join('reference', 'claims-registry.json')))).filter(c => String(c.claim_id).startsWith('conn-')).length} connectivity claims are hashed for drift.`]);
+    failures.length ? failures : [`Connectivity knowledge base and matrix agree at v${matrix?.version}, no VERIFIED row lacks its source and quote, the skill does not discourage its own use, and ${(JSON.parse(readText(path.join('reference', 'claims-registry.json'))).claims ?? JSON.parse(readText(path.join('reference', 'claims-registry.json')))).filter(c => String(c.claim_id).startsWith('conn-')).length} connectivity claims are hashed for drift. These checks are lexical: a pass means nothing obviously drifted, not that the content is correct.`]);
 }
 
 {

@@ -1,6 +1,6 @@
 # SQL Server to Azure — connectivity knowledge base
 
-> **Version.** v0.6 — 12 August 2026. Ships in the `sql-migration-advisor` plugin as the
+> **Version.** v0.7 — 12 August 2026. Ships in the `sql-migration-advisor` plugin as the
 > knowledge base for `get-connection-details`. It changes no fact in
 > [`sql-server-to-azure-migration.md`](sql-server-to-azure-migration.md), which serves the
 > migration skill and is maintained separately.
@@ -13,12 +13,15 @@
 > cross-checked. Where the runs disagreed, the disagreement is recorded in §7 rather than averaged
 > away.
 >
-> **What verification here does and does not mean.** Each fact carries a source and a quote that
-> was matched against the live page. That is the floor, not a guarantee. A quote proves the cell it
-> supports — not the whole row it sits in, not the scope of the claim, and not that a page has no
-> further section qualifying it. An external audit of v0.2 found three material errors that had
-> passed as "verified" precisely because a quote proving one cell was read as proving a row. Those
-> are corrected in v0.3 and the incident is recorded in §7.6.
+> **Facts carry a status, and the status is the point.** `VERIFIED` means a Microsoft page **and
+> a matching quote** sit behind that exact row — 21 of 58 rows qualify. `DERIVED` means the page
+> is cited but the row carries no quote of its own: it is stated, not proven, and must not be
+> presented as verified. `CONFLICT` and `OPEN` are surfaced, never resolved silently.
+>
+> Even `VERIFIED` is a floor rather than a guarantee. A quote proves the cell it supports, not
+> the whole row, not the scope of the claim, and not that a page has no later section qualifying
+> it. Four external audits each found rows where that distinction had been lost; the fourth
+> found it a sixth time. The incidents are in §7.6.
 >
 > **Agreement between research runs is not evidence** and is never used as one. Two models agreeing
 > usually means one shared training bias, and one run in this batch cited a page that returns 404.
@@ -94,7 +97,7 @@ the single most frequent MI connectivity mistake.
 | --- | --- | --- | --- | --- |
 | VNet-local (default) | `<mi_name>.<dns_zone>.database.windows.net` | **1433** | redirect (default since Oct 2025) or proxy | VERIFIED |
 | Public | `<mi_name>.public.<dns_zone>.database.windows.net` | **3342** | Proxy, forced | VERIFIED |
-| Private endpoint | same as VNet-local unless configured otherwise | **1433** | Proxy, forced | VERIFIED |
+| Private endpoint | see §5.2 — **depends on topology** | **1433** | Proxy, forced | VERIFIED |
 
 > "The VNet-local endpoint accepts connections on port 1433."
 > "Public endpoint accepts connections on port 3342."
@@ -102,32 +105,37 @@ the single most frequent MI connectivity mistake.
 > "Private endpoints always use the Proxy connection type regardless of the connection type setting."
 > — [Connectivity architecture for MI](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connectivity-architecture-overview)
 
-**Port 3342 is not a typo and not optional.** A client pointed at the public endpoint on 1433 will
-never connect.
+**These are three different hostnames, not three routes to one.** The public endpoint inserts
+`.public.` into the name and listens on a different port, so a connection string written for the
+VNet-local endpoint cannot reach it by moving the client to another network: **both the host and the
+port change**. The public endpoint must also be **enabled** on the instance — it is off by default.
 
-**MI redirect ports are in dispute. Open 1433 *and* 11000–11999 across the subnet range.**
+Port 3342 is not a typo and not optional. A client pointed at the public hostname on 1433 will never
+connect.
+
+**MI redirect ports are disputed. Test 1433 first; open 11000–11999 only if that fails and your
+security policy allows it.**
 
 | Reading | Source |
 | --- | --- |
 | 1433 across the subnet range, no port range | [Connection types](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connection-types-overview), re-fetched twice on 12 Aug 2026 |
-| 1433 **and 11000–11999**, with a note that the port range "remains authoritative until further notice" while a 1433-only improvement rolls out | Quoted by an external audit; **not located** on the three pages read here |
+| 1433 **and 11000–11999** | Microsoft's own [Bicep](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/create-bicep-quickstart) and [ARM](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/create-template-quickstart) quickstarts still provision an NSG rule for the range. An external audit also quotes a variant of the connection-types page stating the range "remains authoritative until further notice" |
 
 > "Traffic from your SQL clients to the SQL managed instance must be permitted on port 1433 across
 > the instance's subnet address range."
 
 v0.3 declared this settled in favour of 1433-only and dismissed a research run that said otherwise.
 That was the same mistake as the P0s: **a quote proving what one page says was read as proving what
-Microsoft requires.** The absence of 11000–11999 on the pages reachable here is not evidence it is
-not required elsewhere.
+Microsoft requires.**
 
-**The operational answer does not depend on resolving it**, because the risk is asymmetric:
+**Opening a port range is not free.** v0.5 said that recommending both ranges costs only "unused
+ports inside the customer's own subnet" and that nothing breaks. That was cavalier: a wider range
+enlarges the exposed surface and can breach a least-privilege policy the customer is audited
+against. It is a decision for the operator, not a default.
 
-- Recommend 1433 only, and if the range is required, **the connection fails in production**.
-- Recommend both, and if only 1433 is required, ports are open inside the customer's own delegated
-  subnet that were not needed. Nothing breaks.
-
-So the guidance is to open both, and to say why. A subnet used for MI Link will have 11000–11999
-open regardless — that requirement is separately documented and is not in dispute.
+**So the guidance is a sequence, not a blanket rule:** configure 1433 across the subnet range, test
+the actual topology, and add 11000–11999 only if the connection fails and policy permits. Say which
+reading each recommendation rests on.
 
 Redirect also requires a client driver implementing **TDS 7.4 or newer**; older clients silently
 fall back to proxy rather than failing.
@@ -213,8 +221,9 @@ does. The portal offers three connectivity types — **Public** (over the intern
 > **Default**." — [Connect to your SQL database](https://learn.microsoft.com/en-us/fabric/database/sql/connect)
 
 Because `Default` means Redirect inside Azure and Proxy outside, a Fabric SQL database client
-running inside Azure inherits the 11000–11999 requirement **and cannot opt out of it**. This
-follows from combining two documented facts; it is not stated in one place. Treat as inferred.
+running inside Azure would inherit the Azure SQL Database Redirect port requirement and could not
+opt out of it. **No Microsoft page states this**: it follows from combining two documented facts.
+It is recorded as an inference in §7.5 and must not be presented as a requirement.
 
 ### 2.5 Fabric Warehouse
 
@@ -278,11 +287,17 @@ refused without them:
 
 ### 3.2 SQL Server on Azure VM has three authentication modes, not two
 
-| Mode | Condition |
-| --- | --- |
-| SQL authentication | Required for remote access unless Active Directory is configured |
-| Windows authentication | Only when the VM is domain-joined inside a virtual network |
-| **Microsoft Entra ID** | **SQL Server 2022 (16.x) and later only**, enabled via the Azure portal |
+| Mode | Keyword | Condition |
+| --- | --- | --- |
+| SQL authentication | user id / password | Required for remote access unless Active Directory is configured |
+| **Windows** authentication | `Integrated Security=true` | Only when the VM is domain-joined inside a virtual network |
+| **Microsoft Entra** | `Authentication=Active Directory ...` | **SQL Server 2022 (16.x) and later only**, enabled via the Azure portal |
+
+**Windows integrated and Entra integrated are not the same mechanism.** `Integrated Security=true`
+is Windows authentication and needs the domain join. `Authentication=Active Directory Integrated`
+is an Entra mode with different prerequisites, and whether it is supported here — and under which
+client and federation conditions — is **not established** (§7.5). v0.6 justified the Entra mode
+with a quote about Windows authentication, the sixth instance of the same reading error.
 
 > "SQL Server with Microsoft Entra authentication is only supported on SQL Server 2022 (16.x) and
 > later versions."
@@ -337,7 +352,11 @@ For a user-assigned managed identity the client ID is supplied separately: `msiC
 `UID` in ODBC — and in ODBC that is the **client ID** on App Service or Container Instances, the
 **object ID** everywhere else.
 
-**`sqlcmd` and `bcp` use `-G` for Entra**, requiring sqlcmd 13.1 or later:
+**`sqlcmd` and `bcp` are not settled.** The example below is **Fabric-specific** and uses
+`<server>;1433`; standard `sqlcmd` separates the port with a comma, `-S <server>,<port>`. There are
+also two builds — Go and ODBC — whose `-G` semantics differ, and without credentials the Go build
+can fall back to a default credential chain, which is not interactive. Collect the build before
+recommending a flag. Listed in §7.5:
 
 ```text
 sqlcmd -S <your_server>.database.fabric.microsoft.com;1433 -G -d <your_database> -i ./script.sql
@@ -373,10 +392,24 @@ is a **missing NuGet package**. Nothing about the network or the identity is wro
 | Target | Private DNS zone | Public forwarder |
 | --- | --- | --- |
 | Azure SQL Database | `privatelink.database.windows.net` | `database.windows.net` |
-| Azure SQL Managed Instance | `privatelink.{dnsPrefix}.database.windows.net` | `{dnsPrefix}.database.windows.net` |
+| Azure SQL Managed Instance, endpoint in a **different** VNet | `privatelink.{dnsPrefix}.database.windows.net` | `{dnsPrefix}.database.windows.net` |
+| Azure SQL Managed Instance, endpoint in the **same** VNet | **not this zone** — see below | — |
 | Microsoft Fabric (workspace) | `privatelink.fabric.microsoft.com` | `fabric.microsoft.com` |
 
 Source: [Private endpoint DNS configuration](https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns) — VERIFIED.
+
+**The Managed Instance answer depends on where the endpoint sits, and getting it wrong is worse
+than not answering.** A private endpoint in the *same* virtual network as the instance is not the
+generic case: applying the `privatelink` zone there can disturb the instance's own internal and
+management connectivity, and the TLS name may require `HostNameInCertificate`. That case is **not
+researched here** (§7.5).
+
+So the topology is a required input, not a detail: ask whether the endpoint is in the same VNet as
+the instance or a different one, and answer with the open item rather than the different-VNet zone
+when it is the same.
+
+Errors 47073 and 47072 are worth knowing before any of this matters: `Public network access`
+disabled and a minimum-TLS mismatch both refuse the connection before DNS or ports come into play.
 
 Clients on a private endpoint do not need the gateway ranges.
 
@@ -513,7 +546,9 @@ because every symptom points away from the cause.
 | **40615** | Server firewall rejected the client IP | Firewall rules on the logical server |
 | **18456** | Login failed | Login exists and is enabled; contained user created; **or a DNS override — see §5.2** |
 | **40532** | Login failed, routing form | Same DNS-override family as 18456 |
-| **5** | Cannot connect | Outbound 1433 open on every firewall in the path |
+| **47073** | `Public network access` is disabled | The server setting, **before** any port or DNS question |
+| **47072** | Client cannot meet the minimum TLS version | The server minimum against the client and driver capability |
+| **5** | Cannot connect | The port *this target* uses — 1433, **3342** on the MI public endpoint, a custom SQL VM port, or the Redirect range — on every firewall in the path |
 | **26 / 40** | Server not found or unreachable | Server name; remote connections enabled |
 | **10053** | Transport-level error, connection aborted | Client-side interception, proxy, or network appliance |
 | **40613** | Database not currently available | Retry with backoff; check for an open DAC session |
@@ -688,6 +723,7 @@ flagged, however old the fact. Review dates by volatility remain the missing hal
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v0.7 | 2026-08-12 | **Fourth external audit, and the first to find the flagship example wrong.** The worked example described the same connection string reaching a Managed Instance from a laptop and from App Service. That is impossible: the public endpoint is a different hostname — `.public.` is inserted — on a different port, and it must be enabled. The card also printed an ADO.NET keyword list under a JDBC heading; a JDBC answer is a `jdbc:sqlserver://host:port;key=value` URL and what was shipped would fail at runtime. Both are rewritten, and the skill now asks for the hostname rather than composing it. Windows integrated and Entra integrated were conflated: `Integrated Security=true` was justified by a quote about Windows authentication and then labelled an Entra mode, demanding a domain join for a mode that does not need one — the sixth instance of a quote proving one cell being read as proving a row. The MI redirect conflict gains Microsoft’s own Bicep and ARM quickstarts, which still provision 11000–11999, and loses the claim that opening a range is harmless: a wider range enlarges exposure and can breach least privilege, so the guidance is now to test 1433 first and widen only if it fails and policy allows. Managed Instance private-endpoint DNS depends on whether the endpoint sits in the instance’s own virtual network, which the contract now collects and which the same-VNet case answers as an open item. Statuses are split: 21 rows keep `VERIFIED`, 37 become `DERIVED` because the page is cited but the row carries no quote of its own, and the header no longer claims every fact is quoted. `sqlcmd` and `bcp` return to open research — the syntax shipped was a Fabric example generalised into a rule, and the Go and ODBC builds do not give `-G` the same meaning. Errors 47073 and 47072 are added because they refuse the connection before ports or DNS matter, error 5 stops assuming 1433, and diagnosis replaces the mandatory *Not this* row with a hypothesis, its evidence and the test that would disprove it. |
 | v0.6 | 2026-08-12 | **Drift detection, and the skill documented as shipping.** Ten claims now watch the Microsoft pages behind the volatile facts and fail the build when one changes, reusing the registry and weekly workflow already built for the migration knowledge base. Each section was proved to carry its fact before being baselined, and one did not: the JDBC claim matched the page H1 and silently spanned the whole document, so it would have reported drift on any editorial change and told nobody anything. A CI gate now keeps this document and its matrix from disagreeing on version or on three load-bearing values, and it earned its place by catching the matrix left a version behind. The skill gained its own input and output contracts, kept deliberately separate from the migration skill’s: the two share a repository and a plugin, not a vocabulary. |
 | v0.5 | 2026-08-12 | **A third audit reopened a question v0.3 had closed by fiat.** MI redirect ports return to **CONFLICT**: the pages reachable here state 1433 across the subnet range, while the audit quotes 1433 **and 11000–11999** with a note that the range remains authoritative until further notice. That text was not located on the three pages read, and v0.3 had used its own partial reading to dismiss a research run that said 11000–11999 — the same cell-proves-the-row failure, this time applied to settle a dispute rather than to state a fact. The guidance now opens **both** ranges, because the risk is asymmetric: recommending 1433 alone and being wrong fails the connection, while recommending both and being wrong opens unused ports inside the customer's own subnet. `sqlcmd` and `bcp` leave open research — their `-G` syntax is on the Fabric page §2.4 already quotes, the third gap declared while holding its source after Go and error 4060. |
 | v0.4 | 2026-08-12 | **Second external audit. Two more rows failed the same way as the three P0s: a quote proving one cell was read as proving the row.** Azure SQL Database private endpoints had no row of their own, so the public-endpoint Redirect range would have been applied by default. It is **1433 to 65535**, not 11000–11999, and opening the wrong one leaves the connection failing rather than partly working. Connecting to the `privatelink` FQDN or to the private IP fails by design — something the private DNS zone table implied was fine. An existing private endpoint on `Default` runs Proxy on 1433, and Redirect is gated on the driver: JDBC needs 9.4 or above, and anything outside the documented list is proxied whatever the policy says. The Fabric Warehouse FQDN loses its VERIFIED status, because the quote behind it proved the port and said nothing about the hostname. §7.7 records the structural recommendations as accepted and not done, chief among them a claims registry with drift detection: that machinery already exists for the sibling knowledge base and watches 0 of the 57 facts here. |

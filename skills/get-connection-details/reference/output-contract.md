@@ -1,6 +1,6 @@
 # Output contract — `get-connection-details`
 
-> **v0.6.** This contract belongs to `get-connection-details` only. The
+> **v0.7.** This contract belongs to `get-connection-details` only. The
 > `recommend-migration-path` contracts live at [`reference/output-contract.md`](../../../reference/output-contract.md)
 > and are not affected by anything here.
 
@@ -23,7 +23,7 @@ what is wrong and — just as importantly — what is not.
 | Requirements table | Ports, DNS, identity. Each row actionable as written |
 | What will break it | Only when a documented trap applies to this combination |
 | Verification command | Runnable, so the answer is falsifiable |
-| Stamp | `KB v<version> · sourced and quoted` |
+| Stamp | `KB v<version>` plus the status of the values used |
 
 ### Diagnosing
 
@@ -31,7 +31,7 @@ what is wrong and — just as importantly — what is not.
 | --- | --- |
 | Verdict line | Symptom and **probable cause**, named as probable |
 | Reasoning | Why the symptom points elsewhere than the cause |
-| Check table | First, then, and an explicit **Not this** row |
+| Hypothesis table | The hypothesis, the evidence for it, the one test that would disprove it, and what to look at if it does |
 | Verification command | Runnable |
 | Stamp | Same |
 
@@ -58,6 +58,10 @@ Checked against the candidate answer before it is shown.
 | 10 | **The knowledge-base version is stated**, so the answer is reproducible |
 | 11 | **Open items are named when they apply.** A question landing on §7.5 or §7.1 is answered with the open item, not with a guess |
 | 12 | **Driver syntax is never ported between drivers.** SqlClient spells with spaces, JDBC and ODBC without |
+| 14 | **The connection string uses the syntax of the driver asked for.** A JDBC answer is a `jdbc:sqlserver://host:port;key=value` URL, not an ADO.NET keyword list |
+| 15 | **A hostname is never composed.** The MI public endpoint, both Fabric endpoints and any private-endpoint name are read from the portal |
+| 16 | **A `DERIVED` row is not presented as verified.** Say the page states it and that no quote was captured for that row |
+| 17 | **A diagnosis states a hypothesis and its discriminating test.** No cause is exonerated without evidence |
 | 13 | **A version-gated answer states its version condition** — Entra on SQL Server 2022+, Redirect on JDBC 9.4+, ODBC service principal on 17.7+ |
 
 ---
@@ -87,14 +91,24 @@ When a consumer asks for structured output:
   "mode": "compose | diagnose",
   "target": "<target_id>",
   "networkPath": "<network_path>",
-  "endpoint": { "fqdn": "<string | PORTAL_DERIVED>", "port": 0, "connectionPolicy": "<string>" },
+  "endpoint": {
+    "fqdn": "<string | PORTAL_DERIVED>",
+    "ports": [{ "from": 0, "to": 0, "direction": "inbound | outbound", "scope": "<subnet range | gateway IPs>", "status": "VERIFIED | DERIVED | CONFLICT" }],
+    "connectionPolicy": "<string>"
+  },
   "connectionString": "<string with placeholders>",
   "requirements": [{ "kind": "port | dns | identity | driver", "statement": "<string>", "source": "<url>" }],
-  "diagnosis": { "probableCause": "<string>", "notThis": ["<string>"], "checkFirst": "<string>" },
+  "diagnosis": {
+    "hypothesis": "<string>",
+    "evidenceFor": ["<string>"],
+    "discriminatingTest": "<string>",
+    "ifRuledOut": ["<next candidate>"],
+    "confidence": "leading | plausible | speculative"
+  },
   "verification": { "command": "<string>", "executed": false, "result": null },
   "unknowns": ["<field or open-research item>"],
   "conflicts": [{ "id": "<contradiction id>", "readings": ["<string>"], "guidance": "<string>" }],
-  "knowledgeBase": { "version": "v0.6" }
+  "knowledgeBase": { "version": "v0.7" }
 }
 ```
 

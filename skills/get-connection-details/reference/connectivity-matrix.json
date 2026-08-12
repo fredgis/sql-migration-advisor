@@ -1,6 +1,6 @@
 {
   "$comment": "Canonical structured source for get-connection-details. v0.6. Prose in docs/sql-server-to-azure-migration-connectivity.md is written FROM this file, never the reverse. Each row carries a source and a quote matched against the live page. That is the floor, not a guarantee: a quote proves the cell it supports, not the whole row, not the scope of the claim, and not that the page has no later section qualifying it. An external audit of v0.2 found three material errors that had all passed as verified for exactly that reason - see contradictions[v02-verification-overclaim]. Agreement between research runs is never used as evidence; anything unquotable is listed in open_research instead of being stated.",
-  "version": "0.6",
+  "version": "0.7",
   "retrieved": "2026-08-12",
   "vocabulary": {
     "target_id": [
@@ -20,7 +20,8 @@
       "entra-service-principal-certificate",
       "entra-workload-identity",
       "entra-integrated",
-      "sql-authentication"
+      "sql-authentication",
+      "windows-integrated"
     ],
     "network_path": [
       "public-endpoint",
@@ -43,7 +44,7 @@
       "conditional",
       "UNKNOWN"
     ],
-    "$comment": "entra-default, entra-service-principal-certificate and entra-workload-identity were added during the merge. The original research vocabulary omitted them, yet entra-default is the mode both SqlClient and JDBC document most prominently. It is NOT a synonym for managed identity: it is a credential chain that also covers developer tooling and the CLI."
+    "$comment": "entra-default, entra-service-principal-certificate and entra-workload-identity were added during the merge. The original research vocabulary omitted them, yet entra-default is the mode both SqlClient and JDBC document most prominently. It is NOT a synonym for managed identity: it is a credential chain that also covers developer tooling and the CLI. windows-integrated was added after an audit found entra-integrated justified by a quote about Windows authentication. Integrated Security=true and Authentication=Active Directory Integrated are different mechanisms with different prerequisites; conflating them makes the skill demand a domain join for a mode that does not need one."
   },
   "endpoints": [
     {
@@ -204,13 +205,17 @@
       "target_id": "azure-sql-database",
       "auth_mode": "sql-authentication",
       "support": "supported",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "target_id": "azure-sql-managed-instance",
       "auth_mode": "sql-authentication",
       "support": "supported",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "target_id": "sql-server-on-azure-vm",
@@ -218,7 +223,7 @@
       "support": "supported",
       "status": "VERIFIED",
       "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/virtual-machines/windows/ways-to-connect-to-sql",
-      "quote": "Virtual networks also enable you to join your Azure VMs to a domain. This is the only way to use Windows authentication to SQL Server. The other connection scenarios require SQL authentication with user names and passwords.",
+      "quote": "SQL Server authentication is needed to connect to the VM remotely unless you have configured Active Directory on a virtual network.",
       "$comment": "Required for remote access unless Active Directory is configured. This is NOT the whole picture: see the entra rows below."
     },
     {
@@ -270,12 +275,21 @@
     },
     {
       "target_id": "sql-server-on-azure-vm",
-      "auth_mode": "entra-integrated",
+      "auth_mode": "windows-integrated",
       "support": "conditional",
       "prerequisite": "VM domain-joined inside a virtual network",
       "status": "VERIFIED",
       "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/virtual-machines/windows/ways-to-connect-to-sql",
-      "quote": "Virtual networks also enable you to join your Azure VMs to a domain. This is the only way to use Windows authentication to SQL Server."
+      "quote": "Virtual networks also enable you to join your Azure VMs to a domain. This is the only way to use Windows authentication to SQL Server.",
+      "$comment": "This row is Windows authentication (Integrated Security=true), not Microsoft Entra. It was labelled entra-integrated until an audit caught it."
+    },
+    {
+      "target_id": "sql-server-on-azure-vm",
+      "auth_mode": "entra-integrated",
+      "support": "UNKNOWN",
+      "prerequisite": "SQL Server 2022 or later is required for any Entra mode; whether the integrated variant specifically is supported, and under which client and federation conditions, was not established",
+      "status": "OPEN",
+      "$comment": "Deliberately unknown. The quote previously attached here proved Windows authentication, not Entra integrated."
     }
   ],
   "driver_syntax": [
@@ -284,35 +298,45 @@
       "auth_mode": "entra-default",
       "keyword": "Active Directory Default",
       "min_version": "Microsoft.Data.SqlClient 3.0.0",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/ado-net/sql/azure-active-directory-authentication",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "driver": "dotnet-sqlclient",
       "auth_mode": "entra-interactive",
       "keyword": "Active Directory Interactive",
       "min_version": "2.0.0",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/ado-net/sql/azure-active-directory-authentication",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "driver": "dotnet-sqlclient",
       "auth_mode": "entra-integrated",
       "keyword": "Active Directory Integrated",
       "min_version": "2.0.0",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/ado-net/sql/azure-active-directory-authentication",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "driver": "dotnet-sqlclient",
       "auth_mode": "entra-service-principal",
       "keyword": "Active Directory Service Principal",
       "min_version": "2.0.0",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/ado-net/sql/azure-active-directory-authentication",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "driver": "dotnet-sqlclient",
       "auth_mode": "entra-device-code",
       "keyword": "Active Directory Device Code Flow",
       "min_version": "2.1.0",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/ado-net/sql/azure-active-directory-authentication",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "driver": "dotnet-sqlclient",
@@ -320,7 +344,9 @@
       "keyword": "Active Directory Managed Identity",
       "alias": "Active Directory MSI",
       "min_version": "2.1.0",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/ado-net/sql/azure-active-directory-authentication",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "driver": "dotnet-sqlclient",
@@ -328,49 +354,63 @@
       "keyword": "Active Directory Managed Identity",
       "alias": "Active Directory MSI",
       "min_version": "2.1.0",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/ado-net/sql/azure-active-directory-authentication",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "driver": "dotnet-sqlclient",
       "auth_mode": "entra-workload-identity",
       "keyword": "Active Directory Workload Identity",
       "min_version": "5.2.0",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/ado-net/sql/azure-active-directory-authentication",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "driver": "jdbc",
       "auth_mode": "entra-default",
       "keyword": "authentication=ActiveDirectoryDefault",
       "min_version": "12.2",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/jdbc/connecting-using-azure-active-directory-authentication",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "driver": "jdbc",
       "auth_mode": "entra-interactive",
       "keyword": "authentication=ActiveDirectoryInteractive",
       "min_version": "9.2",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/jdbc/connecting-using-azure-active-directory-authentication",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "driver": "jdbc",
       "auth_mode": "entra-integrated",
       "keyword": "authentication=ActiveDirectoryIntegrated",
       "min_version": "6.0",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/jdbc/connecting-using-azure-active-directory-authentication",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "driver": "jdbc",
       "auth_mode": "entra-service-principal",
       "keyword": "authentication=ActiveDirectoryServicePrincipal",
       "min_version": "9.2",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/jdbc/connecting-using-azure-active-directory-authentication",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "driver": "jdbc",
       "auth_mode": "entra-service-principal-certificate",
       "keyword": "authentication=ActiveDirectoryServicePrincipalCertificate",
       "min_version": "12.4",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/jdbc/connecting-using-azure-active-directory-authentication",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "driver": "jdbc",
@@ -378,7 +418,9 @@
       "keyword": "authentication=ActiveDirectoryManagedIdentity",
       "alias": "authentication=ActiveDirectoryMSI",
       "min_version": "12.2 (MSI alias since 8.3.1)",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/jdbc/connecting-using-azure-active-directory-authentication",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "driver": "jdbc",
@@ -386,14 +428,18 @@
       "keyword": "authentication=ActiveDirectoryManagedIdentity",
       "extra_property": "msiClientId=<client-id>",
       "min_version": "12.2",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/sql/connect/jdbc/connecting-using-azure-active-directory-authentication",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "driver": "ssms",
       "auth_mode": "entra-interactive",
       "keyword": "Microsoft Entra ID - Universal with MFA support",
       "min_version": "UNKNOWN",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/fabric/database/sql/connect",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "driver": "odbc",
@@ -466,21 +512,24 @@
     {
       "driver": "sqlcmd",
       "auth_mode": "entra-interactive",
-      "keyword": "-G",
+      "keyword": "-G, but the semantics depend on the sqlcmd build",
       "min_version": "sqlcmd 13.1",
-      "status": "VERIFIED",
-      "source_url": "https://learn.microsoft.com/en-us/fabric/database/sql/connect",
-      "quote": "sqlcmd -S <your_server>.database.fabric.microsoft.com;1433 -G -d <your_database> -i ./script.sql",
-      "$comment": "The -G flag requires at least version 13.1. Declared blocking in v0.3 and v0.4 while the syntax was on a page cited in section 2.4."
+      "status": "OPEN",
+      "source_url": "https://learn.microsoft.com/en-us/sql/tools/sqlcmd/sqlcmd-authentication",
+      "$comment": "Downgraded from VERIFIED: one Fabric example was generalised into a rule for every sqlcmd invocation.",
+      "scope_note": "The example this was taken from is Fabric-specific and uses <server>;1433. Standard sqlcmd separates the port with a comma: -S <server>,<port>.",
+      "blocking_unknown": "Which build is installed (Go or ODBC). Without credentials the Go build can fall back to DefaultAzureCredential, which is not interactive."
     },
     {
       "driver": "bcp",
       "auth_mode": "entra-interactive",
-      "keyword": "-G",
+      "keyword": "-G, but the semantics depend on the sqlcmd build",
       "min_version": "UNKNOWN",
-      "status": "VERIFIED",
-      "source_url": "https://learn.microsoft.com/en-us/fabric/database/sql/connect",
-      "quote": "You can connect to your SQL database in Fabric with the bcp utility, just like any other SQL Database Engine."
+      "status": "OPEN",
+      "source_url": "https://learn.microsoft.com/en-us/sql/tools/sqlcmd/sqlcmd-authentication",
+      "scope_note": "The example this was taken from is Fabric-specific and uses <server>;1433. Standard sqlcmd separates the port with a comma: -S <server>,<port>.",
+      "blocking_unknown": "Which build is installed (Go or ODBC). Without credentials the Go build can fall back to DefaultAzureCredential, which is not interactive.",
+      "$comment": "Downgraded from VERIFIED: one Fabric example was generalised into a rule for every sqlcmd invocation."
     }
   ],
   "driver_gotchas": [
@@ -512,20 +561,26 @@
       "target_id": "azure-sql-database",
       "zone": "privatelink.database.windows.net",
       "forwarder": "database.windows.net",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "target_id": "azure-sql-managed-instance",
       "zone": "privatelink.{dnsPrefix}.database.windows.net",
       "forwarder": "{dnsPrefix}.database.windows.net",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "target_id": "fabric-warehouse",
       "zone": "privatelink.fabric.microsoft.com",
       "forwarder": "fabric.microsoft.com",
       "subresource": "workspace",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     }
   ],
   "dns_rules": [
@@ -551,91 +606,136 @@
       "error": 40615,
       "cause": "server firewall rejected the client IP",
       "check_first": "firewall rules on the logical server",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "error": 18456,
       "cause": "login failed - credential, disabled login, missing contained user, or a DNS override",
       "check_first": "login exists and is enabled; then dns_rules",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "error": 40532,
       "cause": "login failed, routing form - same DNS-override family as 18456",
       "check_first": "dns_rules",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "error": 5,
-      "cause": "outbound 1433 blocked between client and internet",
-      "check_first": "every firewall on the path",
-      "status": "VERIFIED"
+      "cause": "the outbound port this target actually uses is blocked between client and internet",
+      "check_first": "the port for this endpoint - 1433, 3342 on the MI public endpoint, a custom SQL VM port, or the Redirect range - on every firewall in the path",
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified.",
+      "$comment": "Was tied to 1433 alone, which is wrong for every target this skill covers except the simplest."
     },
     {
       "error": 26,
       "cause": "server not found or unreachable",
       "check_first": "server name; remote connections enabled",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "error": 40,
       "cause": "could not open a connection to SQL Server",
       "check_first": "same as 26",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "error": 10053,
       "cause": "transport-level error, connection aborted by host software",
       "check_first": "client-side interception, proxy or network appliance",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "error": 40613,
       "cause": "database not currently available, or an existing DAC session",
       "check_first": "retry with backoff",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "error": 40197,
       "cause": "service error during upgrade or failover",
       "check_first": "the embedded sub-code",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "error": 40501,
       "cause": "service busy",
       "check_first": "resource limits for the tier",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "error": 49918,
       "cause": "not enough resources to process request",
       "check_first": "resource limits",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "error": 4221,
       "cause": "read-secondary login failed on an HADR wait",
       "check_first": "long write transactions on the primary",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "error": 24804,
       "cause": "Fabric transient loss during a system update",
       "check_first": "sign in again and retry",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "error": 6008,
       "cause": "Fabric workspace temporarily unavailable",
       "check_first": "re-establish the connection",
-      "status": "VERIFIED"
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues",
+      "derived_note": "Stated on the cited page, whose section was quoted for a sibling row. This row carries no quote of its own and must not be presented as individually verified."
     },
     {
       "error": 4060,
       "cause": "UNKNOWN",
       "check_first": "UNKNOWN",
       "status": "UNKNOWN"
+    },
+    {
+      "error": 47073,
+      "cause": "Public network access is disabled on the server or database",
+      "check_first": "the Public network access setting, before anything about ports or DNS",
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/connectivity-settings",
+      "derived_note": "Documented on the connectivity settings page; no individual quote captured."
+    },
+    {
+      "error": 47072,
+      "cause": "The client cannot negotiate the minimum TLS version the server requires",
+      "check_first": "the minimal TLS version setting against the client and driver capability",
+      "status": "DERIVED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/connectivity-settings",
+      "derived_note": "Documented on the connectivity settings page; no individual quote captured."
     }
   ],
   "contradictions": [
@@ -658,14 +758,18 @@
       "topic": "MI redirect port requirement",
       "readings": [
         "1433 across the subnet range (connection types prerequisites, re-fetched twice on 2026-08-12)",
-        "1433 AND 11000-11999, the range remaining authoritative until further notice while a 1433-only improvement rolls out (quoted by an external audit, not located on the pages read here)"
+        "1433 AND 11000-11999, the range remaining authoritative until further notice while a 1433-only improvement rolls out (quoted by an external audit, not located on the pages read here)",
+        "the Bicep and ARM quickstarts for Managed Instance still create an NSG rule for 11000-11999"
       ],
       "sources": [
-        "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connection-types-overview"
+        "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connection-types-overview",
+        "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/create-bicep-quickstart",
+        "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/create-template-quickstart"
       ],
-      "note": "Most likely the same rollout observed at two points in time. Recorded as unresolved rather than settled a second time. Guidance opens both ranges.",
+      "note": "Unresolved. Microsoft’s own deployment templates still provision the range while the connection-types page documents 1433 alone. Present both readings and let the operator decide against their security policy: opening a port range is not free, it widens exposure and can breach least privilege, so it must never be described as harmless.",
       "confidence": "none",
-      "resolved": false
+      "resolved": false,
+      "guidance": "State both readings with their sources. Recommend testing 1433 first on the actual topology, and opening 11000-11999 only if the connection fails and policy allows it."
     },
     {
       "id": "mi-proxyoverride-default",
@@ -867,5 +971,20 @@
       "detail": "sqlcmd documents -G, --authentication-method and ActiveDirectoryDefault; the Go pages are listed; error 4060 is on the troubleshooting page already cited.",
       "why": "The research pipeline does not distinguish source discovered, source opened, claim extracted and claim verified. Three gaps were declared while their sources were in hand."
     }
-  ]
+  ],
+  "private_endpoint_topology": {
+    "$comment": "A Managed Instance private endpoint in the SAME virtual network as the instance does not take the generic privatelink zone treatment. Applying it there can disturb the instance internal and management connectivity, and the TLS name may require HostNameInCertificate. The input contract must collect the topology before any exact DNS recommendation is produced.",
+    "required_input": "private_endpoint_topology = same-vnet | different-vnet | UNKNOWN",
+    "different_vnet": {
+      "dns": "privatelink.{dnsPrefix}.database.windows.net",
+      "status": "VERIFIED",
+      "source_url": "https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns"
+    },
+    "same_vnet": {
+      "dns": "NOT the generic privatelink zone",
+      "status": "OPEN",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/private-endpoint-overview",
+      "note": "Requires a different DNS strategy and possibly HostNameInCertificate. Not researched here - answer with the open item, never with the different-vnet zone."
+    }
+  }
 }

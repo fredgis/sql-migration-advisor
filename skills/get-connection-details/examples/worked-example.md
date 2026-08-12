@@ -1,9 +1,9 @@
 # Worked example — the same code, two environments, one timeout
 
-A full session, shown end to end: the report, the interview, the card, and what happens next.
-Every value used here is VERIFIED in
-[`../reference/connectivity-matrix.json`](../reference/connectivity-matrix.json) against a live
-Microsoft page, and the card follows the shape defined in [`../SKILL.md`](../SKILL.md).
+A full session: the report, the interview, the card, and what happens next. Every value comes from
+[`../reference/connectivity-matrix.json`](../reference/connectivity-matrix.json), and each carries
+the status that row holds — `VERIFIED` where a quote sits behind it, `DERIVED` where only the page
+does.
 
 ---
 
@@ -16,130 +16,148 @@ This is the ticket that gets passed between three teams. The developer says the 
 network team says the port is open. The DBA says the database is answering. **All three are telling
 the truth**, which is why it survives a week.
 
-A generic answer — *"check that port 1433 is open and your connection string is correct"* — is
-plausible and wrong, and it sends the network team to look at a port that was never involved.
-
 ## The interview
 
-Four questions, one at a time. None of them about the code.
+Five questions, one at a time. None about the code.
 
 > **Skill** — Which target? Managed Instance, from what you describe — confirm?
 >
 > **Developer** — Yes, MI.
 >
-> **Skill** — Which network path does the App Service use: public endpoint, private endpoint, or is
-> it VNet-integrated?
+> **Skill** — What is the exact hostname in the connection string? Paste it as it is, don't
+> reconstruct it.
 >
-> **Developer** — No VNet integration, so public I assume.
+> **Developer** — `contoso-mi.abc123def456.database.windows.net`, port 1433.
 >
-> **Skill** — And from your laptop, are you on the corporate VPN?
+> **Skill** — That is the VNet-local endpoint. Is the App Service VNet-integrated?
 >
-> **Developer** — Yes.
+> **Developer** — No.
 >
-> **Skill** — Last one: which driver, and which authentication mode?
+> **Skill** — Then it has no route to that address. Is the instance's **public endpoint** enabled?
+> It is off by default.
 >
-> **Developer** — JDBC, with the App Service managed identity.
+> **Developer** — I don't know.
+>
+> **Skill** — That decides between two different fixes. Last one: which driver and version, and
+> system-assigned or user-assigned identity?
+>
+> **Developer** — JDBC 12.4, system-assigned.
 
-The third question is the one that resolves the case. It is asked because the answer changes which
-endpoint is in play, not to build a profile.
+The third question is the one that resolves the case, and it is asked because **the answer changes
+the diagnosis**, not to build a profile.
+
+## The diagnosis
+
+The hostname is the VNet-local endpoint: `<mi-name>.<dns-zone>.database.windows.net` on 1433. It
+resolves to an address inside the instance's subnet, reachable only from that virtual network.
+
+The laptop reaches it because the corporate VPN routes into that network. The App Service, without
+VNet integration, has no route to it at all — so the TCP handshake never completes and the client
+waits until it gives up. **A timeout, not an authentication error**, which is why the port is the
+last thing anyone suspects.
+
+**The same connection string cannot be made to work by changing networks.** The public endpoint is
+a different hostname — `.public.` is inserted — on a different port. Both must change together.
 
 ## The card
 
-> **Azure SQL Managed Instance** · public endpoint · **port 3342** · connection type **Proxy (forced)**
-> KB **v0.6** · sourced and quoted
+> **Azure SQL Managed Instance** · reached via the VNet-local endpoint · client has no route
+> KB **v0.7** · endpoint shapes and ports VERIFIED · JDBC keyword VERIFIED
 >
-> Your laptop and your App Service are not reaching the same endpoint. Over VPN you reach the
-> **VNet-local endpoint on 1433**. From App Service outside the VNet you reach the **public
-> endpoint, which listens on 3342**. The same string names 1433 in both places, so it resolves the
-> right server on a port nothing listens on — a timeout rather than an authentication error, which
-> is why the port is the last thing anyone suspects.
+> Your connection string names the VNet-local endpoint, which only exists inside the instance's
+> virtual network. The VPN puts your laptop in that network; the App Service is not in it. There are
+> two ways out, and they are not the same string.
+>
+> **Option A — VNet-integrate the App Service** *(keeps traffic private)*
 >
 > ```text
-> Server = <mi-name>.public.<dns-zone>.database.windows.net,3342
-> authentication=ActiveDirectoryManagedIdentity
+> jdbc:sqlserver://contoso-mi.<dns-zone>.database.windows.net:1433;databaseName=<database>;authentication=ActiveDirectoryManagedIdentity;encrypt=true;trustServerCertificate=false
+> ```
+>
+> The string is unchanged. Enable regional VNet integration into a delegated subnet with a route to
+> the MI subnet, and confirm the name resolves to the private address from inside the app.
+>
+> **Option B — use the public endpoint** *(different host and port)*
+>
+> ```text
+> jdbc:sqlserver://contoso-mi.public.<dns-zone>.database.windows.net:3342;databaseName=<database>;authentication=ActiveDirectoryManagedIdentity;encrypt=true;trustServerCertificate=false
 > ```
 >
 > | | Requirement |
 > | --- | --- |
-> | Port | 3342 inbound, **across the entire subnet range** — never a single IP, it can change |
+> | Public endpoint | Must be **enabled** on the instance — it is off by default |
+> | Hostname | Read it from the portal. `.public.` is inserted, and the DNS zone stays the same |
+> | Port | **3342**, not 1433. Allow it inbound across the subnet range |
 > | Connection type | Proxy, forced. The instance-level setting is ignored on this endpoint |
-> | DNS | `<mi-name>.public.<dns-zone>.database.windows.net` — always the name, never the address |
-> | Identity | The App Service managed identity must exist **as a user inside the database** |
+> | Driver | `ActiveDirectoryManagedIdentity` needs JDBC 12.2+. You are on 12.4. System-assigned, so no `msiClientId` |
+> | Identity | The identity must exist as a user **inside the target database** |
 > | Not usable for | Failover groups and Managed Instance link — client traffic only |
 >
-> **What will break it** — setting the instance connection type to Redirect. It is ignored here, so
-> the change looks applied and does nothing.
+> **What will break Option B** — setting the instance connection type to Redirect. It is ignored on
+> the public endpoint, so the change looks applied and does nothing.
 >
-> **Verify** — `Test-NetConnection <mi-name>.public.<dns-zone>.database.windows.net -Port 3342`
->
-> *Source: "Public endpoint accepts connections on port 3342." —
-> [MI connectivity architecture](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connectivity-architecture-overview)*
+> **Verify** — `Test-NetConnection contoso-mi.public.<dns-zone>.database.windows.net -Port 3342`.
+> Success proves TCP reaches that port and nothing further; a failure does not by itself prove the
+> NSG is responsible — DNS, a route table, an appliance or a disabled endpoint produce the same
+> result.
 
 ## What happens next
 
-The developer runs the check. Thirty seconds. Either outcome moves the ticket:
+Either outcome moves the ticket, and neither closes it on its own:
 
-- **It succeeds** — the port was the problem. Change the string, done.
-- **It fails** — the NSG is blocking 3342. The question stops being *"why does it time out"* and
-  becomes *"who opens the rule"*, which is a conversation with the network team rather than an
-  investigation.
+- **The check succeeds** — the network path is open. If the app still fails, the next layer is
+  identity: is the managed identity a user in that database?
+- **The check fails** — the path is blocked, but *where* is still open. Resolve the name first, then
+  test the port from inside the App Service, then look at the NSG.
 
-Both outcomes end the three-way ping-pong, which is the actual deliverable.
+The value is not the answer alone. It is ending the three-way ping-pong with a test whose result
+changes what you look at next.
 
 ---
 
-# Second example — the error that lies about its own cause
+# Second example — the error that misleads
 
 > "Error 18456, login failed. But only from the corporate network."
 
 Every signal says authentication. The credential works elsewhere, so the natural next steps are
-resetting the secret and re-granting the user. Both find nothing.
+resetting the secret and re-granting the user.
 
 ## The card
 
-> **Error 18456 from one network only** · probable cause **DNS override**, not credentials
-> KB **v0.6** · sourced and quoted
+> **Error 18456 from one network only** · leading hypothesis **DNS override**
+> KB **v0.7** · the DNS-override behaviour is VERIFIED; its attribution to this case is a hypothesis
 >
 > The gateway validates the FQDN it receives against the target server. A name pinned to a retired
 > gateway address is rejected by design, and the rejection is reported as a login failure. The same
 > cause produces **40532** and **40615**.
 >
-> | | Check |
+> | | |
 > | --- | --- |
-> | First | `hosts` file, static CNAME, or a private DNS zone pinning the server FQDN |
-> | Then | Client resolution against authoritative DNS — a mismatch confirms the override |
-> | **Not this** | The credential. It is correct, which is why it works from every other network |
+> | Hypothesis | A DNS override pins the server FQDN to a stale gateway address |
+> | Evidence for | The credential works from other networks; the failure is confined to one |
+> | Discriminating test | Compare client resolution with authoritative DNS. A mismatch confirms it; a match rules it out |
+> | If ruled out | Next candidates: a network-scoped firewall rule, a proxy or appliance rewriting the connection, a client-side TLS or certificate policy, or `Public network access` disabled — error 47073 |
 >
-> **Why every instinct is wrong here** — the symptom names authentication, so the natural next
-> steps are resetting the secret and re-granting the user. Both find nothing, because nothing is
-> wrong with either.
+> **Why the symptom misleads** — the error names authentication, so the instinct is to reset the
+> secret. That is likely to find nothing here, but the credential is not *proven* correct until the
+> discriminating test comes back.
 >
 > **Verify** — `Resolve-DnsName -Name "<server>.database.windows.net" -DnsOnly`, compared with
 > authoritative DNS.
->
-> *Source: "Login attempts that go directly to an IP address (or to a stale IP through a DNS
-> override) fail by design." —
-> [Troubleshoot common connection issues](https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-errors-issues)*
 
-The **Not this** row is the one that earns the card. Without it the reader goes to the credential
-anyway, because that is what the error says.
+The hypothesis row is what earns the card. Naming a cause without naming the test that would
+disprove it is how a plausible answer becomes a wasted afternoon.
 
 ---
 
 ## Why these two cases justify a skill
 
-1. **The facts are counter-intuitive.** Port 3342. TCP/IP disabled by default on Developer and
-   Express VM images. No `ActiveDirectoryDefault` in ODBC.
-2. **They are sourced and quoted**, not produced by plausibility. The stamp `KB v0.6 · sourced and
-   quoted` promises exactly that and no more: every value in the card has a Microsoft page and a
-   matched sentence behind it. It does not promise the claim is correctly scoped — an audit of
-   v0.2 found three rows where a quote proving one cell had been read as proving the whole row.
-3. **The symptom consistently points at the wrong layer** — a timeout that is not a network
-   problem, an authentication error that is a DNS problem, a failed connection caused by a missing
-   NuGet package.
-
-The third is the real argument. These are exactly the cases where an untooled model answers
-confidently and wrongly, and where the wrong answer costs a day of three teams' time.
+1. **The facts are counter-intuitive.** The public endpoint is a different hostname *and* port. TCP/IP
+   is disabled by default on Developer and Express VM images. ODBC has no `ActiveDirectoryDefault`.
+2. **They carry a status.** `VERIFIED` where a quote sits behind the row, `DERIVED` where only the
+   page does, `CONFLICT` where Microsoft's own sources disagree. The card says which.
+3. **The symptom points at the wrong layer** — a timeout that is not a port problem, an
+   authentication error that is a DNS problem, a failed connection caused by a missing package.
 
 Examples use sanitised placeholders. Keep customer names, tenant details, server names and
 subscription identifiers out of them.

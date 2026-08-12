@@ -1,6 +1,6 @@
 # Input contract — `get-connection-details`
 
-> **v0.6.** This contract belongs to `get-connection-details` only. The
+> **v0.7.** This contract belongs to `get-connection-details` only. The
 > `recommend-migration-path` contracts live at [`reference/input-contract.md`](../../../reference/input-contract.md)
 > and are not affected by anything here.
 
@@ -45,6 +45,15 @@ A connection string built on `UNKNOWN` is a guess. Say so rather than emitting o
 | `sql_server_version` | version \| `UNKNOWN` | conditional | Required for `sql-server-on-azure-vm`: Entra needs SQL Server 2022 or later |
 | `edition` | `developer` \| `express` \| `standard` \| `enterprise` \| `UNKNOWN` | conditional | Developer and Express VM images do not enable TCP/IP |
 | `domain_joined` | boolean \| `UNKNOWN` | conditional | Windows authentication requires it on a VM |
+| `fqdn` | hostname as configured | yes | **Read from the portal, never composed.** The MI public endpoint inserts `.public.` and is a different host from the VNet-local one; both Fabric hostnames are portal-derived |
+| `public_endpoint_enabled` | boolean \| `UNKNOWN` | conditional | Managed Instance only. Off by default, and its absence changes the fix rather than the port |
+| `private_endpoint_topology` | `same-vnet` \| `different-vnet` \| `UNKNOWN` | conditional | Managed Instance private endpoints. **No exact DNS recommendation without it**: the generic `privatelink` zone applied in the instance own VNet can disturb its internal and management connectivity |
+| `public_network_access` | `enabled` \| `disabled` \| `UNKNOWN` | conditional | Azure SQL. Refuses the connection with error 47073 before any port or DNS question applies |
+| `minimum_tls_version` | version \| `UNKNOWN` | conditional | A client below the server minimum fails with 47072, before authentication |
+| `client_os` | `windows` \| `linux` \| `macos` \| `UNKNOWN` | conditional | Several ODBC modes are Windows-only, and `ActiveDirectoryIntegrated` needs ODBC 17.6+ elsewhere |
+| `sqlcmd_build` | `go` \| `odbc` \| `UNKNOWN` | conditional | The two builds do not give `-G` the same meaning. Without credentials the Go build can fall back to a default credential chain, which is not interactive |
+| `managed_identity_client_id` | client ID \| `NOT_APPLICABLE` | conditional | Required for a user-assigned identity, absent for system-assigned |
+| `target_database` | name \| `UNKNOWN` | no | Fabric Warehouse connects to `master` when it is omitted |
 
 **Never collected, never stored:** passwords, keys, SAS tokens, client secrets, connection strings
 containing any of them. If a user pastes one, do not echo it back.
@@ -71,7 +80,12 @@ must return "not researched" rather than an inferred answer.
 
 `entra-default` · `entra-interactive` · `entra-device-code` · `entra-managed-identity-system` ·
 `entra-managed-identity-user` · `entra-service-principal` · `entra-service-principal-certificate` ·
-`entra-workload-identity` · `entra-integrated` · `sql-authentication`
+`entra-workload-identity` · `entra-integrated` · `windows-integrated` · `sql-authentication`
+
+`windows-integrated` (`Integrated Security=true`) and `entra-integrated`
+(`Authentication=Active Directory Integrated`) are **different mechanisms with different**
+**prerequisites**. A domain-joined VM is a requirement of the first, not the second. Conflating
+them is how v0.6 came to demand a domain join for an Entra mode.
 
 `entra-default` is **not** a synonym for managed identity. It is a credential chain that also
 covers developer tooling and the CLI, and it does not exist in ODBC at all.
@@ -115,6 +129,12 @@ preference.
 | `odbc` + `entra-interactive` on Linux or macOS | Invalid. Windows driver only |
 | `vnet-local` + any target other than Managed Instance | Invalid |
 | `private-endpoint` + `redirect` + `driver_version` unknown | Ask. Redirect is driver-gated; JDBC needs 9.4 or above and other drivers are proxied |
+| `azure-sql-managed-instance` + `private-endpoint` + topology `UNKNOWN` | Ask. The DNS answer differs and the same-VNet case is not researched |
+| `azure-sql-managed-instance` + `public-endpoint` + not enabled | Invalid. Enabling it is part of the answer, not an assumption |
+| `sql-server-on-azure-vm` + `windows-integrated` + not domain-joined | Invalid. Windows authentication requires a domain-joined VM in a VNet |
+| `sqlcmd` + any Entra mode + build `UNKNOWN` | Ask. `-G` does not mean the same thing in the Go and ODBC builds |
+| `odbc` + `entra-interactive` + client OS not Windows | Invalid. Windows driver only |
+| any Azure SQL target + public network access disabled | Fails with 47073 regardless of every other field. Say so first |
 
 When a combination is invalid, name the restriction and the alternative. Do not silently choose a
 different value on the user's behalf.
