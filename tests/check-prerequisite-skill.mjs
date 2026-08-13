@@ -25,11 +25,11 @@ const outputContract = read(...skillDir, 'reference', 'output-contract.md');
 const template = read(...skillDir, 'templates', 'prerequisite-plan.md');
 const kb = read('docs', 'sql-server-to-azure-migration-prerequisite.md');
 
-const expectedPathIds = Array.from({ length: 26 }, (_, i) => `P${String(i + 1).padStart(2, '0')}`);
+const expectedPathIds = Array.from({ length: 28 }, (_, i) => `P${String(i + 1).padStart(2, '0')}`);
 const pathIds = catalog.paths.map(pathEntry => pathEntry.id);
-check('path-count', catalog.paths.length === 26, `expected 26 paths, found ${catalog.paths.length}`);
+check('path-count', catalog.paths.length === 28, `expected 28 paths, found ${catalog.paths.length}`);
 check('path-ids', JSON.stringify(pathIds) === JSON.stringify(expectedPathIds), `expected ${expectedPathIds.join(', ')}, found ${pathIds.join(', ')}`);
-check('path-ordinals', catalog.paths.every((entry, index) => entry.ordinal === index + 1), 'ordinals must be contiguous from 1 to 26');
+check('path-ordinals', catalog.paths.every((entry, index) => entry.ordinal === index + 1), 'ordinals must be contiguous from 1 to 28');
 
 for (const key of ['id', 'slug', 'title', 'target', 'method', 'supportStatus']) {
   const values = catalog.paths.map(entry => entry[key]);

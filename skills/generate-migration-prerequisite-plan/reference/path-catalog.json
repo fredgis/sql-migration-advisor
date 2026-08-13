@@ -323,6 +323,29 @@
       "supportStatus": "supported",
       "disambiguation": { "field": "dms_migration_mode", "equals": "ONLINE" },
       "questionFields": ["dms_migration_mode", "dms_backup_landing_zone", "recovery_model_status", "source_permissions", "target_permissions", "network_path_status", "tde_status", "schema_compatibility_status", "largest_database_size_gb", "downtime_tolerance", "validation_plan_status", "rollback_plan_status"]
+    },
+    {
+      "ordinal": 27,
+      "id": "P27",
+      "slug": "avs-hosted-sql-platform",
+      "title": "Azure VMware Solution — hosted SQL Server platform overlay",
+      "target": "Azure VMware Solution",
+      "method": "Hosted SQL Server platform overlay",
+      "advisorAliases": ["AVS", "Azure VMware Solution"],
+      "supportStatus": "supported",
+      "overlay": true,
+      "questionFields": ["source_location", "target_region", "network_path_status", "dns_status", "domain_model", "authentication_model", "largest_database_size_gb", "validation_plan_status"]
+    },
+    {
+      "ordinal": 28,
+      "id": "P28",
+      "slug": "azure-migrate-assessment",
+      "title": "Azure Migrate assessment for SQL Server estates",
+      "target": "SQL Server on Azure VM / Azure VMware Solution / Azure SQL Managed Instance / Azure SQL Database",
+      "method": "Azure Migrate assessment",
+      "advisorAliases": ["Azure Migrate", "Azure Migrate (assess)", "Azure Migrate assessment"],
+      "supportStatus": "supported",
+      "questionFields": ["source_location", "source_version", "source_edition", "database_count", "performance_baseline_status", "source_permissions", "network_path_status", "feature_inventory_status", "target_region"]
     }
   ]
 }

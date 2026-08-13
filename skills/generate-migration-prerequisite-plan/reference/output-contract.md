@@ -85,7 +85,7 @@ Free text cannot produce `typed_answer` or `verified_evidence`.
 
 | # | Invariant |
 | --- | --- |
-| 1 | The target/method resolves to exactly one of the 26 catalog paths, or the output is `unresolved_path` and contains no invented prerequisite plan. |
+| 1 | The target/method resolves to exactly one of the 28 catalog paths, or the output is `unresolved_path` and contains no invented prerequisite plan. |
 | 2 | Every prerequisite has a stable ID, applicability statement, requirement type, blocking flag, evidence requirement, official public source and `lastVerified` date. |
 | 3 | `confirmed` rests on a typed fact or verified evidence; free-text confidence language is never enough. |
 | 4 | Every unanswered or ambiguous hard-gate fact remains `unknown` and appears in `unknowns`. |
