@@ -81,6 +81,26 @@ for (const row of prerequisiteRows) {
   check(`row-date-${row.id}`, /^\d{4}-\d{2}-\d{2}$/u.test(row.cells[8]), `invalid verification date ${row.cells[8]}`);
 }
 
+// A GFM table whose delimiter row has a different cell count from its header row is not a table
+// at all: the whole block renders as raw pipe text. Six path sections shipped that way because
+// every row-level check passed while the table around them was never parsed.
+const kbLines = kb.split(/\r?\n/);
+const cellCount = line => line.trimEnd().split('|').slice(1, -1).length;
+let tableIndex = 0;
+for (let i = 1; i < kbLines.length; i += 1) {
+  if (!/^\s*\|\s*:?-{3,}/u.test(kbLines[i])) continue;
+  if (!kbLines[i - 1].trimStart().startsWith('|')) continue;
+  tableIndex += 1;
+  const header = cellCount(kbLines[i - 1]);
+  const delimiter = cellCount(kbLines[i]);
+  check(
+    `kb-table-shape-${tableIndex}`,
+    header === delimiter,
+    `line ${i + 1}: header has ${header} cells, delimiter row has ${delimiter}; the table will not render`
+  );
+}
+check('kb-tables-found', tableIndex >= 24, `expected at least 24 KB tables, found ${tableIndex}`);
+
 for (const question of questions.questions) {
   for (const consumer of question.consumedBy) {
     check(`consumer-exists-${question.id}-${consumer}`, prerequisiteIdSet.has(consumer), `${consumer} does not exist in the KB`);

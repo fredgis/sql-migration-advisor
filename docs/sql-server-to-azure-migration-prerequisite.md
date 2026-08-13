@@ -269,7 +269,7 @@ Direct means the backup is placed or downloaded through the Kubernetes pod/PVC o
 workflow without depending on a separately exposed client-facing SQL endpoint for transfer.
 
 | ID | Prerequisite | Type | Blocking | Owner | Applicability | Evidence required | Official source | Verified |
-| --- | --- | --- | :---: | --- | --- | --- | --- | --- | --- |
+| --- | --- | --- | :---: | --- | --- | --- | --- | --- |
 | P17-001 | Deploy a supported Kubernetes distribution/runtime and healthy Arc data controller/SQL MI; the container runtime must be `containerd`. | required | Yes | Kubernetes platform owner | P17 | Cluster/version/runtime and Arc health export | [Create Arc-enabled SQL Managed Instance](https://learn.microsoft.com/en-us/azure/azure-arc/data/create-sql-managed-instance) | 2026-08-13 |
 | P17-002 | Use direct connectivity mode and satisfy its outbound Azure endpoints, extensions, identity and monitoring prerequisites; indirect mode is retired. | required | Yes | Arc platform owner | P17 | Connectivity mode and extension health | [Arc data connectivity](https://learn.microsoft.com/en-us/azure/azure-arc/data/connectivity) | 2026-08-13 |
 | P17-003 | Configure the backup storage class at deployment with `ReadWriteMany` capability and sufficient PVC capacity; changing the backup storage class after deployment is unsupported. | required | Yes | Kubernetes storage owner | P17 | StorageClass/PVC YAML, RWX test and capacity record | [Arc data storage configuration](https://learn.microsoft.com/en-us/azure/azure-arc/data/storage-configuration) | 2026-08-13 |
@@ -283,7 +283,7 @@ Use this overlay when restore administration or validation depends on a client-f
 service endpoint that must first be stable and reachable.
 
 | ID | Prerequisite | Type | Blocking | Owner | Applicability | Evidence required | Official source | Verified |
-| --- | --- | --- | :---: | --- | --- | --- | --- | --- | --- |
+| --- | --- | --- | :---: | --- | --- | --- | --- | --- |
 | P18-001 | Deploy a supported Kubernetes distribution/runtime and healthy Arc data controller/SQL MI with `containerd`. | required | Yes | Kubernetes platform owner | P18 | Cluster/version/runtime and Arc health export | [Create Arc-enabled SQL Managed Instance](https://learn.microsoft.com/en-us/azure/azure-arc/data/create-sql-managed-instance) | 2026-08-13 |
 | P18-002 | Use direct connectivity mode and validate required Azure outbound connectivity and extensions; indirect mode is retired. | required | Yes | Arc platform owner | P18 | Connectivity mode and extension health | [Arc data connectivity](https://learn.microsoft.com/en-us/azure/azure-arc/data/connectivity) | 2026-08-13 |
 | P18-003 | Configure RWX backup storage and sufficient PVC capacity before deployment/restore. | required | Yes | Kubernetes storage owner | P18 | StorageClass/PVC YAML and capacity test | [Arc data storage configuration](https://learn.microsoft.com/en-us/azure/azure-arc/data/storage-configuration) | 2026-08-13 |
@@ -294,7 +294,7 @@ service endpoint that must first be stable and reachable.
 ## 22. P19 — SQL Server Container: Backup/Restore through Mounted Volume
 
 | ID | Prerequisite | Type | Blocking | Owner | Applicability | Evidence required | Official source | Verified |
-| --- | --- | --- | :---: | --- | --- | --- | --- | --- | --- |
+| --- | --- | --- | :---: | --- | --- | --- | --- | --- |
 | P19-001 | Select a supported Microsoft SQL Server Linux container image compatible with the source backup, pin the image tag and accept Linux/container feature differences. | required | Yes | Container and SQL owners | P19 | Image digest/tag, source version and compatibility assessment | [Deploy SQL Server Linux containers](https://learn.microsoft.com/en-us/sql/linux/sql-server-linux-docker-container-deployment) | 2026-08-13 |
 | P19-002 | Mount persistent storage for `/var/opt/mssql` and a backup path with correct ownership, permissions, access mode, capacity and retention outside the container writable layer. | required | Yes | Container storage owner | P19 | Deployment/PVC/volume configuration and write test | [Configure SQL Server containers](https://learn.microsoft.com/en-us/sql/linux/sql-server-linux-docker-container-configure) | 2026-08-13 |
 | P19-003 | Copy a verified backup set to the mounted volume and test `RESTORE FILELISTONLY` plus restore with explicit Linux target paths. | required | Yes | DBA | P19 | Backup verification, mounted-file manifest and restore rehearsal | [Restore a SQL Server database in a Linux container](https://learn.microsoft.com/en-us/sql/linux/tutorial-restore-backup-in-sql-server-container) | 2026-08-13 |
@@ -305,7 +305,7 @@ service endpoint that must first be stable and reachable.
 ## 23. P20 — SQL MI / SQL DB: bcp
 
 | ID | Prerequisite | Type | Blocking | Owner | Applicability | Evidence required | Official source | Verified |
-| --- | --- | --- | :---: | --- | --- | --- | --- | --- | --- |
+| --- | --- | --- | :---: | --- | --- | --- | --- | --- |
 | P20-001 | Install a current `bcp`/ODBC toolchain on an approved copy host and record exact versions, architecture and authentication support. | required | Yes | Migration engineer | P20 | `bcp -v`, ODBC version and host build record | [bcp utility](https://learn.microsoft.com/en-us/sql/tools/bcp-utility) | 2026-08-13 |
 | P20-002 | Create and validate the target schema first; define table order, keys, identities, constraints, triggers, computed columns, collations and type/format mappings. | required | Yes | Database developer | P20 | Target schema deployment and format-file/load rehearsal | [Use native or character format](https://learn.microsoft.com/en-us/sql/relational-databases/import-export/use-native-format-to-import-or-export-data-sql-server) | 2026-08-13 |
 | P20-003 | Grant least-privilege source SELECT and target INSERT/bulk permissions and prove TLS, DNS, firewall/private connectivity and authentication from the copy host. | required | Yes | Security and network owners | P20 | Sanitized permissions and connection tests | [Azure SQL connectivity architecture](https://learn.microsoft.com/en-us/azure/azure-sql/database/connectivity-architecture) | 2026-08-13 |
@@ -316,7 +316,7 @@ service endpoint that must first be stable and reachable.
 ## 24. P21 — SQL MI / SQL DB / Fabric SQL DB: Azure Data Factory Copy
 
 | ID | Prerequisite | Type | Blocking | Owner | Applicability | Evidence required | Official source | Verified |
-| --- | --- | --- | :---: | --- | --- | --- | --- | --- | --- |
+| --- | --- | --- | :---: | --- | --- | --- | --- | --- |
 | P21-001 | Select and deploy the correct integration runtime/gateway for source reachability: Azure IR, managed VNet/private endpoint, self-hosted IR or Fabric gateway as supported by the chosen connector. | required | Yes | Data integration owner | P21 | Runtime/gateway health and topology record | [Integration runtime concepts](https://learn.microsoft.com/en-us/azure/data-factory/concepts-integration-runtime) | 2026-08-13 |
 | P21-002 | Configure source and target connections with least-privilege managed identity/service principal/SQL credentials and Key Vault or managed credential storage. | required | Yes | Security owner | P21 | Sanitized linked-connection tests and identity permissions | [Store ADF credentials in Key Vault](https://learn.microsoft.com/en-us/azure/data-factory/store-credentials-in-key-vault) | 2026-08-13 |
 | P21-003 | Deploy and validate the target schema and explicit column/type mapping; define identity, key, constraint, trigger, computed-column and upsert behavior. | required | Yes | Database developer | P21 | Mapping document and successful representative copy | [Copy activity schema and type mapping](https://learn.microsoft.com/en-us/azure/data-factory/copy-activity-schema-and-type-mapping) | 2026-08-13 |
@@ -335,7 +335,7 @@ service endpoint that must first be stable and reachable.
 > claim.
 
 | ID | Prerequisite | Type | Blocking | Owner | Applicability | Evidence required | Official source | Verified |
-| --- | --- | --- | :---: | --- | --- | --- | --- | --- | --- |
+| --- | --- | --- | :---: | --- | --- | --- | --- | --- |
 | P22-001 | Obtain explicit architecture/security acceptance for an archived sample; pin source commit/version and hashes, scan dependencies, define ownership, and prove a supportable build/runtime or choose another path. | required | Yes | Architecture and security owners | P22 | Signed risk acceptance, source hash, dependency scan and reproducible build | [Azure-Samples Smart Bulk Copy repository](https://github.com/Azure-Samples/smartbulkcopy) | 2026-08-13 |
 | P22-002 | Create the target schema independently and validate keys, identities, constraints, triggers, temporal tables, columnstore and all required source data types; the sample is data-only. | required | Yes | Database developer | P22 | Schema deployment and type-coverage rehearsal | [Smart Bulk Copy FAQ](https://github.com/Azure-Samples/smartbulkcopy/blob/master/docs/FAQ.md) | 2026-08-13 |
 | P22-003 | Use sanitized source/target connection configuration, supported authentication/TLS, least-privilege permissions and proven network reachability from the execution host. | required | Yes | Security and network owners | P22 | Connection tests and protected configuration reference | [Smart Bulk Copy configuration](https://github.com/Azure-Samples/smartbulkcopy/blob/master/docs/CONFIG.md) | 2026-08-13 |
