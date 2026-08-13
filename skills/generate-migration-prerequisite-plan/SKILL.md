@@ -110,7 +110,10 @@ Keep these caveats visible:
 - `P16` uses a Preview Migration Assistant against a GA Fabric SQL database target.
 - `P22` is an official Azure sample, not an Azure service, supported migration product or SLA. Its
   `Azure-Samples/smartbulkcopy` repository is archived, and its README requires .NET Core 3.1, a
-  runtime that is out of support.
+  runtime that is out of support. `P22` is therefore **opt-in only**: never resolve it by inference
+  from a target, a method alias or a size signal. Select it only when the user explicitly chooses
+  Smart Bulk Copy over `bcp` after being shown the archived-repository and out-of-support-runtime
+  facts. If the answer is unknown, resolve to `P21` (`bcp`) or return the shortlist instead.
 
 ## Output
 
@@ -142,5 +145,6 @@ Every row must retain its stable prerequisite ID even when the visible title is 
   support.
 - Never describe Smart Bulk Copy as an Azure service, product or supported migration runtime, and
   always surface its archived-sample status when rendering readiness.
+- Never resolve `P22` without an explicit, informed user opt-in.
 - Never create a Markdown conclusion that is absent from the JSON state.
 - Never echo sensitive identifiers.

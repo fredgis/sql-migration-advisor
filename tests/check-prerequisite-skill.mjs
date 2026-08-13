@@ -315,7 +315,21 @@ const specialSupport = Object.fromEntries(catalog.paths.map(entry => [entry.id, 
 check('data-box-support-label', specialSupport.P14 === 'composed_pattern', `P14 label is ${specialSupport.P14}`);
 check('striim-support-label', specialSupport.P15 === 'third_party', `P15 label is ${specialSupport.P15}`);
 check('fabric-support-label', specialSupport.P16 === 'preview_tool_ga_target', `P16 label is ${specialSupport.P16}`);
-check('smart-bulk-support-label', specialSupport.P22 === 'official_sample_not_product', `P22 label is ${specialSupport.P22}`);
+check('smart-bulk-support-label', specialSupport.P22 === 'deprecated_archived_sample', `P22 label is ${specialSupport.P22}`);
+const smartBulkPath = catalog.paths.find(entry => entry.id === 'P22');
+check('smart-bulk-opt-in-required', smartBulkPath?.requiresExplicitOptIn === true,
+  'P22 must declare requiresExplicitOptIn so an archived sample is never resolved by inference');
+check('smart-bulk-opt-in-reason', /archived/u.test(smartBulkPath?.optInReason || '') && /\.NET Core 3\.1/u.test(smartBulkPath?.optInReason || ''),
+  'P22 optInReason must state both the archived repository and the out-of-support runtime');
+check('smart-bulk-opt-in-gated', smartBulkPath?.disambiguation?.field === 'bulk_copy_tool' && smartBulkPath?.disambiguation?.equals === 'SMART_BULK_COPY',
+  'P22 must stay behind an explicit bulk_copy_tool choice');
+check('smart-bulk-opt-in-documented', /explicit(ly)? (opt|choose|select)/iu.test(skill) && /P22/u.test(skill),
+  'SKILL.md must document the P22 explicit opt-in rule');
+for (const entry of catalog.paths) {
+  if (entry.id === 'P22') continue;
+  check(`support-label-not-deprecated-${entry.id}`, entry.supportStatus !== 'deprecated_archived_sample',
+    `${entry.id} must not borrow the archived-sample label`);
+}
 check('data-box-caveat',
   /Data Box transports files; it does not restore a SQL Server backup/u.test(kb) && /a `\.bak` alone cannot be restored/u.test(kb),
   'P14 must not be presented as direct SQL backup restore to Azure SQL Database');
