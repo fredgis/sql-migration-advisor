@@ -334,6 +334,70 @@ compareAcrossDocs('Azure Arc portal MI wizard database batch limit', consistency
   }
 }
 
+// Third knowledge base: migration prerequisites. Same reasoning as the connectivity block -- its own
+// files, the same error list, and a clean skip when absent so the Microsoft fork stays green. What
+// this document can get wrong is not a fact drifting on a Microsoft page but its own version line
+// drifting apart across the six places that declare it, which is exactly the failure a weekly job
+// should catch before a reader trusts a plan generated from a stale contract.
+{
+  const PRE_DOC = path.join(ROOT, 'docs', 'sql-server-to-azure-migration-prerequisite.md');
+  const PRE_DIR = path.join(ROOT, 'skills', 'generate-migration-prerequisite-plan');
+  const PRE_CATALOG = path.join(PRE_DIR, 'reference', 'path-catalog.json');
+
+  if (fs.existsSync(PRE_DOC) && fs.existsSync(PRE_CATALOG)) {
+    const preDoc = read(PRE_DOC);
+    let catalog = null;
+    try { catalog = JSON.parse(read(PRE_CATALOG)); }
+    catch { errors.push('prerequisite path catalog is not valid JSON'); }
+
+    if (catalog) {
+      const docVersion = first(/\*\*Version:\*\*\s*(v\d+\.\d+)/, preDoc);
+      if (!docVersion) {
+        errors.push('prerequisite KB carries no version stamp');
+      } else if (docVersion !== catalog.knowledgeBaseVersion) {
+        errors.push(`prerequisite KB is ${docVersion} while its path catalog declares ${catalog.knowledgeBaseVersion}; the skill reads both, so they cannot ship apart`);
+      }
+
+      // Every surface that declares the line must agree, or the skill's own load-and-verify step
+      // passes against one file and answers from another.
+      const declarations = [
+        ['schemas/output.schema.json', /"prerequisiteKnowledgeBaseVersion":\s*\{\s*"const":\s*"(v\d+\.\d+)"/],
+        ['reference/input-contract.md', /Prerequisite knowledge-base line:\*\*\s*`(v\d+\.\d+)`/],
+        ['reference/output-contract.md', /Prerequisite knowledge-base line:\*\*\s*`(v\d+\.\d+)`/],
+        ['SKILL.md', /schema\/KB line `[\d.]+`\/`(v\d+\.\d+)`/]
+      ];
+      for (const [rel, re] of declarations) {
+        const file = path.join(PRE_DIR, rel);
+        if (!fs.existsSync(file)) { errors.push(`prerequisite skill is missing ${rel}`); continue; }
+        const declared = first(re, read(file));
+        if (!declared) errors.push(`${rel} no longer declares a prerequisite KB version`);
+        else if (docVersion && declared !== docVersion) {
+          errors.push(`${rel} declares ${declared} while the prerequisite KB is ${docVersion}`);
+        }
+      }
+
+      // The freshness stamp is the only thing telling a reader when the sources were last read.
+      const verified = first(/\*\*Last verified:\*\*\s*(\d{4}-\d{2}-\d{2})/, preDoc);
+      if (!verified) errors.push('prerequisite KB carries no "Last verified" date');
+      else {
+        const ageDays = Math.floor((Date.now() - Date.parse(verified)) / 86400000);
+        if (ageDays > 180) warnings.push(`prerequisite KB was last verified ${ageDays} days ago (${verified})`);
+      }
+
+      // Every path the catalog declares must have prerequisites in the document, or the skill can
+      // resolve a path and then produce an empty plan.
+      const missingRows = catalog.paths
+        .filter(entry => !new RegExp(`^\\|\\s*${entry.id}-\\d{3}\\s*\\|`, 'm').test(preDoc))
+        .map(entry => entry.id);
+      if (missingRows.length) {
+        errors.push(`prerequisite paths declared with no rows in the KB: ${missingRows.join(', ')}`);
+      }
+
+      if (!errors.length) console.log(`Prerequisite KB checked: ${docVersion}, ${catalog.paths.length} paths.`);
+    }
+  }
+}
+
 for (const w of warnings) console.warn(`WARNING: ${w}`);
 if (errors.length) {
   console.error('KB consistency check failed:');

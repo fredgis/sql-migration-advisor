@@ -9,6 +9,9 @@ on:
     branches: [main]
     paths:
       - 'docs/sql-server-to-azure-migration.md'
+      - 'docs/sql-server-to-azure-migration-prerequisite.md'
+      - 'skills/generate-migration-prerequisite-plan/**'
+      - 'tests/check-prerequisite-skill.mjs'
       - 'reference/decision-rules.md'
       - 'reference/claims-registry.json'
       - 'README.md'
@@ -52,6 +55,11 @@ jobs:
 
       - name: Check KB / decision-rules consistency
         run: node tools/weekly-check/check-consistency.mjs
+
+      # The prerequisite KB has its own gate. Running it here means a weekly run fails on a broken
+      # prerequisite contract instead of only on a broken Advisor KB.
+      - name: Check prerequisite KB / skill contracts
+        run: node tests/check-prerequisite-skill.mjs
 
   # Evidence gathering. Independent of the model, and the part most likely to fail for
   # boring reasons: a dead link, a feed timing out, a source page moving. Isolated so a
