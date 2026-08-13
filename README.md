@@ -145,7 +145,7 @@ Azure VM in offline and online mode, DMS offline to Azure SQL Database, transact
 Data Box seed, Striim, the Fabric Migration Assistant, two Arc routes, containers, bcp, Data Factory
 Copy, Smart Bulk Copy, an Azure VMware Solution platform overlay and Azure Migrate assessment.
 Behind them sits [`docs/sql-server-to-azure-migration-prerequisite.md`](docs/sql-server-to-azure-migration-prerequisite.md):
-12 common requirements and 285 rows in total, each with a stable ID, an owner, an applicability
+12 common requirements and 292 rows in total, each with a stable ID, an owner, an applicability
 condition, the evidence that would settle it, and a public Microsoft source with the date it was
 checked.
 
