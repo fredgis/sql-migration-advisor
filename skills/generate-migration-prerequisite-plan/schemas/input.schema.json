@@ -44,7 +44,10 @@
           "arc_connectivity_mode", "arc_backup_storage_class_status", "arc_external_endpoint_status",
           "arc_restore_entrypoint", "container_image_status", "container_volume_status",
           "bulk_copy_tool", "bulk_target_schema_status", "adf_integration_runtime_status",
-          "adf_connection_status"
+          "adf_connection_status",
+          "dms_migration_mode",
+          "dms_backup_landing_zone",
+          "recovery_model_status"
         ]
       },
       "additionalProperties": {

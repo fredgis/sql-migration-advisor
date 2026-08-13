@@ -139,13 +139,19 @@ before we run it*, and that question has a different shape: the path is already 
 is being ranked. `generate-migration-prerequisite-plan` answers it, either from a pasted advisor
 recommendation or standalone from a target and method you already know.
 
-It covers **22 paths**: six routes to SQL Server on Azure VM, Azure VMware Solution, three to
-Managed Instance, BACPAC and DMS to Azure SQL Database, transactional replication, a Data Box seed,
-Striim, the Fabric Migration Assistant, two Arc routes, containers, bcp, Data Factory Copy and Smart
-Bulk Copy. Behind them sits [`docs/sql-server-to-azure-migration-prerequisite.md`](docs/sql-server-to-azure-migration-prerequisite.md):
-12 common requirements and 145 rows in total, each with a stable ID, an owner, an applicability
+It covers **26 paths**: six routes to SQL Server on Azure VM, Azure VMware Solution, three to
+Managed Instance, BACPAC to Azure SQL Database, the four modern DMS routes to Managed Instance and
+Azure VM in offline and online mode, DMS offline to Azure SQL Database, transactional replication, a
+Data Box seed, Striim, the Fabric Migration Assistant, two Arc routes, containers, bcp, Data Factory
+Copy and Smart Bulk Copy. Behind them sits [`docs/sql-server-to-azure-migration-prerequisite.md`](docs/sql-server-to-azure-migration-prerequisite.md):
+12 common requirements and 178 rows in total, each with a stable ID, an owner, an applicability
 condition, the evidence that would settle it, and a public Microsoft source with the date it was
 checked.
+
+The Advisor marks 51 method-and-target combinations as supported, and each is a distinct route. The
+knowledge base now records a disposition for every one of them — covered, widening planned, or out
+of scope with a reason — and a test parses the Advisor matrix directly and fails when a supported
+combination has no disposition. Twenty-one are covered today.
 
 **What it refuses to do.** It does not choose a target, run an assessment, deploy anything or
 certify readiness. Confidence is not evidence: a prerequisite becomes `confirmed` only on a typed

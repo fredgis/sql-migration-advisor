@@ -66,6 +66,9 @@
     { "id": "bulk_copy_tool", "answerType": "single_select", "allowedValues": ["BCP", "SMART_BULK_COPY", "UNKNOWN"], "consumedBy": ["P20-001", "P22-001"], "effects": { "BCP": "P20", "SMART_BULK_COPY": "P22", "UNKNOWN": "unresolved_path" } },
     { "id": "bulk_target_schema_status", "answerType": "readiness_status", "consumedBy": ["P20-002", "P21-003", "P22-002"], "effects": { "CONFIRMED": "confirmed", "MISSING": "missing", "UNKNOWN": "unknown" } },
     { "id": "adf_integration_runtime_status", "answerType": "readiness_status", "consumedBy": ["P21-001"], "effects": { "CONFIRMED": "confirmed", "MISSING": "missing", "UNKNOWN": "unknown" } },
-    { "id": "adf_connection_status", "answerType": "readiness_status", "consumedBy": ["P21-002"], "effects": { "CONFIRMED": "confirmed", "MISSING": "missing", "UNKNOWN": "unknown" } }
+    { "id": "adf_connection_status", "answerType": "readiness_status", "consumedBy": ["P21-002"], "effects": { "CONFIRMED": "confirmed", "MISSING": "missing", "UNKNOWN": "unknown" } },
+    { "id": "dms_migration_mode", "answerType": "single_select", "allowedValues": ["OFFLINE", "ONLINE", "UNKNOWN"], "consumedBy": ["P23-008", "P24-001", "P25-009", "P26-001"], "effects": { "OFFLINE": "offline_path", "ONLINE": "online_path", "UNKNOWN": "unresolved_path" } },
+    { "id": "dms_backup_landing_zone", "answerType": "single_select", "allowedValues": ["SMB_NETWORK_SHARE", "AZURE_BLOB_STORAGE", "UNKNOWN"], "consumedBy": ["P23-005", "P24-005", "P25-005", "P26-005"], "effects": { "SMB_NETWORK_SHARE": "shir_required", "AZURE_BLOB_STORAGE": "shir_not_required", "UNKNOWN": "unknown" } },
+    { "id": "recovery_model_status", "answerType": "readiness_status", "consumedBy": ["P24-001", "P26-001"], "effects": { "CONFIRMED": "confirmed", "MISSING": "missing", "UNKNOWN": "unknown" } }
   ]
 }

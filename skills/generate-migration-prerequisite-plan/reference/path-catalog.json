@@ -275,6 +275,54 @@
       "supportStatus": "official_sample_not_product",
       "disambiguation": { "field": "bulk_copy_tool", "equals": "SMART_BULK_COPY" },
       "questionFields": ["bulk_copy_tool", "bulk_target_schema_status", "source_permissions", "target_permissions", "network_path_status", "authentication_model", "schema_compatibility_status", "largest_database_size_gb", "downtime_tolerance", "validation_plan_status", "rollback_plan_status"]
+    },
+    {
+      "ordinal": 23,
+      "id": "P23",
+      "slug": "dms-managed-instance-offline",
+      "title": "Azure SQL Managed Instance — Modern DMS Offline",
+      "target": "Azure SQL Managed Instance",
+      "method": "Modern DMS Offline",
+      "advisorAliases": ["DMS", "Modern DMS", "Azure Database Migration Service", "DMS offline"],
+      "supportStatus": "supported",
+      "disambiguation": { "field": "dms_migration_mode", "equals": "OFFLINE" },
+      "questionFields": ["dms_migration_mode", "dms_backup_landing_zone", "source_permissions", "target_permissions", "network_path_status", "tde_status", "schema_compatibility_status", "largest_database_size_gb", "downtime_tolerance", "validation_plan_status", "rollback_plan_status"]
+    },
+    {
+      "ordinal": 24,
+      "id": "P24",
+      "slug": "dms-managed-instance-online",
+      "title": "Azure SQL Managed Instance — Modern DMS Online",
+      "target": "Azure SQL Managed Instance",
+      "method": "Modern DMS Online",
+      "advisorAliases": ["DMS", "Modern DMS", "Azure Database Migration Service", "DMS online"],
+      "supportStatus": "supported",
+      "disambiguation": { "field": "dms_migration_mode", "equals": "ONLINE" },
+      "questionFields": ["dms_migration_mode", "dms_backup_landing_zone", "recovery_model_status", "source_permissions", "target_permissions", "network_path_status", "tde_status", "schema_compatibility_status", "largest_database_size_gb", "downtime_tolerance", "validation_plan_status", "rollback_plan_status"]
+    },
+    {
+      "ordinal": 25,
+      "id": "P25",
+      "slug": "dms-azure-vm-offline",
+      "title": "SQL Server on Azure VM — Modern DMS Offline",
+      "target": "SQL Server on Azure VM",
+      "method": "Modern DMS Offline",
+      "advisorAliases": ["DMS", "Modern DMS", "Azure Database Migration Service", "DMS offline"],
+      "supportStatus": "supported",
+      "disambiguation": { "field": "dms_migration_mode", "equals": "OFFLINE" },
+      "questionFields": ["dms_migration_mode", "dms_backup_landing_zone", "source_permissions", "target_permissions", "network_path_status", "tde_status", "schema_compatibility_status", "largest_database_size_gb", "downtime_tolerance", "validation_plan_status", "rollback_plan_status"]
+    },
+    {
+      "ordinal": 26,
+      "id": "P26",
+      "slug": "dms-azure-vm-online",
+      "title": "SQL Server on Azure VM — Modern DMS Online",
+      "target": "SQL Server on Azure VM",
+      "method": "Modern DMS Online",
+      "advisorAliases": ["DMS", "Modern DMS", "Azure Database Migration Service", "DMS online"],
+      "supportStatus": "supported",
+      "disambiguation": { "field": "dms_migration_mode", "equals": "ONLINE" },
+      "questionFields": ["dms_migration_mode", "dms_backup_landing_zone", "recovery_model_status", "source_permissions", "target_permissions", "network_path_status", "tde_status", "schema_compatibility_status", "largest_database_size_gb", "downtime_tolerance", "validation_plan_status", "rollback_plan_status"]
     }
   ]
 }

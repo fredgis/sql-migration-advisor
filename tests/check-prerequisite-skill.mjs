@@ -25,11 +25,11 @@ const outputContract = read(...skillDir, 'reference', 'output-contract.md');
 const template = read(...skillDir, 'templates', 'prerequisite-plan.md');
 const kb = read('docs', 'sql-server-to-azure-migration-prerequisite.md');
 
-const expectedPathIds = Array.from({ length: 22 }, (_, i) => `P${String(i + 1).padStart(2, '0')}`);
+const expectedPathIds = Array.from({ length: 26 }, (_, i) => `P${String(i + 1).padStart(2, '0')}`);
 const pathIds = catalog.paths.map(pathEntry => pathEntry.id);
-check('path-count', catalog.paths.length === 22, `expected 22 paths, found ${catalog.paths.length}`);
+check('path-count', catalog.paths.length === 26, `expected 26 paths, found ${catalog.paths.length}`);
 check('path-ids', JSON.stringify(pathIds) === JSON.stringify(expectedPathIds), `expected ${expectedPathIds.join(', ')}, found ${pathIds.join(', ')}`);
-check('path-ordinals', catalog.paths.every((entry, index) => entry.ordinal === index + 1), 'ordinals must be contiguous from 1 to 22');
+check('path-ordinals', catalog.paths.every((entry, index) => entry.ordinal === index + 1), 'ordinals must be contiguous from 1 to 26');
 
 for (const key of ['id', 'slug', 'title', 'target', 'method', 'supportStatus']) {
   const values = catalog.paths.map(entry => entry[key]);
@@ -100,6 +100,63 @@ for (let i = 1; i < kbLines.length; i += 1) {
   );
 }
 check('kb-tables-found', tableIndex >= 24, `expected at least 24 KB tables, found ${tableIndex}`);
+
+// The Advisor matrix is the upstream authority on which (method, target) routes exist. Nothing
+// used to connect it to this catalog, so DMS shipped covering 1 of its 5 GA scenarios and no gate
+// noticed. Every supported cell must now carry an explicit disposition.
+const coverage = parse(...skillDir, 'reference', 'advisor-coverage.json');
+const advisorKb = read('docs', 'sql-server-to-azure-migration.md');
+const matrixHeader = advisorKb.split(/\r?\n/).findIndex(line => line.startsWith('| Method / tool |'));
+check('advisor-matrix-found', matrixHeader !== -1, 'section 8 method x target matrix not found in the Advisor knowledge base');
+
+const supportedCells = [];
+if (matrixHeader !== -1) {
+  const lines = advisorKb.split(/\r?\n/);
+  const columns = lines[matrixHeader].split('|').slice(2, -1).map(cell => cell.trim());
+  for (let i = matrixHeader + 2; i < lines.length && lines[i].trimStart().startsWith('|'); i += 1) {
+    const cells = lines[i].split('|').slice(1, -1).map(cell => cell.trim());
+    const method = cells[0];
+    cells.slice(1).forEach((cell, index) => {
+      if (cell.includes('✅')) supportedCells.push({ method, target: columns[index] });
+    });
+  }
+}
+check('advisor-matrix-cells', supportedCells.length === 51, `expected 51 supported cells, parsed ${supportedCells.length}`);
+
+const dispositionKey = entry => `${entry.method}|${entry.target}`;
+const dispositions = new Map(coverage.dispositions.map(entry => [dispositionKey(entry), entry]));
+check(
+  'coverage-no-duplicates',
+  dispositions.size === coverage.dispositions.length,
+  `${coverage.dispositions.length - dispositions.size} duplicate disposition(s)`
+);
+
+for (const cell of supportedCells) {
+  const entry = dispositions.get(dispositionKey(cell));
+  check(`coverage-declared-${cell.method}-${cell.target}`, Boolean(entry), 'supported in the Advisor matrix but absent from advisor-coverage.json');
+  if (!entry) continue;
+  check(
+    `coverage-status-${cell.method}-${cell.target}`,
+    ['path', 'out-of-scope', 'deferred'].includes(entry.status),
+    `invalid status ${entry.status}`
+  );
+  if (entry.status === 'path') {
+    check(`coverage-paths-${cell.method}-${cell.target}`, Array.isArray(entry.paths) && entry.paths.length > 0, 'status path requires at least one path ID');
+    for (const id of entry.paths || []) {
+      check(`coverage-path-exists-${cell.method}-${cell.target}-${id}`, pathIds.includes(id), `${id} is not in the path catalog`);
+    }
+  } else {
+    check(`coverage-reason-${cell.method}-${cell.target}`, typeof entry.reason === 'string' && entry.reason.length >= 40, 'a non-path disposition requires a substantive reason');
+  }
+}
+
+for (const entry of coverage.dispositions) {
+  check(
+    `coverage-cell-supported-${entry.method}-${entry.target}`,
+    supportedCells.some(cell => dispositionKey(cell) === dispositionKey(entry)),
+    'declared in advisor-coverage.json but not a supported cell in the Advisor matrix'
+  );
+}
 
 for (const question of questions.questions) {
   for (const consumer of question.consumedBy) {

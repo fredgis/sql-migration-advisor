@@ -12,7 +12,7 @@ Turn one selected SQL Server-to-Azure migration path into an auditable prerequis
 skill begins after path selection: it does not select a target, change the Advisor recommendation,
 provision resources, remediate findings or execute a migration.
 
-It supports the 22 paths in
+It supports the 26 paths in
 [`reference/path-catalog.json`](reference/path-catalog.json), using the source-backed knowledge base
 [`docs/sql-server-to-azure-migration-prerequisite.md`](../../docs/sql-server-to-azure-migration-prerequisite.md).
 

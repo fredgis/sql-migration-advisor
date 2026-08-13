@@ -111,6 +111,7 @@ and can still change at least one applicable prerequisite.
 | Fabric | `fabric_capacity_status`, `fabric_workspace_role`, `fabric_gateway_type`, `fabric_dacpac_size_mb` |
 | Arc / containers | `arc_cluster_support_status`, `arc_connectivity_mode`, `arc_backup_storage_class_status`, `arc_external_endpoint_status`, `arc_restore_entrypoint`, `container_image_status`, `container_volume_status` |
 | Bulk / pipelines | `bulk_copy_tool`, `adf_integration_runtime_status`, `adf_connection_status` |
+| Modern DMS | `dms_migration_mode`, `dms_backup_landing_zone`, `recovery_model_status` |
 
 Question definitions, accepted values, consumers and distinct status effects are machine-readable in
 [`questions.json`](questions.json). A question absent from that file must not be asked.
