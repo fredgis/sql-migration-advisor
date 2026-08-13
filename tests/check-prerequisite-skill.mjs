@@ -324,6 +324,32 @@ check('output-schema-statuses',
 
 check('skill-frontmatter-name', /^name: generate-migration-prerequisite-plan$/mu.test(skill), 'frontmatter name must match the folder');
 
+// A row whose Applicability names a target its own path does not serve can never activate: the
+// catalog will not resolve that target to that path, so the row is unreachable. It still counts
+// towards coverage and still reads as protection, which is the dangerous part -- it overstates
+// what the plan checks. P20-015 shipped that way, scoped to SQL database in Fabric on a bcp path
+// the Advisor matrix gives no Fabric cell. AVS is exempt because it is carried by the P27 overlay
+// rather than by each method path.
+const canonicalTargets = [
+  'Azure SQL Managed Instance',
+  'Azure SQL Database',
+  'SQL database in Fabric',
+  'SQL Server on Azure VM',
+  'Azure Arc-enabled SQL Managed Instance',
+  'SQL Server in a container'
+];
+const targetsByPath = new Map(catalog.paths.map(entry => [entry.id, entry.target.split('/').map(part => part.trim())]));
+for (const row of prerequisiteRows) {
+  if (row.id.startsWith('COM-')) continue;
+  const served = targetsByPath.get(row.id.slice(0, 3));
+  if (!served) continue;
+  for (const target of canonicalTargets) {
+    if (!row.cells[5].includes(target)) continue;
+    check(`row-target-reachable-${row.id}-${target.replace(/\W+/gu, '-')}`, served.includes(target),
+      `${row.id} is scoped to ${target}, which ${row.id.slice(0, 3)} does not serve, so the row can never activate`);
+  }
+}
+
 // Every path identifier written in prose is a routing instruction the agent will follow literally.
 // A wrong one is invisible on review -- `P21` and `P20` read alike -- and sends the reader to an
 // unrelated prerequisite set. Prose that names an identifier and its method in parentheses, the

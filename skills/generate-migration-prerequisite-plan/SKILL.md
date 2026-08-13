@@ -113,7 +113,8 @@ Keep these caveats visible:
   runtime that is out of support. `P22` is therefore **opt-in only**: never resolve it by inference
   from a target, a method alias or a size signal. Select it only when the user explicitly chooses
   Smart Bulk Copy over `bcp` after being shown the archived-repository and out-of-support-runtime
-  facts. If the answer is unknown, resolve to `P20` (`bcp`) or return the shortlist instead.
+  facts. If the answer is unknown, return the `P20`/`P22` shortlist with those facts and ask again;
+  never settle the choice on the user's behalf.
 
 ## Output
 
