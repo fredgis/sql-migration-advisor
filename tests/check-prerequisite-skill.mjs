@@ -200,6 +200,46 @@ for (const entry of catalog.paths) {
   }
 }
 
+// Inverse coverage. The checks above run path -> question: they prove a path can ask something.
+// They cannot prove the opposite and more dangerous direction: a prerequisite that blocks readiness
+// while nothing in the skill can ever resolve it. Such a row is not merely unanswered, it is a
+// permanent blocker -- the plan can never reach `ready`, and the reader is given no way to act.
+//
+// A blocking prerequisite is resolvable when at least one of three things is true: a question that
+// the path can actually ask names it, or the row demands evidence, which makes it resolvable by
+// inspection. Recommended rows are exempt: they never block readiness by design.
+const questionById = new Map(questions.questions.map(question => [question.id, question]));
+const commonFields = catalog.commonQuestionFields || [];
+const reachableByPath = new Map();
+for (const entry of catalog.paths) {
+  const fields = new Set([...commonFields, ...(entry.questionFields || [])]);
+  const reachable = new Set();
+  for (const field of fields) {
+    for (const consumed of questionById.get(field)?.consumedBy || []) reachable.add(consumed);
+  }
+  reachableByPath.set(entry.id, reachable);
+}
+
+const allPathIds = catalog.paths.map(entry => entry.id);
+let unresolvableBlockers = 0;
+for (const row of prerequisiteRows) {
+  if (row.cells[3] !== 'Yes') continue;
+  // COM- rows are common to every path, so they must be resolvable from every path that can apply
+  // them; a path-scoped row only has to be resolvable from its own path.
+  const scope = row.id.startsWith('COM-') ? allPathIds : [row.id.slice(0, 3)];
+  const askable = scope.some(pathId => reachableByPath.get(pathId)?.has(row.id));
+  const hasEvidence = row.cells[6].length >= 4;
+  const resolvable = askable || hasEvidence;
+  if (!resolvable) unresolvableBlockers += 1;
+  check(
+    `blocking-prerequisite-resolvable-${row.id}`,
+    resolvable,
+    `${row.id} blocks readiness but no question the path can ask names it and it demands no evidence, so the plan can never leave blocked`
+  );
+}
+check('blocking-prerequisites-all-resolvable', unresolvableBlockers === 0,
+  `${unresolvableBlockers} blocking prerequisite(s) can never be resolved`);
+
 // Target vocabulary differs in register between advisor-coverage.json (short forms such as
 // "SQL MI", "Arc SQL MI", "SQL container") and the catalog (long forms such as "Azure SQL Managed
 // Instance"). Normalise through an alias map rather than a naive substring test, which would never
