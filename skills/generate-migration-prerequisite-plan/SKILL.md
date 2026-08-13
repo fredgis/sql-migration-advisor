@@ -80,7 +80,7 @@ Always On AG, direct Arc restore versus endpoint-based restore, or bcp versus Sm
 ## Operations
 
 1. **Load and verify policy.** Confirm the four reference files, both schemas, and the prerequisite
-   KB all declare schema/KB line `1.0`/`v1.3`.
+   KB all declare schema/KB line `1.0`/`v1.4`.
 2. **Normalize input.** Determine `advisor_handoff` or `standalone`, preserve unknowns, and show the
    sanitized normalized target/method back to the user.
 3. **Resolve the path.** Match target and method aliases. Ask only the documented disambiguation

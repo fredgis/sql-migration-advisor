@@ -1,6 +1,6 @@
 # SQL Server to Azure migration prerequisite knowledge base
 
-> **Version:** v1.3 | **Last verified:** 2026-08-13 | **Companion skill:** `generate-migration-prerequisite-plan`
+> **Version:** v1.4 | **Last verified:** 2026-08-13 | **Companion skill:** `generate-migration-prerequisite-plan`
 > **Scope:** prerequisite planning for the 28 migration paths defined below
 
 This knowledge base begins after a migration target and method have been selected. It converts that
@@ -59,7 +59,7 @@ unrecognized answers remain `unknown`.
 | 18 | P18 | Arc-enabled SQL Managed Instance | Native Backup/Restore after Endpoint Availability | Microsoft-supported |
 | 19 | P19 | SQL Server Container | Backup/Restore through Mounted Volume | Microsoft-supported engine pattern |
 | 20 | P20 | SQL MI / SQL DB | bcp | Microsoft-supported utility |
-| 21 | P21 | SQL MI / SQL DB / Fabric SQL DB | Azure Data Factory Copy | Microsoft-supported |
+| 21 | P21 | SQL MI / SQL DB / Fabric SQL DB | Data Factory Copy | Microsoft-supported |
 | 22 | P22 | SQL MI / SQL DB | Smart Bulk Copy | Archived Azure sample; not a product or service |
 | 23 | P23 | Azure SQL Managed Instance | Modern DMS Offline | Microsoft-supported |
 | 24 | P24 | Azure SQL Managed Instance | Modern DMS Online | Microsoft-supported |
@@ -170,9 +170,9 @@ Use when Azure VM replicas are added to or replace replicas in one WSFC availabi
 
 | ID | Prerequisite | Type | Blocking | Owner | Applicability | Evidence required | Official source | Verified |
 | --- | --- | --- | :---: | --- | --- | --- | --- | --- |
-| P08-001 | Run a source build at or above the documented floor for the link: SQL Server 2016 requires SP3 (13.0.6300.2) plus the Azure Connect pack (13.0.7000.253) on Windows Server and supports the SQL Server to Managed Instance direction only, SQL Server 2019 requires CU20 (15.0.4312.2), and SQL Server 2014 and earlier are not supported at all because the link relies on distributed availability groups introduced in SQL Server 2016. Enable Always On availability groups. | required | Yes | DBA | P08 | Build, edition and OS export compared against the version supportability table, plus HADR-enabled evidence | [Managed Instance link version supportability](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-feature-overview#version-supportability) | 2026-08-13 |
+| P08-001 | Run a source build at or above the documented floor for the link: SQL Server 2016 requires SP3 (13.0.6300.2) plus the Azure Connect pack (13.0.7000.253) on Windows Server and supports the SQL Server to Managed Instance direction only, SQL Server 2019 requires CU20 (15.0.4312.2), and SQL Server 2014 and earlier are not supported at all because the link relies on distributed availability groups introduced in SQL Server 2016. | required | Yes | DBA | P08 | Build, edition and OS export compared against the version supportability table | [Managed Instance link version supportability](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-feature-overview#version-supportability) | 2026-08-13 |
 | P08-002 | Provision SQL MI with a compatible service tier/update policy, sufficient storage/compute and supported database configuration. | required | Yes | Azure SQL owner | P08 | MI configuration, update-policy and sizing record | [Managed Instance update policy](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/update-policy) | 2026-08-13 |
-| P08-003 | Apply the documented SQL Server/MI/Azure permissions, certificates and Azure CA trust chain, and set the `-T1800` and `-T9567` startup trace flags. | required | Yes | DBA and security owners | P08 | Sanitized role/permission export, `DBCC TRACESTATUS` output and certificate-chain validation | [Prepare for Managed Instance link](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-preparation) | 2026-08-13 |
+| P08-003 | Apply the documented SQL Server/MI/Azure permissions, certificates and Azure CA trust chain. | required | Yes | DBA and security owners | P08 | Sanitized role/permission export and certificate-chain validation | [Prepare for Managed Instance link](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-preparation) | 2026-08-13 |
 | P08-004 | Open the documented directional port set: inbound TCP 5022 and 11000–11999 on the Managed Instance subnet NSG from the SQL Server IP, outbound 5022 from that NSG, inbound 5022 on the SQL Server network and host firewalls from the Managed Instance subnet range, and outbound 5022 and 11000–11999 towards that range. | required | Yes | Network owner | P08 | NSG and host firewall rule exports plus a directional port test in each direction | [Managed Instance link network preparation](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-preparation#network-ports-between-the-environments) | 2026-08-13 |
 | P08-005 | Resolve database eligibility issues such as unsupported state or configuration, existing availability group conflicts, and encryption or key dependencies. | required | Yes | DBA | P08 | Database preflight queries and resolved exception list | [Managed Instance link best practices](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-best-practices) | 2026-08-13 |
 | P08-006 | Confirm one-link-per-database design, link/database-count limits, MI capacity and enough log/redo throughput for peak change rate. | required | Yes | Database architect | P08 | Capacity calculation and peak-load link rehearsal | [Managed Instance resource limits](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/resource-limits) | 2026-08-13 |
@@ -184,6 +184,7 @@ Use when Azure VM replicas are added to or replace replicas in one WSFC availabi
 | P08-012 | Enable the Always On availability groups feature and restart SQL Server, because the link is built on distributed availability groups and the feature is off by default. | required | Yes | DBA | P08 | `SERVERPROPERTY('IsHadrEnabled')` returning 1 after the restart | [Enable availability groups for the link](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-preparation#enable-availability-groups) | 2026-08-13 |
 | P08-013 | Enable accelerated database recovery on the source and set the persistent version store to the `PRIMARY` filegroup before linking, because the target cannot enable it afterwards and a non-default store causes restore failures. | conditional | Yes | Database architect | Source is SQL Server 2019 or later | Source query showing accelerated database recovery on and the persistent version store on `PRIMARY` | [Enable accelerated database recovery for the link](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-preparation#enable-accelerated-database-recovery) | 2026-08-13 |
 | P08-014 | Enable Service Broker on the source database before migrating when the target needs it, because a database migrated from a source with it disabled cannot use Service Broker afterwards. | conditional | Yes | Database architect | The migrated database uses Service Broker or the target requires it | Source query showing `is_broker_enabled` set on the database | [Enable Service Broker for the link](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-preparation#enable-service-broker) | 2026-08-13 |
+| P08-015 | Set the `-T1800` and `-T9567` startup trace flags to optimise link performance. Microsoft recommends both rather than requiring them: `-T1800` aligns log writes when the primary and secondary log disks use different sector sizes and is unnecessary when both are 4 KB, and `-T9567` compresses the seeding stream, trading processor load for shorter transfer time. | recommended | No | DBA | P08 | `DBCC TRACESTATUS` output, or the recorded sector size of both log disks when `-T1800` is deliberately omitted | [Enable startup trace flags](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-preparation#enable-startup-trace-flags) | 2026-08-13 |
 
 ## 12. P09 — Azure SQL Managed Instance: Log Replay Service
 
@@ -204,7 +205,7 @@ Use when Azure VM replicas are added to or replace replicas in one WSFC availabi
 | P09-013 | Set the persistent version store to the `PRIMARY` filegroup on the source before migrating, because a persistent version store on another filegroup can cause restore failures on the target. | conditional | Yes | Database architect | Source is SQL Server 2019 or later with accelerated database recovery enabled | Query output showing the persistent version store on `PRIMARY` | [LRS restore operation failures](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate?view=azuresql#restore-operation-failures-after-migrating-to-sql-managed-instance) | 2026-08-13 |
 | P09-014 | Enable accelerated database recovery on the source before migrating when the target needs it, because a database migrated from a source with it disabled cannot use it afterwards. | conditional | Yes | Database architect | Source is SQL Server 2019 or later and accelerated database recovery is required on the target | Source configuration query showing accelerated database recovery enabled | [LRS accelerated database recovery](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate?view=azuresql#unable-to-use-accelerated-database-recovery-after-migrating-to-sql-managed-instance) | 2026-08-13 |
 | P09-015 | Enable Service Broker on the source database before migrating when the target needs it, because a database migrated from a source with Service Broker disabled cannot use it afterwards. | conditional | Yes | Database architect | The migrated database uses Service Broker or the target requires it | Source query showing `is_broker_enabled` set on the database | [Log Replay Service limitations](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate#limitations) | 2026-08-13 |
-| P09-016 | Schedule a maintenance window that does not overlap the migration, because system updates take precedence over LRS: General Purpose suspends pending migrations until the update is applied, while Business Critical cancels and restarts them from the beginning. | required | Yes | Azure SQL owner | P09 | Configured maintenance window and a migration plan showing no overlap | [Configure a maintenance window for LRS](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate#configure-a-maintenance-window) | 2026-08-13 |
+| P09-016 | Schedule a maintenance window that does not overlap the migration, because system updates take precedence over LRS: General Purpose suspends pending migrations until the update is applied, while Business Critical cancels and restarts them from the beginning. Microsoft lists the window as a best practice that is not required but is highly recommended for large databases, and it does not prevent an unplanned failover or a security patch from interrupting the migration. | recommended | No | Azure SQL owner | P09, and strongly indicated for large databases | Configured maintenance window and a migration plan showing no overlap, or a recorded decision to run without one | [Configure a maintenance window for LRS](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate#configure-a-maintenance-window) | 2026-08-13 |
 | P09-017 | Delegate the managed instance subnet and add it to the storage firewall through the Storage service endpoint, and keep the storage account in the same region as the instance or in its paired region. | conditional | Yes | Network and storage owners | The Blob Storage account holding the backups sits behind a firewall | Subnet delegation and service endpoint configuration, storage firewall rule export, and the region pair of both resources | [Configure Azure storage behind a firewall](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate#configure-azure-storage-behind-a-firewall) | 2026-08-13 |
 
 ## 13. P10 — Azure SQL Managed Instance: Native Backup/Restore
@@ -401,15 +402,7 @@ service endpoint that must first be stable and reachable.
 | P20-014 | Confirm the target table is not published for replication and is not memory-optimised, and pass TABLOCK, before relying on minimally logged bulk import. | conditional | No | Database architect | Minimal logging is required and the target is a full SQL Server engine | `sys.tables` and replication article queries plus the issued bcp command manifest | [Prerequisites for minimal logging in bulk import](https://learn.microsoft.com/en-us/sql/relational-databases/import-export/prerequisites-for-minimal-logging-in-bulk-import) | 2026-08-13 |
 | P20-015 | Connect bcp to SQL database in Fabric with Microsoft Entra authentication using the `-G` option against `<server>.database.fabric.microsoft.com,1433`; that target accepts no SQL authentication, so `-U`/`-P` cannot be used. | conditional | Yes | Security owner | Target is SQL database in Fabric | Sanitised bcp command and a successful connection transcript | [Connect to SQL database in Fabric with bcp](https://learn.microsoft.com/en-us/fabric/database/sql/connect#connect-with-bcp-utility) | 2026-08-13 |
 
-`bcp` can also load a SQL database in Fabric, using Microsoft Entra authentication with the `-G`
-option ([Connect to SQL database in Fabric with bcp](https://learn.microsoft.com/en-us/fabric/database/sql/connect#connect-with-bcp-utility)).
-That combination is deliberately absent from the table above: section 8 of the Advisor matrix marks
-no `bcp` cell for SQL database in Fabric, so the route is outside the scope this knowledge base
-declares. The matrix reaches that target through transactional replication (P13), BACPAC and
-SqlPackage (P11), ADF Copy (P21) and the Fabric Migration Assistant (P16). A row scoped to a route
-the catalog cannot resolve would never activate, and would overstate coverage while doing so.
-
-## 24. P21 — SQL MI / SQL DB / Fabric SQL DB / SQL VM / Arc SQL MI / SQL container: Azure Data Factory Copy
+## 24. P21 — SQL MI / SQL DB / Fabric SQL DB / SQL VM / Arc SQL MI / SQL container: Data Factory Copy
 
 | ID | Prerequisite | Type | Blocking | Owner | Applicability | Evidence required | Official source | Verified |
 | --- | --- | --- | :---: | --- | --- | --- | --- | --- |
@@ -578,19 +571,19 @@ different route, covered by P06.
 
 ## 32. Coverage against the Advisor method and target matrix
 
-The Advisor knowledge base marks 51 method and target combinations as supported. Each one is a
+The Advisor knowledge base marks 56 method and target combinations as supported. Each one is a
 distinct route with its own prerequisite set, so each must carry an explicit disposition here. A
 path may serve several combinations provided it carries target-specific conditional rows; what is
 not permitted is a supported combination with no disposition at all.
 
-`skills/generate-migration-prerequisite-plan/reference/advisor-coverage.json` records all 51, and
+`skills/generate-migration-prerequisite-plan/reference/advisor-coverage.json` records all 56, and
 `tests/check-prerequisite-skill.mjs` parses the Advisor matrix directly and fails when a supported
 combination is missing, when a disposition names a path that does not exist, or when a
 non-path disposition carries no reason.
 
 | Disposition | Combinations | Meaning |
 | --- | ---: | --- |
-| Covered by a path | 45 | A prerequisite set exists for this combination. Where the target is an AVS-hosted SQL Server, the method path is applied together with the §30 platform overlay. |
+| Covered by a path | 50 | A prerequisite set exists for this combination. Where the target is an AVS-hosted SQL Server, the method path is applied together with the §30 platform overlay. |
 | Out of scope | 6 | SSMA converts non-SQL-Server sources such as Oracle, Sybase, DB2, MySQL and Access. A knowledge base scoped to SQL Server sources can never reach these combinations, so the exclusion is a property of the source rather than a scoping preference. |
 
 Coverage also runs the other way, and that direction has to be stated or it looks like an omission.

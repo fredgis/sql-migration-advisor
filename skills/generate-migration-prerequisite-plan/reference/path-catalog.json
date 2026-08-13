@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "knowledgeBaseVersion": "v1.3",
+  "knowledgeBaseVersion": "v1.4",
   "commonQuestionFields": [
     "source_version",
     "source_edition",
