@@ -3,7 +3,7 @@
   "$id": "https://github.com/fredgis/sql-migration-advisor/skills/generate-migration-prerequisite-plan/schemas/output.schema.json",
   "title": "Migration prerequisite plan output",
   "type": "object",
-  "required": ["metadata", "selectedPath", "overallStatus", "summary", "prerequisites", "blockers", "unknowns", "assumptions", "questionsAsked", "nextActions", "sourceRegister"],
+  "required": ["metadata", "overallStatus"],
   "additionalProperties": false,
   "properties": {
     "metadata": {
@@ -12,7 +12,7 @@
       "additionalProperties": true,
       "properties": {
         "schemaVersion": { "const": "1.0" },
-        "prerequisiteKnowledgeBaseVersion": { "const": "v1.0" },
+        "prerequisiteKnowledgeBaseVersion": { "const": "v1.1" },
         "pathCatalogVersion": { "const": "1.0" },
         "evaluatedAt": { "type": "string", "format": "date-time" },
         "mode": { "enum": ["advisor_handoff", "standalone"] },
@@ -24,7 +24,7 @@
       "required": ["id", "title", "target", "method", "supportStatus"],
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string", "pattern": "^P(0[1-9]|1[0-9]|2[0-2])$" },
+        "id": { "type": "string", "pattern": "^P(0[1-9]|1[0-9]|2[0-8])$" },
         "title": { "type": "string", "minLength": 1 },
         "target": { "type": "string", "minLength": 1 },
         "method": { "type": "string", "minLength": 1 },
@@ -32,7 +32,7 @@
         "supportStatus": { "type": "string", "minLength": 1 }
       }
     },
-    "overallStatus": { "enum": ["ready", "ready_with_conditions", "blocked", "unknown_requires_assessment"] },
+    "overallStatus": { "enum": ["ready", "ready_with_conditions", "blocked", "unknown_requires_assessment", "unresolved_path"] },
     "summary": {
       "type": "object",
       "required": ["confirmed", "missing", "unknown", "notApplicable", "blockingMissing", "blockingUnknown"],
@@ -89,6 +89,65 @@
           "verifiedAt": { "type": "string", "format": "date" }
         }
       }
+    },
+    "unresolvedReason": { "enum": ["no_matching_path", "multiple_candidate_paths", "ambiguous_disambiguation_answer"] },
+    "candidatePaths": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "target", "method"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^P(0[1-9]|1[0-9]|2[0-8])$" },
+          "title": { "type": "string", "minLength": 1 },
+          "target": { "type": "string", "minLength": 1 },
+          "method": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "disambiguation": {
+      "type": ["object", "null"],
+      "required": ["field", "question", "allowedValues"],
+      "additionalProperties": false,
+      "properties": {
+        "field": { "type": "string", "minLength": 1 },
+        "question": { "type": "string", "minLength": 1 },
+        "allowedValues": { "type": "array", "minItems": 2, "items": { "type": "string", "minLength": 1 } }
+      }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "overallStatus": { "const": "unresolved_path" } }, "required": ["overallStatus"] },
+      "then": {
+        "required": ["unresolvedReason", "candidatePaths", "disambiguation"],
+        "not": {
+          "anyOf": [
+            { "required": ["selectedPath"] },
+            { "required": ["prerequisites"] },
+            { "required": ["summary"] },
+            { "required": ["blockers"] },
+            { "required": ["nextActions"] }
+          ]
+        }
+      },
+      "else": {
+        "required": ["selectedPath", "summary", "prerequisites", "blockers", "unknowns", "assumptions", "questionsAsked", "nextActions", "sourceRegister"],
+        "not": {
+          "anyOf": [
+            { "required": ["unresolvedReason"] },
+            { "required": ["candidatePaths"] },
+            { "required": ["disambiguation"] }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "metadata": { "properties": { "mode": { "const": "advisor_handoff" } }, "required": ["mode"] } },
+        "required": ["metadata"]
+      },
+      "then": { "required": ["inheritedAdvisorFacts"] }
+    }
+  ]
 }

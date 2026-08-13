@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "knowledgeBaseVersion": "v1.0",
+  "knowledgeBaseVersion": "v1.1",
   "commonQuestionFields": [
     "source_version",
     "source_edition",
@@ -61,6 +61,8 @@
       "method": "Log shipping",
       "advisorAliases": ["Log shipping"],
       "supportStatus": "supported",
+      "standaloneOnly": true,
+      "standaloneReason": "Log shipping has no row in the Advisor section 8 method x target matrix; it is documented as a legacy, Windows-only technique reachable only through standalone target/method selection, never as a recommended matrix cell.",
       "questionFields": ["source_version", "source_os", "recovery_model", "backup_chain_status", "network_path_status", "tde_status", "tde_material_status", "peak_change_rate", "downtime_tolerance", "validation_plan_status", "rollback_plan_status"]
     },
     {
@@ -94,6 +96,8 @@
       "method": "Azure Migrate replication",
       "advisorAliases": ["Azure Migrate", "Azure Migrate replication", "Azure Migrate lift and shift"],
       "supportStatus": "supported",
+      "standaloneOnly": true,
+      "standaloneReason": "Azure Migrate replication (lift and shift) is a VM-level online replication method documented outside section 8; only Azure Migrate assessment is promoted into that summary matrix, so replication itself carries no matrix cell to reference.",
       "questionFields": ["azure_migrate_platform", "azure_migrate_appliance_status", "source_os", "source_permissions", "network_path_status", "target_region", "target_permissions", "performance_baseline_status", "test_migration_status", "validation_plan_status", "rollback_plan_status"]
     },
     {
@@ -145,7 +149,7 @@
       "id": "P11",
       "slug": "sql-db-bacpac-sqlpackage",
       "title": "Azure SQL Database — BACPAC / SqlPackage",
-      "target": "Azure SQL Database",
+      "target": "Azure SQL Database / SQL Server on Azure VM / Azure SQL Managed Instance / SQL database in Fabric / Azure Arc-enabled SQL Managed Instance / SQL Server in a container",
       "method": "BACPAC / SqlPackage",
       "advisorAliases": ["BACPAC/SqlPackage", "BACPAC / SqlPackage"],
       "supportStatus": "supported",
@@ -167,7 +171,7 @@
       "id": "P13",
       "slug": "transactional-replication-managed-targets",
       "title": "SQL MI / SQL DB / Fabric SQL DB — Transactional Replication",
-      "target": "Azure SQL Managed Instance / Azure SQL Database / SQL database in Fabric",
+      "target": "Azure SQL Managed Instance / Azure SQL Database / SQL database in Fabric / SQL Server on Azure VM / Azure Arc-enabled SQL Managed Instance / SQL Server in a container",
       "method": "Transactional replication",
       "advisorAliases": ["Transactional replication"],
       "supportStatus": "supported_with_target_specific_limits",
@@ -182,6 +186,8 @@
       "method": "Data Box seed then Delta Synchronization",
       "advisorAliases": ["Data Box seed → sync delta", "Data Box seed then delta synchronization"],
       "supportStatus": "composed_pattern",
+      "standaloneOnly": true,
+      "standaloneReason": "Data Box is a one-time physical seed transport, not a data-movement method row in the Advisor section 8 matrix; it must always pair with a separately supported delta mechanism, so no single matrix cell can name this composed pattern.",
       "questionFields": ["largest_database_size_gb", "network_path_status", "data_box_device_status", "delta_sync_method", "schema_compatibility_status", "target_region", "target_tier", "source_permissions", "target_permissions", "peak_change_rate", "downtime_tolerance", "validation_plan_status", "rollback_plan_status"]
     },
     {
@@ -193,6 +199,8 @@
       "method": "Striim Online CDC",
       "advisorAliases": ["STRIIM (online)", "Striim online CDC"],
       "supportStatus": "third_party",
+      "standaloneOnly": true,
+      "standaloneReason": "Striim is third-party CDC runtime software with no row in the Advisor section 8 matrix; it appears only in narrative guidance as the online path to Azure SQL Database, so it is reachable solely through standalone selection.",
       "questionFields": ["source_version", "source_permissions", "target_permissions", "striim_runtime_status", "network_path_status", "schema_compatibility_status", "authentication_model", "peak_change_rate", "downtime_tolerance", "validation_plan_status", "rollback_plan_status"]
     },
     {
@@ -246,7 +254,7 @@
       "id": "P20",
       "slug": "bulk-copy-bcp",
       "title": "SQL MI / SQL DB — bcp",
-      "target": "Azure SQL Managed Instance / Azure SQL Database",
+      "target": "Azure SQL Managed Instance / Azure SQL Database / SQL Server on Azure VM / Azure Arc-enabled SQL Managed Instance / SQL Server in a container",
       "method": "bcp",
       "advisorAliases": ["bcp", "bcp / Smart Bulk Copy"],
       "supportStatus": "supported",
@@ -258,7 +266,7 @@
       "id": "P21",
       "slug": "adf-copy-managed-targets",
       "title": "SQL MI / SQL DB / Fabric SQL DB — Azure Data Factory Copy",
-      "target": "Azure SQL Managed Instance / Azure SQL Database / SQL database in Fabric",
+      "target": "Azure SQL Managed Instance / Azure SQL Database / SQL database in Fabric / SQL Server on Azure VM / Azure Arc-enabled SQL Managed Instance / SQL Server in a container",
       "method": "Azure Data Factory Copy",
       "advisorAliases": ["ADF Copy", "Azure Data Factory Copy", "Fabric Data Factory copy job"],
       "supportStatus": "supported",
@@ -269,7 +277,7 @@
       "id": "P22",
       "slug": "smart-bulk-copy",
       "title": "SQL MI / SQL DB — Smart Bulk Copy",
-      "target": "Azure SQL Managed Instance / Azure SQL Database",
+      "target": "Azure SQL Managed Instance / Azure SQL Database / SQL Server on Azure VM",
       "method": "Smart Bulk Copy",
       "advisorAliases": ["Smart Bulk Copy", "bcp / Smart Bulk Copy"],
       "supportStatus": "official_sample_not_product",

@@ -36,7 +36,9 @@ Read these bundled files before asking anything:
 2. [`reference/output-contract.md`](reference/output-contract.md)
 3. [`reference/path-catalog.json`](reference/path-catalog.json)
 4. [`reference/questions.json`](reference/questions.json)
-5. [`../../docs/sql-server-to-azure-migration-prerequisite.md`](../../docs/sql-server-to-azure-migration-prerequisite.md)
+5. [`schemas/input.schema.json`](schemas/input.schema.json)
+6. [`schemas/output.schema.json`](schemas/output.schema.json)
+7. [`../../docs/sql-server-to-azure-migration-prerequisite.md`](../../docs/sql-server-to-azure-migration-prerequisite.md)
 
 If a file is missing, invalid, or reports a different prerequisite knowledge-base version, stop
 with a policy-integrity warning. Never compensate with remembered or invented prerequisites.
@@ -77,8 +79,8 @@ Always On AG, direct Arc restore versus endpoint-based restore, or bcp versus Sm
 
 ## Operations
 
-1. **Load and verify policy.** Confirm the four reference files and the prerequisite KB all declare
-   schema/KB line `1.0`/`v1.0`.
+1. **Load and verify policy.** Confirm the four reference files, both schemas, and the prerequisite
+   KB all declare schema/KB line `1.0`/`v1.1`.
 2. **Normalize input.** Determine `advisor_handoff` or `standalone`, preserve unknowns, and show the
    sanitized normalized target/method back to the user.
 3. **Resolve the path.** Match target and method aliases. Ask only the documented disambiguation
@@ -106,7 +108,9 @@ Keep these caveats visible:
   perform delta synchronization.
 - `P15` is third-party: distinguish Striim requirements from Microsoft Azure SQL requirements.
 - `P16` uses a Preview Migration Assistant against a GA Fabric SQL database target.
-- `P22` is an official Azure sample, not an Azure service, supported migration product or SLA.
+- `P22` is an official Azure sample, not an Azure service, supported migration product or SLA. Its
+  `Azure-Samples/smartbulkcopy` repository is archived, and its README requires .NET Core 3.1, a
+  runtime that is out of support.
 
 ## Output
 
@@ -136,5 +140,7 @@ Every row must retain its stable prerequisite ID even when the visible title is 
 - Never let a recommended item block readiness.
 - Never present preview, third-party, sample or composed-pattern support as first-party GA service
   support.
+- Never describe Smart Bulk Copy as an Azure service, product or supported migration runtime, and
+  always surface its archived-sample status when rendering readiness.
 - Never create a Markdown conclusion that is absent from the JSON state.
 - Never echo sensitive identifiers.

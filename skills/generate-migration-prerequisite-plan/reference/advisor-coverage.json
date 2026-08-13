@@ -8,8 +8,7 @@
   },
   "statuses": {
     "path": "Covered by one or more prerequisite paths in this catalog.",
-    "out-of-scope": "Deliberately excluded. The reason must explain why this cell is not a SQL Server to Azure data-movement route.",
-    "deferred": "Acknowledged gap. The method already exists in the catalog on other targets; closing this cell means widening an existing path's applicability, not adding a new one. The reason must name that path."
+    "out-of-scope": "Deliberately excluded. The reason must explain why this cell is not a SQL Server to Azure data-movement route."
   },
   "dispositions": [
     { "method": "Azure Migrate (assess)", "target": "SQL VM", "status": "path", "paths": ["P28"] },

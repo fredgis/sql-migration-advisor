@@ -1,7 +1,7 @@
 # Input contract — `generate-migration-prerequisite-plan`
 
 > **Schema version:** `1.0`
-> **Prerequisite knowledge-base line:** `v1.0`
+> **Prerequisite knowledge-base line:** `v1.1`
 
 This contract accepts either the structured result of `recommend-migration-path` or a standalone
 target-and-method selection. Both modes normalize into one selected path from
@@ -68,6 +68,13 @@ decision state; neither format may add an inference missing from the other.
 The authoritative field-to-path mapping is in `path-catalog.json`. Ask a field only when it is
 listed in `commonQuestionFields` or the selected path's `questionFields`, is not already answered,
 and can still change at least one applicable prerequisite.
+
+**Disambiguation exception.** A field named in a path's `disambiguation` block is askable even
+before a path is selected, because it exists to choose between candidate paths. `ha_migration_pattern`
+(P01 vs P02) and `arc_restore_entrypoint` (P17 vs P18) are askable only through this exception;
+neither field is listed in `commonQuestionFields` or in any path's `questionFields`. `bulk_copy_tool`
+and `dms_migration_mode` need no exception because their disambiguation field is already inside the
+`questionFields` of the paths they distinguish.
 
 ### Common source, target and operational facts
 
