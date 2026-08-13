@@ -1029,6 +1029,38 @@ try {
     failures.length ? failures : [`${entries.length} skills declare a name matching their folder, a description long enough to route, and ask_user where they run an interview.`]);
 }
 
+{
+  // The skill count is quoted in prose the same way the gate and rule counts were, and it drifted
+  // the same way: the README said "two skills" while skills/ held three, because nothing counted.
+  // Skills are discovered from the folder, so the folder is the truth and the prose is the claim.
+  const failures = [];
+  let names = [];
+  try { names = fs.readdirSync('skills', { withFileTypes: true }).filter(e => e.isDirectory()).map(e => e.name).sort(); }
+  catch { failures.push('skills/ cannot be read'); }
+
+  const WORD = { one: 1, two: 2, three: 3, four: 4, five: 5 };
+  for (const doc of ['README.md', path.join('docs', 'sql-migration-advisor-developer-pitch.md')]) {
+    let text = '';
+    try { text = readText(doc); } catch { failures.push(`${doc} is missing`); continue; }
+
+    for (const m of text.matchAll(/\b(one|two|three|four|five|\d+) skills\b/giu)) {
+      const line = text.slice(text.lastIndexOf('\n', m.index) + 1, text.indexOf('\n', m.index));
+      if (/^\| v[0-9]/u.test(line)) continue; // changelog rows record what was true then
+      const stated = WORD[m[1].toLowerCase()] ?? Number(m[1]);
+      if (stated !== names.length) failures.push(`${doc} claims ${m[1]} skills; skills/ holds ${names.length}`);
+    }
+
+    // Naming each one matters more than the total: a skill the CLI installs and the README never
+    // mentions is a skill nobody knows they have, which is how an unaudited one gets trusted.
+    for (const name of names) {
+      if (!text.includes(name)) failures.push(`${doc} never names the installed skill ${name}`);
+    }
+  }
+
+  add('skill-count-documented', failures.length === 0,
+    failures.length ? failures : [`skills/ holds ${names.length} skills (${names.join(', ')}), and both installation documents state that number and name each one.`]);
+}
+
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };
 if (jsonMode) {
   process.stdout.write(JSON.stringify({ summary, results }, null, 2) + '\n');

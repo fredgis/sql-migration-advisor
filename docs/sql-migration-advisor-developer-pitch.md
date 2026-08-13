@@ -75,10 +75,12 @@ The runtime process:
 
 ## 3. The three main parts
 
-> **Two skills ship in this plugin.** Everything in sections 3 to 7 describes
-> `recommend-migration-path`, which is production. The second skill,
-> `get-connection-details`, is a **draft under review** and is described in §15. It is installed
-> alongside this one because skills are discovered from `skills/`, not declared in a manifest.
+> **Three skills ship in this plugin.** Everything in sections 3 to 7 describes
+> `recommend-migration-path`, which is production. `get-connection-details` is a **draft under
+> review** and is described in §15. `generate-migration-prerequisite-plan` is **new and not yet
+> audited**: it starts where this one stops, turning a selected path into a sourced prerequisite
+> plan. All three are installed together because skills are discovered from `skills/`, not declared
+> in a manifest.
 
 ### `skills/recommend-migration-path/SKILL.md`
 
@@ -994,7 +996,7 @@ flowchart LR
     G3([Push to main on the KB, tools/pdf,<br/>tools/diagram, tools/artifacts, howto SVGs]) --> W3[Artifacts coherence<br/>artifacts.yml]
     G4([Push to main on blume/ or howto/]) --> W4[Deploy docs<br/>deploy-docs.yml]
 
-    W1 --> O1[actionlint · rules data --strict<br/>25 gates · 110 golden scenarios<br/>engine branch coverage >= 85%]
+    W1 --> O1[actionlint · rules data --strict<br/>26 gates · 110 golden scenarios<br/>engine branch coverage >= 85%]
 
     W2 --> C1[consistency] --> C2[evidence<br/>links · news · claims] --> C3[review<br/>Foundry gpt-5.6-sol] --> C4[decide]
     C4 --> O2a[Substantive edits:<br/>pull request + version bump]
@@ -1210,8 +1212,9 @@ canonical constants only after its prose existed, which left the same logic expr
 central structural finding of both external audits of this repository. Starting structured costs
 nothing now and avoids inheriting that debt.
 
-The two skills share a repository and a plugin, **not a vocabulary**. The connectivity contracts
-live in the skill's own folder and are independent of the root contracts.
+Each skill shares a repository and a plugin with the others, **not a vocabulary**. The connectivity
+contracts live in the skill's own folder and are independent of the root contracts, and the
+prerequisite skill's contracts do the same.
 
 ### What protects it
 

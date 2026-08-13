@@ -1,0 +1,210 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const rel = (...parts) => path.join(root, ...parts);
+const read = (...parts) => fs.readFileSync(rel(...parts), 'utf8');
+const parse = (...parts) => JSON.parse(read(...parts));
+const failures = [];
+const checks = [];
+
+function check(name, condition, detail) {
+  checks.push(name);
+  if (!condition) failures.push(`${name}: ${detail}`);
+}
+
+const skillDir = ['skills', 'generate-migration-prerequisite-plan'];
+const catalog = parse(...skillDir, 'reference', 'path-catalog.json');
+const questions = parse(...skillDir, 'reference', 'questions.json');
+const inputSchema = parse(...skillDir, 'schemas', 'input.schema.json');
+const outputSchema = parse(...skillDir, 'schemas', 'output.schema.json');
+const skill = read(...skillDir, 'SKILL.md');
+const inputContract = read(...skillDir, 'reference', 'input-contract.md');
+const outputContract = read(...skillDir, 'reference', 'output-contract.md');
+const template = read(...skillDir, 'templates', 'prerequisite-plan.md');
+const kb = read('docs', 'sql-server-to-azure-migration-prerequisite.md');
+
+const expectedPathIds = Array.from({ length: 22 }, (_, i) => `P${String(i + 1).padStart(2, '0')}`);
+const pathIds = catalog.paths.map(pathEntry => pathEntry.id);
+check('path-count', catalog.paths.length === 22, `expected 22 paths, found ${catalog.paths.length}`);
+check('path-ids', JSON.stringify(pathIds) === JSON.stringify(expectedPathIds), `expected ${expectedPathIds.join(', ')}, found ${pathIds.join(', ')}`);
+check('path-ordinals', catalog.paths.every((entry, index) => entry.ordinal === index + 1), 'ordinals must be contiguous from 1 to 22');
+
+for (const key of ['id', 'slug', 'title', 'target', 'method', 'supportStatus']) {
+  const values = catalog.paths.map(entry => entry[key]);
+  check(`path-${key}-present`, values.every(value => typeof value === 'string' && value.length > 0), `every path must define ${key}`);
+  if (['id', 'slug', 'title'].includes(key)) {
+    check(`path-${key}-unique`, new Set(values).size === values.length, `${key} values must be unique`);
+  }
+}
+
+const questionIds = questions.questions.map(question => question.id);
+check('question-ids-unique', new Set(questionIds).size === questionIds.length, 'question IDs must be unique');
+const definedQuestionIds = new Set(questionIds);
+const effectiveQuestionIds = new Set([
+  ...(catalog.commonQuestionFields || []),
+  ...catalog.paths.flatMap(entry => entry.questionFields || []),
+  ...catalog.paths.map(entry => entry.disambiguation?.field).filter(Boolean)
+]);
+for (const field of effectiveQuestionIds) {
+  check(`catalog-question-${field}`, definedQuestionIds.has(field), `${field} is used by the catalog but not defined in questions.json`);
+}
+for (const field of questionIds) {
+  check(`question-reachable-${field}`, effectiveQuestionIds.has(field), `${field} is defined but no common/path/disambiguation rule can ask it`);
+}
+
+for (const question of questions.questions) {
+  check(`question-type-${question.id}`, typeof question.answerType === 'string' && question.answerType.length > 0, 'answerType is required');
+  check(`question-consumer-${question.id}`, Array.isArray(question.consumedBy) && question.consumedBy.length > 0, 'at least one consuming prerequisite is required');
+  const effects = Object.values(question.effects || {});
+  check(`question-effects-${question.id}`, new Set(effects).size >= 2, 'at least two distinct documented effects are required');
+}
+
+const prerequisiteRows = [];
+for (const line of kb.split(/\r?\n/)) {
+  const match = line.match(/^\| ((?:COM|P\d{2})-\d{3}) \|/u);
+  if (!match) continue;
+  const cells = line.split('|').slice(1, -1).map(cell => cell.trim());
+  prerequisiteRows.push({ id: match[1], cells, line });
+}
+const prerequisiteIds = prerequisiteRows.map(row => row.id);
+const prerequisiteIdSet = new Set(prerequisiteIds);
+check('prerequisite-rows-exist', prerequisiteRows.length >= 100, `expected a substantial KB, found ${prerequisiteRows.length} prerequisite rows`);
+check('prerequisite-ids-unique', prerequisiteIdSet.size === prerequisiteIds.length, 'prerequisite IDs must be globally unique');
+
+for (const row of prerequisiteRows) {
+  check(`row-columns-${row.id}`, row.cells.length === 9, `expected 9 columns, found ${row.cells.length}`);
+  check(`row-type-${row.id}`, ['required', 'conditional', 'recommended'].includes(row.cells[2]), `invalid requirement type ${row.cells[2]}`);
+  check(`row-blocking-${row.id}`, ['Yes', 'No'].includes(row.cells[3]), `invalid blocking value ${row.cells[3]}`);
+  check(`row-source-${row.id}`, /\]\(https:\/\/[^)]+\)/u.test(row.cells[7]), 'official source must be a public HTTPS Markdown link');
+  check(`row-date-${row.id}`, /^\d{4}-\d{2}-\d{2}$/u.test(row.cells[8]), `invalid verification date ${row.cells[8]}`);
+}
+
+for (const question of questions.questions) {
+  for (const consumer of question.consumedBy) {
+    check(`consumer-exists-${question.id}-${consumer}`, prerequisiteIdSet.has(consumer), `${consumer} does not exist in the KB`);
+  }
+}
+
+for (const id of expectedPathIds) {
+  check(`kb-section-${id}`, new RegExp(`^## \\d+\\. ${id} —`, 'mu').test(kb), `${id} has no dedicated KB section`);
+  check(`kb-prerequisites-${id}`, prerequisiteIds.some(prerequisiteId => prerequisiteId.startsWith(`${id}-`)), `${id} has no prerequisite rows`);
+}
+
+const knownFactNames = inputSchema.properties.knownFacts.propertyNames.enum;
+check('input-schema-question-parity',
+  JSON.stringify([...knownFactNames].sort()) === JSON.stringify([...questionIds].sort()),
+  'input schema knownFacts must exactly match questions.json');
+check('input-schema-mode-contract',
+  inputSchema.allOf?.length === 2 &&
+  inputSchema.properties.mode.enum.includes('advisor_handoff') &&
+  inputSchema.properties.mode.enum.includes('standalone'),
+  'both input modes must be schema-enforced');
+check('input-schema-mode-non-null',
+  inputSchema.allOf.every((branch) =>
+    branch.if?.required?.includes('mode') &&
+    branch.then?.required?.length === 1 &&
+    branch.then?.properties?.[branch.then.required[0]]?.type === 'object'),
+  'the payload selected by each input mode must be a non-null object');
+check('output-schema-statuses',
+  JSON.stringify(outputSchema.properties.prerequisites.items.properties.status.enum) ===
+  JSON.stringify(['confirmed', 'missing', 'unknown', 'not_applicable']),
+  'output prerequisite status vocabulary drifted');
+
+check('skill-frontmatter-name', /^name: generate-migration-prerequisite-plan$/mu.test(skill), 'frontmatter name must match the folder');
+check('skill-ask-user', /^allowed-tools: ask_user$/mu.test(skill), 'the guided interview must declare ask_user');
+check('skill-contracts-wired',
+  ['input-contract.md', 'output-contract.md', 'path-catalog.json', 'questions.json', 'sql-server-to-azure-migration-prerequisite.md'].every(name => skill.includes(name)),
+  'SKILL.md must reference every local contract and the KB');
+check('handoff-no-reask',
+  /Do not re-ask a fact already present/u.test(inputContract) && /Never re-ask an Advisor-supplied fact/u.test(skill),
+  'Advisor facts must not be re-asked');
+check('no-multiselect',
+  /Never use a multi-select/u.test(inputContract) && /never use multi-select/u.test(skill),
+  'multi-select controls must be forbidden');
+check('free-text-not-evidence',
+  /Never convert free prose/u.test(inputContract) && /Never promote free prose/u.test(skill),
+  'free-text claims must not confirm evidence');
+check('unknown-semantics',
+  ['CONFIRMED', 'MISSING', 'UNKNOWN', 'NOT_APPLICABLE'].every(marker => inputContract.includes(marker)),
+  'all four absence/readiness markers must be defined');
+check('markdown-json-parity',
+  /same normalized\s+decision state/u.test(inputContract) &&
+  /same object/u.test(outputContract) &&
+  /Build the JSON object first/u.test(skill),
+  'Markdown and JSON must share one state model');
+check('template-columns',
+  template.includes('| Area | Prerequisite | Status | Blocking | Owner | Evidence required | Official source |'),
+  'the required output table columns drifted');
+
+const invariantCount = (outputContract.match(/^\| \d+ \| /gmu) || []).length;
+check('output-invariants', invariantCount === 13, `expected 13 self-check invariants, found ${invariantCount}`);
+
+const specialSupport = Object.fromEntries(catalog.paths.map(entry => [entry.id, entry.supportStatus]));
+check('data-box-support-label', specialSupport.P14 === 'composed_pattern', `P14 label is ${specialSupport.P14}`);
+check('striim-support-label', specialSupport.P15 === 'third_party', `P15 label is ${specialSupport.P15}`);
+check('fabric-support-label', specialSupport.P16 === 'preview_tool_ga_target', `P16 label is ${specialSupport.P16}`);
+check('smart-bulk-support-label', specialSupport.P22 === 'official_sample_not_product', `P22 label is ${specialSupport.P22}`);
+check('data-box-caveat',
+  /Data Box transports files; it does not restore a SQL Server backup/u.test(kb) && /a `\.bak` alone cannot be restored/u.test(kb),
+  'P14 must not be presented as direct SQL backup restore to Azure SQL Database');
+check('fabric-caveat',
+  /target is GA/u.test(kb) && /Migration Assistant is Preview/u.test(kb),
+  'P16 must distinguish the GA target from the Preview tool');
+check('smart-bulk-caveat',
+  /archived read-only on \*\*2026-06-15\*\*/u.test(kb) &&
+  /not\*\* an Azure migration service or supported product/u.test(kb),
+  'P22 must disclose archived sample status and lack of product/SLA support');
+
+const sourceUrls = [...new Set([...kb.matchAll(/\]\((https:\/\/[^)]+)\)/gu)].map(match => match[1]))];
+const allowedSourceHosts = new Set(['learn.microsoft.com', 'github.com', 'www.striim.com', 'developer.striim.com']);
+for (const url of sourceUrls) {
+  const parsed = new URL(url);
+  check(`source-host-${url}`, allowedSourceHosts.has(parsed.hostname), `${parsed.hostname} is not an approved primary-source host`);
+  if (parsed.hostname === 'github.com') {
+    check(`github-source-owner-${url}`, parsed.pathname.toLowerCase().startsWith('/azure-samples/'), 'GitHub sources must belong to Azure-Samples');
+  }
+}
+
+async function checkLink(url) {
+  const request = async method => fetch(url, {
+    method,
+    redirect: 'follow',
+    headers: {
+      'user-agent': 'sql-migration-advisor-prerequisite-link-check/1.0',
+      ...(method === 'GET' ? { range: 'bytes=0-1024' } : {})
+    },
+    signal: AbortSignal.timeout(30000)
+  });
+  let response = await request('HEAD');
+  if ([403, 405, 429].includes(response.status)) response = await request('GET');
+  return { url, status: response.status, finalUrl: response.url };
+}
+
+if (process.argv.includes('--check-links')) {
+  const pending = [...sourceUrls];
+  const results = [];
+  const workers = Array.from({ length: Math.min(8, pending.length) }, async () => {
+    while (pending.length) {
+      const url = pending.shift();
+      try {
+        results.push(await checkLink(url));
+      } catch (error) {
+        results.push({ url, status: 0, error: error.message });
+      }
+    }
+  });
+  await Promise.all(workers);
+  for (const result of results) {
+    check(`live-source-${result.url}`, result.status >= 200 && result.status < 400, `HTTP ${result.status}${result.error ? ` (${result.error})` : ''}`);
+  }
+}
+
+if (failures.length) {
+  console.error(`Prerequisite skill checks failed (${failures.length}/${checks.length}):`);
+  for (const failure of failures) console.error(`- ${failure}`);
+  process.exit(1);
+}
+
+console.log(`Prerequisite skill checks passed: ${checks.length} checks, ${catalog.paths.length} paths, ${questions.questions.length} questions, ${prerequisiteRows.length} prerequisites, ${sourceUrls.length} primary-source URLs.`);

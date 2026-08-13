@@ -66,7 +66,7 @@ version loaded and where it came from, so the advice is traceable.
 - **Explicit uncertainty** — every recommendation is `provisional`, and `medium` is the confidence ceiling. Nothing higher is reachable from an interview, because the skill reads no artefact from your estate. It carries assumptions, unknowns, blockers and the evidence a tool would have to produce.
 - **It checks its own answer** — before the card is shown, the skill re-reads its draft against the 13 invariants in [`reference/output-contract.md`](reference/output-contract.md). One of them: no eligibility claim may rest on a field you never answered. A failed invariant is shown to you, never silently repaired.
 - **Freshness gates** — version bumps require substantive diffs; link checks classify bot-blocked pages; high-risk claims are tracked in [`reference/claims-registry.json`](reference/claims-registry.json).
-- **Regression protection** — [`tests/`](tests/) holds 110 golden scenarios and 25 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
+- **Regression protection** — [`tests/`](tests/) holds 110 golden scenarios and 26 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
 
 ## One version, every surface
 
@@ -99,16 +99,19 @@ Check it yourself: `node tools/artifacts/check-artifacts.mjs`.
 
 ## What's inside
 
-**Two skills ship in this plugin.** `recommend-migration-path` is production. `get-connection-details`
-is a **draft under review** — it is installed alongside the other one because skills are discovered
-from `skills/`, and it says so in its own status line. Its facts are sourced and gated, but three
-external audits have open findings against them, so treat its answers as a reference rather than a
-verdict. See [§ The connectivity draft](#the-connectivity-draft).
+**Three skills ship in this plugin.** `recommend-migration-path` is production.
+`generate-migration-prerequisite-plan` is **new and not yet audited** — it turns one selected path
+into a sourced readiness plan. `get-connection-details` is a **draft under review**. All three are
+installed together because skills are discovered from `skills/`, and each says what it is in its own
+status line. See [§ The prerequisite companion](#the-prerequisite-companion) and
+[§ The connectivity draft](#the-connectivity-draft).
 
 | Path | Purpose |
 | --- | --- |
 | [`skills/recommend-migration-path/SKILL.md`](skills/recommend-migration-path/SKILL.md) | The skill — trigger description, principles, the two-tier interview (triage, then confirmation), and the output-card template. |
-| [`skills/get-connection-details/SKILL.md`](skills/get-connection-details/SKILL.md) | **Draft.** The second skill: how to connect an application to an Azure SQL family target, and why a connection is failing. Picks up where the advisor stops. |
+| [`skills/generate-migration-prerequisite-plan/SKILL.md`](skills/generate-migration-prerequisite-plan/SKILL.md) | **New.** The prerequisite companion: takes one selected path — from the advisor or stated directly — and returns a sourced readiness plan as Markdown, JSON, or both. |
+| [`docs/sql-server-to-azure-migration-prerequisite.md`](docs/sql-server-to-azure-migration-prerequisite.md) | **New.** The prerequisite knowledge base: 12 common requirements and 22 path sections, every row carrying a stable ID, an owner, the evidence it demands and a public Microsoft source. |
+| [`skills/get-connection-details/SKILL.md`](skills/get-connection-details/SKILL.md) | **Draft.** The third skill: how to connect an application to an Azure SQL family target, and why a connection is failing. Picks up where the advisor stops. |
 | [`skills/get-connection-details/reference/connectivity-matrix.json`](skills/get-connection-details/reference/connectivity-matrix.json) | **Draft.** The canonical structured source for connectivity facts. The prose is written from this file, not the reverse. |
 | [`reference/input-contract.md`](reference/input-contract.md) | What the interview may produce: 30 stable option IDs, 20 canonical field names, and the difference between *confirmed none* and *nobody checked*. |
 | [`reference/output-contract.md`](reference/output-contract.md) | What an answer must look like, and the 13 invariants the skill checks against its own draft before showing it. |
@@ -119,13 +122,47 @@ verdict. See [§ The connectivity draft](#the-connectivity-draft).
 | [`reference/claims-registry.json`](reference/claims-registry.json) | Hashes and source pointers for high-risk claims, used by weekly drift detection. 29 claims: 19 for the migration knowledge base, 10 for connectivity. |
 | [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) | The same knowledge base as a branded, partner-ready PDF. |
 | [`lab/`](lab/) | A self-contained, hands-on lab: take a legacy SQL Server 2016 workload to a SQL Server on Azure VM, driven by the advisor and the HVE Squad (VM-to-VM migration). |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Deep dive: what the plugin is, how a session runs end to end, what the 25 gates defend, and where it can still be wrong. |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Deep dive: what the plugin is, how a session runs end to end, what the 26 gates defend, and where it can still be wrong. |
 | [`howto/how-the-skill-works.md`](howto/how-the-skill-works.md) | Implementer's guide: how the skill works, how an agent uses it, and how the weekly Action keeps the knowledge base fresh (with architecture diagrams). |
 | [`docs/sql-migration-advisor-developer-pitch.md`](docs/sql-migration-advisor-developer-pitch.md) | Developer pitch: runtime architecture, the decision process, the CI and pull-request gates, and how the knowledge base stays current. |
 | [`blume/`](blume/) | Source for the online docs page — [fredgis.github.io/sql-migration-advisor](https://fredgis.github.io/sql-migration-advisor/) — a friendly overview of how the skill works and stays up to date. |
 | [`tests/`](tests/) | Golden scenarios and anti-regression gates that keep the decision policy honest. |
 
 The skills are prompt-driven markdown — no build step, no dependencies.
+
+---
+
+## The prerequisite companion
+
+The advisor stops at *which path*. The question that immediately follows is *what has to be true
+before we run it*, and that question has a different shape: the path is already chosen, so nothing
+is being ranked. `generate-migration-prerequisite-plan` answers it, either from a pasted advisor
+recommendation or standalone from a target and method you already know.
+
+It covers **22 paths**: six routes to SQL Server on Azure VM, Azure VMware Solution, three to
+Managed Instance, BACPAC and DMS to Azure SQL Database, transactional replication, a Data Box seed,
+Striim, the Fabric Migration Assistant, two Arc routes, containers, bcp, Data Factory Copy and Smart
+Bulk Copy. Behind them sits [`docs/sql-server-to-azure-migration-prerequisite.md`](docs/sql-server-to-azure-migration-prerequisite.md):
+12 common requirements and 145 rows in total, each with a stable ID, an owner, an applicability
+condition, the evidence that would settle it, and a public Microsoft source with the date it was
+checked.
+
+**What it refuses to do.** It does not choose a target, run an assessment, deploy anything or
+certify readiness. Confidence is not evidence: a prerequisite becomes `confirmed` only on a typed
+answer or a verified evidence record, and blank, declined or ambiguous answers stay `unknown` rather
+than quietly passing. It never reports `ready` while an applicable required item is missing or
+unknown, and it will not read a Distributed AG as an Always On AG, or bcp as Smart Bulk Copy — where
+two paths share a name it asks rather than guesses.
+
+**Support status is part of the answer, not a footnote.** Data Box is a seed, not a migration
+service, and something else must carry the delta. Striim is a third-party runtime. The Fabric
+Migration Assistant is Preview against a GA target. Smart Bulk Copy is an archived Azure sample with
+no product support or SLA. Each is labelled as such wherever it appears.
+
+**Why it is new.** It ships with its own contracts, schemas and a dedicated gate — `node
+tests/check-prerequisite-skill.mjs`, with `--check-links` resolving every cited source URL — but it
+has not yet been through the external audits the advisor has. Treat its output as a well-sourced
+starting plan, not a verdict.
 
 ---
 
@@ -166,8 +203,9 @@ copilot plugin marketplace add fredgis/sql-migration-advisor
 copilot plugin install sql-migration-advisor@fredgis
 ```
 
-Then restart Copilot CLI (skills load at startup), run `/skills`, and confirm **both**
-**`recommend-migration-path`** and **`get-connection-details`** are listed. Ask *"I want to migrate
+Then restart Copilot CLI (skills load at startup), run `/skills`, and confirm **all three** —
+**`recommend-migration-path`**, **`generate-migration-prerequisite-plan`** and
+**`get-connection-details`** — are listed. Ask *"I want to migrate
 a SQL Server environment to Azure"* and the interview starts.
 
 Installing from a marketplace opens an interactive picker, so run the second command from a real
@@ -190,14 +228,15 @@ copilot --plugin-dir ./sql-migration-advisor
 | --- | --- |
 | Repository, and the marketplace it hosts | `sql-migration-advisor`, published under the marketplace `fredgis` |
 | Plugin — the unit you install | `sql-migration-advisor` |
-| **Skills — what actually triggers** | **`recommend-migration-path`** (production) and **`get-connection-details`** (draft) |
+| **Skills — what actually triggers** | **`recommend-migration-path`** (production), **`generate-migration-prerequisite-plan`** (new) and **`get-connection-details`** (draft) |
 
-**The plugin installs two skills.** They are discovered from `skills/`, not declared in a manifest,
-so both arrive together:
+**The plugin installs three skills.** They are discovered from `skills/`, not declared in a manifest,
+so all three arrive together:
 
 | Skill | Triggers on | Status |
 | --- | --- | --- |
 | `recommend-migration-path` | *"I want to migrate a SQL Server environment to Azure"* | Production |
+| `generate-migration-prerequisite-plan` | *"what do I need in place before we run this migration"*, or a pasted advisor recommendation | **New** — no external audit yet |
 | `get-connection-details` | *"my app can't connect to Managed Instance"*, an error number, or a connection that works from one network and not another | **Draft** — see [The connectivity draft](#the-connectivity-draft) |
 
 `get-connection-details` announces its draft status in its own answers. Its facts are sourced,

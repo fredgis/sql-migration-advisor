@@ -81,6 +81,7 @@ jobs:
             --accept 200,206,301,302,307,308
             --exclude 'partner\.microsoft\.com'
             docs/sql-server-to-azure-migration.md
+            docs/sql-server-to-azure-migration-prerequisite.md
           format: markdown
           output: ./lychee-report.md
           fail: false
