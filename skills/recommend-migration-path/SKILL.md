@@ -200,7 +200,7 @@ This skill signs in to nothing and holds no credential. It reads the files shipp
 
 **Fetch the live document only when the user asks for it.** Say that it is being fetched, and read only:
 
-- `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/v2.7.0/docs/sql-server-to-azure-migration.md`
+- `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/v2.7.1/docs/sql-server-to-azure-migration.md`
 
 That URL is pinned to a release tag, not to `main`. A mutable branch means the facts can change under the reader between two sessions with no version to cite. Never substitute a different URL, and never rewrite the path: the raw host serves `…/<tag>/<path>`, and inserting `blob` returns 404. If the tagged document is unreachable, fall back to the bundled copy and say the fallback is what answered.
 
@@ -365,6 +365,8 @@ Want the prerequisites for this path? I can build the readiness plan for <target
 ```
 
 **The offer is optional and stays optional.** Never invoke the prerequisite skill on your own initiative, never treat the assessment as unfinished without it, and never repeat the offer if it goes unanswered — a recommendation is a complete deliverable on its own, and a user who wanted a checklist would have asked for one. Make the offer once and drop it.
+
+**Neither skill depends on the other.** This one is a complete assessment whether or not the plan is ever produced, and the prerequisite skill runs standalone from a target and method the user already knows, with no Advisor output at all. So declining costs nothing and forecloses nothing: the plan can be asked for later, in this session or another, by a user who never ran this skill.
 
 **Omit the offer entirely when there is nothing to prepare for**: every target `unsupported`, or the method gate `refused` with no alternative. Offering to plan the prerequisites of a path that cannot be taken reads as though the refusal was not meant.
 
