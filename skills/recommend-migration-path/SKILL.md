@@ -354,6 +354,22 @@ Three states, not two. With only `passed` and `refused`, an unverified prerequis
 
 For an **estate**, lead with “Estate strategy”, then a compact table: `Profile · Primary · Alternative · Status/confidence · Key evidence gap`, and expand only the non-obvious profiles.
 
+### Optional next step — the prerequisite plan
+
+A recommendation says *where to go*. It does not say *what must be true before you can go*. That second question is answered by a separate skill, `generate-migration-prerequisite-plan`, which accepts the JSON contract below directly and returns the sourced, path-specific readiness list.
+
+**Offer it once, in one line, after the card:**
+
+```text
+Want the prerequisites for this path? I can build the readiness plan for <target> via <method>.
+```
+
+**The offer is optional and stays optional.** Never invoke the prerequisite skill on your own initiative, never treat the assessment as unfinished without it, and never repeat the offer if it goes unanswered — a recommendation is a complete deliverable on its own, and a user who wanted a checklist would have asked for one. Make the offer once and drop it.
+
+**Omit the offer entirely when there is nothing to prepare for**: every target `unsupported`, or the method gate `refused` with no alternative. Offering to plan the prerequisites of a path that cannot be taken reads as though the refusal was not meant.
+
+If the skill is not installed, say what it is called and stop. Do not attempt to reproduce its output from this knowledge base: the prerequisite corpus is a separate, separately sourced document, and improvising it produces confident, unsourced checklists — the exact failure this skill exists to avoid.
+
 ### Machine-readable JSON contract
 
 Emit this object on request or alongside the card. Unknown values are `null` or arrays in `unknowns`; do not invent data.
