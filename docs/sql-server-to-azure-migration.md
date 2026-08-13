@@ -6,7 +6,7 @@
 >
 > **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of August 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
 >
-> **Version.** v2.6 — 12 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
+> **Version.** v2.7 — 13 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**
@@ -199,7 +199,8 @@ Standardized columns (Microsoft Learn style): **Method · Min source · Target/m
 | [Log Replay Service (LRS)](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate) | Standalone LRS: SQL Server 2008–2022 | Online sync; cutover downtime | Full/diff/log → Azure Blob; public endpoint; 30-day max window; target remains RESTORING / NORECOVERY (no reads/writes) until cutover. Cutover restores the final backup: minutes on GP with a small final backup, but potentially hours on Business Critical while replicas are seeded. Supports up to the service-tier database limit (for example 100 GP, 500 Next-gen GP), with 100 simultaneous restores per instance and 150 per subscription. Arc portal migration uses the conservative 2014+ Arc floor; standalone LRS remains 2008–2022. |
 | [Native backup & restore (.bak)](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/restore-sample-database-quickstart) | SQL 2008 | Offline | Simplest; migrate TDE certificate *before* restore or it fails late; master/msdb restore not supported (script instance objects). |
 | [Transactional replication](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/replication-transactional-overview) | SQL Server 2016+ | Online | MI can be a subscriber from SQL Server 2016 and later; exact publisher/distributor/subscriber combinations depend on the MI update policy, so check the supportability matrix. |
-| [bcp / Smart Bulk Copy](https://github.com/Azure-Samples/smartbulkcopy) | any | Offline | High-speed data-only / partial (parallel copy). |
+| [bcp](https://learn.microsoft.com/en-us/sql/tools/bcp/bcp-utility) | any | Offline | High-speed data-only / partial. |
+| [Smart Bulk Copy](https://github.com/Azure-Samples/smartbulkcopy) | any | Offline | Archived Azure-Samples parallel-copy wrapper over bulk copy; data-only / partial. |
 | [BACPAC / SqlPackage](https://learn.microsoft.com/en-us/azure/azure-sql/database/database-import) | any | Offline | Smaller DBs / simple. |
 | [Azure Data Factory — Copy](https://learn.microsoft.com/en-us/azure/data-factory/connector-azure-sql-managed-instance) | any | Offline / batch | When migration = integration / transformation. |
 
@@ -215,7 +216,8 @@ Standardized columns (Microsoft Learn style): **Method · Min source · Target/m
 | STRIIM (online CDC) | any | Online (near-zero) | Microsoft-recommended online / CDC data migration to Azure SQL DB — fills the gap that DMS is offline-only for SQL DB; pair with DMS for schema. |
 | [Transactional replication](https://learn.microsoft.com/en-us/azure/azure-sql/database/replication-to-sql-database) | SQL Server 2016 and later (incl. 2022, 2025) | Online | Azure SQL Database can be a push subscriber only, with snapshot and one-way transactional replication. Peer-to-peer and merge are not supported; replicated tables require primary keys. Article limits include unsupported conversions for `hierarchyid`, FILESTREAM and spatial to MAX types, plus partitioning/index feature limits. |
 | [BACPAC / SqlPackage](https://learn.microsoft.com/en-us/azure/azure-sql/database/database-import) | any | Offline | Small/medium; `SqlPackage` for scale. |
-| [bcp / Smart Bulk Copy](https://learn.microsoft.com/en-us/sql/tools/bcp-utility) | any | Offline | Data-only / bulk. |
+| [bcp](https://learn.microsoft.com/en-us/sql/tools/bcp/bcp-utility) | any | Offline | Data-only / bulk. |
+| [Smart Bulk Copy](https://github.com/Azure-Samples/smartbulkcopy) | any | Offline | Archived Azure-Samples parallel-copy wrapper; data-only / bulk. |
 | [Azure Data Factory — Copy](https://learn.microsoft.com/en-us/azure/data-factory/connector-azure-sql-database) | any | Offline / batch | BI / integration. |
 
 > ❌ **Not supported to Azure SQL Database:** native `.bak` restore, detach/attach, MI Link. SQL Agent → use [Elastic Jobs](https://learn.microsoft.com/en-us/azure/azure-sql/database/elastic-jobs-overview).
@@ -228,7 +230,9 @@ Standardized columns (Microsoft Learn style): **Method · Min source · Target/m
 | --- | --- | --- |
 | [Fabric Migration Assistant — DACPAC](https://learn.microsoft.com/en-us/fabric/database/sql/migrate-with-migration-assistant-using-dacpac) | Offline | Preview tool limits: schema via DACPAC ≤ 20 MB; AI-assisted compatibility fixes; data via Fabric Data Factory copy job + on-prem data gateway only (no VNet gateway / Private Link for the assistant). These are Migration Assistant limits, not target-wide Fabric SQL database limits. |
 | [Transactional replication](https://learn.microsoft.com/en-us/azure/azure-sql/database/replication-to-sql-database) | Online | Fabric SQL database can be a push subscriber only. Publishing to Fabric SQL database requires SQL Server 2022 RTM CU12 or greater; snapshot and one-way transactional replication are supported, peer-to-peer and merge are not, and replicated tables require primary keys. |
-| T-SQL / Fabric pipelines / Data Factory copy jobs / Dataflow Gen2 / TDS-capable tools | Offline / batch | Alternative ingestion paths into Fabric SQL database; do not eliminate the target solely because Migration Assistant Preview limits do not fit. |
+| [bcp](https://learn.microsoft.com/en-us/fabric/database/sql/connect#connect-with-bcp-utility) | Offline | Documented against Fabric SQL database "just like any other SQL Database Engine product", and *SQL database in Microsoft Fabric* appears in the [bcp utility](https://learn.microsoft.com/en-us/sql/tools/bcp/bcp-utility) **Applies to** banner. Fabric SQL database accepts no SQL authentication: connect with Microsoft Entra ID using `-G`, against `<server>.database.fabric.microsoft.com,1433`. Data-only — pair with a schema method. |
+| [Fabric Data Factory — Copy activity / Copy job / Dataflow Gen2](https://learn.microsoft.com/en-us/fabric/data-factory/connector-sql-database-overview) | Offline / batch | Source **and** destination, Beta. Organizational-account authentication; None / on-premises / virtual-network gateway. ⚠️ **Azure** Data Factory has no Fabric SQL database connector — it ships Fabric Lakehouse and Fabric Warehouse only, so an Azure Data Factory pipeline cannot target this database. |
+| T-SQL / other TDS-capable tools | Offline / batch | Alternative ingestion paths into Fabric SQL database; do not eliminate the target solely because Migration Assistant Preview limits do not fit. |
 | [Fabric Mirroring for SQL Server](https://learn.microsoft.com/en-us/fabric/mirroring/sql-server) | n/a (continuous) | NOT a one-shot migration — near-real-time CDC replication to OneLake for analytics. GA (Nov 2025), optimized for SQL Server 2025. Complementary "analytical modernization" path. |
 
 ### 5.5 To Containers / Arc-enabled SQL MI
@@ -332,12 +336,13 @@ Microsoft describes LRS as an online migration with expected downtime during cut
 | HCX / vMotion | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Transactional replication | ✅ | ✅ | ✅ | ✅¹ | ✅² | ✅ | ✅ |
 | BACPAC / SqlPackage | ✅ | ✅ | ✅ | ✅ | ✅ (DACPAC) | ✅ | ✅ |
-| bcp / Smart Bulk Copy | ✅ | ✅ | ✅ | ✅ | ➖ | ✅ | ✅ |
-| ADF Copy | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| bcp | ✅ | ✅ | ✅ | ✅ | ✅⁴ | ✅ | ✅ |
+| Smart Bulk Copy | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ |
+| Data Factory Copy | ✅ | ✅ | ✅ | ✅ | ✅⁵ | ✅ | ✅ |
 | Fabric Migration Assistant | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
 | SSMA (heterogeneous) | ✅ | ✅ | ✅ | ✅ | ➖ | ✅ | ✅ |
 
-✅ supported · ❌ n/a · ➖ indirect/non-first-class · ↩ reverse only · ¹ SQL DB transactional replication: SQL Server 2016+ publisher, push subscriber only; snapshot and one-way transactional only. · ² Fabric SQL database transactional replication requires SQL Server 2022 RTM CU12+ publisher, push subscriber only. · ³ Managed Instance link is scoped to **Azure SQL Managed Instance**, not Azure Arc-enabled SQL Managed Instance. Exposing a SQL endpoint on the Arc target does not make MI Link available; use native backup/restore or MI-compatible data movement.
+✅ supported · ❌ n/a · ➖ indirect/non-first-class · ↩ reverse only · ¹ SQL DB transactional replication: SQL Server 2016+ publisher, push subscriber only; snapshot and one-way transactional only. · ² Fabric SQL database transactional replication requires SQL Server 2022 RTM CU12+ publisher, push subscriber only. · ³ Managed Instance link is scoped to **Azure SQL Managed Instance**, not Azure Arc-enabled SQL Managed Instance. Exposing a SQL endpoint on the Arc target does not make MI Link available; use native backup/restore or MI-compatible data movement. · ⁴ **bcp** lists *SQL database in Microsoft Fabric* in its own **Applies to** banner, and Fabric documents a dedicated [Connect with bcp utility](https://learn.microsoft.com/en-us/fabric/database/sql/connect#connect-with-bcp-utility) procedure — "just like any other SQL Database Engine product". Fabric SQL database accepts no SQL authentication, so the connection must use Microsoft Entra ID with the `-G` option. **Smart Bulk Copy** is a separate archived community sample and claims no Fabric, Arc SQL MI or container support; it is split out of this row for that reason. · ⁵ Fabric SQL database is served by **Fabric** Data Factory, whose [SQL database connector](https://learn.microsoft.com/en-us/fabric/data-factory/connector-sql-database-overview) supports Copy activity, Copy job and Dataflow Gen2 as both source and destination (Beta; organizational-account authentication; None / on-premises / virtual-network gateway). **Azure** Data Factory publishes Fabric Lakehouse and Fabric Warehouse connectors but **no Fabric SQL database connector** — do not plan an Azure Data Factory pipeline against this target.
 
 ---
 
@@ -573,7 +578,9 @@ flowchart LR
 - Native backup & restore (MI) — <https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/restore-sample-database-quickstart>
 - Transactional replication (SQL DB) — <https://learn.microsoft.com/en-us/azure/azure-sql/database/replication-to-sql-database>
 - Import/Export · BACPAC — <https://learn.microsoft.com/en-us/azure/azure-sql/database/database-import>
-- bcp utility — <https://learn.microsoft.com/en-us/sql/tools/bcp-utility>
+- bcp utility — <https://learn.microsoft.com/en-us/sql/tools/bcp/bcp-utility>
+- Connect to SQL database in Fabric with bcp — <https://learn.microsoft.com/en-us/fabric/database/sql/connect#connect-with-bcp-utility>
+- Fabric Data Factory SQL database connector — <https://learn.microsoft.com/en-us/fabric/data-factory/connector-sql-database-overview>
 - Smart Bulk Copy — <https://github.com/Azure-Samples/smartbulkcopy>
 - Backup to URL — <https://learn.microsoft.com/en-us/sql/relational-databases/backup-restore/sql-server-backup-to-url>
 - Move a TDE-protected database — <https://learn.microsoft.com/en-us/sql/relational-databases/security/encryption/move-a-tde-protected-database-to-another-sql-server>
@@ -628,13 +635,14 @@ flowchart LR
 
 ## 17. Document version & changelog
 
-Current version: **v2.6** (2026-08-12).
+Current version: **v2.7** (2026-08-13).
 
 <details>
-<summary><b>Version history</b> (current: v2.6)</summary>
+<summary><b>Version history</b> (current: v2.7)</summary>
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v2.7 | 2026-08-13 | **The summary matrix asserted two things Microsoft's own documentation contradicts, and both were wrong in the direction that costs a customer a working route.** §8 gave `bcp / Smart Bulk Copy` a `➖` against **SQL database in Fabric**. bcp names *SQL database in Microsoft Fabric* in its own **Applies to** banner, and Fabric publishes a dedicated [Connect with bcp utility](https://learn.microsoft.com/en-us/fabric/database/sql/connect#connect-with-bcp-utility) procedure — "just like any other SQL Database Engine product". The cell is now `✅`, with the constraint that makes it work recorded: Fabric SQL database accepts no SQL authentication, so the connection must use Microsoft Entra ID with `-G`. The same row also fused **two tools with different support**, and that fusion was what hid the error — it claimed Arc SQL MI and containers for Smart Bulk Copy, an archived community sample that claims neither. bcp and Smart Bulk Copy are now separate rows. Second, `ADF Copy` claimed **Fabric SQL DB**. Azure Data Factory publishes Fabric **Lakehouse** and Fabric **Warehouse** connectors and **no Fabric SQL database connector**; the product that has one is **Fabric** Data Factory, whose [SQL database connector](https://learn.microsoft.com/en-us/fabric/data-factory/connector-sql-database-overview) is Beta and serves Copy activity, Copy job and Dataflow Gen2 in both directions. The row is renamed `Data Factory Copy` and the distinction is stated in the legend and in §5.4, because a reader who built an Azure Data Factory pipeline against this target would find no connector to select. 56 supported cells, up from 51. |
 | v2.6 | 2026-08-12 | **One addition, from an external review of the knowledge base against public Microsoft sources.** Microsoft Entra **managed identity** was absent entirely, and it is the only capability in that review the document did not already carry. It is recorded where a reader looks up what a source version buys them (§9), scoped exactly as the sources scope it — Arc-connected **SQL Server 2025 on Windows Server**, system-assigned only. The migration-relevant half is the **outbound** direction: an app registration cannot make outbound connections, so a managed identity is what lets `BACKUP TO URL` and Key Vault access work without a storage-account key or SAS credential. The limits are recorded with the same weight as the capability, because each one disqualifies it outright: no Linux, no SQL Server 2022 or earlier, no failover cluster instances, and Azure public cloud required — which excludes the air-gapped and sovereign profiles in §12. |
 | v2.5 | 2026-08-12 | **A knowledge-base fact changed, and it was a rule that contradicted this document’s own table.** The AzCopy row stated a blanket *"for DBs > 1 TB, local backup + AzCopy is faster/safer than direct Backup-to-URL"*, while the Backup to URL row four sections earlier records the real constraint: 1 TB is the **page-blob cap on SQL Server 2012 SP1 CU2–2014**, and SQL Server 2016+ writes block blobs reaching **12.8 TB striped**. Read alone, the AzCopy row pushed a reader on a supported 2019 source off a direct path for a limit that does not apply to it. The row now scopes the cutoff to the builds it belongs to and states that above them the choice is throughput and retry behaviour, not a size limit. Found by the weekly review. |
 | v2.4 | 2026-08-12 | **A factual correction, and the first knowledge-base fact to change since v1.18.** SQL Server 2014 was documented with ESUs *"until 8 July 2027"*. Microsoft Lifecycle records Extended Security Updates Year 3 for SQL Server 2014 ending **13 July 2027** — a five-day error on a date that drives stay-versus-migrate economics for the estates most likely to be assessed. The end-of-support dates for 2014 and 2016 also used the Patch Tuesday convention (9 July 2024, 14 July 2026) while Microsoft publishes the Extended End Date (10 July 2024, 15 July 2026). Both are defensible in isolation and contradictory side by side, which is exactly how a customer conversation goes wrong. The Lifecycle dates are now quoted as published, and a note records why the Patch Tuesday differs, so the two never look like a mistake again. Found while verifying a third-party audit that had raised the 2016 date as a nuance; the 2014 error it did not see was the one that mattered. Applying the convention then exposed the same off-by-one in three further rows, all quoting the Patch Tuesday: SQL Server 2017 (12 -> 13 Oct 2027), 2019 (8 -> 9 Jan 2030), 2022 (11 -> 12 Jan 2033), and SSRS 2022, which inherits the SQL Server 2022 lifecycle. Every row of the table is now verified against its Microsoft Lifecycle page, and the table links to those pages so a reader can check the dates without trusting us. |

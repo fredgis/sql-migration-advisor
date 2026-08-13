@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "knowledgeBaseVersion": "v1.2",
+  "knowledgeBaseVersion": "v1.3",
   "commonQuestionFields": [
     "source_version",
     "source_edition",
@@ -253,8 +253,8 @@
       "ordinal": 20,
       "id": "P20",
       "slug": "bulk-copy-bcp",
-      "title": "SQL MI / SQL DB — bcp",
-      "target": "Azure SQL Managed Instance / Azure SQL Database / SQL Server on Azure VM / Azure Arc-enabled SQL Managed Instance / SQL Server in a container",
+      "title": "SQL MI / SQL DB / Fabric SQL DB — bcp",
+      "target": "Azure SQL Managed Instance / Azure SQL Database / SQL database in Fabric / SQL Server on Azure VM / Azure Arc-enabled SQL Managed Instance / SQL Server in a container",
       "method": "bcp",
       "advisorAliases": ["bcp", "bcp / Smart Bulk Copy"],
       "supportStatus": "supported",
@@ -265,10 +265,10 @@
       "ordinal": 21,
       "id": "P21",
       "slug": "adf-copy-managed-targets",
-      "title": "SQL MI / SQL DB / Fabric SQL DB — Azure Data Factory Copy",
+      "title": "SQL MI / SQL DB / Fabric SQL DB — Data Factory Copy",
       "target": "Azure SQL Managed Instance / Azure SQL Database / SQL database in Fabric / SQL Server on Azure VM / Azure Arc-enabled SQL Managed Instance / SQL Server in a container",
-      "method": "Azure Data Factory Copy",
-      "advisorAliases": ["ADF Copy", "Azure Data Factory Copy", "Fabric Data Factory copy job"],
+      "method": "Data Factory Copy",
+      "advisorAliases": ["Data Factory Copy", "ADF Copy", "Azure Data Factory Copy", "Fabric Data Factory copy job"],
       "supportStatus": "supported",
       "questionFields": ["adf_integration_runtime_status", "adf_connection_status", "source_permissions", "target_permissions", "network_path_status", "authentication_model", "bulk_target_schema_status", "schema_compatibility_status", "largest_database_size_gb", "validation_plan_status", "rollback_plan_status"]
     },

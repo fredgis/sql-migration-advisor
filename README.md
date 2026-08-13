@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Knowledge base v2.6" src="https://img.shields.io/badge/knowledge%20base-v2.6-2b8a3e">
+  <img alt="Knowledge base v2.7" src="https://img.shields.io/badge/knowledge%20base-v2.7-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml/badge.svg"></a>
 </p>
@@ -60,7 +60,7 @@ version loaded and where it came from, so the advice is traceable.
 
 ## Why it is trustworthy
 
-- **Verified knowledge** — the v2.6 knowledge base is source-backed and corrected against Microsoft Learn.
+- **Verified knowledge** — the v2.7 knowledge base is source-backed and corrected against Microsoft Learn.
 - **Rules under regression test** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers. An executable mirror in `tests/` replays 110 scenarios through those rules on every commit. The mirror is not what runs in your session: an agent reads the rules and applies them, so this is a tested policy rather than a byte-identical guarantee.
 - **Every decision is addressable** — the card cites a rule ID for each verdict, and [`reference/decision-rules.md`](reference/decision-rules.md) ends with an index of all 28. Look one up, read what it consumes and how it treats an unknown, and argue with it.
 - **Explicit uncertainty** — every recommendation is `provisional`, and `medium` is the confidence ceiling. Nothing higher is reachable from an interview, because the skill reads no artefact from your estate. It carries assumptions, unknowns, blockers and the evidence a tool would have to produce.
@@ -76,20 +76,20 @@ The knowledge base is quoted by a skill, three manifests, a PDF, a poster, this 
 
 | Surface | Version | Up to date |
 | --- | --- | --- |
-| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v2.6` | ✅ |
-| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v2.6` | ✅ |
-| `SKILL.md` and its pinned fetch URL | `v2.6.0` | ✅ |
-| `version.json`, `plugin.json`, `marketplace.json` | `v2.6.0` | ✅ |
-| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v2.6` | ✅ |
-| Poster caption and PNG | `v2.6` | ✅ |
-| This README's badge and PDF sentence | `v2.6` | ✅ |
-| **This table** | `v2.6` | ✅ |
+| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v2.7` | ✅ |
+| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v2.7` | ✅ |
+| `SKILL.md` and its pinned fetch URL | `v2.7.0` | ✅ |
+| `version.json`, `plugin.json`, `marketplace.json` | `v2.7.0` | ✅ |
+| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v2.7` | ✅ |
+| Poster caption and PNG | `v2.7` | ✅ |
+| This README's badge and PDF sentence | `v2.7` | ✅ |
+| **This table** | `v2.7` | ✅ |
 | The six `blume/public/*.svg` mirrors | — | ✅ |
 | [`blume/docs/index.mdx`](blume/docs/index.mdx) — the docs site | — | ✅ |
-| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v2.6.0` | ✅ |
+| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v2.7.0` | ✅ |
 | [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | — | ✅ |
 | `howto/*.html` | — | ✅ |
-| The developer pitch's sample failure block | `v2.6` | ✅ |
+| The developer pitch's sample failure block | `v2.7` | ✅ |
 
 <!-- surfaces:end -->
 
@@ -145,14 +145,14 @@ Azure VM in offline and online mode, DMS offline to Azure SQL Database, transact
 Data Box seed, Striim, the Fabric Migration Assistant, two Arc routes, containers, bcp, Data Factory
 Copy, Smart Bulk Copy, an Azure VMware Solution platform overlay and Azure Migrate assessment.
 Behind them sits [`docs/sql-server-to-azure-migration-prerequisite.md`](docs/sql-server-to-azure-migration-prerequisite.md):
-12 common requirements and 292 rows in total, each with a stable ID, an owner, an applicability
+12 common requirements and 295 rows in total, each with a stable ID, an owner, an applicability
 condition, the evidence that would settle it, and a public Microsoft source with the date it was
 checked.
 
-The Advisor marks 51 method-and-target combinations as supported, and each is a distinct route with
+The Advisor marks 56 method-and-target combinations as supported, and each is a distinct route with
 its own prerequisites. The knowledge base records a disposition for every one of them, and a test
 parses the Advisor matrix directly and fails when a supported combination has no disposition, when a
-disposition names a path that does not exist, or when an exclusion carries no reason. **45 of the 51
+disposition names a path that does not exist, or when an exclusion carries no reason. **50 of the 56
 are covered.** The remaining six are the SSMA row, which converts non-SQL-Server sources such as
 Oracle, DB2 and MySQL and so can never be reached from a SQL Server source.
 
@@ -450,7 +450,7 @@ Mermaid decision diagrams. The `SKILL.md` mirrors its AI Migration Agent I/O con
 
 The same knowledge base ships as a polished, branded PDF —
 [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (25 pages,
-v2.6, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
+v2.7, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
 
@@ -512,10 +512,11 @@ base and this README on the same version. Last verified: August 2026.
 
 <!-- CHANGELOG:START -->
 <details>
-<summary><b>📓 Changelog</b> — current: <b>v2.6</b> (August 2026)</summary>
+<summary><b>📓 Changelog</b> — current: <b>v2.7</b> (August 2026)</summary>
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| v2.7.0 | 2026-08-13 | **The summary matrix asserted two routes Microsoft's own documentation contradicts, and every gate stayed green because they all check the matrix rather than check it.** `bcp / Smart Bulk Copy` was marked `➖` against **SQL database in Fabric**, yet bcp names *SQL database in Microsoft Fabric* in its **Applies to** banner and Fabric publishes a dedicated *Connect with bcp utility* procedure. The cell is now `✅`, carrying the constraint that makes it real: Fabric SQL database accepts no SQL authentication, so `-G` Entra authentication is mandatory. That row also fused two tools with different support — the fusion is what hid the error — so bcp and Smart Bulk Copy are now separate rows, which also withdraws an Arc SQL MI and container claim the archived sample never made. Separately, `ADF Copy` claimed **Fabric SQL DB**: **Azure** Data Factory ships Fabric Lakehouse and Fabric Warehouse connectors and no Fabric SQL database connector, while **Fabric** Data Factory has one (Beta). The row is now `Data Factory Copy` and the split is stated wherever a reader would act on it. Prerequisite knowledge base v1.3, 295 rows: `P20-015` — deleted in the previous release for naming a target the matrix denied — is restored, and `P21-017`/`P21-018` record the Data Factory distinction. A new `live-anchor-*` gate resolves all 38 citation fragments against the ids their pages actually render, after one was found pointing at a heading that no longer exists. 56 supported cells, up from 51. |
 | v2.6.0 | 2026-08-12 | **An external review checked the knowledge base against public Microsoft Learn sources; eleven of its twelve technical points were already covered, several with the same source URL.** The twelfth was a real gap: **Microsoft Entra managed identity** for Arc-connected SQL Server 2025, absent from the document entirely. Added in §9 with both Learn sources, scoped to what they actually support — Windows Server only, system-assigned only, no failover cluster instances, Azure public cloud required. The point that earns its place in a *migration* knowledge base is the outbound direction: an app registration cannot make outbound connections, so this is the credential-free alternative to the SAS or storage-account credential that Backup to URL otherwise needs. Nothing else from the review was applied — the rest described a state the document had already passed. |
 | v2.5.0 | 2026-08-12 | **Three internal contradictions, found by the weekly review and none of them caught by a gate.** The executable mirror marked the losing Kubernetes engine option `unsupported` on both branches, while `decision-rules.md` states that `excluded_by_preference` is not `unsupported` — the golden scenarios asserted only the *winning* option, so the contradiction was invisible. `BACKUP-BLOB-PATH` gated **Data Box**, the one transport that exists because the network path is blocked, so a blocked Blob path refused the method that survives it. The knowledge base carried a blanket *"> 1 TB use AzCopy"* rule contradicting its own version-specific table. Log shipping was documented `unavailable` for both restore modes, though `WITH STANDBY` leaves the secondary readable between restore jobs. Both Kubernetes scenarios now pin the losing option, and the sabotage test confirms the assertion fails when the old value returns. |
 | v2.4.2 | 2026-08-12 | **The one path that still served a wrong fact.** The on-demand knowledge-base fetch in `SKILL.md` was pinned to tag `v2.1.0` while the skill shipped v2.4, so a user who asked for the live document was handed the knowledge base from three releases back — including the SQL Server 2014 ESU date that v2.4 had just corrected. The bundled copy was right; the fetched one was not. The pin now follows the release, and `version-manifest-current` fails the build when it does not, or when the URL points at a mutable branch instead of a tag. Sabotage-tested in both directions. Found while assessing a third-party audit, which did not report it. |

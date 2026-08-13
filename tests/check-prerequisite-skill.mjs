@@ -135,7 +135,7 @@ if (matrixHeader !== -1) {
     });
   }
 }
-check('advisor-matrix-cells', supportedCells.length === 51, `expected 51 supported cells, parsed ${supportedCells.length}`);
+check('advisor-matrix-cells', supportedCells.length === 56, `expected 56 supported cells, parsed ${supportedCells.length}`);
 
 const dispositionKey = entry => `${entry.method}|${entry.target}`;
 const dispositions = new Map(coverage.dispositions.map(entry => [dispositionKey(entry), entry]));
@@ -327,9 +327,15 @@ check('skill-frontmatter-name', /^name: generate-migration-prerequisite-plan$/mu
 // A row whose Applicability names a target its own path does not serve can never activate: the
 // catalog will not resolve that target to that path, so the row is unreachable. It still counts
 // towards coverage and still reads as protection, which is the dangerous part -- it overstates
-// what the plan checks. P20-015 shipped that way, scoped to SQL database in Fabric on a bcp path
-// the Advisor matrix gives no Fabric cell. AVS is exempt because it is carried by the P27 overlay
-// rather than by each method path.
+// what the plan checks. AVS is exempt because it is carried by the P27 overlay rather than by
+// each method path.
+//
+// This gate is only ever as right as the Advisor matrix behind it. It first fired on P20-015,
+// scoped to SQL database in Fabric on a bcp path the matrix gave no Fabric cell -- and the row was
+// correct while the matrix was wrong: Microsoft documents bcp against Fabric SQL database, both in
+// the bcp "Applies to" banner and in a dedicated Fabric connect procedure. The row was deleted,
+// then restored once the matrix was fixed. Treat a failure here as a question about which of the
+// two sides is wrong, not as a licence to delete the row.
 const canonicalTargets = [
   'Azure SQL Managed Instance',
   'Azure SQL Database',
@@ -489,6 +495,32 @@ async function checkLink(url) {
   return { url, status: response.status, finalUrl: response.url };
 }
 
+// The link check above proves a page answers, and nothing more. A fragment is never sent to the
+// server, so `.../log-replay-service-migrate#stop-the-migration` returned 200 for as long as it was
+// wrong -- the heading is `stop-the-migration-optional`. A reader following that source lands at the
+// top of a long page with no idea which paragraph was meant to justify the row, which is the whole
+// value of citing an anchor. Headings get renamed far more often than pages get retired, so these
+// rot silently and faster than the URLs around them. Resolve each fragment against the ids the page
+// actually renders.
+async function checkAnchors(page, fragments) {
+  const response = await fetch(page, {
+    redirect: 'follow',
+    headers: { 'user-agent': 'sql-migration-advisor-prerequisite-anchor-check/1.0' },
+    signal: AbortSignal.timeout(45000)
+  });
+  if (!response.ok) return [{ url: page, ok: false, reason: `HTTP ${response.status}` }];
+  const html = await response.text();
+  const ids = new Set([
+    ...[...html.matchAll(/\sid="([^"]+)"/gu)].map(match => match[1].toLowerCase()),
+    ...[...html.matchAll(/\sname="([^"]+)"/gu)].map(match => match[1].toLowerCase())
+  ]);
+  return [...fragments].map(fragment => ({
+    url: `${page}#${fragment}`,
+    ok: ids.has(decodeURIComponent(fragment).toLowerCase()),
+    reason: 'no heading on the page renders this id, so the anchor resolves nowhere'
+  }));
+}
+
 if (process.argv.includes('--check-links')) {
   const pending = [...sourceUrls];
   const results = [];
@@ -505,6 +537,32 @@ if (process.argv.includes('--check-links')) {
   await Promise.all(workers);
   for (const result of results) {
     check(`live-source-${result.url}`, result.status >= 200 && result.status < 400, `HTTP ${result.status}${result.error ? ` (${result.error})` : ''}`);
+  }
+
+  const fragmentsByPage = new Map();
+  for (const url of sourceUrls) {
+    const hash = url.indexOf('#');
+    if (hash === -1) continue;
+    const page = url.slice(0, hash);
+    const fragment = url.slice(hash + 1);
+    if (!fragmentsByPage.has(page)) fragmentsByPage.set(page, new Set());
+    fragmentsByPage.get(page).add(fragment);
+  }
+  const anchorPages = [...fragmentsByPage.keys()];
+  const anchorResults = [];
+  const anchorWorkers = Array.from({ length: Math.min(6, anchorPages.length) }, async () => {
+    while (anchorPages.length) {
+      const page = anchorPages.shift();
+      try {
+        anchorResults.push(...await checkAnchors(page, fragmentsByPage.get(page)));
+      } catch (error) {
+        anchorResults.push({ url: page, ok: false, reason: error.message });
+      }
+    }
+  });
+  await Promise.all(anchorWorkers);
+  for (const result of anchorResults) {
+    check(`live-anchor-${result.url}`, result.ok, result.reason);
   }
 }
 

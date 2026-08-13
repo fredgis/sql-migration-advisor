@@ -557,8 +557,8 @@ It compares:
 #### Example failure
 
 ```text
-KB version:              v2.6
-decision-rules version:  v2.6
+KB version:              v2.7
+decision-rules version:  v2.7
 README badge:            v1.6
 ```
 
