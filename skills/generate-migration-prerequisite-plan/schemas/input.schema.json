@@ -47,7 +47,8 @@
           "adf_connection_status",
           "dms_migration_mode",
           "dms_backup_landing_zone",
-          "recovery_model_status"
+          "recovery_model_status",
+          "avs_host_quota_status", "avs_vcf_subscription_status", "avs_address_plan_status", "avs_interconnect_topology", "avs_outbound_internet_method", "azure_migrate_project_access_status", "azure_migrate_discovery_mode", "azure_migrate_source_platform"
         ]
       },
       "additionalProperties": {

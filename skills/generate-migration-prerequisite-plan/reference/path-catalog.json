@@ -342,7 +342,7 @@
       "advisorAliases": ["AVS", "Azure VMware Solution"],
       "supportStatus": "supported",
       "overlay": true,
-      "questionFields": ["source_location", "target_region", "network_path_status", "dns_status", "domain_model", "authentication_model", "largest_database_size_gb", "validation_plan_status"]
+      "questionFields": ["source_location", "target_region", "network_path_status", "dns_status", "domain_model", "authentication_model", "largest_database_size_gb", "validation_plan_status", "avs_host_quota_status", "avs_vcf_subscription_status", "avs_address_plan_status", "avs_interconnect_topology", "avs_outbound_internet_method"]
     },
     {
       "ordinal": 28,
@@ -353,7 +353,7 @@
       "method": "Azure Migrate assessment",
       "advisorAliases": ["Azure Migrate", "Azure Migrate (assess)", "Azure Migrate assessment"],
       "supportStatus": "supported",
-      "questionFields": ["source_location", "source_version", "source_edition", "database_count", "performance_baseline_status", "source_permissions", "network_path_status", "feature_inventory_status", "target_region"]
+      "questionFields": ["source_location", "source_version", "source_edition", "database_count", "performance_baseline_status", "source_permissions", "network_path_status", "feature_inventory_status", "target_region", "azure_migrate_project_access_status", "azure_migrate_discovery_mode", "azure_migrate_source_platform"]
     }
   ]
 }
