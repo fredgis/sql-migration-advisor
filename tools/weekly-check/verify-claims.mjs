@@ -57,11 +57,20 @@ function sectionFromText(text, heading) {
 }
 async function fetchSection(entry) {
   const res = await fetch(entry.source_url, {
-    headers: { 'user-agent': 'sql-migration-advisor-claim-verifier/1.0', accept: 'text/html, text/markdown, */*' },
+    headers: { 'user-agent': 'sql-migration-advisor-claim-verifier/1.0', accept: 'text/html, text/markdown, application/json, */*' },
     signal: AbortSignal.timeout(30000)
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const body = await res.text();
+  // Some claims rest on one field of a JSON API rather than on prose. Hashing a whole API payload
+  // would drift on every star or metadata touch, so a fact like "this repository is archived" would
+  // be unwatchable: it would report drift every week and mean nothing. Pinning the single field
+  // makes a drift report mean the fact itself changed.
+  if (entry.json_field) {
+    const value = entry.json_field.split('.').reduce((node, key) => (node == null ? node : node[key]), JSON.parse(body));
+    if (value === undefined) throw new Error(`field ${entry.json_field} is absent from the response`);
+    return `${entry.json_field}=${JSON.stringify(value)}`;
+  }
   return sectionFromText(htmlToText(body), entry.source_section);
 }
 function hash(s) { return crypto.createHash('sha256').update(normalize(s), 'utf8').digest('hex'); }

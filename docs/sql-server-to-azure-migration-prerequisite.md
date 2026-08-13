@@ -420,8 +420,10 @@ service endpoint that must first be stable and reachable.
 > [!CAUTION]
 > Smart Bulk Copy is **not** an Azure migration service or supported product with an SLA. Its
 > `Azure-Samples/smartbulkcopy` repository is archived read-only: the GitHub API reports
-> `archived: true`, a last repository update of **2026-06-15** and a final commit of `146a905`
-> dated 2023-07-12. Its former Microsoft Learn sample page no longer exists, and its README
+> `archived: true`, and the last commit on the `master` branch is `146a9056` dated **2023-07-12**.
+> The repository's `updated_at` timestamp of 2026-06-15 records a metadata change, not a code
+> change, so it must not be read as evidence of maintenance. Its former Microsoft Learn sample page
+> no longer exists, and its README
 > instructs the reader to install [.NET Core 3.1](https://learn.microsoft.com/en-us/lifecycle/products/microsoft-net-and-net-core),
 > which left support on 2022-12-13. Treat new use as an explicitly accepted field-tool risk, not a
 > Microsoft support claim.

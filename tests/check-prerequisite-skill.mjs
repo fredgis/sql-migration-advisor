@@ -425,11 +425,12 @@ check('fabric-caveat',
   'P16 must distinguish the GA target from the Preview tool');
 check('smart-bulk-caveat',
   /archived read-only/u.test(kb) &&
-  /\*\*2026-06-15\*\*/u.test(kb) &&
-  /146a905/u.test(kb) &&
+  /\*\*2023-07-12\*\*/u.test(kb) &&
+  /146a9056/u.test(kb) &&
+  /metadata change, not a code change/u.test(kb) &&
   /\.NET Core 3\.1/u.test(kb) &&
   /not\*\* an Azure migration service or supported product/u.test(kb),
-  'P22 must disclose archived sample status with its GitHub evidence, the out-of-support runtime, and the lack of product/SLA support');
+  'P22 must date the archive on its last commit, say plainly that the repository updated_at timestamp is not a code change, and disclose the out-of-support runtime and the lack of product/SLA support');
 check('smart-bulk-skill-guardrail',
   /archived/u.test(skill) &&
   /\.NET Core 3\.1/u.test(skill) &&

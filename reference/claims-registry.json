@@ -377,5 +377,20 @@
     ],
     "knowledge_base": "docs/sql-server-to-azure-migration-connectivity.md",
     "note": "Microsoft Entra is supported from SQL Server 2022. v0.1 omitted it because the quote it used proved only the Windows authentication case."
+  },
+  {
+    "claim_id": "p22-smart-bulk-copy-archived",
+    "claim": "Is the Azure-Samples/smartbulkcopy repository still archived read-only, so Smart Bulk Copy (P22) remains an unmaintained sample rather than a supported product?",
+    "source_url": "https://api.github.com/repos/Azure-Samples/smartbulkcopy",
+    "source_section": "archived",
+    "json_field": "archived",
+    "expected_value": true,
+    "last_verified": "2026-08-13",
+    "verification_hash": "f5b057e05be6b48713308a6620c0755292f2705c2658bc2c90d8c44896709c0c",
+    "affected_rules": [
+      "p22-opt-in-required",
+      "p22-archived-sample-label",
+      "p20-fallback-when-tooling-unknown"
+    ]
   }
 ]
