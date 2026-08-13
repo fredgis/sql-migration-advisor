@@ -296,15 +296,16 @@ flowchart TB
     subgraph OFF["🟠 Offline · planned"]
         F1[Native backup/restore]
         F3[BACPAC / SqlPackage]
-        F4[bcp / Smart Bulk Copy]
-        F5[Detach / attach · ADF · Data Box]
+        F4[bcp]
+        F5[Smart Bulk Copy]
+        F6[Detach / attach · Data Factory Copy · Data Box]
     end
     classDef nz fill:#2E9E63,stroke:#1F6B43,color:#fff;
     classDef mn fill:#C9A227,stroke:#8A6D10,color:#2a1c05;
     classDef of fill:#E8A13A,stroke:#A86E18,color:#2a1c05;
     class N1,N2,N3 nz;
     class L0,L1,L2,L3 mn;
-    class F1,F3,F4,F5 of;
+    class F1,F3,F4,F5,F6 of;
 ```
 
 Separate **target availability during sync** from **business cutover downtime**; calling every staged method simply "offline" hides the operational difference:
