@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "knowledgeBaseVersion": "v1.1",
+  "knowledgeBaseVersion": "v1.2",
   "commonQuestionFields": [
     "source_version",
     "source_edition",
@@ -62,7 +62,7 @@
       "advisorAliases": ["Log shipping"],
       "supportStatus": "supported",
       "standaloneOnly": true,
-      "standaloneReason": "Log shipping has no row in the Advisor section 8 method x target matrix; it is documented as a legacy, Windows-only technique reachable only through standalone target/method selection, never as a recommended matrix cell.",
+      "standaloneReason": "Log shipping has no row in the Advisor section 8 method x target matrix; it is documented as a legacy technique reachable only through standalone target/method selection, never as a recommended matrix cell.",
       "questionFields": ["source_version", "source_os", "recovery_model", "backup_chain_status", "network_path_status", "tde_status", "tde_material_status", "peak_change_rate", "downtime_tolerance", "validation_plan_status", "rollback_plan_status"]
     },
     {

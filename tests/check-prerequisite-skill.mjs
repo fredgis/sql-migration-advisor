@@ -323,6 +323,30 @@ check('output-schema-statuses',
   'output prerequisite status vocabulary drifted');
 
 check('skill-frontmatter-name', /^name: generate-migration-prerequisite-plan$/mu.test(skill), 'frontmatter name must match the folder');
+
+// Every path identifier written in prose is a routing instruction the agent will follow literally.
+// A wrong one is invisible on review -- `P21` and `P20` read alike -- and sends the reader to an
+// unrelated prerequisite set. Prose that names an identifier and its method in parentheses, the
+// house style, is checked against the catalog so the pair has to agree.
+const catalogMethods = new Map(catalog.paths.map(entry => [entry.id, entry.method.toLowerCase()]));
+for (const doc of [
+  { name: 'SKILL.md', text: skill },
+  { name: 'input-contract.md', text: inputContract },
+  { name: 'output-contract.md', text: outputContract }
+]) {
+  for (const [, id] of doc.text.matchAll(/`(P\d{2})`/gu)) {
+    check(`${doc.name}-path-exists-${id}`, catalogMethods.has(id),
+      `${doc.name} names ${id}, which is not a catalog path`);
+  }
+  for (const [, id, label] of doc.text.matchAll(/`(P\d{2})` \(`?([^)`]+)`?\)/gu)) {
+    const method = catalogMethods.get(id);
+    const claimed = label.trim().toLowerCase();
+    check(`${doc.name}-path-method-${id}-${claimed.replace(/\W+/gu, '-')}`,
+      method !== undefined && (method.includes(claimed) || claimed.includes(method)),
+      `${doc.name} calls ${id} "${label.trim()}" but the catalog method is "${method}"`);
+  }
+}
+
 check('skill-ask-user', /^allowed-tools: ask_user$/mu.test(skill), 'the guided interview must declare ask_user');
 check('skill-contracts-wired',
   ['input-contract.md', 'output-contract.md', 'path-catalog.json', 'questions.json', 'input.schema.json', 'output.schema.json', 'sql-server-to-azure-migration-prerequisite.md'].every(name => skill.includes(name)),
@@ -348,8 +372,31 @@ check('template-columns',
   template.includes('| Area | Prerequisite | Status | Blocking | Owner | Evidence required | Official source |'),
   'the required output table columns drifted');
 
+// The invariant count lived twice: as a literal here and as prose in SKILL.md. Two copies of a
+// number drift, and the drift is silent -- the skill would tell the agent to run 13 checks while 16
+// exist, so the last three would never run. Derive both from the table instead of restating it.
 const invariantCount = (outputContract.match(/^\| \d+ \| /gmu) || []).length;
-check('output-invariants', invariantCount === 13, `expected 13 self-check invariants, found ${invariantCount}`);
+const invariantIds = (outputContract.match(/^\| (\d+) \| /gmu) || []).map(row => Number(row.split('|')[1].trim()));
+check('output-invariants-present', invariantCount >= 13, `expected at least 13 self-check invariants, found ${invariantCount}`);
+check('output-invariants-numbered', invariantIds.every((id, index) => id === index + 1),
+  `self-check invariants are not numbered 1..${invariantCount}: ${invariantIds.join(',')}`);
+const declaredInvariants = Number((skill.match(/Run all (\d+) output invariants/u) || [])[1]);
+check('output-invariants-count-declared', declaredInvariants === invariantCount,
+  `SKILL.md tells the agent to run ${declaredInvariants} invariants but the contract defines ${invariantCount}`);
+
+// The README advertises the size of the knowledge base. It had drifted to 237 while the file held
+// 283, because nothing tied the prose to the table. A stale count is a small lie with a large
+// effect: it is the number a reader uses to decide whether the KB is worth trusting.
+const readme = read('README.md');
+const advertised = readme.match(/(\d+) common requirements and (\d+) rows in total/u);
+check('readme-row-counts-present', advertised !== null, 'README no longer advertises the knowledge-base size');
+if (advertised) {
+  const commonRows = prerequisiteRows.filter(row => row.id.startsWith('COM-')).length;
+  check('readme-common-count', Number(advertised[1]) === commonRows,
+    `README claims ${advertised[1]} common requirements, the KB has ${commonRows}`);
+  check('readme-total-count', Number(advertised[2]) === prerequisiteRows.length,
+    `README claims ${advertised[2]} rows, the KB has ${prerequisiteRows.length}`);
+}
 
 const specialSupport = Object.fromEntries(catalog.paths.map(entry => [entry.id, entry.supportStatus]));
 check('data-box-support-label', specialSupport.P14 === 'composed_pattern', `P14 label is ${specialSupport.P14}`);

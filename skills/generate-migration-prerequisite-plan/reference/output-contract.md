@@ -1,7 +1,7 @@
 # Output contract — `generate-migration-prerequisite-plan`
 
 > **Schema version:** `1.0`
-> **Prerequisite knowledge-base line:** `v1.1`
+> **Prerequisite knowledge-base line:** `v1.2`
 
 The skill produces one normalized prerequisite-plan object. Markdown is the default rendering; JSON
 is available on request. Both formats must represent exactly the same state.
@@ -98,6 +98,9 @@ Free text cannot produce `typed_answer` or `verified_evidence`.
 | 11 | The Markdown table and JSON arrays are renderings of the same object and have identical counts and statuses. |
 | 12 | No output chooses a different target/method, provisions resources, executes migration, or claims architect approval. |
 | 13 | Every blocking prerequisite is represented in the summary counts. |
+| 14 | `P22` is present only after an explicit, informed user opt-in that names its archived, out-of-support status; when the tooling answer is unknown the output resolves to `P20` (`bcp`) or returns the shortlist, never to `P22`. |
+| 15 | A refusal and a plan never mix: `unresolved_path` carries `unresolvedReason`, `candidatePaths` and `disambiguation` and no plan fields, while any other status carries the plan fields and none of the refusal fields. |
+| 16 | An `advisor_handoff` run carries `inheritedAdvisorFacts`; a handoff without it is a contract failure, not an empty list. |
 
 If an invariant fails, expose the invariant and stop before rendering a readiness verdict. Do not
 repair the plan silently.

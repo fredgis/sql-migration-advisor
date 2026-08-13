@@ -80,7 +80,7 @@ Always On AG, direct Arc restore versus endpoint-based restore, or bcp versus Sm
 ## Operations
 
 1. **Load and verify policy.** Confirm the four reference files, both schemas, and the prerequisite
-   KB all declare schema/KB line `1.0`/`v1.1`.
+   KB all declare schema/KB line `1.0`/`v1.2`.
 2. **Normalize input.** Determine `advisor_handoff` or `standalone`, preserve unknowns, and show the
    sanitized normalized target/method back to the user.
 3. **Resolve the path.** Match target and method aliases. Ask only the documented disambiguation
@@ -96,7 +96,7 @@ Always On AG, direct Arc restore versus endpoint-based restore, or bcp versus Sm
    - `unknown`: it has not been established.
    - `not_applicable`: its applicability condition is demonstrably false.
 8. **Derive overall status** exactly as defined in the output contract.
-9. **Self-check.** Run all 13 output invariants. Expose any failure instead of silently repairing it.
+9. **Self-check.** Run all 16 output invariants. Expose any failure instead of silently repairing it.
 10. **Render.** Build the JSON object first. Render polished Markdown from the same object using the
     template. Return the requested format.
 
@@ -113,7 +113,7 @@ Keep these caveats visible:
   runtime that is out of support. `P22` is therefore **opt-in only**: never resolve it by inference
   from a target, a method alias or a size signal. Select it only when the user explicitly chooses
   Smart Bulk Copy over `bcp` after being shown the archived-repository and out-of-support-runtime
-  facts. If the answer is unknown, resolve to `P21` (`bcp`) or return the shortlist instead.
+  facts. If the answer is unknown, resolve to `P20` (`bcp`) or return the shortlist instead.
 
 ## Output
 
