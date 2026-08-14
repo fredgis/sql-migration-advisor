@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Knowledge base v2.7" src="https://img.shields.io/badge/knowledge%20base-v2.7-2b8a3e">
+  <img alt="Knowledge base v2.8" src="https://img.shields.io/badge/knowledge%20base-v2.8-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml/badge.svg"></a>
 </p>
@@ -60,7 +60,7 @@ version loaded and where it came from, so the advice is traceable.
 
 ## Why it is trustworthy
 
-- **Verified knowledge** — the v2.7 knowledge base is source-backed and corrected against Microsoft Learn.
+- **Verified knowledge** — the v2.8 knowledge base is source-backed and corrected against Microsoft Learn.
 - **Rules under regression test** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers. An executable mirror in `tests/` replays 110 scenarios through those rules on every commit. The mirror is not what runs in your session: an agent reads the rules and applies them, so this is a tested policy rather than a byte-identical guarantee.
 - **Every decision is addressable** — the card cites a rule ID for each verdict, and [`reference/decision-rules.md`](reference/decision-rules.md) ends with an index of all 28. Look one up, read what it consumes and how it treats an unknown, and argue with it.
 - **Explicit uncertainty** — every recommendation is `provisional`, and `medium` is the confidence ceiling. Nothing higher is reachable from an interview, because the skill reads no artefact from your estate. It carries assumptions, unknowns, blockers and the evidence a tool would have to produce.
@@ -76,20 +76,20 @@ The knowledge base is quoted by a skill, three manifests, a PDF, a poster, this 
 
 | Surface | Version | Up to date |
 | --- | --- | --- |
-| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v2.7` | ✅ |
-| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v2.7` | ✅ |
-| `SKILL.md` and its pinned fetch URL | `v2.7.2` | ✅ |
-| `version.json`, `plugin.json`, `marketplace.json` | `v2.7.2` | ✅ |
-| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v2.7` | ✅ |
-| Poster caption and PNG | `v2.7` | ✅ |
-| This README's badge and PDF sentence | `v2.7` | ✅ |
-| **This table** | `v2.7` | ✅ |
+| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v2.8` | ✅ |
+| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v2.8` | ✅ |
+| `SKILL.md` and its pinned fetch URL | `v2.8.0` | ✅ |
+| `version.json`, `plugin.json`, `marketplace.json` | `v2.8.0` | ✅ |
+| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v2.8` | ✅ |
+| Poster caption and PNG | `v2.8` | ✅ |
+| This README's badge and PDF sentence | `v2.8` | ✅ |
+| **This table** | `v2.8` | ✅ |
 | The six `blume/public/*.svg` mirrors | — | ✅ |
 | [`blume/docs/index.mdx`](blume/docs/index.mdx) — the docs site | — | ✅ |
-| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v2.7.2` | ✅ |
+| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v2.8.0` | ✅ |
 | [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | — | ✅ |
 | `howto/*.html` | — | ✅ |
-| The developer pitch's sample failure block | `v2.7` | ✅ |
+| The developer pitch's sample failure block | `v2.8` | ✅ |
 
 <!-- surfaces:end -->
 
@@ -450,8 +450,8 @@ Mermaid decision diagrams. The `SKILL.md` mirrors its AI Migration Agent I/O con
 ## The knowledge base as a PDF
 
 The same knowledge base ships as a polished, branded PDF —
-[`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (26 pages,
-v2.7, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
+[`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (25 pages,
+v2.8, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
 
@@ -513,10 +513,11 @@ base and this README on the same version. Last verified: August 2026.
 
 <!-- CHANGELOG:START -->
 <details>
-<summary><b>📓 Changelog</b> — current: <b>v2.7</b> (August 2026)</summary>
+<summary><b>📓 Changelog</b> — current: <b>v2.8</b> (August 2026)</summary>
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| v2.8.0 | 2026-08-14 | **The rule index pointed 26 of its 28 rules at sections that never mentioned them, and three at the wrong section outright.** Every recommendation cites a rule ID, and the index is how a reader turns that ID into the text they can argue with. `FABRIC-TARGET` and `FABRIC-ASSISTANT` both addressed A2, the hard compatibility table, which contains no Fabric text; the Fabric branch is step 4 of A3 and the assistant limits live in B3. `HYPERSCALE-CEILING` addressed `A2, B2` when the 128 TB ceiling is stated only in B2, and `SOURCE-PERMISSIONS` addressed B3 alone while the input it gates is normalized in A0. The other 22 named a real section that carried no trace of the rule, so following one led to prose with nothing to match against. Rule IDs are now anchored in the text they govern across A0, A2, A3, A4, B1, B2, B3, C1 and C4, and the five wrong or incomplete addresses are corrected. No recommendation changes: the skill loads the whole policy document, so the normative text always reached the model whatever the index said, and the effect column beside each address was already right. What was broken was traceability. The `rule-index-consistent` gate caused this by reading four groups from a five-column table, which left the `Defined in` column checked by nothing for five releases; it now resolves every pointer to a section that exists and mentions the rule. |
 | v2.7.2 | 2026-08-13 | **Two Microsoft recommendations were encoded as blocking prerequisites, so the plan could report `blocked` for a source Microsoft considers ready.** `P08-003` demanded the `-T1800` and `-T9567` startup trace flags, which the link preparation page introduces with *we recommend* and then qualifies further — `-T1800` is unnecessary when the log disks of both replicas use a 4 KB sector size. The row was not downgraded, because it fused two different verdicts in one sentence: the permissions, certificates and Azure CA trust chain beside them are genuinely required, and flattening the row would have made those optional. It is split instead — the permissions stay required and blocking, the flags become `P08-015`, recommended. `P09-016` required an LRS maintenance window; Microsoft lists it under *Best practices* and states it *isn't required but is highly recommended for large databases*, and warns it cannot stop an unplanned failover or a security patch from interrupting the migration. Now recommended, with that limit stated. `P08-001` also asked for Always On, which `P08-012` already owns, so a single control counted as two blockers. §23 still carried the paragraph explaining that bcp to SQL database in Fabric was *deliberately absent from the table above*, sitting directly beneath the `P20-015` row that documents it: the justification outlived the deletion it justified, and asserted two things v2.7.0 had already overturned. Removed. The P21 heading and index entry still read *Azure* Data Factory Copy while `P21-017` below them requires **Fabric** Data Factory for a Fabric sink; both now read `Data Factory Copy`, matching the matrix and `advisor-coverage.json`. The coverage prose claimed 51 combinations and 45 covered where the data records 56 and 50. Finally, the `live-anchor-*` gate shipped in v2.7.0 was never wired into CI: it runs only under `--check-links`, `tests.yml` documented that the weekly job owned that check, and the weekly job never passed the flag. A dedicated `sources` job now runs it on the schedule, off the pull-request path so a Microsoft Learn outage still cannot fail someone else's PR. Prerequisite knowledge base v1.4, 296 rows. |
 | v2.7.1 | 2026-08-13 | **Two places where the previous release had corrected the facts but not yet the surfaces a reader actually meets.** The downtime diagram in §7 still carried the fused label `bcp / Smart Bulk Copy` and a bare `ADF`, so the document contradicted itself in the one place a reader goes to choose a method by cutover window; the nodes are split to match §8, with the downtime classification unchanged because all three remain offline planned methods. Separately, `generate-migration-prerequisite-plan` already knew how to consume this skill's output, but this skill named it nowhere, so the handoff only worked for someone who already knew the second skill existed. The Advisor now offers the prerequisite plan once, after the recommendation card. The offer is optional in both directions: it is never acted on unprompted, never repeated, omitted when no path is viable, and the prerequisite skill still runs standalone for a user who never ran this one. |
 | v2.7.0 | 2026-08-13 | **The summary matrix asserted two routes Microsoft's own documentation contradicts, and every gate stayed green because they all check the matrix rather than check it.** `bcp / Smart Bulk Copy` was marked `➖` against **SQL database in Fabric**, yet bcp names *SQL database in Microsoft Fabric* in its **Applies to** banner and Fabric publishes a dedicated *Connect with bcp utility* procedure. The cell is now `✅`, carrying the constraint that makes it real: Fabric SQL database accepts no SQL authentication, so `-G` Entra authentication is mandatory. That row also fused two tools with different support — the fusion is what hid the error — so bcp and Smart Bulk Copy are now separate rows, which also withdraws an Arc SQL MI and container claim the archived sample never made. Separately, `ADF Copy` claimed **Fabric SQL DB**: **Azure** Data Factory ships Fabric Lakehouse and Fabric Warehouse connectors and no Fabric SQL database connector, while **Fabric** Data Factory has one (Beta). The row is now `Data Factory Copy` and the split is stated wherever a reader would act on it. Prerequisite knowledge base v1.3, 295 rows: `P20-015` — deleted in the previous release for naming a target the matrix denied — is restored, and `P21-017`/`P21-018` record the Data Factory distinction. A new `live-anchor-*` gate resolves all 38 citation fragments against the ids their pages actually render, after one was found pointing at a heading that no longer exists. 56 supported cells, up from 51. |
