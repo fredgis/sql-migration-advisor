@@ -5,7 +5,7 @@ Apply Steps **A → D** in order. Steps map to the two engine phases:
 - **Phase B — Ranking and plan:** Steps B → D. Rank only surviving targets, then choose method, tier, blockers, cost, and assessment.
 
 Regression contract: these rules are a **prompt policy under regression test**. Replaying the same inputs through the rules mirror in `tests/` gives the same result, and 90 golden scenarios enforce it on every commit. The mirror is not what runs in a session: an agent reads these rules and applies them. Treat the contract as a tested policy, not as a guarantee that two runs produce identical wording. Every recommendation must carry the KB version, engine version, and, when available, the source commit SHA and fetch timestamp.
-Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v2.7**, verified August 2026.
+Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v2.8**, verified August 2026.
 
 Three layers, never mixed:
 - **Target** = where the DB ends up (runtime).
@@ -26,7 +26,7 @@ Normalize questionnaire/free-form answers into these fields before filtering:
 | `driver` | end-of-support/ESU · cost · app modernization · data-center exit · analytics/Fabric · sovereignty/edge · modernize in place / not ready |
 | `source_location` | on-prem / Azure VM · AWS EC2 · AWS RDS for SQL Server · GCP Compute Engine · GCP Cloud SQL for SQL Server |
 | `source_version` | 2008/2008 R2 · 2012 · 2014 · 2016 · 2017/2019 · 2022 · 2025 |
-| `source_os` | Windows Server · Linux · unknown. Gates MI Link only through the host rule below: MI Link runs on **Windows Server 2012 or later for every supported SQL Server version, and on Linux from SQL Server 2017 onwards**; SQL Server 2016 is **Windows Server only**. The Windows Server 2012 floor is Microsoft's own, stated in the link Limitations: Windows 10 and 11 clients cannot enable the Always On availability group feature the link requires. |
+| `source_os` | Windows Server · Linux · unknown. Gates MI Link only through the host rule below (**`MI-LINK-HOST`**): MI Link runs on **Windows Server 2012 or later for every supported SQL Server version, and on Linux from SQL Server 2017 onwards**; SQL Server 2016 is **Windows Server only**. The Windows Server 2012 floor is Microsoft's own, stated in the link Limitations: Windows 10 and 11 clients cannot enable the Always On availability group feature the link requires. |
 | `source_edition` | Enterprise · Standard · Developer · Express · Web · unknown. Gates MI Link, which requires **Enterprise, Standard or Developer**. |
 | `management_model` | fully managed PaaS · need OS/file-system/engine control · Kubernetes on-prem/edge/multicloud |
 | `kubernetes_model` | managed engine via Arc data controller · full DIY container · unknown |
@@ -40,7 +40,7 @@ Normalize questionnaire/free-form answers into these fields before filtering:
 | `blob_https_reachability` | `BLOB_HTTPS_CONFIRMED` · `BLOB_HTTPS_BLOCKED` · `BLOB_HTTPS_UNKNOWN`. Gates the backup-based paths that stage through Azure Blob — Backup to URL, BACPAC, LRS and log replay. It does **not** gate transports that never touch Blob: Data Box, detach/attach and file-level copies into a target that has a file system. Unknown holds the method gate at `unknown_requires_assessment` rather than `passed`. |
 | `clr_permission_set` | `CLR_SAFE` · `CLR_EXTERNAL_ACCESS` · `CLR_UNSAFE` · unknown. Gates `CLR-PERMISSION`. **SAFE is not a clearance**: under `clr strict security` the engine treats SAFE and EXTERNAL_ACCESS as UNSAFE unless signed or hash-trusted. |
 | `tde_status` | `TDE_ENABLED` · `TDE_NOT_ENABLED` · unknown. A backup-based method needs the server certificate in the target before restore. |
-| `source_permissions` | `SYSADMIN_AVAILABLE` · `LIMITED_RIGHTS` · unknown. The SSMS 22 Migration Component requires `sysadmin` on the source. |
+| `source_permissions` | `SYSADMIN_AVAILABLE` · `LIMITED_RIGHTS` · unknown. Gates **`SOURCE-PERMISSIONS`**. The SSMS 22 Migration Component requires `sysadmin` on the source. |
 | `authentication` | `SQL_LOGINS_ONLY` · `WINDOWS_LOGINS` · `ENTRA_ID` · `MIXED_AUTH` · unknown. Drives login remediation effort. |
 | `rpo` / `rto` | free text in the customer's own units. Recorded as required evidence; no HA/DR posture is asserted without them. |
 | `target_region` | free text. Regional feature availability is stated as unverified until confirmed. |
@@ -92,25 +92,25 @@ These are filters, not preferences:
 
 | Dependency / answer | MI | SQL DB | SQL VM / AVS / container | Rule |
 | --- | --- | --- | --- | --- |
-| FILESTREAM / FileTable | `unsupported` | `unsupported` | `eligible` | Hard MI/SQL DB incompatibility. Do not bundle with PolyBase/DTC. |
-| PolyBase over Blob / ADLS Gen2 cloud files using `OPENROWSET(BULK)`, external tables or CETAS; CSV/Parquet | `eligible` | assess separately | `eligible` | SQL MI supports cloud-file virtualization. Delta Lake, pushdown, and S3 are not supported. |
-| PolyBase connector to Oracle, Teradata, MongoDB, another SQL Server, or other external RDBMS | `unsupported` | `unsupported` unless refactored | `eligible` | MI does not support PolyBase external RDBMS connectors. |
-| PolyBase selected but source type unknown | `unknown_requires_assessment` | `unknown_requires_assessment` | `eligible` | Evidence required: list external data sources/connectors. |
-| Homogeneous SQL↔SQL T-SQL DTC (MI↔MI or MI↔SQL Server) | `eligible` | `unsupported` for DTC to SQL DB | `eligible` | MI managed DTC supports SQL-to-SQL distributed transactions; port 135 **inbound and outbound**, 14000–15000 inbound, 49152–65535 outbound. Prefer native elastic transactions for all-MI cross-DB work. |
-| Heterogeneous DTC to third-party RDBMS | `unsupported` | `unsupported` | `eligible` | Use SQL VM or refactor the transaction boundary. |
-| DTC selected but participants unknown | `unknown_requires_assessment` | `unknown_requires_assessment` | `eligible` | Evidence required: transaction participants and linked-server map. |
-| Linked servers | `eligible_with_remediation` for supported SQL/OLE DB patterns; third-party RDBMS must be assessed | `unsupported` unless refactored | `eligible` | Hard SQL DB blocker; possible MI blocker when third-party RDBMS is mandatory. |
+| FILESTREAM / FileTable | `unsupported` | `unsupported` | `eligible` | **`FILESTREAM-PAAS`.** Hard MI/SQL DB incompatibility. Do not bundle with PolyBase/DTC. |
+| PolyBase over Blob / ADLS Gen2 cloud files using `OPENROWSET(BULK)`, external tables or CETAS; CSV/Parquet | `eligible` | assess separately | `eligible` | **`POLYBASE-KIND`.** SQL MI supports cloud-file virtualization. Delta Lake, pushdown, and S3 are not supported. |
+| PolyBase connector to Oracle, Teradata, MongoDB, another SQL Server, or other external RDBMS | `unsupported` | `unsupported` unless refactored | `eligible` | **`POLYBASE-KIND`.** MI does not support PolyBase external RDBMS connectors. |
+| PolyBase selected but source type unknown | `unknown_requires_assessment` | `unknown_requires_assessment` | `eligible` | **`POLYBASE-KIND`**, **`DEPENDENCY-INVENTORY`.** Evidence required: list external data sources/connectors. |
+| Homogeneous SQL↔SQL T-SQL DTC (MI↔MI or MI↔SQL Server) | `eligible` | `unsupported` for DTC to SQL DB | `eligible` | **`DTC-TOPOLOGY`.** MI managed DTC supports SQL-to-SQL distributed transactions; port 135 **inbound and outbound**, 14000–15000 inbound, 49152–65535 outbound. Prefer native elastic transactions for all-MI cross-DB work. |
+| Heterogeneous DTC to third-party RDBMS | `unsupported` | `unsupported` | `eligible` | **`DTC-TOPOLOGY`.** Use SQL VM or refactor the transaction boundary. |
+| DTC selected but participants unknown | `unknown_requires_assessment` | `unknown_requires_assessment` | `eligible` | **`DTC-TOPOLOGY`**, **`DEPENDENCY-INVENTORY`.** Evidence required: transaction participants and linked-server map. |
+| Linked servers | `eligible_with_remediation` for supported SQL/OLE DB patterns; third-party RDBMS must be assessed | `unsupported` unless refactored | `eligible` | **`LINKED-SERVERS`.** Hard SQL DB blocker; possible MI blocker when third-party RDBMS is mandatory. |
 | SQL Agent jobs | `eligible` | `eligible_with_remediation` | `eligible` | SQL DB requires Elastic Jobs/Automation; this is ranking/remediation, not a hard blocker unless jobs cannot be refactored. |
 | SQL CLR, permission set `CLR_SAFE` or `CLR_EXTERNAL_ACCESS` | `eligible_with_remediation` | `unsupported` | `eligible` | **`CLR-PERMISSION`.** SAFE is not a clearance. Under `clr strict security`, on by default since SQL Server 2017, the engine treats SAFE and EXTERNAL_ACCESS assemblies as if they were UNSAFE: each must be signed with a certificate or asymmetric key that has a matching login, or its hash trusted via `sp_add_trusted_assembly`. Remediation is therefore signing plus an assembly inventory, not a permission-set check. Assess external file, network and native-library calls before ranking. SQL DB has no instance-level CLR. |
 | SQL CLR, permission set `CLR_UNSAFE` | `unknown_requires_assessment` | `unsupported` | `eligible` | **`CLR-PERMISSION`.** UNSAFE assemblies may call unmanaged code and touch the host, which managed PaaS does not expose. Do not rank MI first until the assemblies are inventoried and their calls understood. |
 | SQL CLR, permission set unknown | `unknown_requires_assessment` | `unknown_requires_assessment` | `eligible` | **`CLR-PERMISSION`.** Evidence required: assembly inventory with permission sets, signatures and external calls. Never treat an unstated permission set as SAFE. |
-| Need OS/file-system/exact engine control/third-party agents | `unsupported` | `unsupported` | `eligible` | Target SQL VM, AVS, or full DIY container. |
+| Need OS/file-system/exact engine control/third-party agents | `unsupported` | `unsupported` | `eligible` | **`MANAGEMENT-MODEL`.** Target SQL VM, AVS, or full DIY container. |
 
 ### A3. Reachable target selection order after filtering
 
 Use this order to produce the target shortlist; it prevents masked branches.
 
-1. **Arc in-place / assess first** → SQL Server enabled by Azure Arc control plane.
+1. **Arc in-place / assess first** → SQL Server enabled by Azure Arc control plane. **`ARC-IN-PLACE`.**
    Trigger when **any** condition is true:
    - `intent = assessment-only`;
    - `intent = modernize in place / not ready`;
@@ -123,9 +123,9 @@ Use this order to produce the target shortlist; it prevents masked branches.
 3. **Kubernetes / edge / sovereign-multicloud**:
    - `management_model = Kubernetes on-prem/edge/multicloud` + `kubernetes_model = managed engine via Arc data controller` → Arc-enabled SQL MI.
    - `management_model = Kubernetes on-prem/edge/multicloud` + `kubernetes_model = full DIY container` → SQL Server in a container.
-   - `management_model = Kubernetes on-prem/edge/multicloud` + `kubernetes_model = unknown` → `unknown_requires_assessment`; ask/record evidence. Safe default: do **not** silently pick Arc MI or container.
+   - `management_model = Kubernetes on-prem/edge/multicloud` + `kubernetes_model = unknown` → `unknown_requires_assessment`; ask/record evidence. Safe default: do **not** silently pick Arc MI or container. **`MANAGEMENT-MODEL`.**
 
-4. **Fabric analytics branch before generic SQL DB**:
+4. **Fabric analytics branch before generic SQL DB**: **`FABRIC-TARGET`**, **`FABRIC-ASSISTANT`.**
    If `driver = analytics/Fabric` or workload profile = BI/analytics-first, evaluate **SQL database in Fabric** before Azure SQL Database. The target is **GA**, so `previewAcceptable=false` does not eliminate it — it only rules out the Fabric Migration Assistant, and the target survives whenever another ingestion path fits (T-SQL, transactional replication, Fabric pipelines / Data Factory copy jobs, Dataflow Gen2, TDS-capable tools). Apply the DACPAC ≤ 20 MB, no-Private-Link and on-prem-gateway checks only when the selected path is the Migration Assistant. Mark Fabric `unsupported` or `eligible_with_remediation` only on an actual target-surface or ingestion blocker, then continue to SQL DB/MI/VM.
 
 5. **Maximum compatibility / OS control**:
@@ -147,7 +147,7 @@ Use this order to produce the target shortlist; it prevents masked branches.
 | GCP Compute Engine | ✅ if sysadmin + AG + 5022 + 11000–11999 + networking | ✅ via Blob upload | ✅ | ✅ via Blob upload | ✅ if sysadmin | ✅ |
 | **GCP Cloud SQL for SQL Server** | ❌ no sysadmin / no AG endpoints | ✅ via export→Blob | ✅ | ⚠️ indirect | ❌ not practical — requires sysadmin/distributor rights the platform does not grant | ✅ |
 
-MI Link prerequisites: SQL Server 2016+, Enterprise / Standard / Developer edition, a host OS supported by that SQL Server version (Windows Server 2012 or later throughout, Linux from SQL Server 2017 onwards, SQL Server 2016 being Windows Server only), sysadmin on source, distributed availability groups, ability to create AG endpoints, VNet connectivity, and documented MI Link ports. Required ports are: MI subnet NSG inbound **5022** and **11000–11999** from the SQL Server IP; MI subnet NSG outbound **5022** to the SQL Server IP (Microsoft's table states MI NSG allows 5022 + 11000–11999 both directions); SQL Server host OS/corporate firewall inbound **5022** from the MI subnet /24; SQL Server host OS/corporate firewall outbound **5022** and **11000–11999** to the MI subnet. Ports **11000–11999** carry the MI-side distributed-AG HADR data-replication channel; the MI-side HadrPort is dynamically assigned in that range and visible in `sys.dm_hadr_fabric_config_parameters`. MI-side ports cannot be customized; the SQL Server-side endpoint port can. If **5022** or **11000–11999** cannot be opened in the required directions, set MI Link `unsupported`. The fallback is **LRS only when LRS itself qualifies**: source SQL Server 2008–2022, all LRS prerequisites met, and the migration able to complete inside the 30-day maximum window. For a SQL Server 2025 source, or a window that cannot be met, evaluate another supported method or target, or return a provisional shortlist — never fall through to LRS unconditionally. This gate is always required, independent of tier, update policy, VPN, ExpressRoute, or peering. Therefore MI Link is impossible from AWS RDS for SQL Server and GCP Cloud SQL for SQL Server.
+MI Link prerequisites: SQL Server 2016+, Enterprise / Standard / Developer edition, a host OS supported by that SQL Server version (Windows Server 2012 or later throughout, Linux from SQL Server 2017 onwards, SQL Server 2016 being Windows Server only), sysadmin on source, distributed availability groups, ability to create AG endpoints, VNet connectivity, and documented MI Link ports. Required ports are: MI subnet NSG inbound **5022** and **11000–11999** from the SQL Server IP; MI subnet NSG outbound **5022** to the SQL Server IP (Microsoft's table states MI NSG allows 5022 + 11000–11999 both directions); SQL Server host OS/corporate firewall inbound **5022** from the MI subnet /24; SQL Server host OS/corporate firewall outbound **5022** and **11000–11999** to the MI subnet. Ports **11000–11999** carry the MI-side distributed-AG HADR data-replication channel; the MI-side HadrPort is dynamically assigned in that range and visible in `sys.dm_hadr_fabric_config_parameters`. MI-side ports cannot be customized; the SQL Server-side endpoint port can. If **5022** or **11000–11999** cannot be opened in the required directions, set MI Link `unsupported`. The fallback is **LRS only when LRS itself qualifies**: source SQL Server 2008–2022, all LRS prerequisites met, and the migration able to complete inside the 30-day maximum window. For a SQL Server 2025 source, or a window that cannot be met, evaluate another supported method or target, or return a provisional shortlist — never fall through to LRS unconditionally. This gate is always required, independent of tier, update policy, VPN, ExpressRoute, or peering. Therefore MI Link is impossible from AWS RDS for SQL Server and GCP Cloud SQL for SQL Server. The rules behind this matrix are **`MI-LINK-SOURCE`**, **`MI-LINK-VERSION`**, **`MI-LINK-HOST`** and **`MI-LINK-PORTS`** for the first column, and **`REPL-PUBLISHER`** for the transactional-replication column.
 
 ---
 
@@ -172,6 +172,8 @@ Score/rank only candidates whose Phase A state is `eligible` or `eligible_with_r
 | 9 | Prefer the candidate with fewer unresolved assumptions | One path rests on more unverified claims |
 | 10 | Otherwise return a **provisional shortlist** | Candidates tie, or depend on different unknowns |
 
+**`RANK-ORDER`** is the rule ID for this ordered table.
+
 **Never invent a winner at step 10.** A shortlist that names what would break the tie is more useful than a confident answer chosen arbitrarily.
 
 For every ordering decision, record which step and which input changed the order. That record is what the output trace renders.
@@ -184,6 +186,8 @@ If a tier-driving input is missing, emit `unknown_requires_assessment` for tier 
 
 #### Azure SQL Managed Instance tier
 
+**`MI-TIER`.**
+
 | Inputs | Tier result |
 | --- | --- |
 | Low-latency storage required, high IOPS/log throughput, heavy tempdb, in-memory OLTP, read-scale secondary, highest HA/resilience, or SLA/latency target cannot tolerate remote storage | **MI Business Critical** |
@@ -193,6 +197,8 @@ If a tier-driving input is missing, emit `unknown_requires_assessment` for tier 
 | `performance.latency`, `performance.iops`, `performance.log_throughput`, and `resilience.read_scale/SLA` unknown | `unknown_requires_assessment` — require Perfmon/DMV baseline, wait stats, log generation rate, HA/read-scale requirement |
 
 #### Azure SQL Database service tier/model
+
+**`SQLDB-TIER`**; the size ceilings below are **`HYPERSCALE-CEILING`.**
 
 | Inputs | Tier/model result |
 | --- | --- |
@@ -210,7 +216,7 @@ If a tier-driving input is missing, emit `unknown_requires_assessment` for tier 
 
 | Downtime wanted | Method | Gate |
 | --- | --- | --- |
-| Near-zero | **Distributed AG** or **Always On AG** | Distributed AG: source **2016+**. Always On AG: source **2012+**. Both: AD DS or workgroup AG + certs, AG endpoints, ports open, planned failover window |
+| Near-zero | **Distributed AG** or **Always On AG** | **`AG-VERSION`.** Distributed AG: source **2016+**. Always On AG: source **2012+**. Both: AD DS or workgroup AG + certs, AG endpoints, ports open, planned failover window |
 | Minimal | **Log shipping** | Windows source and log backup chain feasible |
 | Offline | **Native backup/restore** — direct `BACKUP TO URL` from **2012 SP1 CU2+**, or local backup + upload below that build or when URL prerequisites are unavailable; detach/attach for special large-file cases | Confirm the build for SQL Server 2012 (SP1 CU2 or later). 2012/2014 use page blob + storage-account credential, 1 TB max; 2016+ use block blob + SAS, up to 12.8 TB striped. TDE cert installed first when encrypted. **`BACKUP-BLOB-PATH`**: every variant moves through HTTPS to Azure Blob, so `blob_https_reachability` must be `BLOB_HTTPS_CONFIRMED` before this gate reports `passed`. `BLOB_HTTPS_UNKNOWN` yields `unknown_requires_assessment` and `BLOB_HTTPS_BLOCKED` refuses the method: an unverified upload path is the single most common reason a cutover date slips, and it is invisible until someone tries it |
 | Whole VM/instance | **Azure Migrate** replication | use for rehost/business case; validate SQL consistency |
@@ -226,10 +232,10 @@ Arc-enabled source: SQL migration in Azure Arc can orchestrate offline native ba
 
 | Downtime wanted | Method | Gate |
 | --- | --- | --- |
-| Near-zero / online | **MI Link** | SQL Server 2016+, **Enterprise / Standard / Developer edition**, and a host OS supported by that SQL Server version: **Windows Server 2012 or later** on every supported version, plus **Linux from SQL Server 2017** onwards (SQL Server 2016 is Windows Server only). Also sysadmin, distributed AG, AG endpoint creation, required 5022 + 11000–11999 ports, VNet connectivity; not possible from AWS RDS/GCP Cloud SQL. Unknown OS or edition makes the method `unknown_requires_assessment`; an unsupported edition, a Windows client OS or Windows Server below 2012, or a Linux host below SQL Server 2017, eliminates **MI Link only**, never the MI target. When the migration is driven from the **Azure Arc portal**, that path is documented as Windows Server only, so a Linux host keeps MI Link but loses the Arc-portal orchestration |
-| Online migration / planned cutover | **Log Replay Service (LRS)** standalone | SQL Server 2008–2022 (**not 2025**); sources include SQL on VMs, AWS EC2, AWS RDS, GCP Compute Engine, GCP Cloud SQL; public endpoint/storage access; **the initial restore and log replay must complete inside the 30-day maximum window**; target is `unavailable` (RESTORING/NORECOVERY) during sync |
-| Offline / simplest | **Native backup/restore (.bak)** | SQL Server 2008+; install TDE cert in destination `master` first; master/msdb not restorable |
-| Online subset | **Transactional replication** | use when tables/articles fit and publisher rights exist |
+| Near-zero / online | **MI Link** | **`MI-LINK-VERSION`**, **`MI-LINK-HOST`**, **`MI-LINK-SOURCE`**, **`MI-LINK-PORTS`.** SQL Server 2016+, **Enterprise / Standard / Developer edition**, and a host OS supported by that SQL Server version: **Windows Server 2012 or later** on every supported version, plus **Linux from SQL Server 2017** onwards (SQL Server 2016 is Windows Server only). Also sysadmin, distributed AG, AG endpoint creation, required 5022 + 11000–11999 ports, VNet connectivity; not possible from AWS RDS/GCP Cloud SQL. Unknown OS or edition makes the method `unknown_requires_assessment`; an unsupported edition, a Windows client OS or Windows Server below 2012, or a Linux host below SQL Server 2017, eliminates **MI Link only**, never the MI target. When the migration is driven from the **Azure Arc portal**, that path is documented as Windows Server only, so a Linux host keeps MI Link but loses the Arc-portal orchestration |
+| Online migration / planned cutover | **Log Replay Service (LRS)** standalone | **`LRS-VERSION`**, **`LRS-WINDOW`.** SQL Server 2008–2022 (**not 2025**); sources include SQL on VMs, AWS EC2, AWS RDS, GCP Compute Engine, GCP Cloud SQL; public endpoint/storage access; **the initial restore and log replay must complete inside the 30-day maximum window**; target is `unavailable` (RESTORING/NORECOVERY) during sync |
+| Offline / simplest | **Native backup/restore (.bak)** | **`BACKUP-BLOB-PATH`**, **`SOURCE-PERMISSIONS`.** SQL Server 2008+; install TDE cert in destination `master` first; master/msdb not restorable. The SSMS 22 Migration Component requires `sysadmin` on the source: `LIMITED_RIGHTS` refuses that tooling path and an unstated `source_permissions` holds it at `unknown_requires_assessment` |
+| Online subset | **Transactional replication** | **`REPL-PUBLISHER`.** Use when tables/articles fit and publisher rights exist |
 | Data-only / bulk | bcp / Smart Bulk Copy / BACPAC / ADF | data movement only; validate schema/features separately |
 
 LRS and Arc version paths:
@@ -239,7 +245,7 @@ LRS and Arc version paths:
 - **Arc → Azure SQL MI via LRS:** Microsoft documents a method-table floor of SQL Server **2012+** and Windows Server **2012+**, but this contradicts the same page's **2014+** overall Arc experience floor. Conservative engine rule: require Arc experience floor **2014+** for Arc-orchestrated LRS; standalone LRS outside Arc remains **2008–2022**. Note that the LRS-specific pages also list SQL Server 2012 among supported sources — that is consistent with the standalone **2008–2022** range and is *not* evidence of a 2012 floor for the Arc experience.
 - **Arc → SQL Server on Azure VM:** SQL Server **2014+**.
 
-MI migration capacity gates:
+MI migration capacity gates (**`MI-LINK-CAPACITY`**; the Arc wizard row is **`ARC-WIZARD-BATCH`**):
 | Method/control plane | Capacity rule |
 | --- | --- |
 | **MI Link** | Up to **100 links** on MI General Purpose and Business Critical; up to **500 links** on Next-gen General Purpose. One link = one database. |
@@ -262,7 +268,7 @@ Not supported to SQL DB: native `.bak` restore, detach/attach, MI Link, local SQ
 
 #### → SQL database in Fabric (GA target; Migration Assistant in Preview)
 
-- **Fabric Migration Assistant (Preview)**: schema via **DACPAC ≤ 20 MB**; data via **Fabric Data Factory copy job** + **on-prem data gateway**. No VNet gateway/Private Link for the assistant. `targetAvailabilityDuringSync=not-present`, `businessCutoverDowntime=full load time`; use for Fabric-native/analytics-first simple schemas, not broad enterprise OLTP by default. **`previewAcceptable=false` disqualifies this method only, never the target.** Alternative Fabric SQL database ingestion paths include T-SQL, transactional replication (SQL Server 2022 RTM CU12+ publisher), Fabric pipelines / Data Factory copy jobs, Dataflow Gen2, and any TDS-capable tool; do not eliminate Fabric solely because assistant limits do not fit.
+- **Fabric Migration Assistant (Preview)**: **`FABRIC-ASSISTANT`.** Schema via **DACPAC ≤ 20 MB**; data via **Fabric Data Factory copy job** + **on-prem data gateway**. No VNet gateway/Private Link for the assistant. `targetAvailabilityDuringSync=not-present`, `businessCutoverDowntime=full load time`; use for Fabric-native/analytics-first simple schemas, not broad enterprise OLTP by default. **`previewAcceptable=false` disqualifies this method only, never the target.** Alternative Fabric SQL database ingestion paths include T-SQL, transactional replication (SQL Server 2022 RTM CU12+ publisher), Fabric pipelines / Data Factory copy jobs, Dataflow Gen2, and any TDS-capable tool; do not eliminate Fabric solely because assistant limits do not fit.
 
 #### → Arc-enabled SQL MI / container
 
@@ -279,7 +285,7 @@ Ship the initial full backup via Data Box or AzCopy over ExpressRoute, then catc
 
 ### C1. Migration availability and cutover downtime outputs
 
-The source-of-truth downtime model is the pair `targetAvailabilityDuringSync` + `businessCutoverDowntime`. A coarse `downtimeClass` may be emitted for cards, but it must be derived from `businessCutoverDowntime`.
+The source-of-truth downtime model is the pair `targetAvailabilityDuringSync` + `businessCutoverDowntime`. A coarse `downtimeClass` may be emitted for cards, but it must be derived from `businessCutoverDowntime`. **`DOWNTIME-CLASS`.**
 
 | Method | `targetAvailabilityDuringSync` | `businessCutoverDowntime` | Derived `downtimeClass` |
 | --- | --- | --- | --- |
@@ -341,7 +347,8 @@ Rules:
 - `confidence = medium` is the ceiling. It is reached only when all hard blockers and tier-driving inputs are known and the chosen method gates are satisfied. Nothing above it is available, because a confidence higher than that would have to rest on measured evidence and the interview produces none.
 - `confidence = low` when any candidate is `unknown_requires_assessment` on a decision-driving dependency.
 - Never turn an unknown into a silent safe default.
-- An unknown cutover downtime tolerance yields `businessCutoverDowntime: unknown_requires_assessment`. A downtime class is a promise made to the business, so it is never inferred from a method that was itself selected by defaulting the unanswered question.
+- An unknown cutover downtime tolerance yields `businessCutoverDowntime: unknown_requires_assessment`. A downtime class is a promise made to the business, so it is never inferred from a method that was itself selected by defaulting the unanswered question. **`DOWNTIME-CLASS`.**
+- The card must not contradict the eligibility table that produced it. **`OUTPUT-CONSISTENCY`** is normative in [`output-contract.md`](output-contract.md) §3, which is the list of invariants to run **before rendering**; expose an inconsistency, never repair it silently.
 
 ---
 
@@ -422,10 +429,10 @@ The normative wording stays in the sections above. This index is the address boo
 | `MANAGEMENT-MODEL` | hard target gate | `management_model`, `kubernetes_model` | Family split blocked; return a shortlist | A2 |
 | `ARC-IN-PLACE` | hard target gate | `intent`, `source_version` | Path not offered | A3 |
 | `ARC-WIZARD-BATCH` | hard method gate | `migration_batch_size`, `arc_extension_version` | **Not treated as recent**, `unknown_requires_assessment` | B3 |
-| `FABRIC-TARGET` | hard target gate | `driver` | Fabric ranked below, never eliminated | A2 |
-| `FABRIC-ASSISTANT` | hard method gate | `fabric_constraints` | Assistant `unknown_requires_assessment`; the GA target survives | A2 |
-| `HYPERSCALE-CEILING` | hard target gate | `size` | Tier `unknown_requires_assessment`. Past the 128 TB single-database ceiling, both PaaS families are **refused** and the workload must be sharded or moved to a VM | A2, B2 |
-| `SOURCE-PERMISSIONS` | hard method gate | `source_permissions` | Method `unknown_requires_assessment`; limited rights **refuse** the method | B3 |
+| `FABRIC-TARGET` | hard target gate | `driver` | Fabric ranked below, never eliminated | A3 |
+| `FABRIC-ASSISTANT` | hard method gate | `fabric_constraints` | Assistant `unknown_requires_assessment`; the GA target survives | A3, B3 |
+| `HYPERSCALE-CEILING` | hard target gate | `size` | Tier `unknown_requires_assessment`. Past the 128 TB single-database ceiling, both PaaS families are **refused** and the workload must be sharded or moved to a VM | B2 |
+| `SOURCE-PERMISSIONS` | hard method gate | `source_permissions` | Method `unknown_requires_assessment`; limited rights **refuse** the method | A0, B3 |
 | `MI-TIER` | tier rule | `performance`, `size`, `database_count` | Tier `unknown_requires_assessment`, never General Purpose by default | B2 |
 | `SQLDB-TIER` | tier rule | `performance`, `size`, `tenant_count` | Tier `unknown_requires_assessment` | B2 |
 | `DOWNTIME-CLASS` | consistency rule | `downtime` | `businessCutoverDowntime` `unknown_requires_assessment` | C1, C4 |

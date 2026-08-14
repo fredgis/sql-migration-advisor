@@ -852,10 +852,32 @@ try {
 
   if (!index) failures.push('reference\\decision-rules.md has no Rule index section');
 
-  const rows = [...index.matchAll(/^\| `([A-Z][A-Z0-9-]+)` \| ([^|]+) \| ([^|]+) \| ([^|]+) \|/gmu)];
+  const rows = [...index.matchAll(/^\| `([A-Z][A-Z0-9-]+)` \| ([^|]+) \| ([^|]+) \| ([^|]+) \| ([^|]+) \|/gmu)];
   if (rows.length < 20) failures.push(`the rule index lists only ${rows.length} rules; the hard gates alone exceed that`);
 
-  for (const [, id, , consumes, unknown] of rows) {
+  // The `Defined in` column was read by nothing for five releases, because this regex captured four
+  // groups over a five-column table. Twenty-six of twenty-eight rules named a section that contained
+  // no trace of them, and three named the wrong section outright. A signpost nobody follows is worse
+  // than no signpost: the card cites rule IDs, so a reader who cannot find the rule cannot argue with
+  // it. Resolve every pointer to a real section that actually mentions the rule.
+  const heads = [...rules.matchAll(/^(#{3,4}) ([A-D][0-9])\. [^\n]*$/gmu)].map(m => ({ lvl: m[1].length, id: m[2], i: m.index }));
+  const sectionBody = sec => {
+    const h = heads.find(x => x.id === sec);
+    if (!h) return null;
+    // A section owns its subsections: stop at the next heading of the same or higher level, so B3
+    // keeps its `#### → target` blocks instead of ending at the first one.
+    const n = rules.slice(h.i + 3).search(new RegExp(`\\n#{2,${h.lvl}} `, 'u'));
+    return n < 0 ? rules.slice(h.i) : rules.slice(h.i, h.i + 3 + n);
+  };
+
+  for (const [, id, , consumes, unknown, defined] of rows) {
+    const sections = [...defined.matchAll(/\b([A-D][0-9])\b/gu)].map(m => m[1]);
+    if (!sections.length) failures.push(`${id} names no section in its 'Defined in' column, so it is not addressable`);
+    for (const sec of sections) {
+      const body = sectionBody(sec);
+      if (body === null) failures.push(`${id} is declared in section ${sec}, which does not exist`);
+      else if (!body.includes(id)) failures.push(`${id} is declared in section ${sec}, which never mentions it`);
+    }
     // Every consumed field named in backticks must exist in the input contract.
     for (const field of [...consumes.matchAll(/`([a-z_][a-z0-9_]*)`/g)].map(m => m[1])) {
       if (!new RegExp(`\`${field}\``).test(inputContract)) failures.push(`${id} consumes '${field}', which the input contract does not define`);
@@ -874,7 +896,7 @@ try {
   if (!/Never invent a winner/u.test(rules)) failures.push('B1 does not forbid inventing a winner when candidates tie');
 
   add('rule-index-consistent', failures.length === 0,
-    failures.length ? failures : [`${rows.length} rules are addressable, consume only documented fields, and each declares an unknown behaviour that is not a pass.`]);
+    failures.length ? failures : [`${rows.length} rules are addressable, resolve to a section that defines them, consume only documented fields, and each declares an unknown behaviour that is not a pass.`]);
 }
 
 {
