@@ -506,7 +506,7 @@ Released as `v2.1.0`. **23 gates, 106 scenarios.**
 | W2-3 | One fetch policy | ✅ bundled by default, live on request, aligned across five documents |
 | W2-4 | Non-overlapping size classes | ✅ |
 | W2-5 | `CLR-PERMISSION` normative | ✅ written **and implemented**: UNSAFE or unstated returns a shortlist, and SAFE is not a clearance |
-| W2-6 | Gate: index entries resolve | ⚠️ partial: entries are checked for consumed fields and unknown behaviour, not for the presence of normative text |
+| W2-6 | Gate: index entries resolve | ✅ v2.8.0. The gate matched four capture groups against a five-column table, so `Defined in` was read by nothing and passed green for five releases. 26 of the 28 pointers named a section that never mentioned the rule; four cells were corrected outright. Rule IDs are now anchored in the text they govern, and each pointer must resolve to a section that exists **and** carries the rule |
 | W3-1..9 | Scenarios from the transcript | ✅ 16 added, including the metamorphic pairs and six that keep the distribution honest |
 | W4-1 | `excluded_by_preference` | ✅ invariant 12 and the status vocabulary |
 | W4-2 | Eight families in the trace | ✅ invariant 11 |
