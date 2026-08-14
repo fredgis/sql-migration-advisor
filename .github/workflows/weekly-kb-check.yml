@@ -1,21 +1,34 @@
 name: Weekly KB freshness check
 
-# Every Monday: verify KB consistency, check links, scan watched official sources,
-# verify high-risk claim source hashes, and open a human-review PR/issue. A version
-# bump is allowed only after substantive content edits exist and consistency passes.
+# Every Monday, for each of the three knowledge bases this repository maintains: verify internal
+# consistency, prove every cited source and heading anchor still resolves, gather official news and
+# route it, re-hash the volatile source sections behind the load-bearing claims, ask a model to
+# review each document against that evidence, and then either open a maintenance pull request or
+# open an issue asking a human to decide.
+#
+# The governing rule is that no automated signal edits guidance. A model verdict, a drifted hash and
+# a dead link are all reasons to ask a human; none of them is a reason to change a sentence. A
+# version moves only when a real content diff already exists, judged by the same code that applies
+# the bump.
 
 on:
   pull_request:
     branches: [main]
+    # Every file the checks below read or write. A path missing here is a change that reaches main
+    # without the gate that exists to catch it.
     paths:
       - 'docs/sql-server-to-azure-migration.md'
       - 'docs/sql-server-to-azure-migration-prerequisite.md'
-      - 'skills/generate-migration-prerequisite-plan/**'
-      - 'tests/check-prerequisite-skill.mjs'
+      - 'docs/sql-server-to-azure-migration-connectivity.md'
       - 'reference/decision-rules.md'
       - 'reference/claims-registry.json'
-      - 'README.md'
+      - 'skills/recommend-migration-path/SKILL.md'
+      - 'skills/generate-migration-prerequisite-plan/**'
+      - 'skills/get-connection-details/**'
+      - 'tests/check-prerequisite-skill.mjs'
       - 'tools/weekly-check/**'
+      - 'version.json'
+      - 'README.md'
       - '.github/workflows/weekly-kb-check.yml'
   schedule:
     - cron: '0 5 * * 1'
@@ -29,18 +42,23 @@ on:
         type: boolean
         default: false
 
+# Read-only by default. The three jobs that need more are granted it individually, so the job that
+# runs JavaScript from a pull request branch cannot reach a token that can write to the repository
+# or mint an Azure identity.
 permissions:
-  contents: write
-  pull-requests: write
-  issues: write
-  id-token: write
+  contents: read
 
+# Scheduled and manual runs share one group because they write the same fixed branch. Splitting them
+# by event name let a manual run and the Monday run push to weekly-kb-update at the same time. Pull
+# requests are serialised per ref instead, so one contributor never queues behind another.
 concurrency:
-  group: weekly-kb-check-${{ github.event_name }}
+  group: >-
+    weekly-kb-check-${{ github.event_name == 'pull_request' && format('pr-{0}', github.ref) || 'write' }}
   cancel-in-progress: false
 
 jobs:
   consistency:
+    name: Consistency gates
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -53,22 +71,24 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Check KB / decision-rules consistency
+      - name: Check consistency across all three knowledge bases
         run: node tools/weekly-check/check-consistency.mjs
 
-      # The prerequisite KB has its own gate. Running it here means a weekly run fails on a broken
-      # prerequisite contract instead of only on a broken Advisor KB.
       - name: Check prerequisite KB / skill contracts
         run: node tests/check-prerequisite-skill.mjs
 
-  # Live source and anchor verification. Network-bound, so it never runs on a pull request,
-  # where a moved Microsoft heading would block an unrelated contributor. It stands as its own
-  # job rather than a step inside evidence: a rotted anchor turns this red on its own instead
-  # of aborting the run before the evidence artifacts are uploaded.
+  # Live source verification. Network-bound, so it never runs on a pull request, where a moved
+  # Microsoft heading would block an unrelated contributor. Failures do not abort the job: they are
+  # recorded as evidence and reach the decision stage, which is what turns them into an issue
+  # somebody actually reads. A job that merely went red would notify nobody.
   sources:
+    name: Sources and anchors
     if: github.event_name != 'pull_request'
     needs: consistency
     runs-on: ubuntu-latest
+    outputs:
+      doc_links_exit: ${{ steps.doclinks.outputs.exit_code }}
+      prereq_links_ok: ${{ steps.prereqlinks.outputs.ok }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -78,13 +98,41 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Verify every prerequisite source and anchor still resolves
-        run: node tests/check-prerequisite-skill.mjs --check-links
+      - name: Verify every cited source and heading anchor in all three knowledge bases
+        id: doclinks
+        run: |
+          set +e
+          node tools/weekly-check/check-doc-links.mjs --concurrency 8
+          CODE=$?
+          set -e
+          echo "exit_code=${CODE}" >> "$GITHUB_OUTPUT"
+          exit 0
 
-  # Evidence gathering. Independent of the model, and the part most likely to fail for
-  # boring reasons: a dead link, a feed timing out, a source page moving. Isolated so a
-  # failure here names itself instead of hiding inside a twenty-step job.
+      - name: Verify every prerequisite catalogue source and anchor still resolves
+        id: prereqlinks
+        run: |
+          set +e
+          node tests/check-prerequisite-skill.mjs --check-links
+          CODE=$?
+          set -e
+          if [ "${CODE}" -eq 0 ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; fi
+          exit 0
+
+      - name: Upload source verification
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: weekly-sources
+          path: |
+            doc-links.md
+            doc-links.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  # Evidence gathering. Independent of the model, and the part most likely to fail for boring
+  # reasons: a dead link, a feed timing out, a source page moving.
   evidence:
+    name: Evidence
     if: github.event_name != 'pull_request'
     needs: consistency
     runs-on: ubuntu-latest
@@ -110,6 +158,7 @@ jobs:
             --exclude 'partner\.microsoft\.com'
             docs/sql-server-to-azure-migration.md
             docs/sql-server-to-azure-migration-prerequisite.md
+            docs/sql-server-to-azure-migration-connectivity.md
           format: markdown
           output: ./lychee-report.md
           fail: false
@@ -121,7 +170,7 @@ jobs:
           LYCHEE_EXIT: ${{ steps.lychee.outputs.exit_code }}
         run: node tools/weekly-check/classify-links.mjs
 
-      - name: Gather news
+      - name: Gather and route news
         id: news
         run: |
           COUNT=$(node tools/weekly-check/gather-news.mjs --days "${{ github.event.inputs.days || '7' }}" --out news)
@@ -141,17 +190,25 @@ jobs:
             link-summary.json
             news.md
             news.json
+            news-routing.json
             claims-report.md
             claims-report.json
           if-no-files-found: warn
           retention-days: 14
 
-  # The model review. Advisory by design, so every failure path here is tolerated and the
-  # run continues with an empty verdict rather than losing the deterministic evidence.
+  # The model review: one pass per knowledge base, in sequence.
+  #
+  # Advisory by design, so every failure path is tolerated and the run continues. What it must never
+  # do is fail silently: a missing response is recorded as "the review did not run", which the
+  # decision stage treats as a reason to ask a human, not as a clean verdict.
   review:
+    name: Model review
     if: github.event_name != 'pull_request'
-    needs: evidence
+    needs: [evidence, sources]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write        # OIDC federation to Azure; no stored client secret
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -166,8 +223,11 @@ jobs:
         with:
           name: weekly-evidence
 
-      - name: Build review prompt
-        run: node tools/weekly-check/build-prompt.mjs > prompt.txt
+      - name: Download source verification
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: weekly-sources
 
       - name: Sign in to Azure (GitHub OIDC, no stored secret)
         id: azlogin
@@ -178,36 +238,58 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: AI review (Azure AI Foundry)
+      - name: AI review — one pass per knowledge base
         if: steps.azlogin.outcome == 'success'
         continue-on-error: true
         env:
           AZURE_AI_ENDPOINT: ${{ secrets.AZURE_AI_ENDPOINT }}
           AZURE_AI_DEPLOYMENT: ${{ secrets.AZURE_AI_DEPLOYMENT }}
         run: |
-          TOKEN="$(az account get-access-token --resource https://ai.azure.com --query accessToken -o tsv)"
-          echo "::add-mask::$TOKEN"
-          AZURE_AI_TOKEN="$TOKEN" node tools/weekly-check/ai-review.mjs
+          for KB in migration prerequisite connectivity; do
+            echo "::group::AI review — ${KB}"
+            node tools/weekly-check/build-prompt.mjs --kb "${KB}" > "prompt-${KB}.txt"
+            wc -c "prompt-${KB}.txt"
+            # A fresh token per pass: three deep reviews can outlast one token, and an expiry
+            # halfway through would silently cost the last knowledge base its review.
+            TOKEN="$(az account get-access-token --resource https://ai.azure.com --query accessToken -o tsv)"
+            echo "::add-mask::$TOKEN"
+            AZURE_AI_TOKEN="$TOKEN" \
+            AI_PROMPT_FILE="prompt-${KB}.txt" \
+            AI_RESPONSE_FILE="response-${KB}.txt" \
+              node tools/weekly-check/ai-review.mjs || echo "review for ${KB} did not complete"
+            echo "::endgroup::"
+          done
 
-      - name: Ensure an AI response file exists
+      - name: Record which reviews produced no response
         if: always()
-        run: test -f response.txt || touch response.txt
+        run: |
+          for KB in migration prerequisite connectivity; do
+            if [ ! -s "response-${KB}.txt" ]; then
+              echo "no verdict for ${KB}: the decision stage will report it as unreviewed"
+              : > "response-${KB}.txt"
+            fi
+          done
 
       - name: Upload review
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: weekly-review
-          path: response.txt
+          path: response-*.txt
           if-no-files-found: warn
           retention-days: 14
 
   # Decision and delivery. These steps share the working tree deliberately: applying stamps,
   # rebuilding artifacts and opening the pull request all operate on the same checkout.
   decide:
+    name: Decide and deliver
     if: github.event_name != 'pull_request'
-    needs: [evidence, review]
+    needs: [sources, evidence, review]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -224,6 +306,12 @@ jobs:
         with:
           name: weekly-evidence
 
+      - name: Download source verification
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: weekly-sources
+
       - name: Download review
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -233,32 +321,21 @@ jobs:
         id: decide
         env:
           NEWS_COUNT: ${{ needs.evidence.outputs.news_count }}
+          PREREQ_LINKS_OK: ${{ needs.sources.outputs.prereq_links_ok }}
         run: node tools/weekly-check/decide.mjs
 
-      - name: Write job summary
-        if: always()
+      - name: Apply metadata updates
+        id: apply
+        if: steps.decide.outputs.apply_mode != 'none' || github.event.inputs.force_pr == 'true'
         run: |
-          {
-            echo "## 🔄 Weekly KB check"
-            echo "- Link check exit code: \`${{ needs.evidence.outputs.lychee_exit }}\`"
-            echo "- News items: \`${{ needs.evidence.outputs.news_count }}\`"
-            echo "- PR required: \`${{ steps.decide.outputs.pr_required }}\`"
-            echo "- Issue required: \`${{ steps.decide.outputs.issue_required }}\`"
-            echo "- Apply mode: \`${{ steps.decide.outputs.apply_mode }}\`"
-            echo "- Version bump: \`${{ steps.decide.outputs.changed }}\`"
-            echo ""
-          } >> "$GITHUB_STEP_SUMMARY"
-          cat link-summary.md >> "$GITHUB_STEP_SUMMARY" || true
-          cat claims-report.md >> "$GITHUB_STEP_SUMMARY" || true
-          cat news.md >> "$GITHUB_STEP_SUMMARY" || true
-
-      - name: Apply housekeeping stamps only
-        if: steps.decide.outputs.apply_mode == 'housekeeping' || github.event.inputs.force_pr == 'true'
-        run: node tools/weekly-check/apply-update.mjs --housekeeping
-
-      - name: Apply version bump + changelog for pre-existing substantive edits
-        if: steps.decide.outputs.apply_mode == 'substantive'
-        run: node tools/weekly-check/apply-update.mjs --substantive --bump "${{ steps.decide.outputs.bump }}" --changelog "$(cat changelog.txt)"
+          if [ "${{ steps.decide.outputs.apply_mode }}" = "substantive" ]; then
+            node tools/weekly-check/apply-update.mjs \
+              --substantive \
+              --bump "${{ steps.decide.outputs.bump }}" \
+              --changelog "$(cat changelog.txt)"
+          else
+            node tools/weekly-check/apply-update.mjs --housekeeping
+          fi
 
       - name: Re-check consistency after applying metadata
         if: steps.decide.outputs.apply_mode != 'none' || github.event.inputs.force_pr == 'true'
@@ -282,6 +359,7 @@ jobs:
           install-dependencies: true
 
       - name: Regenerate PDF + preview
+        id: pdf
         if: steps.decide.outputs.pr_required == 'true' || github.event.inputs.force_pr == 'true'
         continue-on-error: true
         env:
@@ -291,6 +369,27 @@ jobs:
           npm install --prefix tools/pdf --no-audit --no-fund
           node tools/pdf/build.mjs
           node tools/pdf/patchwork.mjs
+
+      - name: Write job summary
+        if: always()
+        run: |
+          {
+            echo "## 🔄 Weekly KB check"
+            echo "- News items: \`${{ needs.evidence.outputs.news_count }}\`"
+            echo "- Link check exit code: \`${{ needs.evidence.outputs.lychee_exit }}\`"
+            echo "- Source/anchor check exit code: \`${{ needs.sources.outputs.doc_links_exit }}\`"
+            echo "- Prerequisite catalogue sources healthy: \`${{ needs.sources.outputs.prereq_links_ok }}\`"
+            echo "- Reviews with no verdict: \`${{ steps.decide.outputs.review_unavailable || 'none' }}\`"
+            echo "- Apply mode: \`${{ steps.decide.outputs.apply_mode }}\`"
+            echo "- Knowledge bases with substantive edits: \`${{ steps.decide.outputs.substantive_kbs || 'none' }}\`"
+            echo "- PR required: \`${{ steps.decide.outputs.pr_required }}\` · issue required: \`${{ steps.decide.outputs.issue_required }}\`"
+            echo "- PDF regeneration: \`${{ steps.pdf.outcome || 'skipped' }}\`"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat doc-links.md >> "$GITHUB_STEP_SUMMARY" || true
+          cat link-summary.md >> "$GITHUB_STEP_SUMMARY" || true
+          cat claims-report.md >> "$GITHUB_STEP_SUMMARY" || true
+          cat news.md >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Create Pull Request
         if: steps.decide.outputs.pr_required == 'true' || github.event.inputs.force_pr == 'true'
@@ -308,16 +407,31 @@ jobs:
           labels: |
             automated
             knowledge-base
+          # Exactly the files the apply step reports having written, plus the two generated artifacts
+          # rebuilt above. Hand-listing these drifted once already: the list named five paths while
+          # the apply step wrote fourteen, so a bump would have shipped without the skill and the
+          # manifest that advertise it.
           add-paths: |
-            docs/sql-server-to-azure-migration.md
+            ${{ steps.apply.outputs.files_multiline }}
             docs/sql-server-to-azure-migration.pdf
             docs/preview/sql-migration-advisor-pdf-preview.png
-            reference/decision-rules.md
-            README.md
 
-      - name: Open report-only issue
+      - name: Open or update the report-only issue
         if: steps.decide.outputs.issue_required == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          ISSUE_TITLE: 'Weekly KB report: human review required'
         run: |
-          gh issue create --title "Weekly KB report: human review required" --body-file issue-body.md --label automated --label knowledge-base
+          # A persistent broken link produced a fresh issue every Monday, so the backlog filled with
+          # copies of one problem and each copy looked new. One open report is updated in place until
+          # a human closes it.
+          EXISTING="$(gh issue list --state open --label automated --label knowledge-base \
+            --json number,title --limit 100 \
+            --jq "map(select(.title == \"${ISSUE_TITLE}\")) | .[0].number // empty")"
+          if [ -n "${EXISTING}" ]; then
+            gh issue comment "${EXISTING}" --body-file issue-body.md
+            echo "updated existing report #${EXISTING}"
+          else
+            gh issue create --title "${ISSUE_TITLE}" --body-file issue-body.md \
+              --label automated --label knowledge-base
+          fi

@@ -387,10 +387,122 @@
     "expected_value": true,
     "last_verified": "2026-08-13",
     "verification_hash": "f5b057e05be6b48713308a6620c0755292f2705c2658bc2c90d8c44896709c0c",
+    "knowledge_base": "docs/sql-server-to-azure-migration-prerequisite.md",
     "affected_rules": [
       "p22-opt-in-required",
       "p22-archived-sample-label",
       "p20-fallback-when-tooling-unknown"
     ]
+  },
+  {
+    "claim_id": "pre-dms-sqldb-limitations",
+    "claim": "Which limitations does the modern Database Migration Service impose on migrations to Azure SQL Database, and do they still bound the P12 readiness plan?",
+    "source_url": "https://learn.microsoft.com/en-us/data-migration/sql-server/database/database-migration-service",
+    "source_section": "Limitations",
+    "last_verified": "2026-08-14",
+    "knowledge_base": "docs/sql-server-to-azure-migration-prerequisite.md",
+    "affected_rules": [
+      "P12"
+    ],
+    "verification_hash": "736341c33efefc79c5551252a395430f09152264d8668b7adf7d15c97f4a8474"
+  },
+  {
+    "claim_id": "pre-dms-sqlvm-online-prerequisites",
+    "claim": "What prerequisites does an online Database Migration Service migration to SQL Server on Azure VM require (P26, and P24 by the same service)?",
+    "source_url": "https://learn.microsoft.com/en-us/data-migration/sql-server/virtual-machines/database-migration-service-online",
+    "source_section": "Prerequisites",
+    "last_verified": "2026-08-14",
+    "knowledge_base": "docs/sql-server-to-azure-migration-prerequisite.md",
+    "affected_rules": [
+      "P26",
+      "P24"
+    ],
+    "verification_hash": "a952500821a8532636f726dd424376b7e681ee728d798494cba65d63caa39aef"
+  },
+  {
+    "claim_id": "pre-dms-sqlvm-offline-prerequisites",
+    "claim": "What prerequisites does an offline Database Migration Service migration to SQL Server on Azure VM require (P25, and P23 by the same service)?",
+    "source_url": "https://learn.microsoft.com/en-us/data-migration/sql-server/virtual-machines/database-migration-service-offline",
+    "source_section": "Prerequisites",
+    "last_verified": "2026-08-14",
+    "knowledge_base": "docs/sql-server-to-azure-migration-prerequisite.md",
+    "affected_rules": [
+      "P25",
+      "P23"
+    ],
+    "verification_hash": "a952500821a8532636f726dd424376b7e681ee728d798494cba65d63caa39aef"
+  },
+  {
+    "claim_id": "pre-fabric-migration-assistant-sources",
+    "claim": "Which source versions and editions does the Fabric Migration Assistant accept, which decides whether P16 is reachable at all?",
+    "source_url": "https://learn.microsoft.com/en-us/fabric/database/sql/migration-assistant",
+    "source_section": "Supported sources",
+    "last_verified": "2026-08-14",
+    "knowledge_base": "docs/sql-server-to-azure-migration-prerequisite.md",
+    "affected_rules": [
+      "P16"
+    ],
+    "verification_hash": "5f143558f453a8ddfd65c40bc6294999b7d75b8830937b9344acd52001dd8202"
+  },
+  {
+    "claim_id": "pre-fabric-migration-assistant-gateway",
+    "claim": "Does the Fabric Migration Assistant still require an on-premises data gateway, which is the network prerequisite P16 plans for?",
+    "source_url": "https://learn.microsoft.com/en-us/fabric/database/sql/migration-assistant",
+    "source_section": "Gateway requirement",
+    "last_verified": "2026-08-14",
+    "knowledge_base": "docs/sql-server-to-azure-migration-prerequisite.md",
+    "affected_rules": [
+      "P16"
+    ],
+    "verification_hash": "445c5158682ca756458f031e197da47c954f013e78b13cc864d2fa9885ed64c3"
+  },
+  {
+    "claim_id": "pre-azure-migrate-appliance-requirements",
+    "claim": "What does the Azure Migrate appliance require to run against VMware, which is the discovery prerequisite behind P28 and P06?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/migrate/migrate-appliance",
+    "source_section": "Appliance - VMware",
+    "last_verified": "2026-08-14",
+    "knowledge_base": "docs/sql-server-to-azure-migration-prerequisite.md",
+    "affected_rules": [
+      "P28",
+      "P06"
+    ],
+    "verification_hash": "292a776b1ed3489ea1747f3de66d4ad48900fd7b8085abfef9c34ba95b0601d8"
+  },
+  {
+    "claim_id": "pre-replication-supported-configurations",
+    "claim": "Which publisher, distributor and subscriber configurations does transactional replication to Azure SQL Database support, which bounds P13?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/replication-to-sql-database",
+    "source_section": "Supported configurations",
+    "last_verified": "2026-08-14",
+    "knowledge_base": "docs/sql-server-to-azure-migration-prerequisite.md",
+    "affected_rules": [
+      "P13"
+    ],
+    "verification_hash": "766c9b63893a5538d583e8f27c882d7239d18b63720eb0e5d0ce745c7625492b"
+  },
+  {
+    "claim_id": "pre-bacpac-import-compatibility",
+    "claim": "What compatibility level does an imported BACPAC receive, and what does that imply for the P11 readiness plan?",
+    "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/database-import",
+    "source_section": "Compatibility level of the new database",
+    "last_verified": "2026-08-14",
+    "knowledge_base": "docs/sql-server-to-azure-migration-prerequisite.md",
+    "affected_rules": [
+      "P11"
+    ],
+    "verification_hash": "af13415101ff54cff09929b40d5d372688e71960d6837f4053f0ec2271df50d5"
+  },
+  {
+    "claim_id": "pre-fabric-sql-db-limitations",
+    "claim": "Which database-level limitations apply to SQL database in Fabric, which bound what a P16 migration can land?",
+    "source_url": "https://learn.microsoft.com/en-us/fabric/database/sql/limitations",
+    "source_section": "Database level limitations",
+    "last_verified": "2026-08-14",
+    "knowledge_base": "docs/sql-server-to-azure-migration-prerequisite.md",
+    "affected_rules": [
+      "P16"
+    ],
+    "verification_hash": "998f10cc75d3d7c1407f04720becc306b3a06335cc527b44547513e0a691e366"
   }
 ]

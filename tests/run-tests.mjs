@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { evaluate, __guards as guards } from './engine/evaluate.mjs';
 import { validateGoldenScenarios } from './validate-scenarios.mjs';
+import { TARGETS, claimsFor } from '../tools/weekly-check/kb-targets.mjs';
+import { normalize as normalizeSubstantive } from '../tools/weekly-check/substantive-diff.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const rel = (...p) => path.join(root, ...p);
@@ -760,9 +762,15 @@ try {
     // The weekly check bumps the knowledge base. If it does not also stamp the manifest and the
     // skill's coordinated line, the next automated bump leaves every installed copy believing it
     // is current, which is the one failure mode a version check must not have.
-    const applyUpdate = readText(path.join('tools', 'weekly-check', 'apply-update.mjs'));
-    if (!/version\.json/u.test(applyUpdate)) failures.push('apply-update.mjs does not stamp version.json, so an automated bump would leave installed copies believing they are current');
-    if (!/knowledge-base line/u.test(applyUpdate)) failures.push('apply-update.mjs does not stamp the coordinated line in SKILL.md');
+    //
+    // Read the whole apply path rather than one file. The per-document stamping rules live in
+    // kb-targets.mjs so that three knowledge bases can each own their own metadata shape, and a
+    // gate that watched only apply-update.mjs would have gone quiet the moment they moved.
+    const applyUpdate = ['apply-update.mjs', 'kb-targets.mjs']
+      .map(f => readText(path.join('tools', 'weekly-check', f)))
+      .join('\n');
+    if (!/version\.json/u.test(applyUpdate)) failures.push('the apply path does not stamp version.json, so an automated bump would leave installed copies believing they are current');
+    if (!/knowledge-base line/u.test(applyUpdate)) failures.push('the apply path does not stamp the coordinated line in SKILL.md');
 
     // The plugin manifests carry the version Copilot CLI displays. They were left at 2.0.0 while
     // everything else moved to v2.1, so `plugin update` installed the new files and still reported
@@ -1059,6 +1067,93 @@ try {
 
   add('skill-count-documented', failures.length === 0,
     failures.length ? failures : [`skills/ holds ${names.length} skills (${names.join(', ')}), and both installation documents state that number and name each one.`]);
+}
+
+{
+  // The weekly check maintains three knowledge bases. Its previous shape maintained one and touched
+  // the others, which is a harder failure to notice than not covering them at all: the run went
+  // green, the report named all three, and only one was ever actually read. These checks assert the
+  // properties that make coverage real rather than declared.
+  const failures = [];
+  const notes = [];
+
+  const registry = JSON.parse(readText(path.join('reference', 'claims-registry.json')));
+  const claims = Array.isArray(registry) ? registry : registry.claims;
+
+  // 1. Every declared knowledge base is a real document that states a version the tooling can read.
+  for (const target of TARGETS) {
+    const io = { read: r => { try { return fs.readFileSync(rel(r), 'utf8'); } catch { return null; } } };
+    if (io.read(target.doc) === null) { failures.push(`${target.id} declares ${target.doc}, which does not exist`); continue; }
+    if (!target.readVersion(io)) failures.push(`${target.id}: no version could be read from ${target.doc}, so it can never be stamped or bumped`);
+    for (const companion of [...target.companions, ...target.context]) {
+      if (io.read(companion) === null) failures.push(`${target.id} declares companion ${companion}, which does not exist`);
+    }
+  }
+
+  // 2. The claims registry partitions cleanly. A claim owned by nobody is watched and never read by
+  //    any reviewer; a claim owned by two reviewers is reported twice and fixed in the wrong place.
+  const ownership = new Map(claims.map(c => [c.claim_id, []]));
+  for (const target of TARGETS) for (const c of claimsFor(target, claims)) ownership.get(c.claim_id).push(target.id);
+  const orphans = [...ownership].filter(([, owners]) => owners.length === 0).map(([id]) => id);
+  const shared = [...ownership].filter(([, owners]) => owners.length > 1).map(([id, o]) => `${id} (${o.join(', ')})`);
+  if (orphans.length) failures.push(`claims belonging to no knowledge base, so no review ever sees them: ${orphans.join(', ')}`);
+  if (shared.length) failures.push(`claims claimed by more than one knowledge base: ${shared.join(', ')}`);
+  for (const target of TARGETS) {
+    const n = claimsFor(target, claims).length;
+    if (n === 0) failures.push(`${target.id} owns no claim, so no silent source edit behind it can ever be detected`);
+    notes.push(`${target.id}: ${n} claim(s)`);
+  }
+
+  // 3. Each review really is scoped to one document. A prompt that quietly carried a sibling would
+  //    invite findings against a file the reviewer was told not to touch, and the reviewer would be
+  //    right to raise them.
+  const titleOf = t => (readText(t.doc).split(/\r?\n/).find(l => /^#\s+\S/.test(l)) || '').trim();
+  for (const target of TARGETS) {
+    const run = spawnSync(process.execPath, [rel('tools', 'weekly-check', 'build-prompt.mjs'), '--kb', target.id], {
+      cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024
+    });
+    if (run.status !== 0) { failures.push(`build-prompt --kb ${target.id} exited ${run.status}: ${(run.stderr || '').trim()}`); continue; }
+    const prompt = run.stdout;
+    if (!prompt.includes(`KNOWLEDGE BASE UNDER REVIEW — ${target.doc}`)) {
+      failures.push(`the ${target.id} prompt does not reproduce ${target.doc}`);
+    }
+    for (const sibling of TARGETS.filter(t => t.id !== target.id)) {
+      const title = titleOf(sibling);
+      if (title && prompt.includes(title)) {
+        failures.push(`the ${target.id} prompt reproduces ${sibling.doc}, which its own instructions declare out of scope`);
+      }
+    }
+    for (const nameable of [target.doc, ...target.companions]) {
+      if (!prompt.includes(`"${nameable}"`)) failures.push(`the ${target.id} output contract does not allow a finding against ${nameable}`);
+    }
+  }
+
+  // 4. Metadata the automation writes itself must never read back as a content change. Without this
+  //    a housekeeping run would license the next version bump, and the version would climb weekly
+  //    with nothing behind it.
+  const beforeMeta = '**Version.** v2.7 — August 2026\n> **Last verified.** 2026-08-01\nMI Link requires port 5022.\n| v2.7 | 2026-08-01 | note |\n';
+  const afterMeta = '**Version.** v2.8 — September 2026\n> **Last verified.** 2026-09-01\nMI Link requires port 5022.\n| v2.8 | 2026-09-01 | new |\n| v2.7 | 2026-08-01 | note |\n';
+  const afterContent = beforeMeta.replace('port 5022', 'port 5023');
+  if (normalizeSubstantive(beforeMeta) !== normalizeSubstantive(afterMeta)) {
+    failures.push('a version, date and changelog-only change reads as a substantive content change, so housekeeping would license a version bump');
+  }
+  if (normalizeSubstantive(beforeMeta) === normalizeSubstantive(afterContent)) {
+    failures.push('a changed fact does not read as a substantive content change, so a real correction could ship with no version bump');
+  }
+
+  // 5. The decision stage and the apply stage must judge "this changed" with the same code. They
+  //    once used different baselines, and a branch carrying real corrections was declared
+  //    substantive by one and refused by the other, so the path could never complete.
+  for (const file of ['decide.mjs', 'apply-update.mjs']) {
+    const src = readText(path.join('tools', 'weekly-check', file));
+    if (!/from '\.\/substantive-diff\.mjs'/.test(src)) {
+      failures.push(`${file} does not use the shared substantive-diff module, so the two stages can disagree about whether a change happened`);
+    }
+  }
+
+  add('weekly-check-covers-every-knowledge-base', failures.length === 0,
+    failures.length ? failures
+      : [`${TARGETS.length} knowledge bases each carry a readable version, own a disjoint set of the ${claims.length} registered claims (${notes.join('; ')}), are sent for review in a prompt scoped to themselves, and are judged changed by one shared implementation.`]);
 }
 
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };

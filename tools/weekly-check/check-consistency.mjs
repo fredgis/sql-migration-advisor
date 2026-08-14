@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { TARGETS } from './kb-targets.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(process.env.WEEKLY_CHECK_ROOT || process.argv[2] || path.resolve(HERE, '..', '..'));
@@ -316,6 +317,15 @@ compareAcrossDocs('Azure Arc portal MI wizard database batch limit', consistency
         if (unhashed.length) errors.push(`connectivity claims without a baseline hash can never report drift: ${unhashed.join(', ')}`);
       }
 
+      // The freshness stamp is the only thing telling a reader when the sources were last read.
+      const connVerified = first(/\*\*Last verified\.\*\*\s*(\d{4}-\d{2}-\d{2})/, connDoc);
+      if (!connVerified) {
+        errors.push('connectivity KB carries no "Last verified" date, so nothing records when its sources were last re-read');
+      } else {
+        const ageDays = Math.floor((Date.now() - Date.parse(connVerified)) / 86400000);
+        if (ageDays > 180) warnings.push(`connectivity KB was last verified ${ageDays} days ago (${connVerified})`);
+      }
+
       // The skill must quote its knowledge-base version so an answer is reproducible, and must not
       // tell the reading model it is unfit for use. A "must not be presented as ready" banner in the
       // body made the model select the skill and then answer from its own knowledge instead, which
@@ -393,7 +403,73 @@ compareAcrossDocs('Azure Arc portal MI wizard database batch limit', consistency
         errors.push(`prerequisite paths declared with no rows in the KB: ${missingRows.join(', ')}`);
       }
 
+      // Drift detection has to cover this document too. Its facts are prerequisites -- version
+      // floors, permissions, quotas -- which change on the same Microsoft pages and just as quietly
+      // as the ones the other two documents watch. A claim with no baseline hash cannot report
+      // drift, so an unhashed entry is counted as absent rather than as coverage.
+      const registryPath = path.join(ROOT, 'reference', 'claims-registry.json');
+      if (fs.existsSync(registryPath)) {
+        const registry = JSON.parse(read(registryPath));
+        const allClaims = Array.isArray(registry) ? registry : registry.claims;
+        const pre = allClaims.filter(c =>
+          c.knowledge_base === 'docs/sql-server-to-azure-migration-prerequisite.md'
+          || /^p\d*-/.test(String(c.claim_id)));
+        const hashed = pre.filter(c => c.verification_hash);
+        if (hashed.length < 8) {
+          errors.push(`only ${hashed.length} prerequisite claims carry a baseline hash; the volatile source pages behind the readiness plan are not all watched`);
+        }
+        const unhashed = pre.filter(c => !c.verification_hash).map(c => c.claim_id);
+        if (unhashed.length) {
+          errors.push(`prerequisite claims without a baseline hash can never report drift: ${unhashed.join(', ')}`);
+        }
+      }
+
       if (!errors.length) console.log(`Prerequisite KB checked: ${docVersion}, ${catalog.paths.length} paths.`);
+    }
+  }
+}
+
+// Fourth block: the weekly check's own coverage.
+//
+// Every knowledge base declared in kb-targets.mjs must actually reach every stage of the weekly run.
+// Declaring a document and wiring it into only some stages is the failure this block exists to
+// prevent, because it produces the worst possible result: a document that looks maintained, is
+// reported on, and is never actually reviewed. The checks are lexical against the workflow file, so
+// they fail the moment a stage is added for two documents and forgotten for the third.
+{
+  const WORKFLOW = path.join(ROOT, '.github', 'workflows', 'weekly-kb-check.yml');
+  if (fs.existsSync(WORKFLOW)) {
+    const wf = read(WORKFLOW);
+    const reviewLoop = first(/for KB in ([a-z ]+); do/, wf);
+    for (const target of TARGETS) {
+      if (!fs.existsSync(path.join(ROOT, target.doc))) {
+        errors.push(`kb-targets declares ${target.doc}, which does not exist`);
+        continue;
+      }
+      if (!wf.includes(target.doc)) {
+        errors.push(`${target.doc} is declared as a knowledge base but never named in the weekly workflow, so no stage of the weekly run reaches it`);
+      }
+      if (!new RegExp(`^\\s*- '${target.doc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}'`, 'm').test(wf)) {
+        errors.push(`${target.doc} is not in the workflow's pull_request paths, so a change to it can reach main without these gates`);
+      }
+      if (!reviewLoop || !reviewLoop.split(/\s+/).includes(target.id)) {
+        errors.push(`the model review loop does not include "${target.id}", so that knowledge base is never sent for review`);
+      }
+      if (!target.newsTopics.length) {
+        errors.push(`${target.id} declares no news topics, so no announcement can ever be routed to it`);
+      }
+    }
+    // The pull request must commit what the apply step wrote, not a list maintained beside it.
+    if (!/add-paths:[\s\S]{0,200}steps\.apply\.outputs\.files_multiline/.test(wf)) {
+      errors.push('the pull request commits a hand-maintained file list rather than the files the apply step reports writing; the two drift apart silently');
+    }
+    // Write permissions on the job that executes repository code from a pull request branch.
+    // Read the permissions block itself rather than the file header: the header also explains, in
+    // prose, why those permissions are withheld, and a looser match found the word there.
+    const header = wf.slice(0, wf.indexOf('jobs:'));
+    const permBlock = header.match(/^permissions:\r?\n((?:[ \t]+\S.*\r?\n)+)/m);
+    if (permBlock && /\bwrite\b/.test(permBlock[1])) {
+      errors.push('the workflow grants write permissions at the top level, so the job that runs pull-request code inherits them');
     }
   }
 }

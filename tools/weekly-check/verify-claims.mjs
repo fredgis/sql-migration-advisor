@@ -12,6 +12,15 @@ const UPDATE = process.argv.includes('--update-hashes');
 const TODAY = new Date().toISOString().slice(0, 10);
 
 const registry = JSON.parse(fs.readFileSync(REGISTRY, 'utf8'));
+// Baselining a newly added claim must not re-baseline the existing ones. Rewriting every hash to
+// whatever the pages say today would erase the very comparison the registry exists to make, and any
+// drift that had already happened would be silently adopted as the new truth.
+const ONLY = (() => {
+  const i = process.argv.indexOf('--only');
+  return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : null;
+})();
+const selected = ONLY ? registry.filter(e => String(e.claim_id).startsWith(ONLY)) : registry;
+if (ONLY) console.error(`--only ${ONLY}: ${selected.length} of ${registry.length} claim(s) selected`);
 const drifted = [];
 const unverified = [];
 const verified = [];
@@ -75,7 +84,7 @@ async function fetchSection(entry) {
 }
 function hash(s) { return crypto.createHash('sha256').update(normalize(s), 'utf8').digest('hex'); }
 
-for (const entry of registry) {
+for (const entry of selected) {
   try {
     const section = await fetchSection(entry);
     const currentHash = hash(section);

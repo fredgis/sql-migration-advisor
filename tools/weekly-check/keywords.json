@@ -22,7 +22,10 @@
     "what's new", "whats new", "release notes", "retirement", "retire", "deprecated",
     "end of support", "lifecycle", "pricing", "program", "private link", "regional availability",
     "compatibility", "prerequisite", "limit", "data sync", "data migration assistant",
-    "azure data studio", "distributed transaction", "dtc", "polybase", "filestream"
+    "azure data studio", "distributed transaction", "dtc", "polybase", "filestream",
+    "private endpoint", "connection policy", "connection string", "firewall rule",
+    "network security group", "private dns", "\\btls\\b", "encrypt", "certificate",
+    "microsoft entra", "sqlclient", "\\bodbc\\b", "\\bjdbc\\b", "connectivity"
   ],
   "exclude": [
     "mysql", "postgresql", "postgres", "mariadb", "cosmos"
