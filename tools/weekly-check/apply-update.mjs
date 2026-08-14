@@ -1,170 +1,142 @@
-// Deterministically apply metadata updates after a human/applied patch has changed KB content.
-// A version bump is refused unless --substantive is set AND the KB has a real
-// content diff versus HEAD, excluding version/date/changelog-only changes.
+// Apply the metadata half of a knowledge-base update: freshness stamps, version numbers, changelog
+// rows and every satellite file that republishes a version line.
 //
-//   node tools/weekly-check/apply-update.mjs --substantive --changelog "text" [--bump minor|major] [--date "Month Year"] [--iso YYYY-MM-DD] [--dry]
-//   node tools/weekly-check/apply-update.mjs --housekeeping [--date "Month Year"] [--iso YYYY-MM-DD] [--dry]
+//   node tools/weekly-check/apply-update.mjs --housekeeping [--iso YYYY-MM-DD] [--dry]
+//   node tools/weekly-check/apply-update.mjs --substantive --changelog "text" [--bump minor|major] [--kbs a,b] [--dry]
+//
+// This never writes guidance. Content is edited by a human (or by a human applying a reviewed
+// finding); this step records that it happened, consistently, across the files that would otherwise
+// be left behind. A version bump is refused unless a real content diff exists, judged by
+// substantive-diff.mjs — the same judgement the decision stage makes, so the two cannot disagree.
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
-
-const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(HERE, '..', '..');
-const DOC = path.join(ROOT, 'docs', 'sql-server-to-azure-migration.md');
-const RULES = path.join(ROOT, 'reference', 'decision-rules.md');
-const README = path.join(ROOT, 'README.md');
-const SKILL = path.join(ROOT, 'skills', 'recommend-migration-path', 'SKILL.md');
-const MANIFEST = path.join(ROOT, 'version.json');
-const REL_DOC = 'docs/sql-server-to-azure-migration.md';
+import { ROOT, TARGETS, byId, TARGET_IDS } from './kb-targets.mjs';
+import { isSubstantive, baselineRef } from './substantive-diff.mjs';
 
 function arg(name, def = '') {
   const i = process.argv.indexOf(`--${name}`);
-  if (i >= 0 && ['dry', 'substantive', 'housekeeping'].includes(name)) return true;
-  return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : def;
+  return i >= 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : def;
 }
 const DRY = process.argv.includes('--dry');
 const SUBSTANTIVE = process.argv.includes('--substantive');
 const HOUSEKEEPING = process.argv.includes('--housekeeping');
 const BUMP = arg('bump', 'minor');
-let changelog = (arg('changelog', '') || '').replace(/\s+/g, ' ').trim();
+const changelog = arg('changelog', '').replace(/\s+/g, ' ').trim();
+const ISO = arg('iso', new Date().toISOString().slice(0, 10));
 
 if (SUBSTANTIVE === HOUSEKEEPING) {
-  console.error('Choose exactly one mode: --substantive (requires real KB content diff) or --housekeeping (date stamps only, no version/changelog).');
+  console.error('Choose exactly one mode: --substantive (requires a real content diff) or --housekeeping (stamps only).');
   process.exit(2);
 }
 if (!['minor', 'major'].includes(BUMP)) {
   console.error('--bump must be "minor" or "major".');
   process.exit(2);
 }
-
-const now = new Date();
-const MONTH_YEAR = arg('date', now.toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }));
-const ISO = arg('iso', now.toISOString().slice(0, 10));
-
-function read(file) { return fs.readFileSync(file, 'utf8'); }
-function currentHead(file) {
-  try { return execFileSync('git', ['show', `HEAD:${file}`], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }); }
-  catch { return null; }
-}
-function stripChangelog(md) {
-  const start = md.search(/\|\s*Version\s*\|\s*Date\s*\|\s*Changes\s*\|/i);
-  if (start < 0) return md;
-  const nextHeading = md.slice(start).search(/\n#{1,3}\s+(?!.*changelog)/i);
-  return nextHeading < 0 ? md.slice(0, start) : md.slice(0, start) + md.slice(start + nextHeading);
-}
-function normalizedSubstantive(md) {
-  return stripChangelog(md)
-    .replace(/\*\*Version\.\*\*\s*v\d+\.\d+\s*[—-]\s*(?:\d{1,2}\s+)?[A-Za-z]+\s+\d{4}/g, '**Version.** vX.Y — Month YYYY')
-    .replace(/Current version:\s*\*\*v\d+\.\d+\*\*\s*\(\d{4}-\d{2}-\d{2}\)/g, 'Current version: **vX.Y** (YYYY-MM-DD)')
-    .replace(/current:\s*v\d+\.\d+/g, 'current: vX.Y')
-    .replace(/current as of (?:\d{1,2}\s+)?[A-Za-z]+\s+\d{4}/gi, 'current as of Month YYYY')
-    .replace(/verified (?:\d{1,2}\s+)?[A-Za-z]+\s+\d{4}/gi, 'verified Month YYYY')
-    .replace(/\r\n/g, '\n')
-    .trim();
-}
-function hasSubstantiveDocDiff() {
-  const base = currentHead(REL_DOC);
-  if (base === null) return false;
-  return normalizedSubstantive(base) !== normalizedSubstantive(read(DOC));
+if (!/^\d{4}-\d{2}-\d{2}$/.test(ISO)) {
+  console.error('--iso must be YYYY-MM-DD.');
+  process.exit(2);
 }
 
-let md = read(DOC);
-const vm = md.match(/\*\*Version\.\*\*\s*v(\d+)\.(\d+)/);
-if (!vm) { console.error('Could not find "**Version.** vX.Y" line in the doc.'); process.exit(1); }
-let [maj, min] = [parseInt(vm[1], 10), parseInt(vm[2], 10)];
-const oldVer = `v${maj}.${min}`;
-
-function updateFreshnessStamps(text) {
-  return text.replace(/current as of (?:\d{1,2}\s+)?[A-Za-z]+\s+\d{4}/gi, `current as of ${MONTH_YEAR}`);
+const requested = arg('kbs', '').split(',').map(s => s.trim()).filter(Boolean);
+for (const id of requested) {
+  if (!byId(id)) { console.error(`--kbs: unknown knowledge base "${id}"; known ids are ${TARGET_IDS.join(', ')}`); process.exit(2); }
 }
-function updateRulesStamp(text, version = null) {
-  let next = text;
-  if (version) next = next.replace(/(\(sql-migration-advisor\),\s*\*\*)v\d+\.\d+(\*\*,\s*verified\s*)(?:\d{1,2}\s+)?[A-Za-z]+\s+\d{4}/, `$1${version}$2${MONTH_YEAR}`);
-  else next = next.replace(/(\(sql-migration-advisor\),\s*\*\*v\d+\.\d+\*\*,\s*verified\s*)(?:\d{1,2}\s+)?[A-Za-z]+\s+\d{4}/, `$1${MONTH_YEAR}`);
-  return next.replace(/verified\s+(?:\d{1,2}\s+)?[A-Za-z]+\s+\d{4}/, `verified ${MONTH_YEAR}`);
-}
+const selected = requested.length ? requested.map(byId) : TARGETS;
 
-let newVer = oldVer;
-let rulesSynced = false;
-let readmeSynced = false;
-let skillSynced = false;
-let manifestSynced = false;
+// A buffered writer, so a target whose satellite files are half-updated when a regex fails to match
+// leaves nothing on disk. Everything lands together or not at all.
+const pending = new Map();
+const io = {
+  read(rel) {
+    if (pending.has(rel)) return pending.get(rel);
+    try { return fs.readFileSync(path.join(ROOT, rel), 'utf8'); } catch { return null; }
+  },
+  edit(rel, fn) {
+    const before = io.read(rel);
+    if (before === null) { console.error(`  ! ${rel} is missing; skipped`); return false; }
+    const after = fn(before);
+    if (after === before) return false;
+    pending.set(rel, after);
+    return true;
+  },
+  editJson(rel, fn) {
+    const before = io.read(rel);
+    if (before === null) { console.error(`  ! ${rel} is missing; skipped`); return false; }
+    const next = `${JSON.stringify(fn(JSON.parse(before)), null, 2)}\n`;
+    if (next === before) return false;
+    pending.set(rel, next);
+    return true;
+  }
+};
+
+const results = [];
 
 if (HOUSEKEEPING) {
-  const before = md;
-  md = updateFreshnessStamps(md);
-  if (!DRY && md !== before) fs.writeFileSync(DOC, md);
-  try {
-    const rl = read(RULES);
-    const next = updateRulesStamp(rl, null);
-    rulesSynced = next !== rl;
-    if (!DRY && rulesSynced) fs.writeFileSync(RULES, next);
-  } catch (e) { console.error(`decision-rules housekeeping skipped: ${e.message}`); }
-  console.log(`${DRY ? '[dry] ' : ''}housekeeping only: ${oldVer} not bumped; freshness stamps set to ${MONTH_YEAR}; changelog unchanged; decision-rules stamp synced=${rulesSynced}.`);
+  for (const target of selected) {
+    const before = new Set(pending.keys());
+    target.stamp(io, ISO);
+    const touched = [...pending.keys()].filter(k => !before.has(k));
+    results.push({ id: target.id, version: target.readVersion(io), touched });
+  }
 } else {
-  if (!hasSubstantiveDocDiff()) {
-    console.error('Refusing version bump: --substantive was set, but no substantive KB content diff exists versus HEAD (metadata-only changes are ignored). Use --housekeeping for stamp-only updates.');
-    process.exit(1);
-  }
   if (!changelog) {
-    console.error('Refusing version bump: --substantive requires truthful --changelog text describing applied content changes.');
+    console.error('Refusing version bump: --substantive requires truthful --changelog text describing the applied content changes.');
     process.exit(1);
   }
+  // A changelog claiming links were repaired, on a run that only ever reads links, would be a lie
+  // recorded permanently in the document's own history.
   if (/fixed\/verified broken link/i.test(changelog) || /fixed .*link/i.test(changelog)) {
     console.error('Refusing misleading changelog: do not claim links were fixed unless link URLs were actually rewritten.');
     process.exit(1);
   }
-  if (BUMP === 'major') { maj += 1; min = 0; } else { min += 1; }
-  newVer = `v${maj}.${min}`;
-  const cell = changelog.replace(/\|/g, '\\|');
-  md = md.replace(/(\*\*Version\.\*\*\s*)v\d+\.\d+(\s*[—-]\s*)(?:\d{1,2}\s+)?[A-Za-z]+\s+\d{4}/, `$1${newVer}$2${MONTH_YEAR}`);
-  md = updateFreshnessStamps(md);
-  md = md.replace(/(Current version:\s*\*\*)v\d+\.\d+(\*\*\s*\()\d{4}-\d{2}-\d{2}(\))/, `$1${newVer}$2${ISO}$3`);
-  md = md.replace(/current:\s*v\d+\.\d+/g, `current: ${newVer}`);
-  const rowsRe = /(\|\s*Version\s*\|\s*Date\s*\|\s*Changes\s*\|\r?\n\|[-\s|]+\|\r?\n)/;
-  if (!rowsRe.test(md)) { console.error('Could not find the changelog table header.'); process.exit(1); }
-  md = md.replace(rowsRe, `$1| ${newVer} | ${ISO} | ${cell} |\n`);
 
-  try {
-    let rd = read(README);
-    const before = rd;
-    rd = rd.replace(/(alt="Knowledge base )v\d+\.\d+(")/g, `$1${newVer}$2`);
-    rd = rd.replace(/(knowledge%20base-)v\d+\.\d+(-)/g, `$1${newVer}$2`);
-    rd = rd.replace(/v\d+\.\d+, (?:\d{1,2}\s+)?[A-Za-z]+ \d{4}/g, `${newVer}, ${MONTH_YEAR}`);
-    rd = rd.replace(/(current:\s*<b>)v\d+\.\d+(<\/b>\s*\()(?:\d{1,2}\s+)?[A-Za-z]+ \d{4}(\))/, `$1${newVer}$2${MONTH_YEAR}$3`);
-    const clRe = /(<!-- CHANGELOG:START -->[\s\S]*?\|\s*Version\s*\|\s*Date\s*\|\s*Summary\s*\|\r?\n\|[-\s|]+\|\r?\n)/;
-    if (clRe.test(rd)) rd = rd.replace(clRe, `$1| ${newVer} | ${ISO} | ${cell} |\n`);
-    readmeSynced = rd !== before;
-    if (!DRY && readmeSynced) fs.writeFileSync(README, rd);
-  } catch (e) { console.error(`README sync skipped: ${e.message}`); }
-  try {
-    const rl = read(RULES);
-    const next = updateRulesStamp(rl, newVer);
-    rulesSynced = next !== rl;
-    if (!DRY && rulesSynced) fs.writeFileSync(RULES, next);
-  } catch (e) { console.error(`decision-rules sync skipped: ${e.message}`); }
-  // The skill states the coordinated line, and version.json advertises it to installed copies.
-  // Neither was synced here, so a weekly bump would have left the skill announcing the old line
-  // and every installed copy believing it was current.
-  try {
-    const sk = read(SKILL);
-    const next = sk.replace(/(knowledge-base line:\s*\*\*)v\d+\.\d+(\*\*)/, `$1${newVer}$2`);
-    skillSynced = next !== sk;
-    if (!DRY && skillSynced) fs.writeFileSync(SKILL, next);
-  } catch (e) { console.error(`SKILL.md sync skipped: ${e.message}`); }
-  try {
-    const manifest = JSON.parse(read(MANIFEST));
-    manifest.knowledgeBase = newVer;
-    manifest.latest = `${newVer}.0`;
-    manifest.released = ISO;
-    manifestSynced = true;
-    if (!DRY) fs.writeFileSync(MANIFEST, `${JSON.stringify(manifest, null, 2)}\n`);
-  } catch (e) { console.error(`version.json sync skipped: ${e.message}`); }
-  if (!DRY) fs.writeFileSync(DOC, md);
-  console.log(`${DRY ? '[dry] ' : ''}${oldVer} -> ${newVer} (${MONTH_YEAR}); substantive content diff verified; changelog row added (${ISO}); README synced=${readmeSynced}; decision-rules stamp synced=${rulesSynced}; SKILL synced=${skillSynced}; version.json synced=${manifestSynced}.`);
-  if (manifestSynced) console.log(`version.json now advertises ${newVer}.0 — cut that release, or installed copies will point at a tag that does not exist.`);
+  const base = baselineRef();
+  const changed = selected.filter(t => isSubstantive(t, base));
+  if (!changed.length) {
+    console.error(
+      `Refusing version bump: no substantive content diff exists in ${selected.map(t => t.id).join(', ')} `
+      + `versus ${base || 'an unknown baseline'} (version, date and changelog changes are ignored). `
+      + 'Use --housekeeping for stamp-only updates.');
+    process.exit(1);
+  }
+  for (const target of changed) {
+    const before = new Set(pending.keys());
+    const version = target.bump(io, { bump: BUMP, changelog, iso: ISO });
+    const touched = [...pending.keys()].filter(k => !before.has(k));
+    results.push({ id: target.id, version, touched });
+  }
+  // Every base is stamped, including those that did not change: a run that verified a document
+  // against this week's evidence and found nothing to correct did verify it.
+  for (const target of selected.filter(t => !changed.includes(t))) {
+    const before = new Set(pending.keys());
+    target.stamp(io, ISO);
+    results.push({ id: target.id, version: target.readVersion(io), touched: [...pending.keys()].filter(k => !before.has(k)) });
+  }
 }
 
-if (process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, `new_version=${newVer}\nmode=${HOUSEKEEPING ? 'housekeeping' : 'substantive'}\n`);
+if (!DRY) for (const [rel, text] of pending) fs.writeFileSync(path.join(ROOT, rel), text);
 
+const prefix = DRY ? '[dry] ' : '';
+console.log(`${prefix}mode=${HOUSEKEEPING ? 'housekeeping' : 'substantive'} date=${ISO}`);
+for (const r of results) {
+  console.log(`${prefix}  ${r.id}: ${r.version || 'unknown version'}${r.touched.length ? ` — ${r.touched.join(', ')}` : ' — nothing to change'}`);
+}
+const files = [...pending.keys()].sort();
+console.log(`${prefix}files written: ${files.length ? files.join(' ') : 'none'}`);
+if (SUBSTANTIVE && pending.has('version.json')) {
+  const v = JSON.parse(pending.get('version.json'));
+  console.log(`version.json now advertises ${v.latest} — cut that release, or installed copies will point at a tag that does not exist.`);
+}
+
+if (process.env.GITHUB_OUTPUT) {
+  const bumped = results.filter(r => r.touched.length).map(r => `${r.id}:${r.version}`).join(',');
+  const delimiter = `EOF_${Date.now().toString(36)}`;
+  fs.appendFileSync(process.env.GITHUB_OUTPUT,
+    `mode=${HOUSEKEEPING ? 'housekeeping' : 'substantive'}\n`
+    + `versions=${bumped}\n`
+    + `files=${files.join(' ')}\n`
+    // The pull-request step commits exactly this list. Emitted from what was actually written rather
+    // than maintained by hand in the workflow, because a hand-maintained copy fell behind the moment
+    // a new file joined the set and quietly shipped an incomplete synchronisation.
+    + `files_multiline<<${delimiter}\n${files.join('\n')}\n${delimiter}\n`);
+}

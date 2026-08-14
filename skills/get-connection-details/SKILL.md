@@ -14,7 +14,7 @@ than presenting it as verified. **CONFLICT** and **OPEN** must be surfaced to th
 resolved silently. Ten source pages are re-checked weekly for drift; that is ten pages, not every
 fact.
 
-Knowledge base: [`docs/sql-server-to-azure-migration-connectivity.md`](../../docs/sql-server-to-azure-migration-connectivity.md) v0.7 ·
+Knowledge base: [`docs/sql-server-to-azure-migration-connectivity.md`](../../docs/sql-server-to-azure-migration-connectivity.md) v0.8 ·
 structured source: [`reference/connectivity-matrix.json`](reference/connectivity-matrix.json)
 
 ## What this skill does
@@ -112,7 +112,7 @@ cannot judge how much to trust the advice, nor reproduce it later.
 **Representative output — composing a connection**
 
 > **Azure SQL Managed Instance** · public endpoint · **port 3342** · connection type **Proxy (forced)**
-> KB **v0.7** · endpoint and port VERIFIED · JDBC keyword VERIFIED
+> KB **v0.8** · endpoint and port VERIFIED · JDBC keyword VERIFIED
 >
 > The public endpoint is a **different hostname** from the VNet-local one — `.public.` is inserted —
 > and it must be enabled on the instance. A string built for the VNet-local endpoint cannot reach it
@@ -142,7 +142,7 @@ cannot judge how much to trust the advice, nor reproduce it later.
 **Representative output — diagnosing a failure**
 
 > **Error 18456 from one network only** · leading hypothesis **DNS override**
-> KB **v0.7** · the DNS-override behaviour is VERIFIED; the attribution to this case is a hypothesis
+> KB **v0.8** · the DNS-override behaviour is VERIFIED; the attribution to this case is a hypothesis
 >
 > The gateway validates the FQDN it receives against the target server. A name pinned to a retired
 > gateway address is rejected by design, and the rejection is reported as a login failure. The same
