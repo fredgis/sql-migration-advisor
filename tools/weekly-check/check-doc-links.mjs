@@ -16,7 +16,7 @@
 // evidence that a page is gone, and reporting it as one trains a reader to ignore the report.
 import fs from 'node:fs';
 import path from 'node:path';
-import { ROOT, TARGETS, byId, TARGET_IDS } from './kb-targets.mjs';
+import { ROOT, TARGETS, byId, TARGET_IDS, linkScanFiles } from './kb-targets.mjs';
 
 const arg = (name, def = null) => {
   const i = process.argv.indexOf(`--${name}`);
@@ -61,16 +61,28 @@ function slugsOf(markdown) {
   return slugs;
 }
 
-function linksOf(markdown) {
+// `bare` additionally collects URLs written outside link syntax, typically in backticks. Policy
+// documents instruct the model to fetch a literal address, and the release pin is written that way:
+// scanning only `](…)` would leave the single most fragile URL in the repository unchecked.
+function linksOf(markdown, { bare = false } = {}) {
   const out = [];
   let inFence = false;
   const lines = markdown.split(/\r?\n/);
   for (let i = 0; i < lines.length; i++) {
     if (/^\s*```/.test(lines[i])) { inFence = !inFence; continue; }
     if (inFence) continue;
+    const taken = new Set();
     for (const m of lines[i].matchAll(/\]\(\s*(<[^>]+>|[^()\s]+(?:\([^()]*\)[^()\s]*)*)\s*(?:"[^"]*")?\)/g)) {
       const url = m[1].replace(/^<|>$/g, '');
       if (/^(mailto:|tel:)/i.test(url)) continue;
+      taken.add(url);
+      out.push({ url, line: i + 1 });
+    }
+    if (!bare) continue;
+    for (const m of lines[i].matchAll(/https?:\/\/[^\s`)<>\]"'|]+/g)) {
+      const url = m[0].replace(/[.,;:]+$/, '');
+      if (taken.has(url)) continue;
+      taken.add(url);
       out.push({ url, line: i + 1 });
     }
   }
@@ -117,33 +129,38 @@ async function checkUrl(url, needsAnchor) {
 const work = new Map();   // url -> { anchor, sites: [{kb, doc, line}] }
 const localFailures = [];
 const docs = [];
+const seenFiles = new Set();
 
 for (const target of targets) {
-  const md = fs.readFileSync(path.join(ROOT, target.doc), 'utf8');
-  const slugs = slugsOf(md);
-  const links = linksOf(md);
-  docs.push({ id: target.id, doc: target.doc, links: links.length, headings: slugs.size });
-  for (const { url, line } of links) {
-    if (url.startsWith('#')) {
-      const frag = decodeURIComponent(url.slice(1)).toLowerCase();
-      if (frag && !slugs.has(frag)) {
-        localFailures.push({ kb: target.id, doc: target.doc, line, url, reason: 'no heading in this document produces that anchor' });
+  for (const file of linkScanFiles(target)) {
+    if (seenFiles.has(file)) continue;
+    seenFiles.add(file);
+    const md = fs.readFileSync(path.join(ROOT, file), 'utf8');
+    const slugs = slugsOf(md);
+    const links = linksOf(md, { bare: file !== target.doc });
+    docs.push({ id: target.id, doc: file, links: links.length, headings: slugs.size });
+    for (const { url, line } of links) {
+      if (url.startsWith('#')) {
+        const frag = decodeURIComponent(url.slice(1)).toLowerCase();
+        if (frag && !slugs.has(frag)) {
+          localFailures.push({ kb: target.id, doc: file, line, url, reason: 'no heading in this document produces that anchor' });
+        }
+        continue;
       }
-      continue;
-    }
-    if (!/^https?:\/\//i.test(url)) {
-      // A relative path to a sibling file in the repository.
-      const rel = url.split('#')[0];
-      if (rel && !fs.existsSync(path.resolve(path.dirname(path.join(ROOT, target.doc)), rel))) {
-        localFailures.push({ kb: target.id, doc: target.doc, line, url, reason: 'the referenced file does not exist' });
+      if (!/^https?:\/\//i.test(url)) {
+        // A relative path, resolved against the directory of the file that wrote it.
+        const rel = url.split('#')[0];
+        if (rel && !fs.existsSync(path.resolve(path.dirname(path.join(ROOT, file)), rel))) {
+          localFailures.push({ kb: target.id, doc: file, line, url, reason: 'the referenced file does not exist' });
+        }
+        continue;
       }
-      continue;
+      const [bare, frag] = url.split('#');
+      const entry = work.get(bare) || { anchors: new Set(), sites: [] };
+      if (frag) entry.anchors.add(frag);
+      entry.sites.push({ kb: target.id, doc: file, line, url });
+      work.set(bare, entry);
     }
-    const [bare, frag] = url.split('#');
-    const entry = work.get(bare) || { anchors: new Set(), sites: [] };
-    if (frag) entry.anchors.add(frag);
-    entry.sites.push({ kb: target.id, doc: target.doc, line, url });
-    work.set(bare, entry);
   }
 }
 
@@ -186,16 +203,26 @@ const perKb = Object.fromEntries(targets.map(t => [t.id, {
   unverified: unverified.filter(u => u.kbs.includes(t.id)).length
 }]));
 
-fs.writeFileSync('doc-links.json', JSON.stringify({ ok, checked: jobs.length, okCount, docs, perKb, failures, unverified }, null, 2));
+const perFile = Object.fromEntries(docs.map(d => {
+  const mine = s => String(s).startsWith(`${d.doc}:`);
+  return [d.doc, {
+    checked: jobs.filter(j => j.sites.some(s => s.doc === d.doc)).length,
+    broken: failures.filter(f => f.sites.some(mine)).length,
+    unverified: unverified.filter(u => u.sites.some(mine)).length
+  }];
+}));
+
+fs.writeFileSync('doc-links.json', JSON.stringify({ ok, checked: jobs.length, okCount, docs, perKb, perFile, failures, unverified }, null, 2));
 
 let md = '## Knowledge-base source and anchor verification\n\n';
 md += `- Healthy: **${ok ? 'yes' : 'no'}**\n`;
 md += `- Unique source URLs checked: **${jobs.length}** (resolved: ${okCount})\n`;
 md += `- Broken sources or anchors: **${failures.length}**\n`;
 md += `- Unverified (bot-blocked 403/429): **${unverified.length}**\n\n`;
-md += '| Knowledge base | Links | Headings | Checked | Broken | Unverified |\n|---|---:|---:|---:|---:|---:|\n';
+md += '| Document | Knowledge base | Links | Headings | Checked | Broken | Unverified |\n|---|---|---:|---:|---:|---:|---:|\n';
 for (const d of docs) {
-  md += `| \`${d.doc}\` | ${d.links} | ${d.headings} | ${perKb[d.id].checked} | ${perKb[d.id].broken} | ${perKb[d.id].unverified} |\n`;
+  const p = perFile[d.doc];
+  md += `| \`${d.doc}\` | ${d.id} | ${d.links} | ${d.headings} | ${p.checked} | ${p.broken} | ${p.unverified} |\n`;
 }
 md += '\n';
 function table(title, rows) {

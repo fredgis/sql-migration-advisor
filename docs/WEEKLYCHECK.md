@@ -109,8 +109,9 @@ full coverage of the Advisor matrix's supported cells.
 Network-bound, so it never runs on a pull request.
 
 [`check-doc-links.mjs`](../tools/weekly-check/check-doc-links.mjs) extracts every link from all
-three documents, tries `HEAD`, retries with `GET` where a host refuses `HEAD`, and accepts only 2xx
-and 3xx. Two checks matter more than the plain reachability:
+three documents **and from the policy documents beside them** — each `SKILL.md` and the decision
+rules — tries `HEAD`, retries with `GET` where a host refuses `HEAD`, and accepts only 2xx and 3xx.
+Three checks matter more than the plain reachability:
 
 - **Anchors are proven.** A URL of the form `page#section` returns HTTP 200 when the page exists and
   the section is gone. The citation is then broken while every link checker calls it healthy. For
@@ -119,9 +120,16 @@ and 3xx. Two checks matter more than the plain reachability:
 - **In-document references are proven.** `[§16 Sources](#16-sources-microsoft-learn)` breaks whenever
   a heading is retitled, and nothing external is involved, so no network check would ever see it.
   Heading slugs are computed and matched.
+- **Addresses written bare are proven.** A policy document tells the model to fetch one literal URL,
+  written in backticks rather than as a link. Scanning only `[text](url)` would leave the live-fetch
+  pin — the most fragile address in the repository, and the one every session may load — unchecked.
 
 Persistent 403 and 429 are reported as **unverified**, never as broken: a bot filter is not evidence
 that a page is gone, and reporting it as one teaches the reader to ignore the report.
+
+That pin names a release tag, so the weekly run cannot repair it: the tag it should move to does not
+exist until the release is cut. The offline gate `policy-document-urls-are-current` therefore holds
+it to `version.json`, and rejects a mutable ref or a `/blob/` path on the raw host.
 
 Failures here do not abort the run. They are recorded and passed to the decision stage, which is what
 turns them into an issue somebody reads.
@@ -240,7 +248,7 @@ Every stage, against every knowledge base.
 |---|:---:|:---:|:---:|
 | Internal consistency (`check-consistency.mjs`) | 🟢 | 🟢 | 🟢 |
 | Structural contract gate (`tests.yml`, no path filter) | 🟢 | 🟢 | 🟢 |
-| Live sources **and heading anchors** (`check-doc-links.mjs`) | 🟢 | 🟢 + catalogue contract | 🟢 |
+| Live sources **and heading anchors** (`check-doc-links.mjs`) | 🟢 + policy docs | 🟢 + catalogue contract | 🟢 + policy docs |
 | Link sweep (lychee, `evidence`) | 🟢 | 🟢 | 🟢 |
 | News collection **and routing** | 🟢 | 🟢 | 🟢 |
 | Silent source drift (`verify-claims.mjs`) | 🟢 19 claims | 🟢 10 claims | 🟢 10 claims |

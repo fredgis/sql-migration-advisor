@@ -1156,6 +1156,48 @@ try {
       : [`${TARGETS.length} knowledge bases each carry a readable version, own a disjoint set of the ${claims.length} registered claims (${notes.join('; ')}), are sent for review in a prompt scoped to themselves, and are judged changed by one shared implementation.`]);
 }
 
+// The live-fetch pin names a release tag, so it goes stale silently: the skill keeps announcing the
+// new version while serving the document from the old one. Nothing rewrites it at bump time, and
+// nothing can — the tag does not exist until the release is cut — so it is asserted here instead.
+{
+  const failures = [];
+  const notes = [];
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, 'version.json'), 'utf8'));
+
+  for (const target of TARGETS) {
+    for (const file of (target.policyDocs || [])) {
+      const abs = path.join(root, file);
+      if (!fs.existsSync(abs)) { failures.push(`${file}: declared as a policy document but missing`); continue; }
+      const text = fs.readFileSync(abs, 'utf8');
+      for (const m of text.matchAll(/https?:\/\/[^\s`)<>\]"']+/g)) {
+        const url = m[0].replace(/[.,;:]+$/, '');
+        if (/\/blob\//.test(url) && url.includes('raw.githubusercontent.com')) {
+          failures.push(`${file}: raw host with a /blob/ path returns 404 — ${url}`);
+        }
+        const pin = url.match(/^https:\/\/raw\.githubusercontent\.com\/[^/]+\/[^/]+\/([^/]+)\//);
+        if (!pin) continue;
+        const ref = pin[1];
+        if (url.endsWith('version.json')) {
+          // Deliberately on a branch: its purpose is to report the newest release.
+          if (ref !== 'main') failures.push(`${file}: the update probe must read version.json from main, not ${ref} — pinning it freezes the answer at the installed version`);
+          else notes.push(`${file}: update probe reads version.json from main`);
+          continue;
+        }
+        if (!/^v\d+\.\d+\.\d+$/.test(ref)) {
+          failures.push(`${file}: the live knowledge base must be pinned to a release tag, found "${ref}" — a mutable ref lets the facts change under the reader with no version to cite`);
+        } else if (ref !== manifest.latest) {
+          failures.push(`${file}: pinned to ${ref} but the latest release is ${manifest.latest} — the skill would announce ${manifest.knowledgeBase} and serve the document from ${ref}`);
+        } else {
+          notes.push(`${file}: live knowledge base pinned to ${ref}, the current release`);
+        }
+      }
+    }
+  }
+
+  add('policy-document-urls-are-current', failures.length === 0,
+    failures.length ? failures : notes.length ? notes : ['no policy document cites a URL']);
+}
+
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };
 if (jsonMode) {
   process.stdout.write(JSON.stringify({ summary, results }, null, 2) + '\n');

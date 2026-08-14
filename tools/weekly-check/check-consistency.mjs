@@ -458,6 +458,19 @@ compareAcrossDocs('Azure Arc portal MI wizard database batch limit', consistency
       if (!target.newsTopics.length) {
         errors.push(`${target.id} declares no news topics, so no announcement can ever be routed to it`);
       }
+      // A policy document is read by every session, so a dead address in one is worse than a dead
+      // address in the knowledge base. It must be swept, and a change to it must reach these gates.
+      for (const file of (target.policyDocs || [])) {
+        if (!fs.existsSync(path.join(ROOT, file))) {
+          errors.push(`${target.id} declares the policy document ${file}, which does not exist`);
+          continue;
+        }
+        const esc = file.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const dir = file.slice(0, file.lastIndexOf('/')).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        if (!new RegExp(`^\\s*- '(?:${esc}|${dir}/\\*\\*)'`, 'm').test(wf)) {
+          errors.push(`${file} is a policy document but is not in the workflow's pull_request paths, so a dead pin in it can reach main without these gates`);
+        }
+      }
     }
     // The pull request must commit what the apply step wrote, not a list maintained beside it.
     if (!/add-paths:[\s\S]{0,200}steps\.apply\.outputs\.files_multiline/.test(wf)) {

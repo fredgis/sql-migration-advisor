@@ -62,6 +62,7 @@ export const TARGETS = [
     doc: 'docs/sql-server-to-azure-migration.md',
     companions: ['reference/decision-rules.md'],
     context: ['reference/decision-rules.md'],
+    policyDocs: ['skills/recommend-migration-path/SKILL.md', 'reference/decision-rules.md'],
     claimPrefixes: [],
     newsTopics: [
       'migrat', 'assessment', 'azure migrate', 'database migration service', '\\bdms\\b',
@@ -144,6 +145,7 @@ export const TARGETS = [
     doc: 'docs/sql-server-to-azure-migration-prerequisite.md',
     companions: ['skills/generate-migration-prerequisite-plan/reference/path-catalog.json'],
     context: [],
+    policyDocs: ['skills/generate-migration-prerequisite-plan/SKILL.md'],
     claimPrefixes: ['p'],
     newsTopics: [
       'prerequisite', 'requirement', 'supported version', 'minimum version', 'compatibility',
@@ -194,6 +196,7 @@ export const TARGETS = [
     doc: 'docs/sql-server-to-azure-migration-connectivity.md',
     companions: ['skills/get-connection-details/reference/connectivity-matrix.json'],
     context: [],
+    policyDocs: ['skills/get-connection-details/SKILL.md'],
     claimPrefixes: ['conn-'],
     newsTopics: [
       'connect', 'connection string', 'private link', 'private endpoint', 'public endpoint',
@@ -248,6 +251,13 @@ export const TARGET_IDS = TARGETS.map(t => t.id);
 
 /** Every file whose content a finding may be raised against. */
 export const reviewableFiles = target => [target.doc, ...target.companions];
+
+/**
+ * Markdown whose links are resolved live. The knowledge base plus the policy documents that cite
+ * sources of their own: a dead pin in a SKILL.md is read by every session, so leaving it out of the
+ * sweep would protect the document nobody reads directly and not the one the model actually loads.
+ */
+export const linkScanFiles = target => [...new Set([target.doc, ...(target.policyDocs || [])])];
 
 /**
  * Files whose content decides whether a change is substantive. Deliberately the documents and their
