@@ -450,7 +450,7 @@ Ordered by what protects a user first, not by what is easiest to test — the ch
 | # | Task | Files | Difficulty |
 |---|---|---|---|
 | W2-1 | Fix the raw KB URL, drop `/blob/`. **The live fetch is currently 404** | `SKILL.md` | 🟢 |
-| W2-2 | Gate: every URL in the policy documents resolves, so a dead pin cannot ship again | `run-tests.mjs` | 🟠 |
+| W2-2 | Gate: every URL in the policy documents resolves, so a dead pin cannot ship again | `run-tests.mjs` | 🟢 |
 | W2-3 | Settle one fetch policy — recommendation: **bundled copy by default**, live fetch on request — and align README, skill, howto and site | 5 files | 🟠 |
 | W2-4 | Non-overlapping size classes: `< 150 GB`, `150 GB – 4 TB`, `> 4 TB – 128 TB`, `> 128 TB` | `SKILL.md`, rules, engine | 🟠 |
 | W2-5 | Write `CLR-PERMISSION` normatively, with the `clr strict security` behaviour and a Microsoft source. **Never treat SAFE as validation** | `decision-rules.md`, KB § if needed | 🟠 |
@@ -502,7 +502,7 @@ Released as `v2.1.0`. **23 gates, 106 scenarios.**
 | W1-5 | Rule `BACKUP-BLOB-PATH` | ✅ written **and implemented**. It covers LRS, which stages backups in Blob — the first version missed that because the method is not called backup/restore |
 | W1-6 | Invariant: no gate passes on an unknown | ✅ invariant 10 |
 | W2-1 | Fix the 404 KB pin | ✅ |
-| W2-2 | Gate on dead URLs | ⚠️ partial: `version-manifest-current` checks the manifest wiring, not every URL. See below |
+| W2-2 | Gate on dead URLs | ✅ `policy-document-urls-are-current` asserts the live pin names the current release tag, rejects a mutable ref and rejects `/blob/` on the raw host; `check-doc-links.mjs` resolves every URL the policy documents cite, including the ones written bare in backticks |
 | W2-3 | One fetch policy | ✅ bundled by default, live on request, aligned across five documents |
 | W2-4 | Non-overlapping size classes | ✅ |
 | W2-5 | `CLR-PERMISSION` normative | ✅ written **and implemented**: UNSAFE or unstated returns a shortlist, and SAFE is not a clearance |
@@ -582,5 +582,4 @@ to end, what the 23 gates defend, and where it can still be wrong.
 - The conditional interview: skip what the current path cannot use, re-ask when the path changes
 - Lot F, runtime evaluation across models — the only work that would measure whether a session
   reaches the mirror's answer, and the gap no gate closes
-- Two partial gates: no check that every URL in the policy documents resolves, and none that each
-  rule-index entry has normative text behind it
+- One partial gate: nothing checks that each rule-index entry has normative text behind it
