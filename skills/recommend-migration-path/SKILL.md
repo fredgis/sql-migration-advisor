@@ -404,8 +404,8 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
     "evidenceRequired": [],
     "evidence": []
   },
-  "knowledgeBase": { "version": "v2.8", "commit": "…", "verifiedAt": "…" },
-  "engineVersion": "v2.8"
+  "knowledgeBase": { "version": "v2.9", "commit": "…", "verifiedAt": "…" },
+  "engineVersion": "v2.9"
 }
 ```
 
