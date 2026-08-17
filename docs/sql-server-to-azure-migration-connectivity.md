@@ -1,6 +1,6 @@
 # SQL Server to Azure — connectivity knowledge base
 
-> **Version.** v0.8 — 14 August 2026. Ships in the `sql-migration-advisor` plugin as the
+> **Version.** v0.9 — 17 August 2026. Ships in the `sql-migration-advisor` plugin as the
 > knowledge base for `get-connection-details`. It changes no fact in
 > [`sql-server-to-azure-migration.md`](sql-server-to-azure-migration.md), which serves the
 > migration skill and is maintained separately.
@@ -590,9 +590,16 @@ the two readings are the same rollout seen at different points, which is precise
 `CONFLICT` status exists for.
 
 **Confidence: none, and deliberately so.** Two independent research inputs disagree, and the
-disagreement was previously resolved by fiat. It is now recorded and the guidance in §2.2 is set to
-the safe side: open both ranges, because being wrong in that direction costs unused ports inside
-your own subnet, while being wrong in the other direction costs a failed production connection.
+disagreement was previously resolved by fiat. It is now recorded, and the guidance in §2.2 is the
+one to follow: allow 1433 across the instance subnet, test the actual topology, and add
+11000–11999 only if the connection fails and security policy permits.
+
+That is a change of direction from v0.5, which told the reader to open both ranges by default on
+the grounds that unnecessary width costs only unused ports. Two things were wrong with it. Opening
+a thousand ports nobody has shown to be needed contradicts this document's own least-privilege
+warning, and it contradicted §2.2, so a reader following one section and a reader following the
+other configured different networks from the same page. A conflict that is genuinely unresolved is
+recorded here; it does not license a default that the rest of the document argues against.
 
 This entry is the strongest argument in the document for the review dates in §7.7. A fact carrying
 "until further notice" is by definition high-volatility, and nothing here expires.
@@ -727,6 +734,7 @@ flagged, however old the fact. Review dates by volatility remain the missing hal
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v0.9 | 2026-08-17 | **§7.1 told the reader to open both MI port ranges by default; §2.2 told them to test 1433 first.** Two sections of the same document configured two different networks. The default in §7.1 was v0.5 guidance that survived the v0.7 change, and it contradicted this document's own least-privilege warning: opening a thousand ports nobody has shown to be needed is not the safe side, it is the wide side. §7.1 now defers to §2.2, and the port conflict stays recorded as unresolved without licensing a default the rest of the document argues against. |
 | v0.8 | 2026-08-14 | Header now states a Last verified date and what earns it. The weekly check reads this document in full: its sources and heading anchors are re-resolved, its ten claims re-hashed, routed news reviewed against it, and this date moves only when that run happened. |
 | v0.7 | 2026-08-12 | **Fourth external audit, and the first to find the flagship example wrong.** The worked example described the same connection string reaching a Managed Instance from a laptop and from App Service. That is impossible: the public endpoint is a different hostname — `.public.` is inserted — on a different port, and it must be enabled. The card also printed an ADO.NET keyword list under a JDBC heading; a JDBC answer is a `jdbc:sqlserver://host:port;key=value` URL and what was shipped would fail at runtime. Both are rewritten, and the skill now asks for the hostname rather than composing it. Windows integrated and Entra integrated were conflated: `Integrated Security=true` was justified by a quote about Windows authentication and then labelled an Entra mode, demanding a domain join for a mode that does not need one — the sixth instance of a quote proving one cell being read as proving a row. The MI redirect conflict gains Microsoft’s own Bicep and ARM quickstarts, which still provision 11000–11999, and loses the claim that opening a range is harmless: a wider range enlarges exposure and can breach least privilege, so the guidance is now to test 1433 first and widen only if it fails and policy allows. Managed Instance private-endpoint DNS depends on whether the endpoint sits in the instance’s own virtual network, which the contract now collects and which the same-VNet case answers as an open item. Statuses are split: 21 rows keep `VERIFIED`, 37 become `DERIVED` because the page is cited but the row carries no quote of its own, and the header no longer claims every fact is quoted. `sqlcmd` and `bcp` return to open research — the syntax shipped was a Fabric example generalised into a rule, and the Go and ODBC builds do not give `-G` the same meaning. Errors 47073 and 47072 are added because they refuse the connection before ports or DNS matter, error 5 stops assuming 1433, and diagnosis replaces the mandatory *Not this* row with a hypothesis, its evidence and the test that would disprove it. |
 | v0.6 | 2026-08-12 | **Drift detection, and the skill documented as shipping.** Ten claims now watch the Microsoft pages behind the volatile facts and fail the build when one changes, reusing the registry and weekly workflow already built for the migration knowledge base. Each section was proved to carry its fact before being baselined, and one did not: the JDBC claim matched the page H1 and silently spanned the whole document, so it would have reported drift on any editorial change and told nobody anything. A CI gate now keeps this document and its matrix from disagreeing on version or on three load-bearing values, and it earned its place by catching the matrix left a version behind. The skill gained its own input and output contracts, kept deliberately separate from the migration skill’s: the two share a repository and a plugin, not a vocabulary. |

@@ -4112,5 +4112,71 @@
       "30-day maximum window"
     ],
     "auditRef": "graph-audit-v2.3"
+  },
+  {
+    "id": "blob-blocked-keeps-a-file-system-target-alive",
+    "title": "Blob upload blocked while the profile requires a target with a file system",
+    "why": "BACKUP-BLOB-PATH claimed every native backup/restore variant moves through Azure Blob. That is true for Managed Instance, which restores only FROM URL, and false for a VM: the knowledge base documents backup to a file and a copy into the target. Blocking Blob used to collapse a valid SQL VM migration to a shortlist, on a criterion that does not apply to it.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "ON_PREM",
+      "source_version": "SQL2017_2019",
+      "intent": "MIGRATE_NOW",
+      "management_model": "NEED_OS_CONTROL",
+      "feature_dependencies": ["FILESTREAM/FileTable"],
+      "size": "UNDER_150_GB",
+      "downtime": "OFFLINE",
+      "source_permissions": "SYSADMIN_AVAILABLE",
+      "blob_https_reachability": "BLOB_HTTPS_BLOCKED"
+    },
+    "expect": {
+      "eligibility": { "sql_vm": "eligible", "sql_mi": "unsupported", "sql_db": "unsupported" },
+      "primary_target": "SQL Server on Azure VM",
+      "method": "Native backup/restore",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
+      "methodGateStatus": "unknown_requires_assessment",
+      "recommendationStatus": "provisional",
+      "confidence": "low",
+      "mustNotRecommend": ["a provisional shortlist instead of the SQL VM the profile requires"]
+    },
+    "assertRulePresent": [
+      "BACKUP-BLOB-PATH",
+      "this target has a file system"
+    ],
+    "auditRef": "weekly-2026-08-17-finding-4"
+  },
+  {
+    "id": "filestream-removes-the-linux-container",
+    "title": "FILESTREAM with a DIY Kubernetes container requested",
+    "why": "The A2 table grouped SQL VM, AVS and container as eligible for FILESTREAM/FileTable, and the DIY branch then set the container eligible unconditionally. The container runs SQL Server on Linux, which has no FILESTREAM at all, so the profile was offered a target that cannot host the dependency it is built around. A preference between two Kubernetes engine models must not resurrect a hard incompatibility.",
+    "inputs": {
+      "scope": "SINGLE_DB",
+      "source_location": "ON_PREM",
+      "source_version": "SQL2017_2019",
+      "intent": "MIGRATE_NOW",
+      "management_model": "KUBERNETES",
+      "kubernetes_model": "FULL_DIY_CONTAINER",
+      "feature_dependencies": ["FILESTREAM/FileTable"],
+      "size": "UNDER_150_GB",
+      "downtime": "OFFLINE",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+    },
+    "expect": {
+      "eligibility": { "container": "unsupported", "sql_mi": "excluded_by_preference", "sql_db": "excluded_by_preference", "sql_vm": "eligible" },
+      "primary_target": "SQL Server on Azure VM",
+      "method": "Native backup/restore",
+      "targetAvailabilityDuringSync": "not-present",
+      "businessCutoverDowntime": "full-restore-time",
+      "methodGateStatus": "passed",
+      "recommendationStatus": "provisional",
+      "confidence": "medium",
+      "mustNotRecommend": ["SQL Server in a container for a FILESTREAM workload"]
+    },
+    "assertRulePresent": [
+      "FILESTREAM-PAAS",
+      "has no FILESTREAM/FileTable"
+    ],
+    "auditRef": "weekly-2026-08-17-finding-5"
   }
 ]

@@ -5,7 +5,7 @@ Apply Steps **A → D** in order. Steps map to the two engine phases:
 - **Phase B — Ranking and plan:** Steps B → D. Rank only surviving targets, then choose method, tier, blockers, cost, and assessment.
 
 Regression contract: these rules are a **prompt policy under regression test**. Replaying the same inputs through the rules mirror in `tests/` gives the same result, and 90 golden scenarios enforce it on every commit. The mirror is not what runs in a session: an agent reads these rules and applies them. Treat the contract as a tested policy, not as a guarantee that two runs produce identical wording. Every recommendation must carry the KB version, engine version, and, when available, the source commit SHA and fetch timestamp.
-Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v2.8**, verified August 2026.
+Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v2.9**, verified August 2026.
 
 Three layers, never mixed:
 - **Target** = where the DB ends up (runtime).
@@ -92,7 +92,7 @@ These are filters, not preferences:
 
 | Dependency / answer | MI | SQL DB | SQL VM / AVS / container | Rule |
 | --- | --- | --- | --- | --- |
-| FILESTREAM / FileTable | `unsupported` | `unsupported` | `eligible` | **`FILESTREAM-PAAS`.** Hard MI/SQL DB incompatibility. Do not bundle with PolyBase/DTC. |
+| FILESTREAM / FileTable | `unsupported` | `unsupported` | `eligible` on **SQL VM and AVS**; `unsupported` on the **container**, which runs SQL Server on Linux and has no FILESTREAM/FileTable | **`FILESTREAM-PAAS`.** Hard MI/SQL DB incompatibility. Do not bundle with PolyBase/DTC. The container shares the Linux limitation, so grouping it with the VM offered a target that cannot host the dependency. |
 | PolyBase over Blob / ADLS Gen2 cloud files using `OPENROWSET(BULK)`, external tables or CETAS; CSV/Parquet | `eligible` | assess separately | `eligible` | **`POLYBASE-KIND`.** SQL MI supports cloud-file virtualization. Delta Lake, pushdown, and S3 are not supported. |
 | PolyBase connector to Oracle, Teradata, MongoDB, another SQL Server, or other external RDBMS | `unsupported` | `unsupported` unless refactored | `eligible` | **`POLYBASE-KIND`.** MI does not support PolyBase external RDBMS connectors. |
 | PolyBase selected but source type unknown | `unknown_requires_assessment` | `unknown_requires_assessment` | `eligible` | **`POLYBASE-KIND`**, **`DEPENDENCY-INVENTORY`.** Evidence required: list external data sources/connectors. |
@@ -218,7 +218,7 @@ If a tier-driving input is missing, emit `unknown_requires_assessment` for tier 
 | --- | --- | --- |
 | Near-zero | **Distributed AG** or **Always On AG** | **`AG-VERSION`.** Distributed AG: source **2016+**. Always On AG: source **2012+**. Both: AD DS or workgroup AG + certs, AG endpoints, ports open, planned failover window |
 | Minimal | **Log shipping** | Windows source and log backup chain feasible |
-| Offline | **Native backup/restore** — direct `BACKUP TO URL` from **2012 SP1 CU2+**, or local backup + upload below that build or when URL prerequisites are unavailable; detach/attach for special large-file cases | Confirm the build for SQL Server 2012 (SP1 CU2 or later). 2012/2014 use page blob + storage-account credential, 1 TB max; 2016+ use block blob + SAS, up to 12.8 TB striped. TDE cert installed first when encrypted. **`BACKUP-BLOB-PATH`**: every variant moves through HTTPS to Azure Blob, so `blob_https_reachability` must be `BLOB_HTTPS_CONFIRMED` before this gate reports `passed`. `BLOB_HTTPS_UNKNOWN` yields `unknown_requires_assessment` and `BLOB_HTTPS_BLOCKED` refuses the method: an unverified upload path is the single most common reason a cutover date slips, and it is invisible until someone tries it |
+| Offline | **Native backup/restore** — direct `BACKUP TO URL` from **2012 SP1 CU2+**, or local backup + upload below that build or when URL prerequisites are unavailable; detach/attach for special large-file cases | Confirm the build for SQL Server 2012 (SP1 CU2 or later). 2012/2014 use page blob + storage-account credential, 1 TB max; 2016+ use block blob + SAS, up to 12.8 TB striped. TDE cert installed first when encrypted. **`BACKUP-BLOB-PATH`** applies to the **Blob-staged variants only**: for those, `blob_https_reachability` must be `BLOB_HTTPS_CONFIRMED` before the gate reports `passed`, `BLOB_HTTPS_UNKNOWN` yields `unknown_requires_assessment`, and an unverified upload path is the single most common reason a cutover date slips because it is invisible until someone tries it. `BLOB_HTTPS_BLOCKED` does **not** eliminate the method here: this target has a file system, so the knowledge base's backup-to-a-file-and-copy route survives. Move to that variant and hold the gate at `unknown_requires_assessment` until the file-transfer route is proven and measured for the largest database — a route nobody has timed is not a route |
 | Whole VM/instance | **Azure Migrate** replication | use for rehost/business case; validate SQL consistency |
 | Multi-TB / limited WAN | **Data Box** seed → sync delta | test one full backup/AzCopy/Data Box run |
 
@@ -412,9 +412,9 @@ The normative wording stays in the sections above. This index is the address boo
 | --- | --- | --- | --- | --- |
 | `MI-LINK-SOURCE` | hard method gate | `source_location` | Method `unknown_requires_assessment` | A4, B3 |
 | `MI-LINK-VERSION` | hard method gate | `source_version` | Method `unknown_requires_assessment` | B3 |
-| `MI-LINK-HOST` | hard method gate | `source_os`, `source_edition`, `source_version` | **Method refused**, fail-closed | A0, B3 |
+| `MI-LINK-HOST` | hard method gate | `source_os`, `source_edition`, `source_version` | Method `unknown_requires_assessment`; a **known** unsupported edition or host eliminates MI Link only, never the MI target | A0, B3 |
 | `MI-LINK-PORTS` | hard method gate | `mi_link_ports` | Method `unknown_requires_assessment` | B3 |
-| `BACKUP-BLOB-PATH` | hard method gate | `blob_https_reachability` | **Gate cannot report `passed`**; `unknown_requires_assessment` | B3 |
+| `BACKUP-BLOB-PATH` | hard method gate | `blob_https_reachability` | **Gate cannot report `passed`**; `unknown_requires_assessment`. Blocked eliminates the Blob-staged variant only; a target with a file system keeps the copy-a-file variant | B3 |
 | `MI-LINK-CAPACITY` | hard method gate | `database_count`, tier | Capacity `unknown_requires_assessment` | B3 |
 | `LRS-VERSION` | hard method gate | `source_version` | Method `unknown_requires_assessment` | B3 |
 | `LRS-WINDOW` | hard method gate | `size`, `network_bandwidth` | Constraint always recorded; **`unknown_requires_assessment`** once size or bandwidth make 30 days a real risk | B3 |

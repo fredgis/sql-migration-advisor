@@ -30,7 +30,7 @@ repository into a Copilot skills location; installing only `SKILL.md` breaks the
 fine-tuning or external service sits in the decision path. It is:
 
 - **Grounded** — every recommendation is traceable to a verified knowledge base, not model memory.
-- **Prompt policy under regression test** — Phase A filters hard eligibility, then Phase B ranks viable paths and tiers. A JavaScript mirror replays 110 scenarios through those rules on every commit; the agent reading them in a session is not that mirror.
+- **Prompt policy under regression test** — Phase A filters hard eligibility, then Phase B ranks viable paths and tiers. A JavaScript mirror replays 112 scenarios through those rules on every commit; the agent reading them in a session is not that mirror.
 - **Explicit about uncertainty** — outputs carry `provisional` status, `low` or `medium` confidence, assumptions, unknowns, blockers and evidence required.
 - **Freshness-gated** — consistency checks, link classification and a claims registry prevent unearned version bumps.
 - **Self-checked before display** — the skill rereads its draft against the output contract, so contradictions are exposed instead of hidden.
@@ -76,7 +76,7 @@ The agent reads them at runtime.
 <a href={`${import.meta.env.BASE_URL}/rule-graph.html`}>Open the interactive rule graph →</a>
 
 Three views over the same policy: the documented paths to each target, the 28 addressable rules with
-the fields each one consumes, and the coverage of the 110 scenarios replayed on every commit. Select a
+the fields each one consumes, and the coverage of the 112 scenarios replayed on every commit. Select a
 node to isolate its relations.
 
 Enumerating the profiles literally is not an option — more than 13.9 billion combinations before the
@@ -251,13 +251,13 @@ challenge, which is the point.
 This one is not a runtime path — it is the **quality gate**, and it runs on **every push and every pull
 request**. (It is separate from the weekly knowledge-base check above, which runs Mondays at 05:00 UTC.)
 
-<img src={`${import.meta.env.BASE_URL}/quality-gate.svg`} alt="Quality gate: decision-rules.data.json is the single source of constants; it feeds evaluate.mjs, which replays 110 golden scenarios into a blocking CI gate, while check-rules-data.mjs verifies the same 187 constants against the decision-rules markdown in strict mode." />
+<img src={`${import.meta.env.BASE_URL}/quality-gate.svg`} alt="Quality gate: decision-rules.data.json is the single source of constants; it feeds evaluate.mjs, which replays 112 golden scenarios into a blocking CI gate, while check-rules-data.mjs verifies the same 187 constants against the decision-rules markdown in strict mode." />
 
 - **One source of constants.** Ports, capacities, version floors and thresholds live in
   `decision-rules.data.json`. The engine holds no hard-coded numbers.
 - **Drift is caught.** `check-rules-data.mjs` verifies 187 constants against the markdown prose, in strict
   mode — a warning fails the build.
-- **Decisions are tested.** 110 golden scenarios are replayed through the engine and compared field by
+- **Decisions are tested.** 112 golden scenarios are replayed through the engine and compared field by
   field. Break a rule and the suite fails, naming the scenario.
 - **Twenty gates run.** The suite checks scenario shape, output consistency, contract wiring, the rule index,
   retired tooling, forbidden regressions and the weekly consistency script.

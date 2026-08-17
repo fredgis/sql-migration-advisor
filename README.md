@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Knowledge base v2.8" src="https://img.shields.io/badge/knowledge%20base-v2.8-2b8a3e">
+  <img alt="Knowledge base v2.9" src="https://img.shields.io/badge/knowledge%20base-v2.9-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml/badge.svg"></a>
 </p>
@@ -60,13 +60,13 @@ version loaded and where it came from, so the advice is traceable.
 
 ## Why it is trustworthy
 
-- **Verified knowledge** — the v2.8 knowledge base is source-backed and corrected against Microsoft Learn.
-- **Rules under regression test** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers. An executable mirror in `tests/` replays 110 scenarios through those rules on every commit. The mirror is not what runs in your session: an agent reads the rules and applies them, so this is a tested policy rather than a byte-identical guarantee.
+- **Verified knowledge** — the v2.9 knowledge base is source-backed and corrected against Microsoft Learn.
+- **Rules under regression test** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers. An executable mirror in `tests/` replays 112 scenarios through those rules on every commit. The mirror is not what runs in your session: an agent reads the rules and applies them, so this is a tested policy rather than a byte-identical guarantee.
 - **Every decision is addressable** — the card cites a rule ID for each verdict, and [`reference/decision-rules.md`](reference/decision-rules.md) ends with an index of all 28. Look one up, read what it consumes and how it treats an unknown, and argue with it.
 - **Explicit uncertainty** — every recommendation is `provisional`, and `medium` is the confidence ceiling. Nothing higher is reachable from an interview, because the skill reads no artefact from your estate. It carries assumptions, unknowns, blockers and the evidence a tool would have to produce.
 - **It checks its own answer** — before the card is shown, the skill re-reads its draft against the 13 invariants in [`reference/output-contract.md`](reference/output-contract.md). One of them: no eligibility claim may rest on a field you never answered. A failed invariant is shown to you, never silently repaired.
 - **Freshness gates** — version bumps require substantive diffs; link checks classify bot-blocked pages; high-risk claims are tracked in [`reference/claims-registry.json`](reference/claims-registry.json).
-- **Regression protection** — [`tests/`](tests/) holds 110 golden scenarios and 29 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
+- **Regression protection** — [`tests/`](tests/) holds 112 golden scenarios and 30 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
 
 ## One version, every surface
 
@@ -76,20 +76,20 @@ The knowledge base is quoted by a skill, three manifests, a PDF, a poster, this 
 
 | Surface | Version | Up to date |
 | --- | --- | --- |
-| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v2.8` | ✅ |
-| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v2.8` | ✅ |
-| `SKILL.md` and its pinned fetch URL | `v2.8.2` | ✅ |
-| `version.json`, `plugin.json`, `marketplace.json` | `v2.8.2` | ✅ |
-| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v2.8` | ✅ |
-| Poster caption and PNG | `v2.8` | ✅ |
-| This README's badge and PDF sentence | `v2.8` | ✅ |
-| **This table** | `v2.8` | ✅ |
+| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v2.9` | ✅ |
+| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v2.9` | ✅ |
+| `SKILL.md` and its pinned fetch URL | `v2.9.0` | ✅ |
+| `version.json`, `plugin.json`, `marketplace.json` | `v2.9.0` | ✅ |
+| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v2.9` | ✅ |
+| Poster caption and PNG | `v2.9` | ✅ |
+| This README's badge and PDF sentence | `v2.9` | ✅ |
+| **This table** | `v2.9` | ✅ |
 | The six `blume/public/*.svg` mirrors | — | ✅ |
 | [`blume/docs/index.mdx`](blume/docs/index.mdx) — the docs site | — | ✅ |
-| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v2.8.2` | ✅ |
+| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v2.9.0` | ✅ |
 | [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | — | ✅ |
 | `howto/*.html` | — | ✅ |
-| The developer pitch's sample failure block | `v2.8` | ✅ |
+| The developer pitch's sample failure block | `v2.9` | ✅ |
 
 <!-- surfaces:end -->
 
@@ -123,7 +123,7 @@ status line. See [§ The prerequisite companion](#the-prerequisite-companion) an
 | [`reference/claims-registry.json`](reference/claims-registry.json) | Hashes and source pointers for high-risk claims, used by weekly drift detection. 39 claims: 19 for the migration knowledge base, 10 for prerequisites, 10 for connectivity. |
 | [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) | The same knowledge base as a branded, partner-ready PDF. |
 | [`lab/`](lab/) | A self-contained, hands-on lab: take a legacy SQL Server 2016 workload to a SQL Server on Azure VM, driven by the advisor and the HVE Squad (VM-to-VM migration). |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Deep dive: what the plugin is, how a session runs end to end, what the 29 gates defend, and where it can still be wrong. |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Deep dive: what the plugin is, how a session runs end to end, what the 30 gates defend, and where it can still be wrong. |
 | [`docs/WEEKLYCHECK.md`](docs/WEEKLYCHECK.md) | Deep dive on the weekly check: how all three knowledge bases are verified, reviewed and stamped each Monday, what it delivers, and what it refuses to do on its own. |
 | [`howto/how-the-skill-works.md`](howto/how-the-skill-works.md) | Implementer's guide: how the skill works, how an agent uses it, and how the weekly Action keeps the knowledge base fresh (with architecture diagrams). |
 | [`docs/sql-migration-advisor-developer-pitch.md`](docs/sql-migration-advisor-developer-pitch.md) | Developer pitch: runtime architecture, the decision process, the CI and pull-request gates, and how the knowledge base stays current. |
@@ -392,7 +392,7 @@ Three views over the same policy, in one page:
 | --- | --- |
 | **Documented paths** | Every target and the methods that reach it, with how many scenarios exercise each |
 | **Rules** | The 28 addressable rules, the fields each one consumes, and what it decides |
-| **Tested coverage** | What the 110 golden scenarios actually reach |
+| **Tested coverage** | What the 112 golden scenarios actually reach |
 
 Select a node to isolate its relations. Enumerating the profiles literally is not an option — more
 than 13.9 billion combinations before the conditional fields, and free-text fields make the space
@@ -452,7 +452,7 @@ Mermaid decision diagrams. The `SKILL.md` mirrors its AI Migration Agent I/O con
 
 The same knowledge base ships as a polished, branded PDF —
 [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (25 pages,
-v2.8, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
+v2.9, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
 
@@ -528,7 +528,7 @@ base and this README on the same version. Last verified: August 2026.
 | v2.5.0 | 2026-08-12 | **Three internal contradictions, found by the weekly review and none of them caught by a gate.** The executable mirror marked the losing Kubernetes engine option `unsupported` on both branches, while `decision-rules.md` states that `excluded_by_preference` is not `unsupported` — the golden scenarios asserted only the *winning* option, so the contradiction was invisible. `BACKUP-BLOB-PATH` gated **Data Box**, the one transport that exists because the network path is blocked, so a blocked Blob path refused the method that survives it. The knowledge base carried a blanket *"> 1 TB use AzCopy"* rule contradicting its own version-specific table. Log shipping was documented `unavailable` for both restore modes, though `WITH STANDBY` leaves the secondary readable between restore jobs. Both Kubernetes scenarios now pin the losing option, and the sabotage test confirms the assertion fails when the old value returns. |
 | v2.4.2 | 2026-08-12 | **The one path that still served a wrong fact.** The on-demand knowledge-base fetch in `SKILL.md` was pinned to tag `v2.1.0` while the skill shipped v2.4, so a user who asked for the live document was handed the knowledge base from three releases back — including the SQL Server 2014 ESU date that v2.4 had just corrected. The bundled copy was right; the fetched one was not. The pin now follows the release, and `version-manifest-current` fails the build when it does not, or when the URL points at a mutable branch instead of a tag. Sabotage-tested in both directions. Found while assessing a third-party audit, which did not report it. |
 | v2.4 | 2026-08-12 | **A factual correction — the first knowledge-base fact to change since v1.18.** SQL Server 2014 was documented with ESUs *"until 8 July 2027"*; Microsoft Lifecycle records ESU Year 3 ending **13 July 2027**. Five days, on a date that drives stay-versus-migrate economics for exactly the estates this skill is pointed at. The 2014 and 2016 end-of-support dates also quoted the Patch Tuesday (9 July 2024, 14 July 2026) where Microsoft publishes the Extended End Date (10 July 2024, 15 July 2026) — both defensible alone, contradictory side by side. Lifecycle dates are now quoted as published, with a note explaining why the last covered update ships the day before. Found while verifying a third-party audit that had flagged the 2016 date; the 2014 error it missed was the one that mattered. Applying the convention then exposed the same off-by-one in three further rows, all quoting the Patch Tuesday: SQL Server 2017 (12 -> 13 Oct 2027), 2019 (8 -> 9 Jan 2030), 2022 (11 -> 12 Jan 2033), and SSRS 2022, which inherits the SQL Server 2022 lifecycle. Every row of the table is now verified against its Microsoft Lifecycle page, and the table links to those pages so a reader can check the dates without trusting us. |
-| v2.3 | 2026-08-11 | Four rules that were written, indexed and applied nowhere are now executed, and no knowledge-base fact changed. An [interactive rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) made them visible. `HYPERSCALE-CEILING` was the one that could mislead a customer: a database above the 128 TB ceiling was recommended onto Azure SQL Database at medium confidence. A refused gate now removes its method instead of being printed beside it. `SOURCE-PERMISSIONS` is consumed, so limited rights refuse MI Link and replication rather than changing nothing. `LRS-WINDOW` executes the 30-day maximum that existed only in the data file. The gates now run after the consistency pass, because running them before meant judging a method that pass then replaced — the third time that ordering has caught us, and the third time a gate caught it. The rule count, drifted to 26 in five documents since v2.1, is now checked by CI. 23 gates, 110 scenarios, 28 addressable rules. |
+| v2.3 | 2026-08-11 | Four rules that were written, indexed and applied nowhere are now executed, and no knowledge-base fact changed. An [interactive rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) made them visible. `HYPERSCALE-CEILING` was the one that could mislead a customer: a database above the 128 TB ceiling was recommended onto Azure SQL Database at medium confidence. A refused gate now removes its method instead of being printed beside it. `SOURCE-PERMISSIONS` is consumed, so limited rights refuse MI Link and replication rather than changing nothing. `LRS-WINDOW` executes the 30-day maximum that existed only in the data file. The gates now run after the consistency pass, because running them before meant judging a method that pass then replaced — the third time that ordering has caught us, and the third time a gate caught it. The rule count, drifted to 26 in five documents since v2.1, is now checked by CI. 23 gates, 112 scenarios, 28 addressable rules. |
 | v2.2 | 2026-08-11 | The skill is renamed **`recommend-migration-path`**, and no knowledge-base fact changed. `get-migration-assessment` is already taken by a skill in `microsoft/sql-migration-agent` that reads assessment results from Azure Resource Manager for Arc-enabled instances — the opposite situation to this one, which interviews a person when no assessment data exists yet. Anyone installing both plugins would have had two skills of the same name in `/skills` and no way to tell which one answered. The rename also turns a future contribution into a straight copy instead of a hand-applied rename on every refresh. The two are complementary, and the skill now routes to `get-migration-assessment` when an assessment already exists: measured evidence beats an interview every time. |
 | v2.1 | 2026-08-10 | Second audit response, and no knowledge-base fact changed. The audit scored v2.0 at 8/10 and named the gap it had left: the contracts were written, but nothing proved the *interview* obeys them. A real session answered in six option IDs the contract had never heard of and collected eight undeclared fields while every gate stayed green. The contract now covers 72 option IDs instead of 30, a gate checks the interview against it, and the network question became three because bandwidth, MI Link ports and Blob reachability gate different things. Two rules that existed only on paper are now implemented: [`BACKUP-BLOB-PATH`](reference/decision-rules.md) holds any backup-based method — Log Replay Service included, since it stages backups in Blob — at `unknown_requires_assessment` until the upload path is confirmed, and `CLR-PERMISSION` returns a shortlist rather than a confident recommendation when assemblies are `UNSAFE` or their permission set was never stated. `SAFE` is not a clearance: `clr strict security` treats it as UNSAFE without a signature. Size classes no longer overlap. Four invariants added, including one that forbids a method gate reporting `passed` on an unknown, and one that separates *excluded by preference* from *technically unsupported*. The live knowledge-base URL was returning 404. The skill now announces which versions it loaded and tells you when a newer release exists. 23 gates, 106 scenarios. |
 | v2.0 | 2026-08-10 | Second external audit response, and no knowledge-base fact changed. The charge this time was structural: the repository tested what was easy to test rather than what makes the decision. Two contracts now own what was implicit — [`input-contract.md`](reference/input-contract.md) holds the 30 option IDs, the 20 fields and the difference between *confirmed none* and *nobody checked*, [`output-contract.md`](reference/output-contract.md) holds the status vocabulary and 9 invariants. The skill re-reads its own draft against those invariants before showing it, and exposes a failure instead of repairing it silently. Phase B ranking becomes ten ordered steps, because an unweighted table let two readers reach two answers from one estate; ties return a shortlist. All 26 hard gates are addressable by ID, with the fields each consumes and its behaviour on an unknown. `high` and `validated`, announced as removed in v1.18, had survived in three documents and two scenarios — a gate now guards the vocabulary. The skill moved to `skills/get-migration-assessment/` and installs as a Copilot CLI plugin. 21 gates, 90 scenarios. |
