@@ -11,6 +11,7 @@ plus the machinery that keeps its content true:
 | Path | Role |
 | --- | --- |
 | `skills/recommend-migration-path/SKILL.md` | the skill the agent runs |
+| `skills/recommend-migration-path/schemas/` | the input and output contracts in machine-checkable form, shared with the prerequisite skill |
 | `reference/input-contract.md` | what the interview may produce: option IDs, canonical fields, and the three answer states |
 | `reference/output-contract.md` | what an answer must look like, and the invariants the skill checks against its own draft |
 | `reference/decision-rules.md` | the decision policy the skill applies, and the index of every addressable rule |

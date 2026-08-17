@@ -21,7 +21,10 @@ version-gated freshness automation.
 ## What it is
 
 The advisor is a self-contained skill at `skills/recommend-migration-path/SKILL.md`. It travels with
-reference documents that define the accepted inputs, the output shape and the rule set. Clone the whole
+reference documents that define the accepted inputs, the output shape and the rule set, and with
+`schemas/input.schema.json` and `schemas/output.schema.json`, which state the same two contracts in a
+form a machine can check — the recommendation object is consumed by a second skill, and a handoff
+described only in prose cannot fail a test. Clone the whole
 repository into a Copilot skills location; installing only `SKILL.md` breaks the relative links to
 `reference/input-contract.md`, `reference/decision-rules.md` and `reference/output-contract.md`. No
 fine-tuning or external service sits in the decision path. It is:

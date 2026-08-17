@@ -1049,8 +1049,11 @@ on the same checkout.
 sql-migration-advisor/
 │
 ├── skills/recommend-migration-path/
-│   └── SKILL.md
-│       └── Agent behaviour, interview, and the self-check before answering
+│   ├── SKILL.md
+│   │   └── Agent behaviour, interview, and the self-check before answering
+│   └── schemas/
+│       ├── input.schema.json    the normalized profile the skill evaluates
+│       └── output.schema.json   the recommendation the prerequisite skill consumes
 │
 ├── docs/
 │   ├── sql-server-to-azure-migration.md

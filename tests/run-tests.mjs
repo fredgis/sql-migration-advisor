@@ -812,7 +812,7 @@ try {
   const gateCount = new Set([...readText(path.join('tests', 'run-tests.mjs')).matchAll(/^\s*add\('([a-z0-9-]+)'/gmu)].map(m => m[1])).size;
   const scenarioCount = scenarios.length;
   const ruleCount = (rules.match(/^\| `[A-Z][A-Z0-9-]+` \|/gmu) || []).length;
-  const QUOTED = ['README.md', 'CONTRIBUTING.md', path.join('howto', 'how-the-skill-works.md'), path.join('blume', 'docs', 'index.mdx'), path.join('docs', 'sql-migration-advisor-developer-pitch.md'), path.join('tests', 'README.md')];
+  const QUOTED = ['README.md', 'CONTRIBUTING.md', path.join('howto', 'how-the-skill-works.md'), path.join('blume', 'docs', 'index.mdx'), path.join('docs', 'sql-migration-advisor-developer-pitch.md'), path.join('tests', 'README.md'), path.join('docs', 'ARCHITECTURE.md')];
   for (const doc of QUOTED) {
     const text = readText(doc);
     const check = (re, actual, what) => {
