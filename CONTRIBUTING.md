@@ -18,7 +18,7 @@ plus the machinery that keeps its content true:
 | `reference/decision-rules.data.json` | the same constants in machine-readable form |
 | `docs/sql-server-to-azure-migration.md` | the knowledge base the rules are distilled from |
 | `reference/claims-registry.json` | high-risk claims tracked by source content hash |
-| `tests/` | the executable mirror and 110 golden scenarios |
+| `tests/` | the executable mirror and 112 golden scenarios |
 
 ## Prerequisites
 
@@ -32,7 +32,7 @@ Chrome binary, but you only need those if you are changing `docs/` output or `to
 Run all four before opening a pull request. They are the same four CI runs.
 
 ```bash
-node tests/run-tests.mjs                        # 29 gates over 110 scenarios
+node tests/run-tests.mjs                        # 30 gates over 112 scenarios
 node tools/rules/check-rules-data.mjs --strict  # constants agree between JSON and markdown
 node tools/weekly-check/check-consistency.mjs   # versions and freshness stamps agree
 node tools/artifacts/check-artifacts.mjs        # derived artifacts are not stale

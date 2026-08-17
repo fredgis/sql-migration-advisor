@@ -335,7 +335,7 @@ knowledge-base PRs).
 ### Golden test suite
 
 <p align="center">
-  <img src="./quality-gate.svg" alt="Quality gate: decision-rules.data.json is the single source of constants; it feeds evaluate.mjs, which replays 110 golden scenarios into a blocking CI gate, while check-rules-data.mjs verifies the same 187 constants against the decision-rules markdown in strict mode." width="960">
+  <img src="./quality-gate.svg" alt="Quality gate: decision-rules.data.json is the single source of constants; it feeds evaluate.mjs, which replays 112 golden scenarios into a blocking CI gate, while check-rules-data.mjs verifies the same 187 constants against the decision-rules markdown in strict mode." width="960">
 </p>
 
 <sub>Runs on **every push and pull request** — separate from the weekly knowledge-base check (Mondays 05:00 UTC). Diagram source: [`quality-gate.architecture.json`](./quality-gate.architecture.json) · interactive: [`quality-gate.html`](./quality-gate.html).</sub>

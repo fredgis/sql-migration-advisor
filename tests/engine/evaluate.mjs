@@ -235,6 +235,11 @@ function applyFeatureEligibility(inputs, eligibility, out) {
     eligibility.sql_mi = E.UNSUPPORTED; eligibility.sql_db = E.UNSUPPORTED;
     out.exclusions.sql_mi = 'FILESTREAM/FileTable is a hard MI incompatibility.';
     out.exclusions.sql_db = 'FILESTREAM/FileTable is a hard SQL DB incompatibility.';
+    // The container was grouped with the VM and AVS as eligible, but it runs SQL Server on Linux,
+    // which has no FILESTREAM or FileTable at all. Offering it was offering a target that cannot
+    // host the dependency the profile is built around.
+    eligibility.container = E.UNSUPPORTED;
+    out.exclusions.container = 'SQL Server on Linux, which the container image runs, has no FILESTREAM/FileTable.';
   }
   if (dep(inputs, 'PolyBase/cloud files')) { eligibility.sql_mi = E.ELIGIBLE; }
   if (dep(inputs, 'PolyBase/external RDBMS')) {
@@ -286,12 +291,21 @@ function applyManagement(inputs, eligibility, out) {
     // other, and the choice is reversible. The lines above already draw this distinction for
     // sql_mi and sql_db; these two did not, so the engine contradicted the rule its own knowledge
     // base states -- "excluded_by_preference is not unsupported".
+    // A preference must never resurrect a target a hard dependency already ruled out. Choosing a
+    // DIY container is a choice between two Kubernetes engine models; it does not give SQL Server
+    // on Linux a FILESTREAM implementation. This branch used to overwrite the exclusion with
+    // ELIGIBLE, so a FILESTREAM profile was offered a container that cannot host it. The guard is
+    // named after the incompatibility rather than testing for UNSUPPORTED, because UNSUPPORTED is
+    // also the resting state of both Kubernetes targets for every profile that never asked for one.
+    const filestream = dep(inputs, 'FILESTREAM') || dep(inputs, 'FileTable');
     if (/managed engine|arc data controller/.test(k8s)) {
       eligibility.arc_sql_mi = E.ELIGIBLE;
-      eligibility.container = E.PREFERENCE;
-      out.exclusions.container = 'Excluded by the stated Kubernetes engine model: a managed engine through Arc data services was chosen over a self-run container. Not a technical limit of the target.';
+      if (!filestream) {
+        eligibility.container = E.PREFERENCE;
+        out.exclusions.container = 'Excluded by the stated Kubernetes engine model: a managed engine through Arc data services was chosen over a self-run container. Not a technical limit of the target.';
+      }
     } else if (/diy|full diy/.test(k8s)) {
-      eligibility.container = E.ELIGIBLE;
+      if (!filestream) eligibility.container = E.ELIGIBLE;
       eligibility.arc_sql_mi = E.PREFERENCE;
       out.exclusions.arc_sql_mi = 'Excluded by the stated Kubernetes engine model: a full DIY container was chosen over a managed engine. Arc-enabled SQL Managed Instance remains available if that preference changes.';
     } else setUnknown(eligibility, ['arc_sql_mi', 'container'], 'Kubernetes managed-vs-DIY engine model', out);
@@ -539,6 +553,26 @@ function applyBackupBlobPath(inputs, out) {
     return;
   }
   if (/blocked/i.test(blob)) {
+    // A target with its own file system does not need Blob at all. The knowledge base documents
+    // "backup to a file (.bak) + copy" as its own route into a SQL Server on Azure VM, so refusing
+    // the whole method eliminated a migration Microsoft documents, on a criterion that does not
+    // apply to it: a profile that requires a VM lost its recommendation and collapsed to a
+    // shortlist. The rule text said "every variant moves through HTTPS to Azure Blob", which is
+    // true for Managed Instance -- it restores only FROM URL -- and false for a VM, AVS or a
+    // container.
+    //
+    // The escape is narrow on purpose. It fires only when the profile actually wants a target with
+    // a file system: offering a VM to someone who asked for managed PaaS would answer a question
+    // they did not ask. And it does not report `passed`, because the file-transfer route is no more
+    // verified than the Blob one was -- it moves the evidence, it does not remove it.
+    const wantsFileSystem = !/managed[_ ]?paas/i.test(String(inputs.management_model ?? ''));
+    const fileSystemTarget = /azure vm|vmware|avs|container/i.test(String(out.primaryTarget ?? ''));
+    if (wantsFileSystem && fileSystemTarget) {
+      out.methodGateStatus = 'unknown_requires_assessment';
+      addUnique(out.unknowns, 'BACKUP-BLOB-PATH: HTTPS to Azure Blob is blocked, so the Blob-staged variant is out. This target has a file system, so a local backup copied into it remains available once the transfer route is proven.');
+      addUnique(out.evidenceRequired, 'Prove a file-transfer route into the target and measure it end to end for the largest database, then rehearse a restore from the copied file.');
+      return;
+    }
     addUnique(out.hardBlockers, 'BACKUP-BLOB-PATH: HTTPS to Azure Blob is blocked, so this backup-based path cannot carry the data. Open the path, or select a method that does not traverse Blob: Data Box, detach/attach or a file-level copy into a target that has a file system.');
     out.methodGateStatus = 'refused';
   } else {

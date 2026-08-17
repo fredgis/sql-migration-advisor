@@ -947,6 +947,110 @@ try {
 }
 
 {
+  // Agreement, not merely resolution. `rule-index-consistent` proves every index entry points at a
+  // section that mentions the rule; it never compares what the two say. W2-6 was that gap for the
+  // pointer, and this is the same gap for the content: three documents declare what happens when an
+  // input is unknown -- the rule index, the section that defines the rule, and the `When UNKNOWN`
+  // column of the input contract -- and nothing checked they agree.
+  //
+  // The distinction that matters is refusal versus unknown. Refusing a method because nobody checked
+  // a prerequisite reads like an incompatibility while being an information gap, which is the same
+  // error the output contract forbids between `unsupported` and `excluded_by_preference`: it makes a
+  // revisitable decision look final. So the check is narrow and one-directional. A cell that declares
+  // refusal on unknown, while another document declares `unknown_requires_assessment` for that same
+  // rule, is a disagreement worth failing the build over.
+  const inputContract = readText(path.join('reference', 'input-contract.md'));
+  const index = (rules.match(/## Rule index[\s\S]*$/u) || [''])[0];
+  const failures = [];
+
+  const heads = [...rules.matchAll(/^(#{3,4}) ([A-D][0-9])\. [^\n]*$/gmu)].map(m => ({ lvl: m[1].length, id: m[2], i: m.index }));
+  const sectionBody = sec => {
+    const h = heads.find(x => x.id === sec);
+    if (!h) return null;
+    const n = rules.slice(h.i + 3).search(new RegExp(`\\n#{2,${h.lvl}} `, 'u'));
+    return n < 0 ? rules.slice(h.i) : rules.slice(h.i, h.i + 3 + n);
+  };
+
+  const UNKNOWN_TOKEN = 'unknown_requires_assessment';
+  // Refusal words only count when the same text does not also offer the unknown state: a cell that
+  // says "cannot report passed; unknown_requires_assessment" is not refusing, it is deferring.
+  //
+  // And a negated mention is the opposite of a refusal. The first draft of this gate read "do not
+  // eliminate Fabric solely because assistant limits do not fit" as a refusal and reported a
+  // contradiction that was not there -- the same substring mistake that once made "no private link
+  // required" fire the Private Link blocker, made here by the check written to catch that class.
+  const NEGATOR = /\b(not|never|rather than|nor|without|no)\b[^.;]{0,24}$/iu;
+  const declaresRefusal = (text) => {
+    if (text.includes(UNKNOWN_TOKEN)) return false;
+    for (const m of text.matchAll(/\b(refus\w*|eliminat\w*)\b/giu)) {
+      if (!NEGATOR.test(text.slice(Math.max(0, m.index - 40), m.index))) return true;
+    }
+    return false;
+  };
+  const offersUnknownState = text => text.includes(UNKNOWN_TOKEN);
+
+  // The `When UNKNOWN` cell of the input contract, per field. Both section 4 tables put it last.
+  const section4 = inputContract.slice(
+    inputContract.indexOf('## 4. Canonical fields'),
+    inputContract.indexOf('## 5. Feature dependencies'));
+  const whenUnknown = new Map();
+  for (const row of section4.matchAll(/^\|\s*`([a-z_]+)`\s*\|([^|]*\|){3}([^|]*)\|/gmu)) {
+    whenUnknown.set(row[1], row[3].trim());
+  }
+
+  const rows = [...index.matchAll(/^\| `([A-Z][A-Z0-9-]+)` \| ([^|]+) \| ([^|]+) \| ([^|]+) \| ([^|]+) \|/gmu)];
+  for (const [, id, , consumes, unknown, defined] of rows) {
+    const indexCell = unknown.trim();
+    const indexRefuses = declaresRefusal(indexCell);
+
+    // 1. Index against the section that defines the rule. Read only the lines of that section which
+    // name the rule, so a neighbouring rule's wording cannot answer for this one.
+    for (const sec of [...defined.matchAll(/\b([A-D][0-9])\b/gu)].map(m => m[1])) {
+      const body = sectionBody(sec);
+      if (!body) continue;
+      const mentions = body.split('\n').filter(line => line.includes(id)).join('\n');
+      if (!mentions) continue;
+      if (indexRefuses && offersUnknownState(mentions)) {
+        failures.push(`${id}: the index says "${indexCell}" but section ${sec} offers ${UNKNOWN_TOKEN}`);
+      }
+      if (!indexRefuses && offersUnknownState(indexCell) && declaresRefusal(mentions)) {
+        failures.push(`${id}: the index offers ${UNKNOWN_TOKEN} but section ${sec} declares refusal`);
+      }
+    }
+
+    // 2. Index against the input contract, for every field the rule consumes. This is the document
+    // the first check cannot see, and it is where the MI Link host policy hid for four releases.
+    for (const field of [...consumes.matchAll(/`([a-z_][a-z0-9_]*)`/g)].map(m => m[1])) {
+      const cell = whenUnknown.get(field);
+      if (!cell) continue;
+      if (declaresRefusal(cell) && offersUnknownState(indexCell)) {
+        failures.push(`${id} consumes \`${field}\`, whose input-contract unknown behaviour declares refusal while the rule offers ${UNKNOWN_TOKEN}`);
+      }
+    }
+  }
+
+  // 3. And the two prose documents against each other, independently of the index, so a field can
+  // never be refused in one and deferred in the other.
+  for (const [field, cell] of whenUnknown) {
+    if (!declaresRefusal(cell)) continue;
+    const owning = rows.filter(r => r[3].includes(`\`${field}\``));
+    for (const [, id, , , , defined] of owning) {
+      for (const sec of [...defined.matchAll(/\b([A-D][0-9])\b/gu)].map(m => m[1])) {
+        const body = sectionBody(sec);
+        if (!body) continue;
+        const mentions = body.split('\n').filter(line => line.includes(id)).join('\n');
+        if (offersUnknownState(mentions)) {
+          failures.push(`\`${field}\`: the input contract refuses on unknown, but section ${sec} offers ${UNKNOWN_TOKEN} for ${id}`);
+        }
+      }
+    }
+  }
+
+  add('rule-unknown-behaviour-agrees', failures.length === 0,
+    failures.length ? [...new Set(failures)] : [`${rows.length} rules declare one unknown behaviour across the index, the section that defines them, and the input contract.`]);
+}
+
+{
   // The rule index is only useful if every entry consumes fields that exist, and if no gate
   // silently treats an unknown as a pass. An index nobody checks is decoration.
   const inputContract = readText(path.join('reference', 'input-contract.md'));

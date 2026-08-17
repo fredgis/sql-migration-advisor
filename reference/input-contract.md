@@ -185,8 +185,8 @@ Three questions ask whether something exists before asking what it is, so that *
 | Field | Type | Required when | Consumed by | When `UNKNOWN` |
 |---|---|---|---|---|
 | `kubernetes_model` | ID | `management_model = KUBERNETES` | Arc-enabled SQL MI vs container | Both held at `unknown_requires_assessment` |
-| `source_os` | ID | MI Link is a candidate | MI Link host gate: Windows Server 2012+, Linux from SQL Server 2017 | **MI Link refused.** Fail-closed: an unverified prerequisite is not a satisfied prerequisite |
-| `source_edition` | ID | MI Link is a candidate | MI Link edition gate: Enterprise, Standard, Developer | **MI Link refused** |
+| `source_os` | ID | MI Link is a candidate | MI Link host gate: Windows Server 2012+, Linux from SQL Server 2017 | MI Link becomes `unknown_requires_assessment`, and the host appears in `evidenceRequired`. A host nobody checked is not a host known to be unsupported: refusing on absence of evidence makes an information gap look like an incompatibility |
+| `source_edition` | ID | MI Link is a candidate | MI Link edition gate: Enterprise, Standard, Developer | MI Link becomes `unknown_requires_assessment`. A **known** Express or Web edition eliminates MI Link only, never the MI target |
 | `clr_permission_set` | ID | SQL CLR is listed, or unknown, while a PaaS target survives | `CLR-PERMISSION` | SQL MI and SQL DB held at `unknown_requires_assessment` |
 | `tde_status` | ID | A backup-based method is a candidate | Certificate migration before restore | Held at `unknown_requires_assessment`; never assumed absent |
 | `source_permissions` | ID | An orchestrated method or SSMS 22 is recommended | Tooling prerequisites, AG endpoints | Stated as required evidence, never assumed present |
