@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/fredgis/sql-migration-advisor/skills/recommend-migration-path/schemas/input.schema.json",
+  "title": "Normalized migration profile",
+  "description": "The profile recommend-migration-path evaluates, after the interview has converted labels and prose into canonical IDs. reference/input-contract.md remains the prose authority; this file is the machine-checkable form of its section 4 canonical fields. It types the shape, not the full option vocabulary: the option IDs are already guarded by the interview-conforms-to-contract gate, and restating several hundred of them here would create a second copy to drift. Written in the JSON Schema subset implemented by tests/validate-scenarios.mjs.",
+  "type": "object",
+  "required": ["intent", "source_location", "source_version", "management_model", "feature_dependencies", "downtime"],
+  "additionalProperties": false,
+
+  "properties": {
+    "scope": {
+      "enum": ["SINGLE_DB", "FEW_DATABASES", "LARGE_ESTATE", "UNKNOWN"],
+      "description": "Drives the estate-discovery branch. When UNKNOWN the profile is treated as a single one and the estate branch does not fire."
+    },
+    "source_location": { "$ref": "#/$defs/answer" },
+    "source_version": { "$ref": "#/$defs/answer" },
+    "intent": { "$ref": "#/$defs/answer" },
+    "driver": { "$ref": "#/$defs/answer" },
+    "management_model": { "$ref": "#/$defs/answer" },
+    "kubernetes_model": { "$ref": "#/$defs/answer" },
+    "source_os": { "$ref": "#/$defs/answer" },
+    "source_edition": { "$ref": "#/$defs/answer" },
+    "clr_permission_set": { "$ref": "#/$defs/answer" },
+    "tde_status": { "$ref": "#/$defs/answer" },
+    "source_permissions": { "$ref": "#/$defs/answer" },
+    "authentication": { "$ref": "#/$defs/answer" },
+
+    "feature_dependencies": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "A list, not prose, so a rule can read a subtype such as PolyBase to an external RDBMS directly. An empty list is not the same as NONE_CONFIRMED: use the marker to record that the user checked."
+    },
+
+    "size": {
+      "enum": ["UNDER_150_GB", "FROM_150_GB_TO_4_TB", "FROM_4_TB_TO_128_TB", "OVER_128_TB", "UNKNOWN"],
+      "description": "Feeds the Hyperscale ceiling, the seeding strategy and tier selection. UNKNOWN holds the tier at unknown_requires_assessment rather than defaulting it."
+    },
+    "downtime": {
+      "enum": ["NEAR_ZERO", "MINIMAL", "OFFLINE", "UNKNOWN"],
+      "description": "The tolerance the business stated. Never inferred backwards from the method that was chosen."
+    },
+    "compliance": {
+      "enum": ["STANDARD_COMMERCIAL", "EU_DATA_BOUNDARY", "GOVERNMENT_SOVEREIGN", "EDGE_AIR_GAPPED", "UNKNOWN"],
+      "description": "Regional and sovereignty constraints. When UNKNOWN, sovereignty-restricted targets are not ranked first."
+    },
+
+    "network_bandwidth": { "$ref": "#/$defs/answer" },
+    "mi_link_ports": { "$ref": "#/$defs/answer" },
+    "blob_https_reachability": {
+      "$ref": "#/$defs/answer",
+      "description": "Gates every backup-based or BACPAC path to Azure Blob through BACKUP-BLOB-PATH. When this is unknown the method gate cannot report passed; it becomes unknown_requires_assessment."
+    },
+    "network_ports": {
+      "$ref": "#/$defs/answer",
+      "description": "Legacy, superseded by network_bandwidth, mi_link_ports and blob_https_reachability. The mirror reads it as their union so scenarios written before the split still run. Not to be collected by a new interview."
+    },
+
+    "rpo": { "$ref": "#/$defs/freeText" },
+    "rto": { "$ref": "#/$defs/freeText" },
+    "target_region": { "$ref": "#/$defs/freeText" },
+    "performance": {
+      "type": ["string", "null"],
+      "description": "null means the question was asked and left unanswered, which is not the same as absent. When unresolved the tier becomes unknown_requires_assessment rather than defaulting to General Purpose."
+    },
+    "tenant_count": { "$ref": "#/$defs/freeText" },
+    "fabric_constraints": { "$ref": "#/$defs/freeText" },
+
+    "database_count": {
+      "type": "integer",
+      "description": "Read against MI Link capacity: 100 links on General Purpose and Business Critical, 500 on Next-gen General Purpose."
+    },
+    "migration_batch_size": {
+      "type": "integer",
+      "description": "Only evaluated when the Arc portal migration is used."
+    },
+    "arc_extension_version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Never treated as recent when absent. The Arc wizard batch limit is 10 per batch from 1.1.3348.364 and 1 otherwise, so an unknown version yields unknown_requires_assessment."
+    },
+
+    "evidence": { "$ref": "#/$defs/evidence" }
+  },
+
+  "$defs": {
+    "answer": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
+    },
+
+    "freeText": {
+      "type": "string",
+      "description": "Recorded as written, never converted into a gate result. Free prose is context, not evidence."
+    },
+
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dependenciesToolConfirmed": { "type": "boolean" },
+        "performanceMeasured": { "type": "boolean" },
+        "regionAvailabilityConfirmed": { "type": "boolean" },
+        "architectSignedOff": { "type": "boolean" }
+      },
+      "description": "Four self-reported booleans. They are recorded as claims to verify elsewhere and have no effect on the recommendation, because this skill reads no artefact. They once promoted a recommendation to validated and high, which turned an unverified statement into an assurance; that path no longer exists."
+    }
+  }
+}

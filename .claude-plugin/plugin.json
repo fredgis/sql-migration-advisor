@@ -1,7 +1,7 @@
 {
   "name": "sql-migration-advisor",
   "description": "Interview-driven SQL Server to Azure migration assessment, grounded in a source-backed knowledge base and a versioned rule set.",
-  "version": "2.8.1",
+  "version": "2.8.2",
   "author": {
     "name": "fredgis"
   },

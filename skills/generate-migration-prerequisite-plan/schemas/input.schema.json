@@ -10,7 +10,7 @@
     "mode": { "enum": ["advisor_handoff", "standalone"] },
     "requestedOutput": { "enum": ["markdown", "json", "both"] },
     "language": { "type": "string", "minLength": 2 },
-    "advisorOutput": { "type": ["object", "null"] },
+    "advisorOutput": { "$ref": "#/$defs/advisorOutput" },
     "standaloneSelection": {
       "type": ["object", "null"],
       "required": ["target", "method"],
@@ -107,5 +107,119 @@
         "properties": { "standaloneSelection": { "type": "object" } }
       }
     }
-  ]
+  ],
+
+  "$defs": {
+    "advisorOutput": {
+      "type": ["object", "null"],
+      "description": "The recommendation handed over by recommend-migration-path. It was previously typed as a bare object, which accepted anything: the contract between the two skills existed only in prose, so a producer change could not break a consumer test. Two shapes are documented and both are accepted here, because the Advisor renders one and the regression mirror emits the other. Whichever arrives, its vocabulary is checked against the same enums the Advisor's own schemas/output.schema.json declares, and the advisor-handoff-vocabulary gate fails the build if the two drift apart. Advisor fields remain context, not proof: no self-reported flag here can confirm an evidence-gated prerequisite.",
+      "anyOf": [
+        { "$ref": "#/$defs/advisorPublicOutput" },
+        { "$ref": "#/$defs/advisorMirrorOutput" }
+      ]
+    },
+
+    "advisorPublicOutput": {
+      "type": "object",
+      "required": ["metadata", "recommendation"],
+      "description": "The public contract shape of reference/output-contract.md section 2, as rendered for a reader and produced on request as JSON.",
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "required": ["recommendationStatus", "confidence"],
+          "properties": {
+            "knowledgeBaseVersion": { "type": "string", "minLength": 1 },
+            "decisionRulesVersion": { "type": "string", "minLength": 1 },
+            "sourceCommit": { "type": "string", "minLength": 1 },
+            "evaluatedAt": { "type": "string", "minLength": 1 },
+            "recommendationStatus": { "$ref": "#/$defs/advisorRecommendationStatus" },
+            "confidence": { "$ref": "#/$defs/advisorConfidence" }
+          }
+        },
+        "normalizedProfile": { "type": "object" },
+        "eligibilityTrace": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "target": { "$ref": "#/$defs/advisorTargetFamily" },
+              "status": { "$ref": "#/$defs/advisorEligibilityStatus" },
+              "ruleId": { "type": "string", "minLength": 1 },
+              "reason": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "recommendation": {
+          "type": "object",
+          "required": ["target", "method"],
+          "properties": {
+            "target": { "type": "string", "minLength": 1 },
+            "tier": { "type": "string", "minLength": 1 },
+            "method": { "type": "string", "minLength": 1 },
+            "targetAvailabilityDuringSync": { "$ref": "#/$defs/advisorTargetAvailability" },
+            "businessCutoverDowntime": { "$ref": "#/$defs/advisorCutoverDowntime" }
+          }
+        },
+        "alternative": { "type": "object" },
+        "methodGateTrace": {
+          "type": "object",
+          "properties": {
+            "method": { "type": "string", "minLength": 1 },
+            "result": { "$ref": "#/$defs/advisorMethodGateStatus" },
+            "unverified": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+          }
+        },
+        "blockers": { "$ref": "#/$defs/advisorStatements" },
+        "unknowns": { "$ref": "#/$defs/advisorStatements" },
+        "assumptions": { "$ref": "#/$defs/advisorStatements" },
+        "evidenceRequired": { "$ref": "#/$defs/advisorStatements" },
+        "nextActions": { "$ref": "#/$defs/advisorStatements" },
+        "evidenceLinks": { "$ref": "#/$defs/advisorStatements" },
+        "largestRisk": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "advisorMirrorOutput": {
+      "type": "object",
+      "required": ["primary_target", "method", "recommendationStatus", "confidence"],
+      "description": "The flattened shape emitted by the Advisor's regression mirror and used by its golden scenarios. It carries the same decisions under different key names, so a plan can be built from a replayed scenario as well as from a live session.",
+      "properties": {
+        "eligibility": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/advisorTargetFamily" },
+          "additionalProperties": { "$ref": "#/$defs/advisorEligibilityStatus" }
+        },
+        "primary_target": { "type": "string", "minLength": 1 },
+        "method": { "type": "string", "minLength": 1 },
+        "tier": { "type": "string", "minLength": 1 },
+        "targetAvailabilityDuringSync": { "$ref": "#/$defs/advisorTargetAvailability" },
+        "businessCutoverDowntime": { "$ref": "#/$defs/advisorCutoverDowntime" },
+        "methodGateStatus": { "$ref": "#/$defs/advisorMethodGateStatus" },
+        "recommendationStatus": { "$ref": "#/$defs/advisorRecommendationStatus" },
+        "confidence": { "$ref": "#/$defs/advisorConfidence" }
+      }
+    },
+
+    "advisorRecommendationStatus": { "enum": ["provisional"] },
+    "advisorConfidence": { "enum": ["medium", "low"] },
+    "advisorEligibilityStatus": {
+      "enum": ["eligible", "eligible_with_remediation", "unsupported", "excluded_by_preference", "unknown_requires_assessment"]
+    },
+    "advisorTargetFamily": {
+      "enum": ["sql_vm", "avs", "sql_mi", "sql_db", "fabric_sql_db", "arc_sql_mi", "container", "arc_in_place"]
+    },
+    "advisorTargetAvailability": {
+      "enum": ["read-write", "read-only", "unavailable", "not-present", "unknown_requires_assessment"]
+    },
+    "advisorCutoverDowntime": {
+      "enum": ["<1min", "near-zero", "minutes", "minimal", "hours", "full-restore-time", "full-load-time", "total-migration-time", "unknown_requires_assessment"]
+    },
+    "advisorMethodGateStatus": {
+      "enum": ["passed", "unknown_requires_assessment", "refused"]
+    },
+    "advisorStatements": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
 }

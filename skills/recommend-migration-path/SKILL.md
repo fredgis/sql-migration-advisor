@@ -200,7 +200,7 @@ This skill signs in to nothing and holds no credential. It reads the files shipp
 
 **Fetch the live document only when the user asks for it.** Say that it is being fetched, and read only:
 
-- `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/v2.8.1/docs/sql-server-to-azure-migration.md`
+- `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/v2.8.2/docs/sql-server-to-azure-migration.md`
 
 That URL is pinned to a release tag, not to `main`. A mutable branch means the facts can change under the reader between two sessions with no version to cite. Never substitute a different URL, and never rewrite the path: the raw host serves `…/<tag>/<path>`, and inserting `blob` returns 404. If the tagged document is unreachable, fall back to the bundled copy and say the fallback is what answered.
 
@@ -300,6 +300,8 @@ The recommended target and method must agree with the eligibility table produced
 ## Output Presentation
 
 **[`../../reference/output-contract.md`](../../reference/output-contract.md) is authoritative** for the fields, the status vocabulary and the self-check invariants. What follows is the rendering.
+
+When JSON is requested, it conforms to [`schemas/output.schema.json`](schemas/output.schema.json), which is the machine-checkable form of that contract. The normalized profile it carries conforms to [`schemas/input.schema.json`](schemas/input.schema.json). Both exist because `generate-migration-prerequisite-plan` consumes this object: a handoff described only in prose cannot fail a test, so a change here that the consumer does not expect would surface as a wrong plan rather than a red build. The `advisor-handoff-vocabulary` gate holds the two ends to one vocabulary.
 
 Render readable Markdown, not a code block.
 

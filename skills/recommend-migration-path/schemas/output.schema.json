@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/fredgis/sql-migration-advisor/skills/recommend-migration-path/schemas/output.schema.json",
+  "title": "Migration path recommendation",
+  "description": "The object recommend-migration-path produces and generate-migration-prerequisite-plan consumes. reference/output-contract.md remains the prose authority; this file is the machine-checkable form of its section 2 structure and its section 1 vocabularies, so that a contract change which is not mirrored here fails the build instead of surfacing as a handoff that silently accepts the wrong shape. Written in the JSON Schema subset implemented by tests/validate-scenarios.mjs, so the repository can validate against it without a dependency.",
+  "type": "object",
+  "required": ["metadata", "normalizedProfile", "eligibilityTrace", "recommendation"],
+  "additionalProperties": false,
+
+  "properties": {
+    "metadata": { "$ref": "#/$defs/metadata" },
+
+    "normalizedProfile": {
+      "type": "object",
+      "description": "What the skill believes it was told, after labels and prose were converted to canonical IDs. Invariant 13: it is always present, so a misreading is visible rather than buried. Its fields are typed by input.schema.json."
+    },
+
+    "eligibilityTrace": {
+      "type": "array",
+      "minItems": 8,
+      "items": { "$ref": "#/$defs/eligibilityEntry" },
+      "description": "Invariant 11: every one of the eight target families appears, including the ones that lost. A family that silently disappears cannot be argued with, which is why the floor is 8 rather than 1."
+    },
+
+    "recommendation": { "$ref": "#/$defs/recommendation" },
+    "alternative": { "$ref": "#/$defs/alternative" },
+    "methodGateTrace": { "$ref": "#/$defs/methodGateTrace" },
+
+    "blockers": { "$ref": "#/$defs/statements" },
+    "unknowns": { "$ref": "#/$defs/statements" },
+    "assumptions": { "$ref": "#/$defs/statements" },
+    "evidenceRequired": { "$ref": "#/$defs/statements" },
+    "nextActions": { "$ref": "#/$defs/statements" },
+    "evidenceLinks": { "$ref": "#/$defs/statements" },
+
+    "largestRisk": {
+      "type": "string",
+      "minLength": 1,
+      "description": "One sentence. A risk register with no single largest entry does not help a reader decide what to look at first."
+    }
+  },
+
+  "$defs": {
+    "version": {
+      "type": "string",
+      "pattern": "^v[0-9]+\\.[0-9]+(\\.[0-9]+)?$",
+      "description": "The coordinated version line, for example v2.8. A recommendation that cannot say which facts produced it cannot be reproduced or challenged."
+    },
+
+    "recommendationStatus": {
+      "enum": ["provisional"],
+      "description": "The only value this skill can produce. It reads no assessment artefact, so it cannot certify one. Kept as a single-value enum rather than a constant string so that adding a second status is a deliberate edit to this contract."
+    },
+
+    "confidence": {
+      "enum": ["medium", "low"],
+      "description": "medium is the ceiling: triage complete and internally consistent. low means a decision-driving unknown remains, or two answers conflict. high does not exist here for the same reason validated does not."
+    },
+
+    "eligibilityStatus": {
+      "enum": ["eligible", "eligible_with_remediation", "unsupported", "excluded_by_preference", "unknown_requires_assessment"],
+      "description": "unsupported and excluded_by_preference are not interchangeable. unsupported marks a technical incompatibility; excluded_by_preference marks an answer the user gave. A preference can be revisited, an incompatibility cannot, and conflating them makes a reversible decision look final."
+    },
+
+    "targetFamily": {
+      "enum": ["sql_vm", "avs", "sql_mi", "sql_db", "fabric_sql_db", "arc_sql_mi", "container", "arc_in_place"],
+      "description": "The eight families of the Phase A trace, in the ids used by the regression mirror."
+    },
+
+    "targetAvailabilityDuringSync": {
+      "enum": ["read-write", "read-only", "unavailable", "not-present", "unknown_requires_assessment"],
+      "description": "What the target can serve while the migration synchronises. not-present is not the same as unavailable: one target does not exist yet, the other exists and refuses connections."
+    },
+
+    "businessCutoverDowntime": {
+      "enum": ["<1min", "near-zero", "minutes", "minimal", "hours", "full-restore-time", "full-load-time", "total-migration-time", "unknown_requires_assessment"],
+      "description": "Never inferred from the chosen method. When the downtime tolerance is unknown, this is unknown_requires_assessment rather than the class the method usually achieves."
+    },
+
+    "methodGateStatus": {
+      "enum": ["passed", "unknown_requires_assessment", "refused"],
+      "description": "Three states, not two. With only passed and refused, an unverified prerequisite has nowhere to go and gets reported as passed, which is what happened to a real session whose Blob upload path nobody had tested. Invariant 10: a gate may not report passed while any field it consumes is unknown."
+    },
+
+    "ruleId": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9-]+$",
+      "description": "The rule that decided this line, as it appears in reference/decision-rules.md. One short token, enough for a reader to look it up and challenge it."
+    },
+
+    "statements": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "A list of readable statements. Empty is meaningful and allowed; an entry that is an empty string is not."
+    },
+
+    "metadata": {
+      "type": "object",
+      "required": ["knowledgeBaseVersion", "decisionRulesVersion", "evaluatedAt", "recommendationStatus", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "knowledgeBaseVersion": { "$ref": "#/$defs/version" },
+        "decisionRulesVersion": { "$ref": "#/$defs/version" },
+        "sourceCommit": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional, because it is only known when the caller can see it. Recorded when available so a recommendation can be reproduced against an exact tree."
+        },
+        "evaluatedAt": {
+          "type": "string",
+          "minLength": 1,
+          "description": "When the recommendation was produced. Facts move; a card with no date cannot be aged."
+        },
+        "recommendationStatus": { "$ref": "#/$defs/recommendationStatus" },
+        "confidence": { "$ref": "#/$defs/confidence" }
+      }
+    },
+
+    "eligibilityEntry": {
+      "type": "object",
+      "required": ["target", "status", "ruleId", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "target": { "$ref": "#/$defs/targetFamily" },
+        "status": { "$ref": "#/$defs/eligibilityStatus" },
+        "ruleId": { "$ref": "#/$defs/ruleId" },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "One line. A status with no reason is an assertion, not a trace."
+        }
+      }
+    },
+
+    "recommendation": {
+      "type": "object",
+      "required": ["target", "method", "targetAvailabilityDuringSync", "businessCutoverDowntime"],
+      "additionalProperties": false,
+      "properties": {
+        "target": { "type": "string", "minLength": 1 },
+        "tier": { "type": "string", "minLength": 1 },
+        "method": { "type": "string", "minLength": 1 },
+        "targetAvailabilityDuringSync": { "$ref": "#/$defs/targetAvailabilityDuringSync" },
+        "businessCutoverDowntime": { "$ref": "#/$defs/businessCutoverDowntime" }
+      },
+      "description": "Invariants 1 and 6: the target named here is eligible or eligible_with_remediation in the trace above, never one marked unsupported. That cross-reference is checked by the skill's self-check, not by this schema."
+    },
+
+    "alternative": {
+      "type": "object",
+      "required": ["target", "method", "condition"],
+      "additionalProperties": false,
+      "properties": {
+        "target": { "type": "string", "minLength": 1 },
+        "method": { "type": "string", "minLength": 1 },
+        "condition": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The condition under which the alternative wins. An alternative with no condition is a second opinion, not a decision aid."
+        }
+      }
+    },
+
+    "methodGateTrace": {
+      "type": "object",
+      "required": ["method", "result"],
+      "additionalProperties": false,
+      "properties": {
+        "method": { "type": "string", "minLength": 1 },
+        "result": { "$ref": "#/$defs/methodGateStatus" },
+        "unverified": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "What is not verified when the result is unknown_requires_assessment. Naming it is the difference between a gate a reader can close and one they can only worry about."
+        }
+      }
+    }
+  }
+}
