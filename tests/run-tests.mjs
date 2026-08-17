@@ -217,6 +217,109 @@ try {
 }
 
 {
+  // The handoff between the two skills existed only in prose. recommend-migration-path declared no
+  // schema at all -- its contracts are Markdown -- and the consumer typed advisorOutput as a bare
+  // object, so any shape passed and a producer change could not break a consumer test. These checks
+  // give both ends one vocabulary and fail the build when they drift apart.
+  const failures = [];
+  const schemaPaths = {
+    advisorOut: path.join('skills', 'recommend-migration-path', 'schemas', 'output.schema.json'),
+    advisorIn: path.join('skills', 'recommend-migration-path', 'schemas', 'input.schema.json'),
+    prereqIn: path.join('skills', 'generate-migration-prerequisite-plan', 'schemas', 'input.schema.json'),
+    golden: path.join('tests', 'golden-scenarios.schema.json'),
+  };
+  const loaded = {};
+  for (const [key, file] of Object.entries(schemaPaths)) {
+    try { loaded[key] = JSON.parse(readText(file)); }
+    catch (err) { failures.push(`${file}: ${err.message || err}`); }
+  }
+
+  const { advisorOut, advisorIn, prereqIn, golden } = loaded;
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+  if (advisorIn && advisorOut && prereqIn && golden) {
+    // 1. The Advisor's input schema names exactly the canonical fields of the contract. A schema
+    // that invents a field, or misses one, describes a profile the interview never produces.
+    const contract = readText(path.join('reference', 'input-contract.md'));
+    const section4 = contract.slice(
+      contract.indexOf('## 4. Canonical fields'),
+      contract.indexOf('## 5. Feature dependencies'));
+    const contractFields = [...section4.matchAll(/^\|\s*`([a-z_]+)`\s*\|/gmu)].map(m => m[1]).sort();
+    const schemaFields = Object.keys(advisorIn.properties || {}).sort();
+    if (!same(contractFields, schemaFields)) {
+      const missing = contractFields.filter(f => !schemaFields.includes(f));
+      const extra = schemaFields.filter(f => !contractFields.includes(f));
+      if (missing.length) failures.push(`input schema is missing canonical field(s): ${missing.join(', ')}`);
+      if (extra.length) failures.push(`input schema declares field(s) absent from the contract: ${extra.join(', ')}`);
+    }
+
+    // 2. The Advisor's output vocabulary is the one the regression mirror already enforces. Two
+    // copies of a vocabulary drift; this is the check that stops them.
+    const expect = golden.$defs?.expect?.properties || {};
+    const pairs = [
+      ['eligibilityStatus', advisorOut.$defs?.eligibilityStatus?.enum, golden.$defs?.eligibilityStatus?.enum],
+      ['targetAvailabilityDuringSync', advisorOut.$defs?.targetAvailabilityDuringSync?.enum, expect.targetAvailabilityDuringSync?.enum],
+      ['businessCutoverDowntime', advisorOut.$defs?.businessCutoverDowntime?.enum, expect.businessCutoverDowntime?.enum],
+      ['methodGateStatus', advisorOut.$defs?.methodGateStatus?.enum, expect.methodGateStatus?.enum],
+      ['recommendationStatus', advisorOut.$defs?.recommendationStatus?.enum, expect.recommendationStatus?.enum],
+      ['confidence', advisorOut.$defs?.confidence?.enum, expect.confidence?.enum],
+    ];
+    for (const [name, mine, theirs] of pairs) {
+      if (!mine || !theirs) failures.push(`${name}: vocabulary missing from one of the two schemas`);
+      else if (!same([...mine].sort(), [...theirs].sort())) {
+        failures.push(`${name}: output schema has ${JSON.stringify(mine)}, the mirror has ${JSON.stringify(theirs)}`);
+      }
+    }
+    const mirrorFamilies = Object.keys(expect.eligibility?.properties || {}).sort();
+    const schemaFamilies = [...(advisorOut.$defs?.targetFamily?.enum || [])].sort();
+    if (!same(mirrorFamilies, schemaFamilies)) {
+      failures.push(`target families: output schema has ${JSON.stringify(schemaFamilies)}, the mirror has ${JSON.stringify(mirrorFamilies)}`);
+    }
+
+    // 3. Invariant 11 is structural, not advisory: a trace that can drop a family is a trace a
+    // reader cannot argue with, so the schema refuses fewer than eight entries.
+    if (advisorOut.properties?.eligibilityTrace?.minItems !== 8) {
+      failures.push('eligibilityTrace must require all eight target families (minItems: 8)');
+    }
+
+    // 4. The consumer no longer accepts an untyped object, and it accepts both documented shapes.
+    const handoff = prereqIn.$defs?.advisorOutput;
+    if (!handoff) failures.push('the prerequisite input schema no longer defines advisorOutput');
+    else if (!Array.isArray(handoff.anyOf) || handoff.anyOf.length !== 2) {
+      failures.push('advisorOutput must accept exactly the two documented shapes: public contract and regression mirror');
+    }
+    for (const branch of ['advisorPublicOutput', 'advisorMirrorOutput']) {
+      if (!prereqIn.$defs?.[branch]) failures.push(`advisorOutput branch ${branch} is not defined`);
+    }
+
+    // 5. And the consumer's copy of the vocabulary equals the producer's. This is the check that
+    // makes the handoff a contract rather than a coincidence.
+    const shared = [
+      ['recommendationStatus', 'advisorRecommendationStatus'],
+      ['confidence', 'advisorConfidence'],
+      ['eligibilityStatus', 'advisorEligibilityStatus'],
+      ['targetFamily', 'advisorTargetFamily'],
+      ['targetAvailabilityDuringSync', 'advisorTargetAvailability'],
+      ['businessCutoverDowntime', 'advisorCutoverDowntime'],
+      ['methodGateStatus', 'advisorMethodGateStatus'],
+    ];
+    for (const [producerDef, consumerDef] of shared) {
+      const mine = advisorOut.$defs?.[producerDef]?.enum;
+      const theirs = prereqIn.$defs?.[consumerDef]?.enum;
+      if (!theirs) failures.push(`the consumer does not declare ${consumerDef}`);
+      else if (!same([...mine].sort(), [...theirs].sort())) {
+        failures.push(`${consumerDef}: consumer has ${JSON.stringify(theirs)}, producer has ${JSON.stringify(mine)}`);
+      }
+    }
+  }
+
+  add('advisor-handoff-vocabulary', failures.length === 0, failures.length ? failures : [
+    'recommend-migration-path declares an input and an output schema, both matching reference/input-contract.md and the regression mirror.',
+    'generate-migration-prerequisite-plan types advisorOutput against both documented shapes and shares all seven vocabularies with the producer.',
+  ]);
+}
+
+{
   const failures = [];
   let required = [];
   try {
@@ -709,7 +812,7 @@ try {
   const gateCount = new Set([...readText(path.join('tests', 'run-tests.mjs')).matchAll(/^\s*add\('([a-z0-9-]+)'/gmu)].map(m => m[1])).size;
   const scenarioCount = scenarios.length;
   const ruleCount = (rules.match(/^\| `[A-Z][A-Z0-9-]+` \|/gmu) || []).length;
-  const QUOTED = ['README.md', 'CONTRIBUTING.md', path.join('howto', 'how-the-skill-works.md'), path.join('blume', 'docs', 'index.mdx'), path.join('docs', 'sql-migration-advisor-developer-pitch.md'), path.join('tests', 'README.md')];
+  const QUOTED = ['README.md', 'CONTRIBUTING.md', path.join('howto', 'how-the-skill-works.md'), path.join('blume', 'docs', 'index.mdx'), path.join('docs', 'sql-migration-advisor-developer-pitch.md'), path.join('tests', 'README.md'), path.join('docs', 'ARCHITECTURE.md')];
   for (const doc of QUOTED) {
     const text = readText(doc);
     const check = (re, actual, what) => {

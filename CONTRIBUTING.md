@@ -11,6 +11,7 @@ plus the machinery that keeps its content true:
 | Path | Role |
 | --- | --- |
 | `skills/recommend-migration-path/SKILL.md` | the skill the agent runs |
+| `skills/recommend-migration-path/schemas/` | the input and output contracts in machine-checkable form, shared with the prerequisite skill |
 | `reference/input-contract.md` | what the interview may produce: option IDs, canonical fields, and the three answer states |
 | `reference/output-contract.md` | what an answer must look like, and the invariants the skill checks against its own draft |
 | `reference/decision-rules.md` | the decision policy the skill applies, and the index of every addressable rule |
@@ -31,7 +32,7 @@ Chrome binary, but you only need those if you are changing `docs/` output or `to
 Run all four before opening a pull request. They are the same four CI runs.
 
 ```bash
-node tests/run-tests.mjs                        # 28 gates over 110 scenarios
+node tests/run-tests.mjs                        # 29 gates over 110 scenarios
 node tools/rules/check-rules-data.mjs --strict  # constants agree between JSON and markdown
 node tools/weekly-check/check-consistency.mjs   # versions and freshness stamps agree
 node tools/artifacts/check-artifacts.mjs        # derived artifacts are not stale
