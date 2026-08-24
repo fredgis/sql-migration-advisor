@@ -301,7 +301,7 @@ The result names:
 - the best alternative.
 
 Each verdict carries the ID of the rule that produced it, such as `MI-LINK-HOST` or
-`FILESTREAM-PAAS`. The index at the end of `decision-rules.md` lists all 28 with the fields each one
+`FILESTREAM-PAAS`. The index at the end of `decision-rules.md` lists all 30 with the fields each one
 consumes and what it does when a field is unknown, so a reader can look a decision up and argue with
 it rather than take it on trust.
 
@@ -996,7 +996,7 @@ flowchart LR
     G3([Push to main on the KB, tools/pdf,<br/>tools/diagram, tools/artifacts, howto SVGs]) --> W3[Artifacts coherence<br/>artifacts.yml]
     G4([Push to main on blume/ or howto/]) --> W4[Deploy docs<br/>deploy-docs.yml]
 
-    W1 --> O1[actionlint · rules data --strict<br/>30 gates · 112 golden scenarios<br/>engine branch coverage >= 85%]
+    W1 --> O1[actionlint · rules data --strict<br/>31 gates · 112 golden scenarios<br/>engine branch coverage >= 85%]
 
     W2 --> C1[consistency] --> C2[evidence<br/>links · news · claims] --> C3[review<br/>Foundry gpt-5.6-sol] --> C4[decide]
     C4 --> O2a[Substantive edits:<br/>pull request + version bump]

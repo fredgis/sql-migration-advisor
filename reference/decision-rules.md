@@ -5,7 +5,7 @@ Apply Steps **A → D** in order. Steps map to the two engine phases:
 - **Phase B — Ranking and plan:** Steps B → D. Rank only surviving targets, then choose method, tier, blockers, cost, and assessment.
 
 Regression contract: these rules are a **prompt policy under regression test**. Replaying the same inputs through the rules mirror in `tests/` gives the same result, and 90 golden scenarios enforce it on every commit. The mirror is not what runs in a session: an agent reads these rules and applies them. Treat the contract as a tested policy, not as a guarantee that two runs produce identical wording. Every recommendation must carry the KB version, engine version, and, when available, the source commit SHA and fetch timestamp.
-Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v2.9**, verified August 2026.
+Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v2.10**, verified August 2026.
 
 Three layers, never mixed:
 - **Target** = where the DB ends up (runtime).
@@ -79,15 +79,40 @@ Classify each target independently. Only `eligible` and `eligible_with_remediati
 | --- | --- | --- | --- |
 | **SQL Server enabled by Azure Arc** *(control plane, in-place)* | none for assessment/control-plane use | Arc onboarding, agent/network prerequisites, paid on-prem ESU | Not a runtime migration target. Use when intent is assess/modernize in place/not ready. |
 | **SQL Server on Azure VM** | none of these rules eliminate it | right-size VM/storage, HA design, patch/backup operations, TDE cert migration | Maximum compatibility and OS/engine control; free ESU on Azure VM applies to SQL Server 2014, SQL Server 2016 ESU is paid even on Azure VM, and SQL Server 2012 and earlier have no remaining ESU path at all. |
-| **Azure VMware Solution (AVS)** | not a VMware estate or no need to keep VMware operational model | HCX/vMotion readiness, AVS capacity/networking | Rehost VMware estate with minimal refactor; keeps FCI/AG patterns. |
+| **Azure VMware Solution (AVS)** | not a VMware estate or no need to keep VMware operational model | HCX/vMotion readiness, AVS capacity/networking, **portable VCF licence — see `AVS-LICENSING`** | Rehost VMware estate with minimal refactor; keeps FCI/AG patterns. |
 | **Azure SQL Managed Instance (MI)** | FILESTREAM/FileTable; PolyBase to external RDBMS; heterogeneous DTC to third-party RDBMS; need OS/file-system access; unsupported third-party linked server dependency | SQL Agent jobs usually native; **Service Broker intra-instance is eligible**; **Service Broker cross-instance is in public preview** and therefore gated on `previewAcceptable`; SQL CLR/cross-DB usually compatible but assess; cloud-file PolyBase eligible; homogeneous SQL↔SQL DTC eligible | PaaS lift-and-shift for instance features. Service Broker within a single instance is fully supported. Cross-instance message exchange, MI-to-MI and SQL Server-to-MI, is in **public preview**: `CREATE ROUTE`/`ALTER ROUTE` must specify port 4022, transport security only (`CREATE REMOTE SERVICE BINDING` unsupported). Treat it exactly like the Fabric Migration Assistant: preview refusal removes the capability, never the MI target. Unknown scope still requires a topology assessment. |
 | **Azure SQL Database** | FILESTREAM/FileTable; linked servers; cross-database three-part-name dependency; instance-level CLR/Service Broker dependency; native restore requirement; DTC dependency | refactor SQL Agent jobs to Elastic Jobs/Automation, refactor cross-DB/linked-server patterns, use contained DB model | Use for cloud-native DB-scoped workloads after dependencies are removed. |
 | **SQL database in Fabric** *(GA target; Migration Assistant in Preview)* | complex enterprise OLTP dependency set that the Fabric SQL surface does not support; no viable ingestion path at all | use T-SQL, transactional replication, Fabric pipelines / Data Factory copy jobs, Dataflow Gen2, or TDS-capable tools; if using the Fabric Migration Assistant Preview specifically, its limits are DACPAC > 20 MB, requires Private Link, or cannot use the required on-prem gateway | The target is GA — do **not** apply a target-level preview blocker. Preview acceptance is a *method* gate on the Fabric Migration Assistant only: when preview is unacceptable, keep evaluating the non-assistant ingestion paths. Rank it ahead of general SQL DB when the driver/profile is Fabric analytics; a non-analytics driver lowers its ranking but does not make it `unsupported`. |
 | **Arc-enabled SQL Managed Instance** | no Kubernetes/edge/sovereign requirement; Kubernetes model = full DIY container *(preference, not a technical limit — record `excluded_by_preference` and say it can be revisited)* | Arc data controller prerequisites, storage class, network, HA sizing | Managed engine on Kubernetes: auto patch/backup/HA through Arc data services. |
 | **SQL Server in a container** | requires managed PaaS/managed engine and will not operate DIY *(preference, not a technical limit — record `excluded_by_preference` and say it can be revisited)* | backup/HA/patch/runbook must be built by customer | Dev/test/edge or full DIY containerized SQL Server. |
 
-### A2. Hard compatibility rules (Phase A only)
+#### AVS licensing — `AVS-LICENSING`
 
+**`AVS-LICENSING`.** AVS remains an eligible target. What is ending is the **license-included**
+purchasing option: Microsoft stops bundling a VMware licence, and continued use requires a
+customer-provided **portable VMware Cloud Foundation subscription** bought from Broadcom and
+registered per private cloud.
+
+| Date | What ends |
+| --- | --- |
+| **15 October 2026** | License-included **pay-as-you-go** SKUs |
+| **31 October 2026** | **New sales** of license-included AVS |
+| **30 August 2027** | Service for the remaining reserved-instance SKUs |
+
+Quoting only the last date understates the problem by ten months, which is why all three are here.
+
+| Answer | Effect on AVS |
+| --- | --- |
+| Portable VCF licence confirmed for the planned period | AVS `eligible`; carry the licence cost into the comparison |
+| Relying on license-included, or the licence is unknown | AVS `unknown_requires_assessment`, with the licence in `evidenceRequired` |
+| Portable VCF confirmed unobtainable for the period | AVS `unsupported`, and say the constraint is commercial, not technical |
+
+**Never report AVS as retiring.** The target is not going away; a purchasing option is. Telling a
+customer otherwise steers them off a supported platform for the wrong reason. And never rank AVS
+without the licence question settled: Broadcom procurement runs in weeks, so a recommendation made
+on a pay-as-you-go assumption today expires before the project starts.
+
+### A2. Hard compatibility rules (Phase A only)
 These are filters, not preferences:
 
 | Dependency / answer | MI | SQL DB | SQL VM / AVS / container | Rule |
@@ -191,13 +216,18 @@ If a tier-driving input is missing, emit `unknown_requires_assessment` for tier 
 | Inputs | Tier result |
 | --- | --- |
 | Low-latency storage required, high IOPS/log throughput, heavy tempdb, in-memory OLTP, read-scale secondary, highest HA/resilience, or SLA/latency target cannot tolerate remote storage | **MI Business Critical** |
-| 101–500 databases or MI Links on a single instance, up to 128 vCores, up to 32 TB, or configurable IOPS/memory required — and Business Critical-only features and its latency floor are not required | **MI Next-gen General Purpose** *(GA)* |
+| 101–500 databases or MI Links on a single instance, up to 128 vCores, up to 32 TB, or configurable IOPS/memory required — and Business Critical-only features and its latency floor are not required | **MI Next-gen General Purpose** *(GA — but its **zone-redundancy option is public preview**, so count it only when `previewAcceptable`)* |
 | Moderate latency/IO, general enterprise workload, cost-sensitive, no read-scale secondary, no high log throughput requirement | **MI General Purpose** |
 | More than 500 databases or links on one instance | Next-gen General Purpose is still capped at 500 — plan **multiple instances** |
 | `performance.latency`, `performance.iops`, `performance.log_throughput`, and `resilience.read_scale/SLA` unknown | `unknown_requires_assessment` — require Perfmon/DMV baseline, wait stats, log generation rate, HA/read-scale requirement |
 
-#### Azure SQL Database service tier/model
+**Zone redundancy on Next-gen General Purpose is public preview.** The tier is GA; that capability is
+not, and a GA tier label must not quietly make its preview options GA too. When resilience is what
+selects the tier, treat zone redundancy as available only if `previewAcceptable` is true. Otherwise
+say the option exists in preview and rank on the GA feature set — the same treatment already applied
+to the Fabric Migration Assistant and to cross-instance Service Broker.
 
+#### Azure SQL Database service tier/model
 **`SQLDB-TIER`**; the size ceilings below are **`HYPERSCALE-CEILING`.**
 
 | Inputs | Tier/model result |
@@ -367,9 +397,8 @@ Rules:
 | --- | --- |
 | DBA-first, Windows, single/few DBs | **SSMS 22 Migration Component** |
 | Arc-enabled source or assess-first/in-place | **SQL Server migration in Azure Arc** and Arc best-practices assessment |
-| Estate scale / business case / dependency map | **Azure Migrate** appliance or import (GA); Arc-based agentless discovery is **Preview**, so select it only when the customer accepts preview services |
-| Orchestrate at scale / CI-CD | **modern Azure DMS** + **`Az.DataMigration`** |
-| Heterogeneous source modernization | **SSMA** for Oracle/Sybase/DB2/MySQL/Access; not for homogeneous SQL→SQL |
+| Estate scale / business case / dependency map | **Azure Migrate** appliance or import (GA); Arc-based agentless discovery is **Preview**, so select it only when the customer accepts preview services || Readiness / strategy / ROI / landing-zone planning **on existing Azure Migrate data** | **Azure Copilot Migration Agent** *(Preview)* — **`COPILOT-AGENT`.** Select only when `previewAcceptable` and an Azure Migrate assessment already exists: it reasons over collected data, it does not collect and it does not move data. Never treat it as a migration method, and never let it replace SQL assessment or method selection, which stay with Azure Migrate, Arc, SSMS and DMS. |
+| Orchestrate at scale / CI-CD | **modern Azure DMS** + **`Az.DataMigration`** || Heterogeneous source modernization | **SSMA** for Oracle/Sybase/DB2/MySQL/Access; not for homogeneous SQL→SQL |
 | Tier uncertainty | Perfmon/DMVs, Query Store, storage latency, log-rate baseline |
 
 ### D3. Microsoft program fit and SLA reference
@@ -426,6 +455,8 @@ The normative wording stays in the sections above. This index is the address boo
 | `LINKED-SERVERS` | hard target gate | `feature_dependencies` | SQL DB `unknown_requires_assessment` | A2 |
 | `CLR-PERMISSION` | hard target gate | `feature_dependencies`, CLR permission set | SQL MI and SQL DB `unknown_requires_assessment` | A2 |
 | `DEPENDENCY-INVENTORY` | hard target gate | `feature_dependencies` | SQL MI and SQL DB `unknown_requires_assessment` | A2 |
+| `AVS-LICENSING` | hard target gate | `target_region`, licence answer | AVS `unknown_requires_assessment` with the portable VCF licence in `evidenceRequired`; never reported as AVS retiring | A1 |
+| `COPILOT-AGENT` | control-plane branch | `previewAcceptable`, existing Azure Migrate data | Not selected; the GA control planes are unaffected | D2 |
 | `MANAGEMENT-MODEL` | hard target gate | `management_model`, `kubernetes_model` | Family split blocked; return a shortlist | A2 |
 | `ARC-IN-PLACE` | hard target gate | `intent`, `source_version` | Path not offered | A3 |
 | `ARC-WIZARD-BATCH` | hard method gate | `migration_batch_size`, `arc_extension_version` | **Not treated as recent**, `unknown_requires_assessment` | B3 |
@@ -433,7 +464,7 @@ The normative wording stays in the sections above. This index is the address boo
 | `FABRIC-ASSISTANT` | hard method gate | `fabric_constraints` | Assistant `unknown_requires_assessment`; the GA target survives | A3, B3 |
 | `HYPERSCALE-CEILING` | hard target gate | `size` | Tier `unknown_requires_assessment`. Past the 128 TB single-database ceiling, both PaaS families are **refused** and the workload must be sharded or moved to a VM | B2 |
 | `SOURCE-PERMISSIONS` | hard method gate | `source_permissions` | Method `unknown_requires_assessment`; limited rights **refuse** the method | A0, B3 |
-| `MI-TIER` | tier rule | `performance`, `size`, `database_count` | Tier `unknown_requires_assessment`, never General Purpose by default | B2 |
+| `MI-TIER` | tier rule | `performance`, `size`, `database_count` | Tier `unknown_requires_assessment`, never General Purpose by default; Next-gen GP zone redundancy counts only when preview is accepted | B2 |
 | `SQLDB-TIER` | tier rule | `performance`, `size`, `tenant_count` | Tier `unknown_requires_assessment` | B2 |
 | `DOWNTIME-CLASS` | consistency rule | `downtime` | `businessCutoverDowntime` `unknown_requires_assessment` | C1, C4 |
 | `RANK-ORDER` | ranking | all surviving candidates | Provisional shortlist at step 10 | B1 |

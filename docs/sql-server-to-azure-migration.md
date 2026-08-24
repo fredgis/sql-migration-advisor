@@ -6,7 +6,7 @@
 >
 > **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of August 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
 >
-> **Version.** v2.9 — 17 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
+> **Version.** v2.10 — 24 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**
@@ -56,7 +56,7 @@ flowchart LR
         G3[Containers: AKS / ARO / ACI / ACA · Arc-enabled SQL MI]
         G4[Hybrid in-place: SQL Server enabled by Azure Arc]
     end
-    subgraph CTL["🛠️ CONTROL PLANES — assess &amp; orchestrate"]
+    subgraph CTL["🛠️ CONTROL PLANES — assess & orchestrate"]
         direction TB
         C1[Azure Migrate]
         C2[SQL migration in Azure Arc]
@@ -129,8 +129,8 @@ flowchart TD
 | # | Target | Layer | When to choose it | Compatibility | Doc |
 | --- | --- | --- | --- | --- | --- |
 | 1 | SQL Server on Azure VM | IaaS | Faithful lift & shift: OS / file-system control, exact version, FileStream/FileTable, PolyBase, cross-instance DTC, third-party agents. | Full | [overview](https://learn.microsoft.com/en-us/data-migration/sql-server/virtual-machines/overview) |
-| 2 | Azure VMware Solution (AVS) | IaaS | Zero-refactor data-center exit for existing VMware estates; keeps FCI and Always On AG; migrate with VMware HCX / vMotion. | Full | [AVS](https://learn.microsoft.com/en-us/azure/azure-vmware/introduction) |
-| 3 | Azure SQL Managed Instance | PaaS | Managed lift-and-shift: keep instance objects (logins, SQL Agent, server triggers, cross-DB, linked servers), native vNet. Tiers GP / BC / Next-gen GP *(GA since Nov 2025 — Elastic SAN backend: 500 DBs, 128 vCores, 32 TB, 80K IOPS, 192 MB/s log, 3–4 ms latency, configurable IOPS/memory; ~5x better price-per-DB by density)*. Free offer: 1 instance / 12 months. ⚠️ No Hyperscale on MI. | ~Near-full (instance) | [overview](https://learn.microsoft.com/en-us/data-migration/sql-server/managed-instance/overview) |
+| 2 | Azure VMware Solution (AVS) | IaaS | Zero-refactor data-center exit for existing VMware estates; keeps FCI and Always On AG; migrate with VMware HCX / vMotion. **Licensing has a deadline: see §15.1.** | Full | [AVS](https://learn.microsoft.com/en-us/azure/azure-vmware/introduction) |
+| 3 | Azure SQL Managed Instance | PaaS | Managed lift-and-shift: keep instance objects (logins, SQL Agent, server triggers, cross-DB, linked servers), native vNet. Tiers GP / BC / Next-gen GP *(GA since Nov 2025 — Elastic SAN backend: 500 DBs, 128 vCores, 32 TB, 80K IOPS, 192 MB/s log, 3–4 ms latency, configurable IOPS/memory; ~5x better price-per-DB by density)*. **Zone redundancy on Next-gen GP is public preview** — the tier is GA, that capability is not, so do not count it as available when preview services are unacceptable. Free offer: 1 instance / 12 months. ⚠️ No Hyperscale on MI. | ~Near-full (instance) | [overview](https://learn.microsoft.com/en-us/data-migration/sql-server/managed-instance/overview) |
 | 4 | Azure SQL Database | PaaS | Cloud-native app / microservice. Models: single DB / elastic pool; tiers GP / BC / Hyperscale; purchasing vCore / DTU / serverless. Hyperscale scales to 128 TB (large / HTAP); serverless for intermittent; elastic pools for consolidation. Free offer: 10 serverless DBs for the subscription lifetime. | Database surface (no instance-level) | [overview](https://learn.microsoft.com/en-us/data-migration/sql-server/database/overview) |
 | 5 | SQL database in Fabric | PaaS | Fabric-native OLTP unified with OneLake. The **target itself is GA**; only the Fabric Migration Assistant is Preview, with tool limits (DACPAC schema ≤ 20 MB, on-prem data gateway only, no Private Link). The target also accepts T-SQL, transactional replication, Fabric pipelines / Data Factory copy jobs, Dataflow Gen2, and other TDS-capable tools, so assistant limits alone must not eliminate it. Assess the database surface before committing an enterprise OLTP workload. | Subset of the SQL Server surface | [SQL database in Fabric](https://learn.microsoft.com/en-us/fabric/database/sql/overview) · [Migration Assistant *(Preview)*](https://learn.microsoft.com/en-us/fabric/database/sql/migration-assistant) |
 | 6 | SQL Server in containers — AKS / ARO / ACI / ACA | Container | Full control of the engine in a container (dev/test, edge, custom). Pod + PersistentVolume; HA via the Kubernetes scheduler. | High — SQL on Linux (no FILESTREAM/FileTable, SSRS/SSAS/SSIS, ML Services; SQL Agent off by default) | [SQL on Kubernetes](https://learn.microsoft.com/en-us/sql/linux/quickstart-sql-server-containers-kubernetes) |
@@ -146,6 +146,7 @@ flowchart TD
 | Tool / experience | Role | Status (2026) | Notes |
 | --- | --- | --- | --- |
 | [Azure Migrate](https://learn.microsoft.com/en-us/azure/migrate/how-to-create-azure-sql-assessment) | Discovery / assessment / sizing / business case at scale | GA (+ Arc-based agentless discovery, Preview) | Appliance (VMware/Hyper-V/Physical) or import-based or Arc-based. Right-sizes SQL DB / MI / VM. |
+| [Azure Copilot Migration Agent](https://learn.microsoft.com/en-us/azure/migrate/azure-copilot-migration-agent) | **Planning only**: analyses existing Azure Migrate data for readiness, strategy, ROI and landing-zone design | Preview | Not a data-movement method and not an assessment collector — it reasons over data Azure Migrate already gathered, so it presupposes an assessment rather than replacing one. Distinct from the SQL in a Day advisor skill in this repository, which interviews a person and reads no estate data. |
 | [SQL Server migration in Azure Arc](https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migration-overview) | Portal-driven assess + migrate for any Arc-enabled SQL Server | GA; **MI and VM targets both GA** | Copilot-assisted; targets **Azure SQL MI** (MI Link / LRS) and — **GA July 2026** — **SQL Server on Azure VM** ([lift-and-shift, native backup/restore](https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migrate-to-sql-server-on-azure-vms)); continuous assessment; Arc-enabled SQL Server 2014+ overall, with MI Link requiring SQL Server 2016+ and, on this Arc-driven path, **Windows Server only**. The Azure Arc portal MI wizard can select up to 10 databases per batch with Azure Extension for SQL Server ≥ 1.1.3348.364 (earlier versions: one database at a time); this is an Arc wizard batch limit, not MI Link capacity. |
 | [SSMS 22 Migration Component](https://learn.microsoft.com/en-us/ssms/migrate/migrate-sql-server-azure-sql) | DBA-first entry point: assess + launch a recommended migration path from SSMS | GA (Windows-only) | Replaces DMA-era workflows and complements the ADS migration extension. **Migrate SQL Server assesses SQL Server instances and migrates them to Azure SQL today.** Backup/restore, MI Link, DMS. Arc-enabled sources can reuse readiness assessments already collected through Azure Arc. |
 | [Azure DMS (modern)](https://learn.microsoft.com/en-us/azure/dms/dms-overview) | Managed migration orchestration (Azure resource · portal / PowerShell / CLI) | GA | Use the modern DMS — former DMS *classic* SQL scenarios are absorbed into the current portal experience. Offline-only to Azure SQL DB; online/minimal-downtime to MI / SQL VM (MI Link preferred for MI). |
@@ -285,7 +286,7 @@ flowchart TB
     subgraph NZ["🟢 Near-zero / minimum cutover downtime"]
         N1[MI Link]
         N2[Distributed / Always On AG]
-        N3[Striim &#40;third-party&#41;]
+        N3["Striim (third-party)"]
     end
     subgraph ONSYNC["🟡 Online sync · target availability varies"]
         L0[Log Replay Service]
@@ -522,6 +523,26 @@ flowchart LR
 | Reservations / Savings Plans | 1- / 3-yr commitment discount | Stacks with AHB. ⚠️ Partner Earned Credit (15%) does not apply to reservations. |
 | Savings plan for databases | up to 35% on Azure SQL (DB / MI) | 1- or 3-year hourly compute commitment; auto-applies across participating database services up to the commitment; stacks with AHB. |
 
+> **⚠️ AVS licensing has a deadline, and it is not one date.** The Azure VMware Solution
+> **license-included** service is being retired: Microsoft will no longer bundle a VMware licence
+> with AVS, and continued use requires a customer-provided **portable VMware Cloud Foundation (VCF)
+> subscription bought from Broadcom**. Three dates matter, and quoting only the last one understates
+> the problem by ten months:
+>
+> | Date | What happens |
+> | --- | --- |
+> | **15 October 2026** | License-included **pay-as-you-go** SKUs retire |
+> | **31 October 2026** | **No new sales** of license-included AVS |
+> | **30 August 2027** | End of service for the remaining reserved-instance SKUs |
+>
+> **AVS itself is not retiring** — only the bundled-licence option. Do not tell a customer the target
+> is going away. But do not recommend AVS without confirming access to a portable VCF licence and its
+> cost either: a recommendation made today on a pay-as-you-go assumption fails in under two months,
+> and Broadcom procurement is measured in weeks. Registration is per private cloud, not per
+> subscription. Source:
+> [Azure update 569535](https://azure.microsoft.com/updates?id=569535) and the
+> [portable VCF licensing reference](https://learn.microsoft.com/en-us/azure/azure-vmware/portable-vcf-licensing-reference).
+
 ### 15.2 Microsoft-funded engagement programs
 
 | Program | Funds | Access |
@@ -636,13 +657,14 @@ flowchart LR
 
 ## 17. Document version & changelog
 
-Current version: **v2.9** (2026-08-17).
+Current version: **v2.10** (2026-08-24).
 
 <details>
-<summary><b>Version history</b> (current: v2.9)</summary>
+<summary><b>Version history</b> (current: v2.10)</summary>
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v2.10 | 2026-08-24 | **A licensing deadline that arrives ten months earlier than the one usually quoted.** The Azure VMware Solution **license-included** service is being retired — AVS itself is not — and the announcement is normally summarised by its last date, 30 August 2027. Two earlier ones decide whether a recommendation survives contact with procurement: license-included **pay-as-you-go** SKUs retire on **15 October 2026** and **new sales end on 31 October 2026**. A recommendation made today on a pay-as-you-go assumption expires in under two months, and a portable VCF subscription is bought from Broadcom in weeks, not days. New rule `AVS-LICENSING` holds AVS at `unknown_requires_assessment` until the licence is confirmed, and a gate forbids both failure modes: quoting only the 2027 date, and the overcorrection of saying AVS is going away. Also: zone redundancy on **MI Next-gen General Purpose is public preview**, so a GA tier label no longer makes a preview capability GA; the **Azure Copilot Migration Agent** joins the control-plane inventory as preview planning over existing Azure Migrate data, explicitly not a data-movement method; and §7's downtime diagram rendered nowhere on GitHub, because an HTML entity meant to protect a parenthesis was decoded before Mermaid parsed it. mermaid-cli renders that form happily, which is why the PDF build never noticed. |
 | v2.9 | 2026-08-17 | **Three documents disagreed about what happens when a prerequisite is unknown, and the disagreement decided what the tool recommends.** `MI-LINK-HOST` said in the rule index that an unknown host or edition **refuses** MI Link, while §B3 and the executable mirror both treated it as `unknown_requires_assessment` — refusing on absence of evidence makes an information gap look like an incompatibility. `BACKUP-BLOB-PATH` claimed every native backup/restore variant moves through Azure Blob, which is true for Managed Instance and false for a VM: a profile that required a VM lost its recommendation to a shortlist when Blob was blocked, although this document documents backup to a file and a copy into the target. And FILESTREAM grouped the Linux container with the VM as eligible, offering a target that has no FILESTREAM at all. A new `rule-unknown-behaviour-agrees` gate now compares the rule index, the section that defines each rule and the input contract, so a contradiction of this kind fails the build instead of waiting for a model to notice it. |
 | v2.8 | 2026-08-14 | **The rule index pointed 26 of its 28 rules at sections that never mentioned them, and three at the wrong section outright.** Every recommendation cites a rule ID, and the index is how a reader turns that ID into the text they can argue with. `FABRIC-TARGET` and `FABRIC-ASSISTANT` both addressed A2, the hard compatibility table, which contains no Fabric text; the Fabric branch is step 4 of A3 and the assistant limits live in B3. `HYPERSCALE-CEILING` addressed `A2, B2` when the 128 TB ceiling is stated only in B2, and `SOURCE-PERMISSIONS` addressed B3 alone while the input it gates is normalized in A0. The remaining 22 pointers named a real section that carried no trace of the rule, so following one led to a page of prose with nothing to match against. Rule IDs are now anchored in the text they govern across A0, A2, A3, A4, B1, B2, B3, C1 and C4, and the five wrong or incomplete addresses are corrected. No recommendation changes: the skill loads the whole policy document, so the normative text always reached the model regardless of what the index said, and the effect column beside each address was already correct. What was broken was traceability. The `rule-index-consistent` gate caused this by reading four groups from a five-column table, which left the `Defined in` column checked by nothing for five releases; it now resolves every pointer to a section that exists and mentions the rule. |
 | v2.7 | 2026-08-13 | **The summary matrix asserted two things Microsoft's own documentation contradicts, and both were wrong in the direction that costs a customer a working route.** §8 gave `bcp / Smart Bulk Copy` a `➖` against **SQL database in Fabric**. bcp names *SQL database in Microsoft Fabric* in its own **Applies to** banner, and Fabric publishes a dedicated [Connect with bcp utility](https://learn.microsoft.com/en-us/fabric/database/sql/connect#connect-with-bcp-utility) procedure — "just like any other SQL Database Engine product". The cell is now `✅`, with the constraint that makes it work recorded: Fabric SQL database accepts no SQL authentication, so the connection must use Microsoft Entra ID with `-G`. The same row also fused **two tools with different support**, and that fusion was what hid the error — it claimed Arc SQL MI and containers for Smart Bulk Copy, an archived community sample that claims neither. bcp and Smart Bulk Copy are now separate rows. Second, `ADF Copy` claimed **Fabric SQL DB**. Azure Data Factory publishes Fabric **Lakehouse** and Fabric **Warehouse** connectors and **no Fabric SQL database connector**; the product that has one is **Fabric** Data Factory, whose [SQL database connector](https://learn.microsoft.com/en-us/fabric/data-factory/connector-sql-database-overview) is Beta and serves Copy activity, Copy job and Dataflow Gen2 in both directions. The row is renamed `Data Factory Copy` and the distinction is stated in the legend and in §5.4, because a reader who built an Azure Data Factory pipeline against this target would find no connector to select. 56 supported cells, up from 51. |

@@ -1,7 +1,7 @@
 # Output contract — `generate-migration-prerequisite-plan`
 
 > **Schema version:** `1.0`
-> **Prerequisite knowledge-base line:** `v1.4`
+> **Prerequisite knowledge-base line:** `v1.5`
 
 The skill produces one normalized prerequisite-plan object. Markdown is the default rendering; JSON
 is available on request. Both formats must represent exactly the same state.
