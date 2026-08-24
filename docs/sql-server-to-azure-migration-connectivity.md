@@ -1,6 +1,6 @@
 # SQL Server to Azure — connectivity knowledge base
 
-> **Version.** v0.9 — 17 August 2026. Ships in the `sql-migration-advisor` plugin as the
+> **Version.** v0.10 — 24 August 2026. Ships in the `sql-migration-advisor` plugin as the
 > knowledge base for `get-connection-details`. It changes no fact in
 > [`sql-server-to-azure-migration.md`](sql-server-to-azure-migration.md), which serves the
 > migration skill and is maintained separately.
@@ -412,8 +412,16 @@ So the topology is a required input, not a detail: ask whether the endpoint is i
 the instance or a different one, and answer with the open item rather than the different-VNet zone
 when it is the same.
 
-Errors 47073 and 47072 are worth knowing before any of this matters: `Public network access`
-disabled and a minimum-TLS mismatch both refuse the connection before DNS or ports come into play.
+Errors 47073 and 47072 are worth knowing before any of this matters, but read them the right way
+round: **receiving either one proves DNS resolved and TCP reached the service.** A server cannot
+return an error to a client that never arrived. 47073 is the `Public network access` policy refusing
+an otherwise-established connection, and 47072 is raised during **TLS negotiation**, which happens
+after the TCP handshake — see §5.3. Both precede *authentication*, not *reachability*.
+
+That distinction is the diagnostic value. These errors close the DNS and port questions rather than
+preceding them, so they are good news for triage: the network path works, and the problem is a
+server-side policy or a TLS mismatch. The inverse is what costs time — when **no** server error comes
+back at all, DNS and ports are exactly what still needs checking.
 
 Clients on a private endpoint do not need the gateway ranges.
 
@@ -550,8 +558,8 @@ because every symptom points away from the cause.
 | **40615** | Server firewall rejected the client IP | Firewall rules on the logical server |
 | **18456** | Login failed | Login exists and is enabled; contained user created; **or a DNS override — see §5.2** |
 | **40532** | Login failed, routing form | Same DNS-override family as 18456 |
-| **47073** | `Public network access` is disabled | The server setting, **before** any port or DNS question |
-| **47072** | Client cannot meet the minimum TLS version | The server minimum against the client and driver capability |
+| **47073** | `Public network access` is disabled | The server setting. Receiving this **proves DNS and TCP worked** — the connection reached the service and policy refused it |
+| **47072** | Client cannot meet the minimum TLS version | The server minimum against the client and driver capability. Raised during TLS negotiation, so the network path is already proven |
 | **5** | Cannot connect | The port *this target* uses — 1433, **3342** on the MI public endpoint, a custom SQL VM port, or the Redirect range — on every firewall in the path |
 | **26 / 40** | Server not found or unreachable | Server name; remote connections enabled |
 | **10053** | Transport-level error, connection aborted | Client-side interception, proxy, or network appliance |
@@ -734,6 +742,7 @@ flagged, however old the fact. Review dates by volatility remain the missing hal
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v0.10 | 2026-08-24 | **The two errors this document told readers to check first were described as arriving before the network mattered.** They arrive after it. A server cannot return 47073 or 47072 to a client that never reached it: 47073 is the public-network-access policy refusing an established connection, and 47072 is raised during TLS negotiation, which follows the TCP handshake — as §5.3 already said. Getting either one is good news for triage, because it closes the DNS and port questions instead of preceding them. The costly case is the inverse, and the old wording pointed away from it: when **no** server error comes back, DNS and ports are exactly what still needs checking. |
 | v0.9 | 2026-08-17 | **§7.1 told the reader to open both MI port ranges by default; §2.2 told them to test 1433 first.** Two sections of the same document configured two different networks. The default in §7.1 was v0.5 guidance that survived the v0.7 change, and it contradicted this document's own least-privilege warning: opening a thousand ports nobody has shown to be needed is not the safe side, it is the wide side. §7.1 now defers to §2.2, and the port conflict stays recorded as unresolved without licensing a default the rest of the document argues against. |
 | v0.8 | 2026-08-14 | Header now states a Last verified date and what earns it. The weekly check reads this document in full: its sources and heading anchors are re-resolved, its ten claims re-hashed, routed news reviewed against it, and this date moves only when that run happened. |
 | v0.7 | 2026-08-12 | **Fourth external audit, and the first to find the flagship example wrong.** The worked example described the same connection string reaching a Managed Instance from a laptop and from App Service. That is impossible: the public endpoint is a different hostname — `.public.` is inserted — on a different port, and it must be enabled. The card also printed an ADO.NET keyword list under a JDBC heading; a JDBC answer is a `jdbc:sqlserver://host:port;key=value` URL and what was shipped would fail at runtime. Both are rewritten, and the skill now asks for the hostname rather than composing it. Windows integrated and Entra integrated were conflated: `Integrated Security=true` was justified by a quote about Windows authentication and then labelled an Entra mode, demanding a domain join for a mode that does not need one — the sixth instance of a quote proving one cell being read as proving a row. The MI redirect conflict gains Microsoft’s own Bicep and ARM quickstarts, which still provision 11000–11999, and loses the claim that opening a range is harmless: a wider range enlarges exposure and can breach least privilege, so the guidance is now to test 1433 first and widen only if it fails and policy allows. Managed Instance private-endpoint DNS depends on whether the endpoint sits in the instance’s own virtual network, which the contract now collects and which the same-VNet case answers as an open item. Statuses are split: 21 rows keep `VERIFIED`, 37 become `DERIVED` because the page is cited but the row carries no quote of its own, and the header no longer claims every fact is quoted. `sqlcmd` and `bcp` return to open research — the syntax shipped was a Fabric example generalised into a rule, and the Go and ODBC builds do not give `-G` the same meaning. Errors 47073 and 47072 are added because they refuse the connection before ports or DNS matter, error 5 stops assuming 1433, and diagnosis replaces the mandatory *Not this* row with a hypothesis, its evidence and the test that would disprove it. |

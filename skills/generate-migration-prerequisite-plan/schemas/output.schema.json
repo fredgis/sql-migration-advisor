@@ -12,7 +12,7 @@
       "additionalProperties": true,
       "properties": {
         "schemaVersion": { "const": "1.0" },
-        "prerequisiteKnowledgeBaseVersion": { "const": "v1.4" },
+        "prerequisiteKnowledgeBaseVersion": { "const": "v1.5" },
         "pathCatalogVersion": { "const": "1.0" },
         "evaluatedAt": { "type": "string", "format": "date-time" },
         "mode": { "enum": ["advisor_handoff", "standalone"] },

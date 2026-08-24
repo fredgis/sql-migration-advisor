@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "knowledgeBaseVersion": "v1.4",
+  "knowledgeBaseVersion": "v1.5",
   "commonQuestionFields": [
     "source_version",
     "source_edition",
@@ -344,6 +344,15 @@
       "advisorAliases": ["AVS", "Azure VMware Solution"],
       "supportStatus": "supported",
       "overlay": true,
+      "licensingBoundary": {
+        "prerequisite": "P27-003",
+        "rule": "VCF licence coverage must span the whole planned period. An existing license-included reservation covers the hosts only until the earlier of its own expiry and 2027-08-30; portable VCF licensing is required from that boundary onward.",
+        "licenseIncludedPayGoRetires": "2026-10-15",
+        "licenseIncludedNewSalesEnd": "2026-10-31",
+        "licenseIncludedServiceEnds": "2027-08-30",
+        "note": "AVS itself is not retiring, only the bundled-licence purchasing option. Never render this as the target going away. Quoting only the 2027 date understates the deadline by ten months, and Broadcom procurement runs in weeks.",
+        "source": "https://azure.microsoft.com/updates?id=569535"
+      },
       "questionFields": ["source_location", "target_region", "network_path_status", "dns_status", "domain_model", "authentication_model", "largest_database_size_gb", "validation_plan_status", "avs_host_quota_status", "avs_vcf_subscription_status", "avs_address_plan_status", "avs_interconnect_topology", "avs_outbound_internet_method"]
     },
     {

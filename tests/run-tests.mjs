@@ -493,7 +493,93 @@ try {
       if (!re.test(text)) failures.push(`${label} does not state the MI Link host floor Windows Server ${floor} or later`);
     }
   }
-  add('forbidden-patterns', failures.length === 0, failures.length ? failures : ['No forbidden anti-regression patterns found; the MI Link Windows Server floor is stated in all three rule documents.']);
+  // Same shape, for the two facts this week's review introduced. Both are "present" checks rather
+  // than "absent" checks, because the danger is a silent omission, not a forbidden phrase.
+  {
+    const kb = readText(path.join('docs', 'sql-server-to-azure-migration.md'));
+    const prereq = readText(path.join('docs', 'sql-server-to-azure-migration-prerequisite.md'));
+
+    // AVS. Two failure modes, opposite in direction. The first is quoting only the 2027 date, which
+    // understates the deadline by ten months: pay-as-you-go SKUs go in October 2026, and Broadcom
+    // procurement runs in weeks, so a recommendation made on that assumption expires before the
+    // project starts. The second is the overcorrection -- saying AVS itself retires, which steers a
+    // customer off a supported platform for a reason that is not true. Only the bundled licence ends.
+    for (const [label, text] of [['docs\\sql-server-to-azure-migration.md', kb], ['reference\\decision-rules.md', rules], ['docs\\sql-server-to-azure-migration-prerequisite.md', prereq]]) {
+      if (!/30 August 2027|2027-08-30/iu.test(text)) failures.push(`${label} does not state the AVS license-included end of service`);
+      if (!/15 October 2026|2026-10-15/iu.test(text)) failures.push(`${label} omits the AVS pay-as-you-go retirement date, which lands ten months before the one usually quoted`);
+      if (!/31 October 2026|2026-10-31/iu.test(text)) failures.push(`${label} omits the AVS end of new license-included sales`);
+    }
+    for (const [label, text] of [['docs\\sql-server-to-azure-migration.md', kb], ['reference\\decision-rules.md', rules]]) {
+      for (const line of text.split(/\r?\n/)) {
+        if (/^\|\s*v\d+\.\d+/.test(line.trim())) continue;
+        if (/\b(AVS|Azure VMware Solution)\b[^.]{0,60}\b(is retiring|retires|is being retired|will be retired)\b/iu.test(line)
+          && !/licen[cs]e-included|bundled|purchasing option|service (?:is )?retir/iu.test(line)) {
+          failures.push(`${label} says AVS itself is retiring; only the license-included option ends: ${line.trim()}`);
+        }
+      }
+    }
+
+    // MI Next-gen General Purpose is GA. Its zone-redundancy option is public preview, and a GA tier
+    // label must not quietly make a preview capability GA too -- the same confusion the repository
+    // already corrects for Fabric, where the target is GA and only the Migration Assistant is Preview.
+    for (const [label, text] of [['docs\\sql-server-to-azure-migration.md', kb], ['reference\\decision-rules.md', rules]]) {
+      if (!/zone[- ]redundan\w*[^.]{0,120}(public )?preview|preview[^.]{0,120}zone[- ]redundan/iu.test(text)) {
+        failures.push(`${label} does not record that zone redundancy on MI Next-gen General Purpose is public preview`);
+      }
+    }
+  }
+  add('forbidden-patterns', failures.length === 0, failures.length ? failures : ['No forbidden anti-regression patterns found; the MI Link Windows Server floor, the three AVS licensing dates and the Next-gen GP zone-redundancy preview status are all stated.']);
+}
+
+{
+  // Mermaid labels, checked as text because the local toolchain cannot reproduce the failure.
+  //
+  // Section 7 of the knowledge base carried `N3[Striim &#40;third-party&#41;]`. The entities were
+  // meant to protect the parentheses, and they do -- under mermaid-cli, which renders that line
+  // without complaint, which is why `tools/pdf/build.mjs` shipped it for months. GitHub decodes the
+  // entity *before* Mermaid sees the source, so the parser meets a bare `(` inside an unquoted label
+  // and refuses the whole diagram: "Unable to render rich display".
+  //
+  // A diagram that renders in the PDF and fails on the page every reader actually opens is worse
+  // than a missing diagram, because nothing in the build says so. The rule is therefore simple and
+  // has one exception-free form: a label containing a parenthesis is a quoted label.
+  const failures = [];
+  const docs = [...new Set([
+    ...['README.md', 'CONTRIBUTING.md'],
+    ...fs.readdirSync('docs').filter(f => f.endsWith('.md')).map(f => path.join('docs', f)),
+    ...fs.readdirSync('reference').filter(f => f.endsWith('.md')).map(f => path.join('reference', f)),
+    ...fs.readdirSync(path.join('skills')).flatMap(d => {
+      const p = path.join('skills', d, 'SKILL.md');
+      return fs.existsSync(p) ? [p] : [];
+    }),
+  ])];
+
+  for (const doc of docs) {
+    const lines = readText(doc).split('\n');
+    let inBlock = false;
+    lines.forEach((line, i) => {
+      if (/^\s*```mermaid/u.test(line)) { inBlock = true; return; }
+      if (inBlock && /^\s*```/u.test(line)) { inBlock = false; return; }
+      if (!inBlock) return;
+      const at = `${doc}:${i + 1}`;
+      // An HTML entity inside a Mermaid block is the bug itself, whatever it decodes to.
+      if (/&#\d+;|&[a-z]+;/u.test(line)) {
+        failures.push(`${at}: HTML entity inside a Mermaid block — GitHub decodes it before parsing: ${line.trim()}`);
+      }
+      // A bracket label carrying a parenthesis must be quoted. Subgraph titles in the same diagrams
+      // already are, so this is the file's own convention rather than a new one.
+      for (const m of line.matchAll(/\[([^\]]*)\]/gu)) {
+        const label = m[1];
+        if (/^\s*"/u.test(label)) continue;
+        if (/[()]/u.test(label)) {
+          failures.push(`${at}: unquoted Mermaid label contains a parenthesis — quote it: ${label}`);
+        }
+      }
+    });
+  }
+
+  add('mermaid-labels-render-on-github', failures.length === 0,
+    failures.length ? failures : [`Mermaid blocks across ${docs.length} documents carry no HTML entity and no unquoted parenthesised label.`]);
 }
 
 {
