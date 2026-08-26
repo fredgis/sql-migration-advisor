@@ -247,7 +247,11 @@
     ["SQL Server enabled by Azure Arc", "Arc best-practices assessment", "observed", 3, "In-place control plane, not a runtime target."]
   ];
 
+  const GRAPH_VERSION = "v3.1.1"; // kept in step by the rule-graph-is-current gate
   const RULES = [
+    { id: "DMS-MODE", type: "hard method gate", fields: ["source_version", "source_permissions", "downtime", "database_count"], impacts: ["Azure DMS (online)", "modern DMS (offline)"], status: "ok", note: "Online mode is never assumed: it needs a confirmed FULL recovery model and log chain, otherwise the method is held at assessment." },
+    { id: "AVS-LICENSING", type: "hard target gate", fields: ["target_region"], impacts: ["AVS"], status: "ok", note: "AVS is held at assessment with the portable VCF licence in evidenceRequired, and is never reported as the service retiring." },
+    { id: "COPILOT-AGENT", type: "control-plane branch", fields: ["previewAcceptable"], impacts: ["Azure Copilot Migration Agent"], status: "ok", note: "Preview control plane over existing Azure Migrate data. Never selected as a migration method, and the GA control planes are unaffected." },
     { id: "MI-LINK-SOURCE", type: "hard method gate", fields: ["source_location"], impacts: ["MI Link"], status: "partial", note: "Managed cloud sources are blocked, but an unknown source is not held at assessment." },
     { id: "MI-LINK-VERSION", type: "hard method gate", fields: ["source_version"], impacts: ["MI Link"], status: "partial", note: "The 2016 floor is applied; an unknown version can fall through to LRS without saying so." },
     { id: "MI-LINK-HOST", type: "hard method gate", fields: ["source_os", "source_edition", "source_version"], impacts: ["MI Link"], status: "ok", note: "Fail-closed on host OS and edition." },

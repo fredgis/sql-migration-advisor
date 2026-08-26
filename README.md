@@ -67,7 +67,7 @@ version loaded and where it came from, so the advice is traceable.
 - **Explicit uncertainty** — every recommendation is `provisional`, and `medium` is the confidence ceiling. Nothing higher is reachable from an interview, because the skill reads no artefact from your estate. It carries assumptions, unknowns, blockers and the evidence a tool would have to produce.
 - **It checks its own answer** — before the card is shown, the skill re-reads its draft against the 15 invariants in [`reference/output-contract.md`](reference/output-contract.md). One of them: no eligibility claim may rest on a field you never answered. A failed invariant is shown to you, never silently repaired.
 - **Freshness gates** — version bumps require substantive diffs; link checks classify bot-blocked pages; high-risk claims are tracked in [`reference/claims-registry.json`](reference/claims-registry.json).
-- **Regression protection** — [`tests/`](tests/) holds 116 golden scenarios and 41 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
+- **Regression protection** — [`tests/`](tests/) holds 116 golden scenarios and 42 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
 
 ## One version, every surface
 
@@ -88,7 +88,7 @@ The knowledge base is quoted by a skill, three manifests, a PDF, a poster, this 
 | The six `blume/public/*.svg` mirrors | — | ✅ |
 | [`blume/docs/index.mdx`](blume/docs/index.mdx) — the docs site | — | ✅ |
 | [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v3.1.1` | ✅ |
-| [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | — | ✅ |
+| [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | `v3.1.1` | ✅ |
 | `howto/*.html` | — | ✅ |
 | The developer pitch's sample failure block | `v3.1` | ✅ |
 
@@ -126,7 +126,7 @@ status line. See [§ The prerequisite companion](#the-prerequisite-companion) an
 | [`reference/claims-registry.json`](reference/claims-registry.json) | Hashes and source pointers for high-risk claims, used by weekly drift detection. 40 claims: 20 for the migration knowledge base, 10 for prerequisites, 10 for connectivity. |
 | [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) | The same knowledge base as a branded, partner-ready PDF. |
 | [`lab/`](lab/) | A self-contained, hands-on lab: take a legacy SQL Server 2016 workload to a SQL Server on Azure VM, driven by the advisor and the HVE Squad (VM-to-VM migration). |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Deep dive: what the plugin is, how a session runs end to end, what the 41 gates defend, and where it can still be wrong. |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Deep dive: what the plugin is, how a session runs end to end, what the 42 gates defend, and where it can still be wrong. |
 | [`docs/NEWDESIGNv2.md`](docs/NEWDESIGNv2.md) | Why there is a v2: how the decision policy became versioned, addressable and testable rather than prose an implementer had to interpret. |
 | [`docs/NEWDESIGNv3.md`](docs/NEWDESIGNv3.md) | **New.** Why there is a v3: a defect that took three releases to see, why a method that is never enumerated is never rejected either, and what changed when the handoff between advisor and prerequisite companion had to carry what the recommendation knew. |
 | [`docs/WEEKLYCHECK.md`](docs/WEEKLYCHECK.md) | Deep dive on the weekly check: how all three knowledge bases are verified, reviewed and stamped each Monday, what it delivers, and what it refuses to do on its own. |

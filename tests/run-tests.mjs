@@ -2038,6 +2038,31 @@ try {
       'The documented producer example is accepted; the same object without controlPlane is rejected.',
     ]);
 }
+
+// The published rule graph is a hand-maintained page, and the surfaces table marked it up to date
+// with no version to check, so it drifted for two weeks and three releases without anything
+// noticing: DMS-MODE, the rule at the centre of the v2.11-v3.1 work, was never on it. A page a
+// reader is invited to browse as the rule set has to hold the same rules as the rule set.
+{
+  const failures = [];
+  const graphPath = path.join('blume', 'public', 'rule-graph.html');
+  const graph = readText(graphPath);
+  const rulesText = readText(path.join('reference', 'decision-rules.md'));
+  const manifest = JSON.parse(readText('version.json'));
+
+  const indexed = [...rulesText.matchAll(/^\|\s*`([A-Z][A-Z0-9-]+)`\s*\|/gm)].map((m) => m[1]);
+  const plotted = [...graph.matchAll(/\{ id: "([A-Z][A-Z0-9-]+)",/g)].map((m) => m[1]);
+
+  for (const id of indexed) if (!plotted.includes(id)) failures.push(`${graphPath}: rule ${id} is in the decision-rules index but absent from the published graph`);
+  for (const id of plotted) if (!indexed.includes(id)) failures.push(`${graphPath}: the graph plots ${id}, which the decision-rules index does not define`);
+
+  const stamp = graph.match(/const GRAPH_VERSION = "([^"]+)"/);
+  if (!stamp) failures.push(`${graphPath}: carries no GRAPH_VERSION, so nothing can tell whether it is current`);
+  else if (stamp[1] !== manifest.latest) failures.push(`${graphPath}: stamped ${stamp[1]}, the release is ${manifest.latest}`);
+
+  add('rule-graph-is-current', failures.length === 0,
+    failures.length ? failures : [`${graphPath} plots the same ${indexed.length} rules as the decision-rules index, stamped ${manifest.latest}.`]);
+}
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };
 if (jsonMode) {
   process.stdout.write(JSON.stringify({ summary, results }, null, 2) + '\n');
