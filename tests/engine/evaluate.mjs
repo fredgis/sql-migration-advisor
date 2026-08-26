@@ -648,6 +648,39 @@ function buildMethodCandidates(inputs, eligibility, out) {
     });
     if (!mapped) out.unmappedWinner = out.method;
   }
+
+  const winner = out.methodCandidates.find((c) => c.selected);
+  out.controlPlane = chooseControlPlane(inputs, target, out.method);
+  out.appliedOverlays = overlaysFor(target, winner);
+  // The method path and its overlays are two different things, and naming them separately is what
+  // lets a reader apply both instead of choosing between them.
+  out.selectedMethodPath = winner ? (winner.prerequisitePaths || []).filter((p) => !out.appliedOverlays.some((o) => o.id === p)) : [];
+}
+// Which control plane runs the migration is not cosmetic: it decides which support matrix applies
+// (standalone LRS is documented for SQL Server 2008-2022 while the Arc route lists 2025) and which
+// prerequisites travel with the recommendation. It was printed on the card and dropped from the
+// JSON, so an Arc-orchestrated restore was indistinguishable from a standalone one downstream.
+function chooseControlPlane(inputs, target, method) {
+  const kind = canonicalMethod(method);
+  if (kind === 'hcx') return 'vmware-hcx';
+  if (kind === 'fabric-assistant') return 'fabric';
+  if (kind === 'dms') return 'azure-dms';
+  if (kind === 'arc-assessment') return 'azure-arc';
+  if (/arc/i.test(String(inputs.management_model || '')) || has(inputs.intent, 'modernize in place')) return 'azure-arc';
+  if (target === 'Arc-enabled SQL Managed Instance') return 'azure-arc';
+  if (any(inputs.size, 'estate scale', 'business case', 'dependency map')) return 'azure-migrate';
+  return 'standalone';
+}
+// An AVS-hosted SQL Server needs the method path and the platform overlay together. Returning one
+// path forced a reader to drop the other: P27 alone describes a platform nobody migrates to, and
+// the method path alone describes a generic SQL Server rather than AVS.
+function overlaysFor(target, candidate) {
+  const overlays = [];
+  const paths = candidate?.prerequisitePaths || [];
+  if (target === 'Azure VMware Solution' && paths.includes('P27')) {
+    overlays.push({ id: 'P27', title: 'Hosted SQL Server platform overlay', role: 'platform', why: 'The target is a SQL Server hosted on Azure VMware Solution, so the platform carries prerequisites the method path does not.' });
+  }
+  return overlays;
 }
 function viableTargetKeyForLabel(label, eligibility) {  const key = LABEL_TO_TARGET[label];
   return key && [E.ELIGIBLE, E.REMEDIATE].includes(eligibility[key]) ? key : undefined;

@@ -45,6 +45,15 @@ the fields underneath it, and say that the shape was out of date rather than fai
 candidate marked `available` over the recommended one, resolve that candidate's
 `prerequisitePaths` instead. Do not re-run the ranking.
 
+**Inherited facts are resolved through `reference/advisor-fact-mappings.json`, not by guesswork.**
+The two skills name and type their facts differently, so "do not ask again" was impossible to apply
+consistently: `size` is a band here and a number in gigabytes there, `downtime` is
+`downtime_tolerance`, and `mi_link_ports` is free text against a status. The crosswalk states, for
+every field, whether it converts directly, needs a vocabulary translation, or **cannot convert at
+all**. The last case is the important one: a qualitative note about performance is not a captured
+baseline, and a list of dependencies the user happened to mention is not a completed inventory. For
+those fields the question is still asked, and the Advisor's answer may be offered as the default.
+
 Normalize the shapes before applying prerequisite rules. The handoff is a recommendation, not
 proof that its assumptions or user-reported evidence were verified.
 

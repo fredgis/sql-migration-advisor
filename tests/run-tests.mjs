@@ -1626,6 +1626,17 @@ try {
       failures.push(`${scenario.id}: "${out.method}" wins for ${out.primaryTarget} with no prerequisite path, so the prerequisite skill has nothing to resolve`);
     }
     if (!chosen) failures.push(`${scenario.id}: recommended "${out.method}" is absent from its own candidate list for ${out.primaryTarget}`);
+    // Audit 9 F-04: an AVS route needs the method path and the platform overlay together, and the
+    // single-path shape forced one of the two to be dropped. Every AVS candidate that moves a
+    // database therefore has to carry P27; only HCX, which moves the machine, does not.
+    if (out.primaryTarget === 'Azure VMware Solution') {
+      for (const c of list) {
+        const movesTheMachine = /hcx|vmotion/i.test(c.method);
+        const carries = (c.prerequisitePaths || []).includes('P27');
+        if (!movesTheMachine && !carries) failures.push(`${scenario.id}: AVS candidate "${c.method}" carries no P27 platform overlay, so the plan would describe a generic SQL Server target rather than AVS`);
+        if (movesTheMachine && carries) failures.push(`${scenario.id}: AVS candidate "${c.method}" moves the virtual machine, so it must not also carry the P27 platform overlay`);
+      }
+    }
     else if (chosen.status !== 'available') failures.push(`${scenario.id}: recommended "${out.method}" is listed unavailable by its own gate — ${chosen.reason}`);
   }
 
@@ -1771,6 +1782,123 @@ try {
     ]);
 }
 
+
+// Audit 9 F-05: the consumer is told not to ask again for a fact the Advisor already established,
+// but the two skills name and type their facts differently, so the rule could not be implemented
+// deterministically. A crosswalk only helps if both of its ends are real, so every entry is checked
+// against the Advisor input contract and the consumer question set, and every not-convertible
+// entry has to say why rather than simply going missing.
+{
+  const failures = [];
+  const mappings = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'reference', 'advisor-fact-mappings.json')));
+  const questions = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'reference', 'questions.json')));
+  const consumerFields = new Set((questions.questions || questions).map((q) => q.field || q.id).filter(Boolean));
+  const advisorContract = readText(path.join('reference', 'input-contract.md'));
+
+  const KINDS = new Set(Object.keys(mappings.conversionKinds || {}));
+  const seen = new Set();
+  for (const m of mappings.mappings || []) {
+    const at = `${m.advisorField} -> ${m.consumerField}`;
+    if (seen.has(at)) failures.push(`${at}: duplicated mapping`);
+    seen.add(at);
+    if (!KINDS.has(m.conversion)) failures.push(`${at}: conversion ${JSON.stringify(m.conversion)} is not one of ${[...KINDS].join(', ')}`);
+    if (!m.note || m.note.length < 30) failures.push(`${at}: needs a note explaining the conversion; a crosswalk entry without one cannot be challenged`);
+    if (!consumerFields.has(m.consumerField)) failures.push(`${at}: ${m.consumerField} is not a field in questions.json`);
+    if (!new RegExp(`\`${m.advisorField}\``).test(advisorContract)) failures.push(`${at}: ${m.advisorField} is not documented in reference/input-contract.md`);
+    if (m.conversion === 'vocabulary' && (!m.valueMap || !Object.keys(m.valueMap).length)) failures.push(`${at}: declared as a vocabulary conversion but carries no valueMap`);
+    if (m.conversion === 'vocabulary' && !m.otherwise) failures.push(`${at}: a vocabulary conversion must say what happens to a value the map does not cover`);
+    if (m.conversion === 'not-convertible' && m.valueMap) failures.push(`${at}: not-convertible entries must not carry a valueMap`);
+  }
+
+  // The fields the audit named are the ones a reader will look for. If one silently leaves the
+  // crosswalk, the gap it documented comes back with no trace.
+  for (const required of ['size', 'downtime', 'authentication', 'mi_link_ports', 'blob_https_reachability', 'performance', 'feature_dependencies']) {
+    if (!(mappings.mappings || []).some((m) => m.advisorField === required)) failures.push(`${required}: named in audit 9 F-05 but absent from the crosswalk`);
+  }
+
+  const counts = (mappings.mappings || []).reduce((acc, m) => { acc[m.conversion] = (acc[m.conversion] || 0) + 1; return acc; }, {});
+  add('advisor-fact-crosswalk-is-wired', failures.length === 0,
+    failures.length ? failures : [
+      `${(mappings.mappings || []).length} mappings: ${Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(', ')}.`,
+      'Every entry names a field the Advisor input contract documents and a field questions.json asks, and every not-convertible entry says why the consumer must still ask.',
+    ]);
+}
+
+
+// The output schema claimed normalizedProfile was typed by input.schema.json while declaring it as
+// a bare object, so nothing stopped a misspelled field from riding through the handoff. Cross-file
+// $ref is outside the subset this repository's validator supports, so the property names are
+// materialised instead and held in step here.
+{
+  const failures = [];
+  const input = JSON.parse(readText(path.join('skills', 'recommend-migration-path', 'schemas', 'input.schema.json')));
+  const output = JSON.parse(readText(path.join('skills', 'recommend-migration-path', 'schemas', 'output.schema.json')));
+  const declared = Object.keys(output.properties?.normalizedProfile?.properties || {}).sort();
+  const expected = Object.keys(input.properties || {}).sort();
+
+  for (const missing of expected.filter((k) => !declared.includes(k))) failures.push(`normalizedProfile does not name ${missing}, which input.schema.json defines`);
+  for (const extra of declared.filter((k) => !expected.includes(k))) failures.push(`normalizedProfile names ${extra}, which input.schema.json does not define`);
+  if (output.properties?.normalizedProfile?.additionalProperties !== false) failures.push('normalizedProfile must set additionalProperties to false, or a misspelled field rides through the handoff unnoticed');
+
+  add('normalized-profile-matches-input-schema', failures.length === 0,
+    failures.length ? failures : [`normalizedProfile names the same ${expected.length} fields as input.schema.json and refuses anything else.`]);
+}
+
+// Audit 9 F-06: the section 8 matrix is not the whole inventory. Routes described only in narrative
+// prose had no canonical identity, so it was impossible to say whether their absence from the
+// matrix was deliberate or an oversight, and equally impossible to stop a transport being counted
+// as a migration method. The manifest types every route; this holds it against the matrix and the
+// path catalog in both directions.
+{
+  const failures = [];
+  const manifest = JSON.parse(readText(path.join('reference', 'migration-methods.json')));
+  const coverage = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'reference', 'advisor-coverage.json')));
+  const catalog = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'reference', 'path-catalog.json')));
+
+  const KINDS = new Set(Object.keys(manifest.kinds || {}));
+  const matrixMethods = new Set(coverage.dispositions.map((d) => d.method));
+  const catalogIds = new Set(catalog.paths.map((p) => p.id));
+  const seen = new Set();
+
+  for (const r of manifest.routes || []) {
+    if (seen.has(r.id)) failures.push(`${r.id}: duplicated route id`);
+    seen.add(r.id);
+    if (!KINDS.has(r.kind)) failures.push(`${r.id}: kind ${JSON.stringify(r.kind)} is not one of ${[...KINDS].join(', ')}`);
+    if (!r.why || r.why.length < 30) failures.push(`${r.id}: needs a why long enough to be challenged`);
+    if (r.pathId && !catalogIds.has(r.pathId)) failures.push(`${r.id}: names path ${r.pathId}, which path-catalog.json does not define`);
+    if (r.inMatrix && !matrixMethods.has(r.name)) failures.push(`${r.id}: declared inMatrix but ${JSON.stringify(r.name)} is not a method in advisor-coverage.json`);
+    if (!r.inMatrix && matrixMethods.has(r.name)) failures.push(`${r.id}: declared outside the matrix but advisor-coverage.json carries ${JSON.stringify(r.name)}`);
+  }
+
+  // Every method the matrix declares has to be typed, or the manifest stops being the inventory it
+  // claims to be the moment a row is added to section 8.
+  const manifestNames = new Set((manifest.routes || []).map((r) => r.name));
+  for (const m of matrixMethods) {
+    if (!manifestNames.has(m)) failures.push(`${m}: present in the section 8 matrix but absent from reference/migration-methods.json`);
+  }
+
+  // A transport or an assessment must never be classified primary or secondary, because that is
+  // what would let a bulk-copy utility be recommended as a migration.
+  const roleOf = new Map();
+  for (const d of coverage.dispositions) if (!roleOf.has(d.method) || d.advisorRole !== 'documentary') roleOf.set(d.method, d.advisorRole);
+  for (const r of manifest.routes || []) {
+    if (!r.inMatrix) continue;
+    const role = roleOf.get(r.name);
+    if ((r.kind === 'transport' || r.kind === 'assessment' || r.kind === 'out_of_scope') && role !== 'documentary') {
+      failures.push(`${r.id}: typed ${r.kind} in the manifest but advisor-coverage.json marks it ${role}; a route that carries no cutover must not be recommendable`);
+    }
+    if (r.kind === 'migration' && role === 'documentary') {
+      failures.push(`${r.id}: typed migration in the manifest but every matrix cell marks it documentary; either it can be recommended or it is not a migration`);
+    }
+  }
+
+  const counts = (manifest.routes || []).reduce((acc, r) => { acc[r.kind] = (acc[r.kind] || 0) + 1; return acc; }, {});
+  add('method-manifest-types-every-route', failures.length === 0,
+    failures.length ? failures : [
+      `${(manifest.routes || []).length} routes typed: ${Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(', ')}.`,
+      `Every one of the ${matrixMethods.size} matrix methods is typed, no transport or assessment is marked recommendable, and every narrative route says why it is not in the matrix.`,
+    ]);
+}
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };
 if (jsonMode) {
   process.stdout.write(JSON.stringify({ summary, results }, null, 2) + '\n');
