@@ -476,13 +476,22 @@
               "required": [
                 "nextActions"
               ]
+            },
+            {
+              "required": [
+                "selectedMethodPath"
+              ]
+            },
+            {
+              "required": [
+                "appliedOverlays"
+              ]
             }
           ]
         }
       },
       "else": {
         "required": [
-          "selectedPath",
           "summary",
           "prerequisites",
           "blockers",
@@ -490,7 +499,9 @@
           "assumptions",
           "questionsAsked",
           "nextActions",
-          "sourceRegister"
+          "sourceRegister",
+          "selectedMethodPath",
+          "appliedOverlays"
         ],
         "not": {
           "anyOf": [

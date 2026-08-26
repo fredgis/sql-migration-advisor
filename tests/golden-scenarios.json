@@ -1358,7 +1358,7 @@
   {
     "id": "multitb-limited-wan-data-box-seed-sync",
     "title": "Multi-TB limited WAN uses Data Box seed-then-sync",
-    "why": "Guards large data movement planning.",
+    "why": "Audit 10 R-03: a physical seed is a transport, not a migration method. Returning Data Box as the method left the delta mechanism unstated while the card read as a complete answer with medium confidence. The method is now the one that actually catches up and cuts over, and Data Box rides along as a transport overlay carrying its own unknown.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -1378,11 +1378,11 @@
         "sql_db": "eligible"
       },
       "primary_target": "Azure SQL Database",
-      "method": "Data Box seed → sync delta",
-      "targetAvailabilityDuringSync": "not-present",
-      "businessCutoverDowntime": "full-load-time",
+      "method": "Transactional replication",
+      "targetAvailabilityDuringSync": "read-write",
+      "businessCutoverDowntime": "near-zero",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [

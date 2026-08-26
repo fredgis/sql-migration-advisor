@@ -6,7 +6,7 @@
 >
 > **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of August 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
 >
-> **Version.** v3.0 — 26 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
+> **Version.** v3.1 — 26 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**
@@ -660,13 +660,14 @@ flowchart LR
 
 ## 17. Document version & changelog
 
-Current version: **v3.0** (2026-08-26).
+Current version: **v3.1** (2026-08-26).
 
 <details>
-<summary><b>Version history</b> (current: v3.0)</summary>
+<summary><b>Version history</b> (current: v3.1)</summary>
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v3.1 | 2026-08-26 | **The standalone Log Replay Service ceiling now says why it is narrower than one Microsoft page.** The LRS-versus-MI-Link comparison page states "2008 and later" with no ceiling; the standalone migration page states 2008 to 2022. Both are current and they disagree. The rule keeps the narrower boundary deliberately, so the failure mode is a route wrongly excluded rather than one wrongly promised, and both pages are watched in the claims registry. The Arc-orchestrated path remains a separate entry listing SQL Server 2025. |
 | v3.0 | 2026-08-26 | **Routes the document describes in prose had no identity, so nothing could say whether their absence from the summary matrix was deliberate.** `reference/migration-methods.json` now types all 26 of them as migration, assessment, transport, overlay or out of scope, with a written reason each. The distinction it enforces is that a transport is not a method: `bcp`, Data Factory Copy, Smart Bulk Copy, Data Box seed, Dataflow Gen2 and the file transports carry bytes for something else and have no cutover of their own, so counting them as migration methods overstated what the tool can recommend. Fabric Mirroring stays out as continuous replication rather than a one-time migration. |
 | v2.12 | 2026-08-26 | **The Log Replay Service ceiling was one gate covering two control planes, and it excluded a version Microsoft supports.** Standalone LRS is documented for SQL Server 2008-2022, but the Azure Arc migration path lists SQL Server 2025 RTM among its supported sources; a single "2008-2022, not 2025" rule therefore refused a route Microsoft publishes. The two are now separate entries, each carrying its source URL, the sentence it rests on, and the date it was checked. Microsoft's own pages disagree here, so both are recorded rather than one being chosen for them. |
 | v2.11 | 2026-08-26 | **The summary matrix was missing a method the tool itself recommends, and understated another.** Log shipping is documented in section 5.1 and returned as a recommendation, yet section 8 carried no row for it, so nothing could check it against a target. **Azure DMS** was marked supported for SQL VM and SQL MI in section 8 while sections 5.1 and 5.2 carried no DMS row at all, which is how the method stayed absent from the guidance that reads those tables. Section 8 now states DMS as online + offline for SQL VM and SQL MI and offline only for SQL DB, sections 5.1 and 5.2 carry the DMS rows, and section 5.3 cross-references both instead of holding the fact alone. |

@@ -90,7 +90,7 @@ Free text cannot produce `typed_answer` or `verified_evidence`.
 | # | Invariant |
 | --- | --- |
 | 1 | The target/method resolves to exactly one of the 28 catalog paths as `selectedMethodPath`, or the output is `unresolved_path` and contains no invented prerequisite plan. **A route may additionally require overlays**, which appear in `appliedOverlays[]` and never replace the method path |
-| 1b | **An AVS-hosted SQL Server carries both**: the method path that moves the data, and `P27` for the platform that hosts it. Emitting only one loses the other, which is what the single-path shape forced — `P27` alone describes a platform nobody migrates to, and the method path alone describes a generic SQL Server target rather than AVS |. |
+| 1b | **An AVS-hosted SQL Server carries both**: the method path that moves the data, and `P27` for the platform that hosts it. Emitting only one loses the other, which is what the single-path shape forced — `P27` alone describes a platform nobody migrates to, and the method path alone describes a generic SQL Server target rather than AVS. |
 | 2 | Every prerequisite has a stable ID, applicability statement, requirement type, blocking flag, evidence requirement, official public source and `lastVerified` date. |
 | 3 | `confirmed` rests on a typed fact or verified evidence; free-text confidence language is never enough. |
 | 4 | Every unanswered or ambiguous hard-gate fact remains `unknown` and appears in `unknowns`. |

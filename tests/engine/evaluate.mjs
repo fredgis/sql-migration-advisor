@@ -329,7 +329,13 @@ function chooseTarget(inputs, eligibility, out) {
   if (eligibility.sql_mi === E.UNKNOWN || eligibility.sql_db === E.UNKNOWN) return ['provisional shortlist only', 'Assessment and dependency discovery first'];
   if (eligibility.sql_mi === E.UNSUPPORTED && eligibility.sql_db === E.UNSUPPORTED) return ['SQL Server on Azure VM', chooseVmMethod(inputs)];
   if (eligibility.sql_vm === E.ELIGIBLE && (eligibility.sql_mi === E.UNSUPPORTED || eligibility.sql_db === E.UNSUPPORTED) && has(inputs.management_model, 'need OS')) return ['SQL Server on Azure VM', chooseVmMethod(inputs)];
-  if (any(inputs.network_ports, 'limited WAN') && any(inputs.size, `> ${SQL_DB_TIERS.hyperscaleSizeThresholdTb} TB`, 'multi-TB', 'multitb')) return ['Azure SQL Database', 'Data Box seed → sync delta'];
+  // Data Box carries the seed; it has no cutover of its own, so returning it as the method left the
+  // delta mechanism unstated while the card read as a complete answer. Pick the real method for the
+  // target and record Data Box as the transport that gets the first full backup there.
+  if (any(inputs.network_ports, 'limited WAN') && any(inputs.size, `> ${SQL_DB_TIERS.hyperscaleSizeThresholdTb} TB`, 'multi-TB', 'multitb')) {
+    out.seedTransport = 'Data Box seed → sync delta';
+    return ['Azure SQL Database', chooseSqlDbMethod(inputs)];
+  }
   if (any(inputs.size, 'estate scale', 'business case', 'dependency map')) return ['provisional shortlist only', 'Azure Migrate appliance/import/Arc discovery'];
   if (dep(inputs, 'TDE')) return ['Azure SQL Managed Instance', 'Native backup/restore'];
   // Diverting to SQL DB because MI Link is blocked and LRS is out of range only made sense while
@@ -652,6 +658,14 @@ function buildMethodCandidates(inputs, eligibility, out) {
   const winner = out.methodCandidates.find((c) => c.selected);
   out.controlPlane = chooseControlPlane(inputs, target, out.method);
   out.appliedOverlays = overlaysFor(target, winner);
+  // A physical seed is a transport, not a method: it moves the first full backup and says nothing
+  // about the cutover. Recording it as an overlay keeps the delta mechanism visible instead of
+  // letting the transport stand in for the whole migration.
+  if (out.seedTransport) {
+    out.appliedOverlays.push({ id: 'P14', title: 'Data Box seed with delta synchronisation', role: 'transport', why: 'Limited WAN at this size, so the initial full backup ships physically. The delta must still be caught up by the selected method before cutover.' });
+    addUnique(out.unknowns, 'Data Box carries the seed only. Confirm which mechanism catches up the delta between the shipped backup and cutover, and how long that window stays open.');
+    addUnique(out.evidenceRequired, 'Name the delta/catch-up mechanism paired with the Data Box seed, and measure the change rate it has to absorb.');
+  }
   // The method path and its overlays are two different things, and naming them separately is what
   // lets a reader apply both instead of choosing between them.
   out.selectedMethodPath = winner ? (winner.prerequisitePaths || []).filter((p) => !out.appliedOverlays.some((o) => o.id === p)) : [];
