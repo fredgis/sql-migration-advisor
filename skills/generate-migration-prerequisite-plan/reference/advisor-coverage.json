@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "Disposition of every supported cell in the Advisor method x target matrix. Section 8 of docs/sql-server-to-azure-migration.md marks 51 (method, target) cells as supported. Each one must appear here exactly once with a status, so that a route the Advisor can recommend can never silently lack prerequisite coverage. Enforced by tests/check-prerequisite-skill.mjs.",
+  "description": "Disposition of every supported cell in the Advisor method x target matrix. Section 8 of docs/sql-server-to-azure-migration.md marks each supported (method, target) cell.md marks 51 (method, target) cells as supported. Each one must appear here exactly once with a status, so that a route the Advisor can recommend can never silently lack prerequisite coverage. Enforced by tests/check-prerequisite-skill.mjs. Each cell also carries an advisorRole that separates \"supported\" from \"recommendable\": tests/run-tests.mjs requires every primary and secondary cell to appear in the matching target sub-section of reference/decision-rules.md B3.",
   "sourceMatrix": {
     "document": "docs/sql-server-to-azure-migration.md",
     "section": "8. Summary matrix — method / tool × target",
@@ -11,74 +11,592 @@
     "out-of-scope": "Deliberately excluded. The reason must explain why this cell is not a SQL Server to Azure data-movement route."
   },
   "dispositions": [
-    { "method": "Azure Migrate (assess)", "target": "SQL VM", "status": "path", "paths": ["P28"] },
-    { "method": "Azure Migrate (assess)", "target": "AVS", "status": "path", "paths": ["P28"] },
-    { "method": "Azure Migrate (assess)", "target": "SQL MI", "status": "path", "paths": ["P28"] },
-    { "method": "Azure Migrate (assess)", "target": "SQL DB", "status": "path", "paths": ["P28"] },
-
-    { "method": "DMS", "target": "SQL VM", "status": "path", "paths": ["P25", "P26"] },
-    { "method": "DMS", "target": "SQL MI", "status": "path", "paths": ["P23", "P24"] },
-    { "method": "DMS", "target": "SQL DB", "status": "path", "paths": ["P12"] },
-
-    { "method": "MI Link", "target": "SQL MI", "status": "path", "paths": ["P08"] },
-
-    { "method": "Log Replay Service", "target": "SQL MI", "status": "path", "paths": ["P09"] },
-
-    { "method": "Native backup/restore", "target": "SQL VM", "status": "path", "paths": ["P04", "P05"] },
-    { "method": "Native backup/restore", "target": "SQL MI", "status": "path", "paths": ["P10"] },
-    { "method": "Native backup/restore", "target": "Arc SQL MI", "status": "path", "paths": ["P17", "P18"] },
-    { "method": "Native backup/restore", "target": "SQL container", "status": "path", "paths": ["P19"] },
-    { "method": "Native backup/restore", "target": "AVS", "status": "path", "paths": ["P04", "P27"] },
-
-    { "method": "Distributed / Always On AG", "target": "SQL VM", "status": "path", "paths": ["P01", "P02"] },
-    { "method": "Distributed / Always On AG", "target": "AVS", "status": "path", "paths": ["P01", "P02", "P27"] },
-
-    { "method": "HCX / vMotion", "target": "AVS", "status": "path", "paths": ["P07"] },
-
-    { "method": "Transactional replication", "target": "SQL MI", "status": "path", "paths": ["P13"] },
-    { "method": "Transactional replication", "target": "SQL DB", "status": "path", "paths": ["P13"] },
-    { "method": "Transactional replication", "target": "Fabric SQL DB", "status": "path", "paths": ["P13"] },
-    { "method": "Transactional replication", "target": "SQL VM", "status": "path", "paths": ["P13"] },
-    { "method": "Transactional replication", "target": "AVS", "status": "path", "paths": ["P13", "P27"] },
-    { "method": "Transactional replication", "target": "Arc SQL MI", "status": "path", "paths": ["P13"] },
-    { "method": "Transactional replication", "target": "SQL container", "status": "path", "paths": ["P13"] },
-
-    { "method": "BACPAC / SqlPackage", "target": "SQL DB", "status": "path", "paths": ["P11"] },
-    { "method": "BACPAC / SqlPackage", "target": "SQL VM", "status": "path", "paths": ["P11"] },
-    { "method": "BACPAC / SqlPackage", "target": "AVS", "status": "path", "paths": ["P11", "P27"] },
-    { "method": "BACPAC / SqlPackage", "target": "SQL MI", "status": "path", "paths": ["P11"] },
-    { "method": "BACPAC / SqlPackage", "target": "Fabric SQL DB", "status": "path", "paths": ["P11"] },
-    { "method": "BACPAC / SqlPackage", "target": "Arc SQL MI", "status": "path", "paths": ["P11"] },
-    { "method": "BACPAC / SqlPackage", "target": "SQL container", "status": "path", "paths": ["P11"] },
-
-    { "method": "bcp", "target": "SQL MI", "status": "path", "paths": ["P20"] },
-    { "method": "bcp", "target": "SQL DB", "status": "path", "paths": ["P20"] },
-    { "method": "bcp", "target": "SQL VM", "status": "path", "paths": ["P20"] },
-    { "method": "bcp", "target": "AVS", "status": "path", "paths": ["P20", "P27"] },
-    { "method": "bcp", "target": "Fabric SQL DB", "status": "path", "paths": ["P20"] },
-    { "method": "bcp", "target": "Arc SQL MI", "status": "path", "paths": ["P20"] },
-    { "method": "bcp", "target": "SQL container", "status": "path", "paths": ["P20"] },
-
-    { "method": "Smart Bulk Copy", "target": "SQL MI", "status": "path", "paths": ["P22"] },
-    { "method": "Smart Bulk Copy", "target": "SQL DB", "status": "path", "paths": ["P22"] },
-    { "method": "Smart Bulk Copy", "target": "SQL VM", "status": "path", "paths": ["P22"] },
-    { "method": "Smart Bulk Copy", "target": "AVS", "status": "path", "paths": ["P22", "P27"] },
-
-    { "method": "Data Factory Copy", "target": "SQL MI", "status": "path", "paths": ["P21"] },
-    { "method": "Data Factory Copy", "target": "SQL DB", "status": "path", "paths": ["P21"] },
-    { "method": "Data Factory Copy", "target": "Fabric SQL DB", "status": "path", "paths": ["P21"] },
-    { "method": "Data Factory Copy", "target": "SQL VM", "status": "path", "paths": ["P21"] },
-    { "method": "Data Factory Copy", "target": "AVS", "status": "path", "paths": ["P21", "P27"] },
-    { "method": "Data Factory Copy", "target": "Arc SQL MI", "status": "path", "paths": ["P21"] },
-    { "method": "Data Factory Copy", "target": "SQL container", "status": "path", "paths": ["P21"] },
-
-    { "method": "Fabric Migration Assistant", "target": "Fabric SQL DB", "status": "path", "paths": ["P16"] },
-
-    { "method": "SSMA (heterogeneous)", "target": "SQL VM", "status": "out-of-scope", "reason": "SQL Server Migration Assistant converts non-SQL-Server sources such as Oracle, Sybase, DB2, MySQL and Access. This knowledge base is scoped to SQL Server sources, for which SSMA is not the migration vehicle." },
-    { "method": "SSMA (heterogeneous)", "target": "AVS", "status": "out-of-scope", "reason": "Heterogeneous-source tool; out of scope for SQL Server sources." },
-    { "method": "SSMA (heterogeneous)", "target": "SQL MI", "status": "out-of-scope", "reason": "Heterogeneous-source tool; out of scope for SQL Server sources." },
-    { "method": "SSMA (heterogeneous)", "target": "SQL DB", "status": "out-of-scope", "reason": "Heterogeneous-source tool; out of scope for SQL Server sources." },
-    { "method": "SSMA (heterogeneous)", "target": "Arc SQL MI", "status": "out-of-scope", "reason": "Heterogeneous-source tool; out of scope for SQL Server sources." },
-    { "method": "SSMA (heterogeneous)", "target": "SQL container", "status": "out-of-scope", "reason": "Heterogeneous-source tool; out of scope for SQL Server sources." }
-  ]
+    {
+      "method": "Azure Migrate (assess)",
+      "target": "SQL VM",
+      "status": "path",
+      "paths": [
+        "P28"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Assessment and discovery control plane, not a data-movement method. It appears in the control-plane guidance, never as the recommended migration method."
+    },
+    {
+      "method": "Azure Migrate (assess)",
+      "target": "AVS",
+      "status": "path",
+      "paths": [
+        "P28"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Assessment and discovery control plane, not a data-movement method. It appears in the control-plane guidance, never as the recommended migration method."
+    },
+    {
+      "method": "Azure Migrate (assess)",
+      "target": "SQL MI",
+      "status": "path",
+      "paths": [
+        "P28"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Assessment and discovery control plane, not a data-movement method. It appears in the control-plane guidance, never as the recommended migration method."
+    },
+    {
+      "method": "Azure Migrate (assess)",
+      "target": "SQL DB",
+      "status": "path",
+      "paths": [
+        "P28"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Assessment and discovery control plane, not a data-movement method. It appears in the control-plane guidance, never as the recommended migration method."
+    },
+    {
+      "method": "DMS",
+      "target": "SQL VM",
+      "status": "path",
+      "paths": [
+        "P25",
+        "P26"
+      ],
+      "advisorRole": "primary",
+      "roleReason": "Managed migration service; can be the recommended method on its own."
+    },
+    {
+      "method": "DMS",
+      "target": "SQL MI",
+      "status": "path",
+      "paths": [
+        "P23",
+        "P24"
+      ],
+      "advisorRole": "primary",
+      "roleReason": "Managed migration service; can be the recommended method on its own."
+    },
+    {
+      "method": "DMS",
+      "target": "SQL DB",
+      "status": "path",
+      "paths": [
+        "P12"
+      ],
+      "advisorRole": "primary",
+      "roleReason": "Managed migration service; can be the recommended method on its own."
+    },
+    {
+      "method": "MI Link",
+      "target": "SQL MI",
+      "status": "path",
+      "paths": [
+        "P08"
+      ],
+      "advisorRole": "primary",
+      "roleReason": "Near-zero-downtime method; can be the recommended method on its own."
+    },
+    {
+      "method": "Log Replay Service",
+      "target": "SQL MI",
+      "status": "path",
+      "paths": [
+        "P09"
+      ],
+      "advisorRole": "primary",
+      "roleReason": "Managed log-restore method; can be the recommended method on its own."
+    },
+    {
+      "method": "Native backup/restore",
+      "target": "SQL VM",
+      "status": "path",
+      "paths": [
+        "P04",
+        "P05"
+      ],
+      "advisorRole": "primary",
+      "roleReason": "The simplest complete method wherever the target can restore a backup; can be the recommended method on its own."
+    },
+    {
+      "method": "Native backup/restore",
+      "target": "SQL MI",
+      "status": "path",
+      "paths": [
+        "P10"
+      ],
+      "advisorRole": "primary",
+      "roleReason": "The simplest complete method wherever the target can restore a backup; can be the recommended method on its own."
+    },
+    {
+      "method": "Native backup/restore",
+      "target": "Arc SQL MI",
+      "status": "path",
+      "paths": [
+        "P17",
+        "P18"
+      ],
+      "advisorRole": "primary",
+      "roleReason": "The simplest complete method wherever the target can restore a backup; can be the recommended method on its own."
+    },
+    {
+      "method": "Native backup/restore",
+      "target": "SQL container",
+      "status": "path",
+      "paths": [
+        "P19"
+      ],
+      "advisorRole": "primary",
+      "roleReason": "The simplest complete method wherever the target can restore a backup; can be the recommended method on its own."
+    },
+    {
+      "method": "Native backup/restore",
+      "target": "AVS",
+      "status": "path",
+      "paths": [
+        "P04",
+        "P27"
+      ],
+      "advisorRole": "primary",
+      "roleReason": "The simplest complete method wherever the target can restore a backup; can be the recommended method on its own."
+    },
+    {
+      "method": "Distributed / Always On AG",
+      "target": "SQL VM",
+      "status": "path",
+      "paths": [
+        "P01",
+        "P02"
+      ],
+      "advisorRole": "primary",
+      "roleReason": "Availability-group seeding for a near-zero cutover; can be the recommended method on its own."
+    },
+    {
+      "method": "Distributed / Always On AG",
+      "target": "AVS",
+      "status": "path",
+      "paths": [
+        "P01",
+        "P02",
+        "P27"
+      ],
+      "advisorRole": "primary",
+      "roleReason": "Availability-group seeding for a near-zero cutover; can be the recommended method on its own."
+    },
+    {
+      "method": "Log shipping",
+      "target": "SQL VM",
+      "status": "path",
+      "paths": [
+        "P03"
+      ],
+      "advisorRole": "primary",
+      "roleReason": "Ships and restores log backups for a minimal-downtime cutover; can be the recommended method on its own."
+    },
+    {
+      "method": "Log shipping",
+      "target": "AVS",
+      "status": "path",
+      "paths": [
+        "P03",
+        "P27"
+      ],
+      "advisorRole": "primary",
+      "roleReason": "Ships and restores log backups for a minimal-downtime cutover; can be the recommended method on its own."
+    },
+    {
+      "method": "HCX / vMotion",
+      "target": "AVS",
+      "status": "path",
+      "paths": [
+        "P07"
+      ],
+      "advisorRole": "primary",
+      "roleReason": "Moves the virtual machine rather than the database; the recommended method for a VMware-preserving move."
+    },
+    {
+      "method": "Transactional replication",
+      "target": "SQL MI",
+      "status": "path",
+      "paths": [
+        "P13"
+      ],
+      "advisorRole": "secondary",
+      "roleReason": "Legitimate when a subset of articles moves and the publisher qualifies, but rarely the whole answer. Belongs in a shortlist."
+    },
+    {
+      "method": "Transactional replication",
+      "target": "SQL DB",
+      "status": "path",
+      "paths": [
+        "P13"
+      ],
+      "advisorRole": "secondary",
+      "roleReason": "Legitimate when a subset of articles moves and the publisher qualifies, but rarely the whole answer. Belongs in a shortlist."
+    },
+    {
+      "method": "Transactional replication",
+      "target": "Fabric SQL DB",
+      "status": "path",
+      "paths": [
+        "P13"
+      ],
+      "advisorRole": "secondary",
+      "roleReason": "Legitimate when a subset of articles moves and the publisher qualifies, but rarely the whole answer. Belongs in a shortlist."
+    },
+    {
+      "method": "Transactional replication",
+      "target": "SQL VM",
+      "status": "path",
+      "paths": [
+        "P13"
+      ],
+      "advisorRole": "secondary",
+      "roleReason": "Legitimate when a subset of articles moves and the publisher qualifies, but rarely the whole answer. Belongs in a shortlist."
+    },
+    {
+      "method": "Transactional replication",
+      "target": "AVS",
+      "status": "path",
+      "paths": [
+        "P13",
+        "P27"
+      ],
+      "advisorRole": "secondary",
+      "roleReason": "Legitimate when a subset of articles moves and the publisher qualifies, but rarely the whole answer. Belongs in a shortlist."
+    },
+    {
+      "method": "Transactional replication",
+      "target": "Arc SQL MI",
+      "status": "path",
+      "paths": [
+        "P13"
+      ],
+      "advisorRole": "secondary",
+      "roleReason": "Legitimate when a subset of articles moves and the publisher qualifies, but rarely the whole answer. Belongs in a shortlist."
+    },
+    {
+      "method": "Transactional replication",
+      "target": "SQL container",
+      "status": "path",
+      "paths": [
+        "P13"
+      ],
+      "advisorRole": "secondary",
+      "roleReason": "Legitimate when a subset of articles moves and the publisher qualifies, but rarely the whole answer. Belongs in a shortlist."
+    },
+    {
+      "method": "BACPAC / SqlPackage",
+      "target": "SQL DB",
+      "status": "path",
+      "paths": [
+        "P11"
+      ],
+      "advisorRole": "secondary",
+      "roleReason": "Legitimate for smaller or schema-compatible workloads. Belongs in a shortlist rather than a default recommendation."
+    },
+    {
+      "method": "BACPAC / SqlPackage",
+      "target": "SQL VM",
+      "status": "path",
+      "paths": [
+        "P11"
+      ],
+      "advisorRole": "secondary",
+      "roleReason": "Legitimate for smaller or schema-compatible workloads. Belongs in a shortlist rather than a default recommendation."
+    },
+    {
+      "method": "BACPAC / SqlPackage",
+      "target": "AVS",
+      "status": "path",
+      "paths": [
+        "P11",
+        "P27"
+      ],
+      "advisorRole": "secondary",
+      "roleReason": "Legitimate for smaller or schema-compatible workloads. Belongs in a shortlist rather than a default recommendation."
+    },
+    {
+      "method": "BACPAC / SqlPackage",
+      "target": "SQL MI",
+      "status": "path",
+      "paths": [
+        "P11"
+      ],
+      "advisorRole": "secondary",
+      "roleReason": "Legitimate for smaller or schema-compatible workloads. Belongs in a shortlist rather than a default recommendation."
+    },
+    {
+      "method": "BACPAC / SqlPackage",
+      "target": "Fabric SQL DB",
+      "status": "path",
+      "paths": [
+        "P11"
+      ],
+      "advisorRole": "secondary",
+      "roleReason": "Legitimate for smaller or schema-compatible workloads. Belongs in a shortlist rather than a default recommendation."
+    },
+    {
+      "method": "BACPAC / SqlPackage",
+      "target": "Arc SQL MI",
+      "status": "path",
+      "paths": [
+        "P11"
+      ],
+      "advisorRole": "secondary",
+      "roleReason": "Legitimate for smaller or schema-compatible workloads. Belongs in a shortlist rather than a default recommendation."
+    },
+    {
+      "method": "BACPAC / SqlPackage",
+      "target": "SQL container",
+      "status": "path",
+      "paths": [
+        "P11"
+      ],
+      "advisorRole": "secondary",
+      "roleReason": "Legitimate for smaller or schema-compatible workloads. Belongs in a shortlist rather than a default recommendation."
+    },
+    {
+      "method": "bcp",
+      "target": "SQL MI",
+      "status": "path",
+      "paths": [
+        "P20"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Data movement only; carries no schema, no dependencies and no cutover. Supported everywhere, never the migration method."
+    },
+    {
+      "method": "bcp",
+      "target": "SQL DB",
+      "status": "path",
+      "paths": [
+        "P20"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Data movement only; carries no schema, no dependencies and no cutover. Supported everywhere, never the migration method."
+    },
+    {
+      "method": "bcp",
+      "target": "SQL VM",
+      "status": "path",
+      "paths": [
+        "P20"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Data movement only; carries no schema, no dependencies and no cutover. Supported everywhere, never the migration method."
+    },
+    {
+      "method": "bcp",
+      "target": "AVS",
+      "status": "path",
+      "paths": [
+        "P20",
+        "P27"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Data movement only; carries no schema, no dependencies and no cutover. Supported everywhere, never the migration method."
+    },
+    {
+      "method": "bcp",
+      "target": "Fabric SQL DB",
+      "status": "path",
+      "paths": [
+        "P20"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Data movement only; carries no schema, no dependencies and no cutover. Supported everywhere, never the migration method."
+    },
+    {
+      "method": "bcp",
+      "target": "Arc SQL MI",
+      "status": "path",
+      "paths": [
+        "P20"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Data movement only; carries no schema, no dependencies and no cutover. Supported everywhere, never the migration method."
+    },
+    {
+      "method": "bcp",
+      "target": "SQL container",
+      "status": "path",
+      "paths": [
+        "P20"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Data movement only; carries no schema, no dependencies and no cutover. Supported everywhere, never the migration method."
+    },
+    {
+      "method": "Smart Bulk Copy",
+      "target": "SQL MI",
+      "status": "path",
+      "paths": [
+        "P22"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Archived community sample for bulk data movement; supported, never a recommendation."
+    },
+    {
+      "method": "Smart Bulk Copy",
+      "target": "SQL DB",
+      "status": "path",
+      "paths": [
+        "P22"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Archived community sample for bulk data movement; supported, never a recommendation."
+    },
+    {
+      "method": "Smart Bulk Copy",
+      "target": "SQL VM",
+      "status": "path",
+      "paths": [
+        "P22"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Archived community sample for bulk data movement; supported, never a recommendation."
+    },
+    {
+      "method": "Smart Bulk Copy",
+      "target": "AVS",
+      "status": "path",
+      "paths": [
+        "P22",
+        "P27"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Archived community sample for bulk data movement; supported, never a recommendation."
+    },
+    {
+      "method": "Data Factory Copy",
+      "target": "SQL MI",
+      "status": "path",
+      "paths": [
+        "P21"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Integration pipeline for data movement; supported, never the migration method on its own."
+    },
+    {
+      "method": "Data Factory Copy",
+      "target": "SQL DB",
+      "status": "path",
+      "paths": [
+        "P21"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Integration pipeline for data movement; supported, never the migration method on its own."
+    },
+    {
+      "method": "Data Factory Copy",
+      "target": "Fabric SQL DB",
+      "status": "path",
+      "paths": [
+        "P21"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Integration pipeline for data movement; supported, never the migration method on its own."
+    },
+    {
+      "method": "Data Factory Copy",
+      "target": "SQL VM",
+      "status": "path",
+      "paths": [
+        "P21"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Integration pipeline for data movement; supported, never the migration method on its own."
+    },
+    {
+      "method": "Data Factory Copy",
+      "target": "AVS",
+      "status": "path",
+      "paths": [
+        "P21",
+        "P27"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Integration pipeline for data movement; supported, never the migration method on its own."
+    },
+    {
+      "method": "Data Factory Copy",
+      "target": "Arc SQL MI",
+      "status": "path",
+      "paths": [
+        "P21"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Integration pipeline for data movement; supported, never the migration method on its own."
+    },
+    {
+      "method": "Data Factory Copy",
+      "target": "SQL container",
+      "status": "path",
+      "paths": [
+        "P21"
+      ],
+      "advisorRole": "documentary",
+      "roleReason": "Integration pipeline for data movement; supported, never the migration method on its own."
+    },
+    {
+      "method": "Fabric Migration Assistant",
+      "target": "Fabric SQL DB",
+      "status": "path",
+      "paths": [
+        "P16"
+      ],
+      "advisorRole": "primary",
+      "roleReason": "The Fabric-native migration vehicle; can be the recommended method for that target."
+    },
+    {
+      "method": "SSMA (heterogeneous)",
+      "target": "SQL VM",
+      "status": "out-of-scope",
+      "reason": "SQL Server Migration Assistant converts non-SQL-Server sources such as Oracle, Sybase, DB2, MySQL and Access. This knowledge base is scoped to SQL Server sources, for which SSMA is not the migration vehicle.",
+      "advisorRole": "documentary",
+      "roleReason": "Heterogeneous-source conversion tool; out of scope for SQL Server sources and never recommended here."
+    },
+    {
+      "method": "SSMA (heterogeneous)",
+      "target": "AVS",
+      "status": "out-of-scope",
+      "reason": "Heterogeneous-source tool; out of scope for SQL Server sources.",
+      "advisorRole": "documentary",
+      "roleReason": "Heterogeneous-source conversion tool; out of scope for SQL Server sources and never recommended here."
+    },
+    {
+      "method": "SSMA (heterogeneous)",
+      "target": "SQL MI",
+      "status": "out-of-scope",
+      "reason": "Heterogeneous-source tool; out of scope for SQL Server sources.",
+      "advisorRole": "documentary",
+      "roleReason": "Heterogeneous-source conversion tool; out of scope for SQL Server sources and never recommended here."
+    },
+    {
+      "method": "SSMA (heterogeneous)",
+      "target": "SQL DB",
+      "status": "out-of-scope",
+      "reason": "Heterogeneous-source tool; out of scope for SQL Server sources.",
+      "advisorRole": "documentary",
+      "roleReason": "Heterogeneous-source conversion tool; out of scope for SQL Server sources and never recommended here."
+    },
+    {
+      "method": "SSMA (heterogeneous)",
+      "target": "Arc SQL MI",
+      "status": "out-of-scope",
+      "reason": "Heterogeneous-source tool; out of scope for SQL Server sources.",
+      "advisorRole": "documentary",
+      "roleReason": "Heterogeneous-source conversion tool; out of scope for SQL Server sources and never recommended here."
+    },
+    {
+      "method": "SSMA (heterogeneous)",
+      "target": "SQL container",
+      "status": "out-of-scope",
+      "reason": "Heterogeneous-source tool; out of scope for SQL Server sources.",
+      "advisorRole": "documentary",
+      "roleReason": "Heterogeneous-source conversion tool; out of scope for SQL Server sources and never recommended here."
+    }
+  ],
+  "advisorRoles": {
+    "primary": "May be the single recommended method for this target. Every primary cell must appear under the matching target sub-section of decision-rules.md B3, so the model can weigh it.",
+    "secondary": "A legitimate alternative that may appear in a shortlist but is rarely the whole answer. Must also appear under the matching B3 sub-section.",
+    "documentary": "Supported and documented, but never a migration recommendation on its own. Deliberately absent from B3."
+  }
 }

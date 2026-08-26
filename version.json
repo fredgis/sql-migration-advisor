@@ -1,7 +1,7 @@
 {
-  "latest": "v2.10.0",
-  "knowledgeBase": "v2.10",
-  "released": "2026-08-24",
+  "latest": "v2.11.0",
+  "knowledgeBase": "v2.11",
+  "released": "2026-08-26",
   "install": "copilot plugin marketplace add fredgis/sql-migration-advisor && copilot plugin install sql-migration-advisor@fredgis",
   "update": "copilot plugin update sql-migration-advisor",
   "note": "Served from main so a running skill can compare its bundled version against the latest release. Kept in step with the coordinated version line by the version-manifest-current gate."

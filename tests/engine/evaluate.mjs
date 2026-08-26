@@ -12,6 +12,11 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const RULES = require('../../reference/decision-rules.data.json');
+// The set of methods a target can be reached by is not a property of this file: it is the section 8
+// matrix, carried by advisor-coverage.json with a role that says whether a cell may be recommended.
+// Reading it here is what stops the method cascade from quietly narrowing the field — a method that
+// is never enumerated is never rejected either, so nothing can argue with its absence.
+const COVERAGE = require('../../skills/generate-migration-prerequisite-plan/reference/advisor-coverage.json');
 
 const TARGETS = ['sql_vm', 'avs', 'sql_mi', 'sql_db', 'fabric_sql_db', 'arc_sql_mi', 'container', 'arc_in_place'];
 const TARGET_LABELS = {
@@ -440,10 +445,67 @@ function miLinkKnownCapacityExceeded(inputs, out = {}) {
   const cap = miLinkCapacityForTier(tier);
   return !!cap && dbCount > cap;
 }
+// The gate below used to be a whitelist narrower than the matrix, so a method the knowledge base
+// supports was answered with "is not a supported method" — a statement about this file, not about
+// Azure. Method labels vary between the rules prose and the engine, so they are normalised once and
+// judged against the set the matrix actually declares for the target.
+const METHOD_ALIASES = [
+  [/backup\/restore via mounted volume/i, 'container-restore'],
+  [/mi link/i, 'mi-link'],
+  [/^lrs$|log replay/i, 'lrs'],
+  [/\bdms\b/i, 'dms'],
+  [/data box/i, 'databox'],
+  [/native backup\/restore|standalone assessment/i, 'native-restore'],
+  [/always on|distributed ag/i, 'ag'],
+  [/log shipping/i, 'log-shipping'],
+  [/hcx|vmotion/i, 'hcx'],
+  [/transactional replication/i, 'repl'],
+  [/bacpac/i, 'bacpac'],
+  [/fabric migration assistant/i, 'fabric-assistant'],
+  [/arc best-practices assessment/i, 'arc-assessment'],
+];
+function canonicalMethod(method) {
+  const text = String(method || '');
+  for (const [pattern, key] of METHOD_ALIASES) if (pattern.test(text)) return key;
+  return text;
+}
+const ACCEPTED_METHODS = {
+  'Azure SQL Managed Instance': ['mi-link', 'lrs', 'dms', 'native-restore', 'repl', 'bacpac'],
+  'Azure SQL Database': ['dms', 'repl', 'bacpac', 'databox'],
+  'SQL Server on Azure VM': ['ag', 'log-shipping', 'native-restore', 'dms', 'repl', 'bacpac'],
+  'Azure VMware Solution': ['hcx', 'native-restore', 'ag', 'log-shipping', 'repl', 'bacpac'],
+  'SQL database in Fabric': ['fabric-assistant', 'repl', 'bacpac'],
+  'Arc-enabled SQL Managed Instance': ['native-restore', 'repl', 'bacpac'],
+  'SQL Server in a container': ['container-restore', 'native-restore', 'repl', 'bacpac'],
+  'SQL Server enabled by Azure Arc': ['arc-assessment'],
+};
+const UNSUPPORTED_METHOD_MESSAGE = {
+  'Azure SQL Managed Instance': (m) => `${m} is not a supported Azure SQL Managed Instance migration method in this rules mirror.`,
+  'Azure SQL Database': (m) => `${m} is not a supported Azure SQL Database migration method in this rules mirror.`,
+  'SQL Server on Azure VM': (m) => `${m} is not a SQL VM migration method.`,
+  'Azure VMware Solution': (m) => `${m} is not an AVS migration method.`,
+  'SQL database in Fabric': (m) => `${m} is not a Fabric SQL database migration method.`,
+  'Arc-enabled SQL Managed Instance': (m) => `${m} is not an Arc-enabled SQL MI migration method.`,
+  'SQL Server in a container': (m) => `${m} is not a SQL Server container migration method.`,
+  'SQL Server enabled by Azure Arc': (m) => `${m} is not an Arc assessment method.`,
+};
+function replicationPublisherFailure(inputs) {
+  if (isManagedCloudSqlSource(inputs)) return 'Transactional replication requires source rights unavailable on managed cloud SQL sources.';
+  return null;
+}
+function agFloorFailure(inputs) {
+  const v = versionNumber(inputs.source_version);
+  if (v && v < SOURCE_FLOORS.alwaysOnAvailabilityGroupToVm.sqlServerMin) {
+    return `Always On availability groups require SQL Server ${SOURCE_FLOORS.alwaysOnAvailabilityGroupToVm.sqlServerMin}+, and distributed availability groups require SQL Server ${SOURCE_FLOORS.distributedAvailabilityGroupToVm.sqlServerMin}+.`;
+  }
+  return null;
+}
 function methodGateFailure(inputs, target, method, out = {}) {
   const v = versionNumber(inputs.source_version);
+  const kind = canonicalMethod(method);
+  if (ACCEPTED_METHODS[target] && !ACCEPTED_METHODS[target].includes(kind)) return (UNSUPPORTED_METHOD_MESSAGE[target] || ((m) => `${m} is not a documented migration method for ${target}.`))(method);
   if (target === 'Azure SQL Managed Instance') {
-    if (method === 'MI Link') {
+    if (kind === 'mi-link') {
       if (isManagedCloudSqlSource(inputs)) return 'MI Link is impossible from AWS RDS/GCP Cloud SQL because sysadmin/AG endpoints are unavailable.';
       if (v && v < SOURCE_FLOORS.miLink.sqlServerMin) return `MI Link requires SQL Server ${SOURCE_FLOORS.miLink.sqlServerMin}+.`;
       // Fail closed. Testing only for 'unsupported' let 'unknown' through, so a source whose OS
@@ -459,43 +521,97 @@ function methodGateFailure(inputs, target, method, out = {}) {
       if (miLinkKnownCapacityExceeded(inputs, out)) return out.exclusions?.mi_link || 'MI Link database capacity is exceeded.';
       return null;
     }
-    if (method === 'LRS') {
+    if (kind === 'lrs') {
       if (v && (v < SOURCE_FLOORS.standaloneLrs.sqlServerMin || v > SOURCE_FLOORS.standaloneLrs.sqlServerMax)) {
         return `Standalone LRS supports SQL Server ${SOURCE_FLOORS.standaloneLrs.sqlServerMin}-${SOURCE_FLOORS.standaloneLrs.sqlServerMax}.`;
       }
       return null;
     }
-    if (method === 'Native backup/restore') return null;
+    if (kind === 'native-restore') return null;
+    if (kind === 'repl') return replicationPublisherFailure(inputs);
+    if (kind === 'dms' || kind === 'bacpac') return null;
     return `${method} is not a supported Azure SQL Managed Instance migration method in this rules mirror.`;
   }
   if (target === 'Azure SQL Database') {
-    if (method === 'Transactional replication') {
+    if (kind === 'repl') {
       if (isManagedCloudSqlSource(inputs)) return 'Transactional replication requires source rights unavailable on managed cloud SQL sources.';
       if (v && v < SOURCE_FLOORS.transactionalReplicationToSqlDb.publisherSqlServerMin) return `Transactional replication publisher requires SQL Server ${SOURCE_FLOORS.transactionalReplicationToSqlDb.publisherSqlServerMin}+.`;
       return null;
     }
     if (method === 'BACPAC/SqlPackage' || method === 'modern DMS (offline)' || method === 'Data Box seed → sync delta') return null;
+    if (kind === 'bacpac' || kind === 'dms' || kind === 'databox') return null;
     return `${method} is not a supported Azure SQL Database migration method in this rules mirror.`;
   }
   if (target === 'SQL Server on Azure VM') {
-    if (!['Distributed AG or Always On AG', 'Log shipping', 'Native backup/restore', 'Standalone assessment / native backup/restore'].includes(method)) return `${method} is not a SQL VM migration method.`;
+    if (!ACCEPTED_METHODS[target].includes(kind)) return `${method} is not a SQL VM migration method.`;
+    if (kind === 'repl') return replicationPublisherFailure(inputs);
     // The floors existed in the rules data and were never applied, so SQL Server 2008 with a
     // near-zero tolerance was handed "Distributed AG or Always On AG": Always On needs 2012+ and
     // distributed AGs need 2016+. A method a source cannot run is worse than a slower one.
-    if (method === 'Distributed AG or Always On AG' && v && v < SOURCE_FLOORS.alwaysOnAvailabilityGroupToVm.sqlServerMin) {
+    if (kind === 'ag' && v && v < SOURCE_FLOORS.alwaysOnAvailabilityGroupToVm.sqlServerMin) {
       return `Always On availability groups require SQL Server ${SOURCE_FLOORS.alwaysOnAvailabilityGroupToVm.sqlServerMin}+, and distributed availability groups require SQL Server ${SOURCE_FLOORS.distributedAvailabilityGroupToVm.sqlServerMin}+.`;
     }
     return null;
   }
-  if (target === 'Azure VMware Solution') return method === 'VMware HCX / vMotion' ? null : `${method} is not an AVS migration method.`;
-  if (target === 'SQL database in Fabric') return method === 'Fabric Migration Assistant' ? null : `${method} is not a Fabric SQL database migration method.`;
-  if (target === 'Arc-enabled SQL Managed Instance') return /^Native backup\/restore/.test(method) ? null : `${method} is not an Arc-enabled SQL MI migration method.`;
-  if (target === 'SQL Server in a container') return method === 'Backup/restore via mounted volume' ? null : `${method} is not a SQL Server container migration method.`;
+  if (target === 'Azure VMware Solution') return kind === 'ag' ? agFloorFailure(inputs) : kind === 'repl' ? replicationPublisherFailure(inputs) : null;
+  if (target === 'SQL database in Fabric') return kind === 'repl' ? replicationPublisherFailure(inputs) : null;
+  if (target === 'Arc-enabled SQL Managed Instance') return kind === 'repl' ? replicationPublisherFailure(inputs) : null;
+  if (target === 'SQL Server in a container') return kind === 'repl' ? replicationPublisherFailure(inputs) : null;
   if (target === 'SQL Server enabled by Azure Arc') return method === 'Arc best-practices assessment' ? null : `${method} is not an Arc assessment method.`;
   return null;
 }
-function viableTargetKeyForLabel(label, eligibility) {
-  const key = LABEL_TO_TARGET[label];
+// Every method the matrix declares for the chosen target is enumerated and judged, and the list is
+// returned whether or not it wins. A recommendation is a ranking, not a revelation: the reader is
+// entitled to see what else qualified, and to hand any qualifying candidate to the prerequisite
+// skill instead of the one this engine ranked first.
+const COVERAGE_TARGET_LABELS = {
+  'SQL VM': 'SQL Server on Azure VM',
+  'AVS': 'Azure VMware Solution',
+  'SQL MI': 'Azure SQL Managed Instance',
+  'SQL DB': 'Azure SQL Database',
+  'Fabric SQL DB': 'SQL database in Fabric',
+  'Arc SQL MI': 'Arc-enabled SQL Managed Instance',
+  'SQL container': 'SQL Server in a container',
+};
+function buildMethodCandidates(inputs, eligibility, out) {
+  out.methodCandidates = [];
+  const target = out.primaryTarget;
+  if (!target || target === 'provisional shortlist only') return;
+  const cells = COVERAGE.dispositions.filter(
+    (cell) => COVERAGE_TARGET_LABELS[cell.target] === target
+      && (cell.advisorRole === 'primary' || cell.advisorRole === 'secondary')
+      && cell.status !== 'out-of-scope'
+  );
+  const selectedKind = canonicalMethod(out.method);
+  const seen = new Set();
+  for (const cell of cells) {
+    const kind = canonicalMethod(cell.method);
+    if (seen.has(kind)) continue;
+    seen.add(kind);
+    const failure = methodGateFailure(inputs, target, cell.method, out);
+    out.methodCandidates.push({
+      method: cell.method,
+      role: cell.advisorRole,
+      status: failure ? 'unavailable' : 'available',
+      selected: kind === selectedKind,
+      reason: failure || `Prerequisite paths ${(cell.paths || []).join(', ') || 'documented in the prerequisite catalog'} apply.`,
+      prerequisitePaths: cell.paths || [],
+    });
+  }
+  // The winner is always in the list, even when it is a target-specific label the matrix words
+  // differently, so the reader never sees a recommendation that is absent from its own shortlist.
+  if (out.method && !out.methodCandidates.some((c) => c.selected)) {
+    out.methodCandidates.unshift({
+      method: out.method,
+      role: 'primary',
+      status: 'available',
+      selected: true,
+      reason: 'Selected by the target-specific rules in decision-rules.md B3.',
+      prerequisitePaths: [],
+    });
+  }
+}
+function viableTargetKeyForLabel(label, eligibility) {  const key = LABEL_TO_TARGET[label];
   return key && [E.ELIGIBLE, E.REMEDIATE].includes(eligibility[key]) ? key : undefined;
 }
 function addMethodExclusion(target, reason, out) {
@@ -854,6 +970,7 @@ export function evaluate(rawInputs = {}) {
 
   applyMethodGates(inputs, primaryTarget, method, eligibility, out);
   enforceOutputConsistency(inputs, eligibility, out);
+  buildMethodCandidates(inputs, eligibility, out);
   // The three gates below run *after* the consistency pass, not before it. Running them first
   // meant they judged a method the consistency pass then replaced, leaving an unknown on the card
   // that belonged to a method nobody was proposing any more.

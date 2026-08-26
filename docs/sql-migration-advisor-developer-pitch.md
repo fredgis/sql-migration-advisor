@@ -37,7 +37,7 @@ flowchart TD
     J --> K[Phase B: ten ordered ranking steps]
     K --> L[Draft recommendation, each verdict citing a rule ID]
 
-    L --> M{Self-check:<br/>13 invariants}
+    L --> M{Self-check:<br/>15 invariants}
     M -- An invariant fails --> N[Expose the inconsistency,<br/>never repair it silently]
     M -- All pass --> O[Render the card]
     N --> O
@@ -122,7 +122,7 @@ one: `NONE_CONFIRMED` when the user checked and there are none, `UNKNOWN` when n
 `NOT_APPLICABLE`. Conflating the first two is what once told a user their dependencies were unknown
 immediately after they answered that there were none.
 
-The output contract owns the status vocabulary, the card structure, and the 13 invariants of the
+The output contract owns the status vocabulary, the card structure, and the 15 invariants of the
 self-check below.
 
 ---
@@ -301,13 +301,13 @@ The result names:
 - the best alternative.
 
 Each verdict carries the ID of the rule that produced it, such as `MI-LINK-HOST` or
-`FILESTREAM-PAAS`. The index at the end of `decision-rules.md` lists all 30 with the fields each one
+`FILESTREAM-PAAS`. The index at the end of `decision-rules.md` lists all 31 with the fields each one
 consumes and what it does when a field is unknown, so a reader can look a decision up and argue with
 it rather than take it on trust.
 
 ### The self-check
 
-Before the card is shown, the skill re-reads its own draft against the 13 invariants in the output
+Before the card is shown, the skill re-reads its own draft against the 15 invariants in the output
 contract. Two examples: no eligibility claim may rest on a field the user never answered, and the
 stated method must actually be available for the recommended target.
 
@@ -996,7 +996,7 @@ flowchart LR
     G3([Push to main on the KB, tools/pdf,<br/>tools/diagram, tools/artifacts, howto SVGs]) --> W3[Artifacts coherence<br/>artifacts.yml]
     G4([Push to main on blume/ or howto/]) --> W4[Deploy docs<br/>deploy-docs.yml]
 
-    W1 --> O1[actionlint · rules data --strict<br/>31 gates · 112 golden scenarios<br/>engine branch coverage >= 85%]
+    W1 --> O1[actionlint · rules data --strict<br/>32 gates · 112 golden scenarios<br/>engine branch coverage >= 85%]
 
     W2 --> C1[consistency] --> C2[evidence<br/>links · news · claims] --> C3[review<br/>Foundry gpt-5.6-sol] --> C4[decide]
     C4 --> O2a[Substantive edits:<br/>pull request + version bump]
@@ -1226,7 +1226,7 @@ prerequisite skill's contracts do the same.
 | `connectivity-kb-matches-matrix` (CI gate) | Prose and matrix disagreeing on version or on three load-bearing values; the draft status disappearing; claims losing their baseline hash |
 | 10 claims in the weekly check | The Microsoft pages behind the volatile facts changing under us |
 | Input contract | Free text promoted to a decision input; invalid combinations accepted silently |
-| Output contract, 13 invariants | A credential emitted, a value not traceable to the matrix, a check reported as run when it was proposed |
+| Output contract, 15 invariants | A credential emitted, a value not traceable to the matrix, a check reported as run when it was proposed |
 
 The gate earned its place on its first run by catching the matrix left at v0.5 while the prose moved
 to v0.6.
