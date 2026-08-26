@@ -1,6 +1,6 @@
 {
-  "latest": "v2.11.0",
-  "knowledgeBase": "v2.11",
+  "latest": "v2.12.0",
+  "knowledgeBase": "v2.12",
   "released": "2026-08-26",
   "install": "copilot plugin marketplace add fredgis/sql-migration-advisor && copilot plugin install sql-migration-advisor@fredgis",
   "update": "copilot plugin update sql-migration-advisor",

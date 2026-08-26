@@ -4,8 +4,8 @@ Apply Steps **A → D** in order. Steps map to the two engine phases:
 - **Phase A — Eligibility filter:** Step A only. Classify every target as `eligible`, `eligible_with_remediation`, `unsupported`, or `unknown_requires_assessment`.
 - **Phase B — Ranking and plan:** Steps B → D. Rank only surviving targets, then choose method, tier, blockers, cost, and assessment.
 
-Regression contract: these rules are a **prompt policy under regression test**. Replaying the same inputs through the rules mirror in `tests/` gives the same result, and 90 golden scenarios enforce it on every commit. The mirror is not what runs in a session: an agent reads these rules and applies them. Treat the contract as a tested policy, not as a guarantee that two runs produce identical wording. Every recommendation must carry the KB version, engine version, and, when available, the source commit SHA and fetch timestamp.
-Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v2.11**, verified August 2026.
+Regression contract: these rules are a **prompt policy under regression test**. Replaying the same inputs through the rules mirror in `tests/` gives the same result, and 116 golden scenarios enforce it on every commit. The mirror is not what runs in a session: an agent reads these rules and applies them. Treat the contract as a tested policy, not as a guarantee that two runs produce identical wording. Every recommendation must carry the KB version, engine version, and, when available, the source commit SHA and fetch timestamp.
+Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v2.12**, verified August 2026.
 
 Three layers, never mixed:
 - **Target** = where the DB ends up (runtime).
@@ -469,8 +469,10 @@ Rules:
 | --- | --- |
 | DBA-first, Windows, single/few DBs | **SSMS 22 Migration Component** |
 | Arc-enabled source or assess-first/in-place | **SQL Server migration in Azure Arc** and Arc best-practices assessment |
-| Estate scale / business case / dependency map | **Azure Migrate** appliance or import (GA); Arc-based agentless discovery is **Preview**, so select it only when the customer accepts preview services || Readiness / strategy / ROI / landing-zone planning **on existing Azure Migrate data** | **Azure Copilot Migration Agent** *(Preview)* — **`COPILOT-AGENT`.** Select only when `previewAcceptable` and an Azure Migrate assessment already exists: it reasons over collected data, it does not collect and it does not move data. Never treat it as a migration method, and never let it replace SQL assessment or method selection, which stay with Azure Migrate, Arc, SSMS and DMS. |
-| Orchestrate at scale / CI-CD | **modern Azure DMS** + **`Az.DataMigration`** || Heterogeneous source modernization | **SSMA** for Oracle/Sybase/DB2/MySQL/Access; not for homogeneous SQL→SQL |
+| Estate scale / business case / dependency map | **Azure Migrate** appliance or import (GA); Arc-based agentless discovery is **Preview**, so select it only when the customer accepts preview services |
+| Readiness / strategy / ROI / landing-zone planning **on existing Azure Migrate data** | **Azure Copilot Migration Agent** *(Preview)* — **`COPILOT-AGENT`.** Select only when `previewAcceptable` and an Azure Migrate assessment already exists: it reasons over collected data, it does not collect and it does not move data. Never treat it as a migration method, and never let it replace SQL assessment or method selection, which stay with Azure Migrate, Arc, SSMS and DMS. |
+| Orchestrate at scale / CI-CD | **modern Azure DMS** + **`Az.DataMigration`** |
+| Heterogeneous source modernization | **SSMA** for Oracle/Sybase/DB2/MySQL/Access; not for homogeneous SQL→SQL |
 | Tier uncertainty | Perfmon/DMVs, Query Store, storage latency, log-rate baseline |
 
 ### D3. Microsoft program fit and SLA reference

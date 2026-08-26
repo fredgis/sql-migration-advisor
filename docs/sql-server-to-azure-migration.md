@@ -6,7 +6,7 @@
 >
 > **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of August 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
 >
-> **Version.** v2.11 — 26 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
+> **Version.** v2.12 — 26 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**
@@ -660,13 +660,14 @@ flowchart LR
 
 ## 17. Document version & changelog
 
-Current version: **v2.11** (2026-08-26).
+Current version: **v2.12** (2026-08-26).
 
 <details>
-<summary><b>Version history</b> (current: v2.11)</summary>
+<summary><b>Version history</b> (current: v2.12)</summary>
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v2.12 | 2026-08-26 | **The Log Replay Service ceiling was one gate covering two control planes, and it excluded a version Microsoft supports.** Standalone LRS is documented for SQL Server 2008-2022, but the Azure Arc migration path lists SQL Server 2025 RTM among its supported sources; a single "2008-2022, not 2025" rule therefore refused a route Microsoft publishes. The two are now separate entries, each carrying its source URL, the sentence it rests on, and the date it was checked. Microsoft's own pages disagree here, so both are recorded rather than one being chosen for them. |
 | v2.11 | 2026-08-26 | **The summary matrix was missing a method the tool itself recommends, and understated another.** Log shipping is documented in section 5.1 and returned as a recommendation, yet section 8 carried no row for it, so nothing could check it against a target. **Azure DMS** was marked supported for SQL VM and SQL MI in section 8 while sections 5.1 and 5.2 carried no DMS row at all, which is how the method stayed absent from the guidance that reads those tables. Section 8 now states DMS as online + offline for SQL VM and SQL MI and offline only for SQL DB, sections 5.1 and 5.2 carry the DMS rows, and section 5.3 cross-references both instead of holding the fact alone. |
 | v2.10 | 2026-08-24 | **A licensing deadline that arrives ten months earlier than the one usually quoted.** The Azure VMware Solution **license-included** service is being retired — AVS itself is not — and the announcement is normally summarised by its last date, 30 August 2027. Two earlier ones decide whether a recommendation survives contact with procurement: license-included **pay-as-you-go** SKUs retire on **15 October 2026** and **new sales end on 31 October 2026**. A recommendation made today on a pay-as-you-go assumption expires in under two months, and a portable VCF subscription is bought from Broadcom in weeks, not days. New rule `AVS-LICENSING` holds AVS at `unknown_requires_assessment` until the licence is confirmed, and a gate forbids both failure modes: quoting only the 2027 date, and the overcorrection of saying AVS is going away. Also: zone redundancy on **MI Next-gen General Purpose is public preview**, so a GA tier label no longer makes a preview capability GA; the **Azure Copilot Migration Agent** joins the control-plane inventory as preview planning over existing Azure Migrate data, explicitly not a data-movement method; and §7's downtime diagram rendered nowhere on GitHub, because an HTML entity meant to protect a parenthesis was decoded before Mermaid parsed it. mermaid-cli renders that form happily, which is why the PDF build never noticed. |
 | v2.9 | 2026-08-17 | **Three documents disagreed about what happens when a prerequisite is unknown, and the disagreement decided what the tool recommends.** `MI-LINK-HOST` said in the rule index that an unknown host or edition **refuses** MI Link, while §B3 and the executable mirror both treated it as `unknown_requires_assessment` — refusing on absence of evidence makes an information gap look like an incompatibility. `BACKUP-BLOB-PATH` claimed every native backup/restore variant moves through Azure Blob, which is true for Managed Instance and false for a VM: a profile that required a VM lost its recommendation to a shortlist when Blob was blocked, although this document documents backup to a file and a copy into the target. And FILESTREAM grouped the Linux container with the VM as eligible, offering a target that has no FILESTREAM at all. A new `rule-unknown-behaviour-agrees` gate now compares the rule index, the section that defines each rule and the input contract, so a contradiction of this kind fails the build instead of waiting for a model to notice it. |

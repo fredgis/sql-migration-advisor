@@ -332,9 +332,14 @@ function chooseTarget(inputs, eligibility, out) {
   if (any(inputs.network_ports, 'limited WAN') && any(inputs.size, `> ${SQL_DB_TIERS.hyperscaleSizeThresholdTb} TB`, 'multi-TB', 'multitb')) return ['Azure SQL Database', 'Data Box seed → sync delta'];
   if (any(inputs.size, 'estate scale', 'business case', 'dependency map')) return ['provisional shortlist only', 'Azure Migrate appliance/import/Arc discovery'];
   if (dep(inputs, 'TDE')) return ['Azure SQL Managed Instance', 'Native backup/restore'];
+  // Diverting to SQL DB because MI Link is blocked and LRS is out of range only made sense while
+  // DMS was unreachable for Managed Instance. It is not a reason to leave the target family when
+  // the profile carries an instance-scoped dependency that SQL DB cannot host.
   if ((has(inputs.downtime, 'near-zero') || has(inputs.downtime, 'minimal'))
     && lrsSourceUnsupported(inputs)
     && !portsOpenForMiLink(inputs)
+    && !dep(inputs, 'SQL Agent') && !dep(inputs, 'linked servers') && !dep(inputs, 'PolyBase/cloud files')
+    && !dep(inputs, 'SQL CLR') && !dep(inputs, 'Service Broker') && !dep(inputs, 'cross-DB')
     && eligibility.sql_db !== E.UNSUPPORTED) return ['Azure SQL Database', chooseSqlDbMethod(inputs)];
   if (dep(inputs, 'SQL Agent') || dep(inputs, 'linked servers') || dep(inputs, 'homogeneous') || dep(inputs, 'PolyBase/cloud files') || dep(inputs, 'SQL CLR') || dep(inputs, 'Service Broker') || dep(inputs, 'cross-DB')) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
   if (isManagedCloudSqlSource(inputs) && has(inputs.downtime, 'near-zero')) return ['Azure SQL Managed Instance', chooseMiMethod(inputs, out)];
@@ -348,10 +353,16 @@ function chooseTarget(inputs, eligibility, out) {
 function chooseVmMethod(inputs) {
   const v = versionNumber(inputs.source_version);
   const agFloor = SOURCE_FLOORS.alwaysOnAvailabilityGroupToVm.sqlServerMin;
+  const linuxSource = /linux/i.test(String(inputs.source_os || ''));
   // Selecting a method the source cannot run, then rejecting it at the gate, produces a
   // provisional shortlist where a working answer existed. The floor belongs here too.
-  if (has(inputs.downtime, 'near-zero') && (!v || v >= agFloor)) return 'Distributed AG or Always On AG';
-  if (has(inputs.downtime, 'minimal') || has(inputs.downtime, 'near-zero')) return 'Log shipping';
+  if (has(inputs.downtime, 'near-zero') && (!v || v >= agFloor) && !linuxSource) return 'Distributed AG or Always On AG';
+  // Log shipping is Windows-only, and availability groups need the version floor. When the source
+  // meets neither, DMS is the documented online path to a SQL VM rather than a longer outage.
+  if (has(inputs.downtime, 'minimal') || has(inputs.downtime, 'near-zero')) {
+    if (linuxSource || (v && v < agFloor)) return 'Azure DMS (online)';
+    return 'Log shipping';
+  }
   return 'Native backup/restore';
 }
 function chooseSqlDbMethod(inputs) {
@@ -378,6 +389,14 @@ function versionAtLeast(actual, required) {
     if (av !== rv) return av > rv;
   }
   return true;
+}
+function lrsRangeMessage(v) {
+  const s = SOURCE_FLOORS.standaloneLrs;
+  const arc = ARC_FLOORS.lrsToManagedInstanceConservative;
+  if (v > s.sqlServerMax && v <= arc.sqlServerMax) {
+    return `Standalone LRS is documented for SQL Server ${s.sqlServerMin}-${s.sqlServerMax}, but Arc-orchestrated LRS lists SQL Server up to ${arc.sqlServerMax}. On SQL Server ${v} the route exists only through the Azure Arc portal; confirm the control plane before ruling LRS out.`;
+  }
+  return `Standalone LRS supports SQL Server ${s.sqlServerMin}-${s.sqlServerMax}.`;
 }
 function lrsSourceUnsupported(inputs) {
   const v = versionNumber(inputs.source_version);
@@ -413,6 +432,10 @@ function chooseMiMethod(inputs, out) {
   applyArcWizardBatchLimit(inputs, out);
   if (has(inputs.downtime, 'near-zero') || has(inputs.downtime, 'minimal')) {
     if (!isManagedCloudSqlSource(inputs) && v >= SOURCE_FLOORS.miLink.sqlServerMin && miLinkHostSupport(inputs) !== 'unsupported' && portsOpenForMiLink(inputs) && (!dbCount || (cap && dbCount <= cap) || (!cap && dbCount <= MI_LINK.capacityLinks.generalPurpose) || out.capacityEligibility === E.UNKNOWN)) return 'MI Link';
+    // B3: DMS online is the path that survives when MI Link is unavailable and LRS does not
+    // qualify. Returning LRS unconditionally here is what made DMS unreachable for this target
+    // while the matrix declared it supported and P23/P24 documented its prerequisites.
+    if (lrsSourceUnsupported(inputs)) return 'Azure DMS (online)';
     return 'LRS';
   }
   // An offline window is what native backup/restore is for: the simplest path, the fewest moving
@@ -432,9 +455,12 @@ function applyMethodGates(inputs, target, method, eligibility, out) {
         out.exclusions.mi_link = `MI Link requires ${p.sqlServerEndpoint} and ${p.managedInstanceHadrRange.start}-${p.managedInstanceHadrRange.end} in the documented directions.`;
       }
     }
+    // Invariant 7: a method limitation eliminates the method, never the target. Marking the whole
+    // Managed Instance family unsupported because standalone LRS stops at 2022 sent SQL Server 2025
+    // to a VM while DMS, MI Link and native restore were all still available for MI.
     if (method === 'LRS' && v && (v < SOURCE_FLOORS.standaloneLrs.sqlServerMin || v > SOURCE_FLOORS.standaloneLrs.sqlServerMax)) {
-      eligibility.sql_mi = E.UNSUPPORTED;
-      addUnique(out.hardBlockers, `Standalone LRS supports SQL Server ${SOURCE_FLOORS.standaloneLrs.sqlServerMin}-${SOURCE_FLOORS.standaloneLrs.sqlServerMax}.`);
+      addMethodExclusion('Azure SQL Managed Instance', lrsRangeMessage(v), out);
+      out.exclusions.lrs = lrsRangeMessage(v);
     }
   }
 }
@@ -523,7 +549,7 @@ function methodGateFailure(inputs, target, method, out = {}) {
     }
     if (kind === 'lrs') {
       if (v && (v < SOURCE_FLOORS.standaloneLrs.sqlServerMin || v > SOURCE_FLOORS.standaloneLrs.sqlServerMax)) {
-        return `Standalone LRS supports SQL Server ${SOURCE_FLOORS.standaloneLrs.sqlServerMin}-${SOURCE_FLOORS.standaloneLrs.sqlServerMax}.`;
+        return lrsRangeMessage(v);
       }
       return null;
     }
@@ -600,15 +626,27 @@ function buildMethodCandidates(inputs, eligibility, out) {
   }
   // The winner is always in the list, even when it is a target-specific label the matrix words
   // differently, so the reader never sees a recommendation that is absent from its own shortlist.
+  // Audit 9: an empty path array here satisfied the invariant while hiding a missing mapping, so
+  // the routes the matrix words differently are named rather than papered over. An assessment is
+  // not a migration and correctly has no prerequisite path.
+  const OFF_MATRIX_PATHS = {
+    'Backup/restore via mounted volume': ['P19'],
+    'Data Box seed → sync delta': ['P14'],
+    'Arc best-practices assessment': [],
+    'Standalone assessment / native backup/restore': ['P05'],
+    'Native backup/restore after endpoint is available': ['P17', 'P18'],
+  };
   if (out.method && !out.methodCandidates.some((c) => c.selected)) {
+    const mapped = OFF_MATRIX_PATHS[out.method];
     out.methodCandidates.unshift({
       method: out.method,
       role: 'primary',
       status: 'available',
       selected: true,
       reason: 'Selected by the target-specific rules in decision-rules.md B3.',
-      prerequisitePaths: [],
+      prerequisitePaths: mapped || [],
     });
+    if (!mapped) out.unmappedWinner = out.method;
   }
 }
 function viableTargetKeyForLabel(label, eligibility) {  const key = LABEL_TO_TARGET[label];
@@ -745,6 +783,10 @@ const OPTION_IDS = {
   FEW_DATABASES: 'a few databases (2-10)',
   LARGE_ESTATE: 'large estate / estate scale / business case / dependency map',
   ON_PREM: 'on-prem / Azure VM',
+  // AZURE_VM was folded into ON_PREM behind a shared label. It is its own value now, because rules
+  // turn on whether the source already runs in Azure, but it still maps onto the same phrase so an
+  // answer given either way reaches the same rules.
+  AZURE_VM: 'Azure VM',
   AWS_EC2: 'AWS EC2',
   AWS_RDS: 'AWS RDS for SQL Server',
   GCP_COMPUTE: 'GCP Compute Engine',

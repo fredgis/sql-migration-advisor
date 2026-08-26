@@ -38,7 +38,7 @@ flowchart TD
     subgraph repo["The repository, which no session reads"]
       EN["tests/engine/evaluate.mjs<br/>a mirror of the rules, in JavaScript"]
       GS["tests/golden-scenarios.json<br/>106 profiles and their expected answers"]
-      GA["tests/run-tests.mjs<br/>32 gates"]
+      GA["tests/run-tests.mjs<br/>35 gates"]
       WK["tools/weekly-check/<br/>freshness and drift"]
     end
 
@@ -73,7 +73,7 @@ Green is loaded in a user's session. Blue never is.
 | `docs/sql-server-to-azure-migration.md` | The knowledge base: every target, method, limit and lever, with Microsoft Learn links. |
 | `reference/decision-rules.data.json` | The same constants in machine-readable form, so a floor can be checked rather than read. |
 | `tests/engine/evaluate.mjs` | 757 lines of JavaScript that mirror the rules. **Never executed in production.** |
-| `tests/run-tests.mjs` | 32 gates. |
+| `tests/run-tests.mjs` | 35 gates. |
 | `tools/weekly-check/` | Four jobs that check the knowledge base has not gone stale or drifted from its sources. |
 | `version.json` | Served from `main` so an installed skill can tell it is out of date. |
 | `.claude-plugin/` | The plugin manifest, and the marketplace manifest that lets this repository publish itself. |
@@ -182,7 +182,7 @@ The traffic runs both ways, and the August 2026 weekly review is the case to rem
 
 ---
 
-## 6. The 32 gates
+## 6. The 35 gates
 
 Grouped by what they defend.
 
@@ -234,7 +234,7 @@ Stated plainly, because overselling is the failure mode this project keeps corre
 
 - **The mirror is not the model.** Nothing proves a session reaches the mirror's answer. Runtime evaluation across models is designed and unbuilt.
 - **The rules are prose, mirrored by hand.** A rule can be written correctly and mirrored wrongly, or written and never mirrored at all. Two such cases were found and fixed in v2.4, which is evidence the class exists, not evidence it is exhausted.
-- **112 scenarios sample an enormous input space.**
+- **116 scenarios sample an enormous input space.**
 - **A shared error scores perfectly.** The Windows Server 2012 floor was wrong for five versions and every test agreed with it, because the tests were written from the same mistaken document.
 - **The skill reads no artefact from your estate.** It opens no report, runs no tool, queries no service. `provisional` is the only status it can produce and `medium` the highest confidence, and no answer it gives replaces an assessment tool or an architect.
 

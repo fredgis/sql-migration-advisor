@@ -1429,7 +1429,7 @@
   {
     "id": "sql2008-near-zero-must-not-be-offered-availability-groups",
     "title": "SQL Server 2008 with a near-zero tolerance cannot be offered availability groups",
-    "why": "External audit counter-example. Always On requires SQL Server 2012+ and distributed AGs require 2016+. Both floors were declared in decision-rules.data.json and never applied, so a 2008 source was handed a method its engine cannot run. Log shipping is the honest answer.",
+    "why": "Audit P1 kept: SQL Server 2008 is below the availability-group floor, so AGs must not be offered. Audit 9 F-02 refines the answer: DMS documents SQL Server 2008 and later for online migration, so the managed service is the near-zero path rather than hand-built log shipping.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -1443,9 +1443,9 @@
     },
     "expect": {
       "primary_target": "SQL Server on Azure VM",
-      "method": "Log shipping",
+      "method": "Azure DMS (online)",
       "targetAvailabilityDuringSync": "unavailable",
-      "businessCutoverDowntime": "minimal",
+      "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
       "confidence": "medium",
       "mustNotRecommend": [
@@ -2663,7 +2663,7 @@
   {
     "id": "sql2025-mi-link-blocked-must-not-fall-to-lrs",
     "title": "SQL 2025 with MI Link blocked must not fall back to standalone LRS",
-    "why": "Audit P1: standalone LRS is only declared for SQL Server 2008-2022, so SQL 2025 must not silently get LRS when MI Link is blocked.",
+    "why": "Audit 9 F-02: SQL Server 2025 is outside the standalone LRS range and MI Link is blocked, but the profile depends on SQL Agent, which Azure SQL Database cannot host. Leaving the Managed Instance family for SQL DB was the defect; DMS online is the documented survivor for this target.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -2679,12 +2679,12 @@
     },
     "expect": {
       "eligibility": {
-        "sql_db": "eligible_with_remediation"
+        "sql_mi": "eligible"
       },
-      "primary_target": "Azure SQL Database",
-      "method": "Transactional replication",
-      "targetAvailabilityDuringSync": "read-write",
-      "businessCutoverDowntime": "near-zero",
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "Azure DMS (online)",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
       "confidence": "medium",
       "mustNotRecommend": [
@@ -2693,9 +2693,7 @@
       ]
     },
     "assertRulePresent": [
-      "Standalone LRS[\\s\\S]*?SQL Server \\*\\*2008–2022\\*\\*",
-      "never fall through to LRS unconditionally",
-      "publisher SQL Server \\*\\*2016 and later\\*\\*, including SQL Server 2022 and 2025"
+      "never fall through to LRS unconditionally"
     ],
     "auditRef": "P1-1"
   },
@@ -2741,7 +2739,7 @@
   {
     "id": "sql2025-mi-link-and-sql-db-blocked-no-lrs-fallback",
     "title": "SQL 2025 with MI Link and SQL DB both blocked does not fall to MI LRS",
-    "why": "Final audit regression: SQL Server 2025 is outside standalone LRS range, so blocked MI Link plus a hard SQL DB blocker must fall to SQL VM or a provisional shortlist.",
+    "why": "Audit 9 F-02: linked servers rule Azure SQL Database out, MI Link is blocked and standalone LRS does not cover SQL Server 2025. Managed Instance still qualifies through DMS, so neither the target nor the method may be abandoned.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -2756,14 +2754,13 @@
     },
     "expect": {
       "eligibility": {
-        "sql_vm": "eligible",
-        "sql_mi": "unsupported",
+        "sql_mi": "eligible_with_remediation",
         "sql_db": "unsupported"
       },
-      "primary_target": "SQL Server on Azure VM",
-      "method": "Log shipping",
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "Azure DMS (online)",
       "targetAvailabilityDuringSync": "unavailable",
-      "businessCutoverDowntime": "minimal",
+      "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
       "confidence": "medium",
       "mustNotRecommend": [
@@ -2773,7 +2770,6 @@
     },
     "assertRulePresent": [
       "Output consistency rule",
-      "SQL Server \\*\\*2025\\*\\* source[\\s\\S]*?never \"Azure SQL MI via LRS\"",
       "Linked servers[\\s\\S]*?`unsupported` unless refactored"
     ],
     "auditRef": "final-audit-no-contradictory-fallback"
@@ -4123,14 +4119,20 @@
       "source_version": "SQL2017_2019",
       "intent": "MIGRATE_NOW",
       "management_model": "NEED_OS_CONTROL",
-      "feature_dependencies": ["FILESTREAM/FileTable"],
+      "feature_dependencies": [
+        "FILESTREAM/FileTable"
+      ],
       "size": "UNDER_150_GB",
       "downtime": "OFFLINE",
       "source_permissions": "SYSADMIN_AVAILABLE",
       "blob_https_reachability": "BLOB_HTTPS_BLOCKED"
     },
     "expect": {
-      "eligibility": { "sql_vm": "eligible", "sql_mi": "unsupported", "sql_db": "unsupported" },
+      "eligibility": {
+        "sql_vm": "eligible",
+        "sql_mi": "unsupported",
+        "sql_db": "unsupported"
+      },
       "primary_target": "SQL Server on Azure VM",
       "method": "Native backup/restore",
       "targetAvailabilityDuringSync": "not-present",
@@ -4138,7 +4140,9 @@
       "methodGateStatus": "unknown_requires_assessment",
       "recommendationStatus": "provisional",
       "confidence": "low",
-      "mustNotRecommend": ["a provisional shortlist instead of the SQL VM the profile requires"]
+      "mustNotRecommend": [
+        "a provisional shortlist instead of the SQL VM the profile requires"
+      ]
     },
     "assertRulePresent": [
       "BACKUP-BLOB-PATH",
@@ -4157,13 +4161,20 @@
       "intent": "MIGRATE_NOW",
       "management_model": "KUBERNETES",
       "kubernetes_model": "FULL_DIY_CONTAINER",
-      "feature_dependencies": ["FILESTREAM/FileTable"],
+      "feature_dependencies": [
+        "FILESTREAM/FileTable"
+      ],
       "size": "UNDER_150_GB",
       "downtime": "OFFLINE",
       "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
-      "eligibility": { "container": "unsupported", "sql_mi": "excluded_by_preference", "sql_db": "excluded_by_preference", "sql_vm": "eligible" },
+      "eligibility": {
+        "container": "unsupported",
+        "sql_mi": "excluded_by_preference",
+        "sql_db": "excluded_by_preference",
+        "sql_vm": "eligible"
+      },
       "primary_target": "SQL Server on Azure VM",
       "method": "Native backup/restore",
       "targetAvailabilityDuringSync": "not-present",
@@ -4171,12 +4182,133 @@
       "methodGateStatus": "passed",
       "recommendationStatus": "provisional",
       "confidence": "medium",
-      "mustNotRecommend": ["SQL Server in a container for a FILESTREAM workload"]
+      "mustNotRecommend": [
+        "SQL Server in a container for a FILESTREAM workload"
+      ]
     },
     "assertRulePresent": [
       "FILESTREAM-PAAS",
       "has no FILESTREAM/FileTable"
     ],
     "auditRef": "weekly-2026-08-17-finding-5"
+  },
+  {
+    "id": "dms-online-to-sql-vm-linux-source",
+    "title": "Linux source with a short window reaches SQL VM through DMS online",
+    "why": "Audit 9 F-02 witness: log shipping is Windows-only and availability groups need a Windows cluster, so a Linux source with a minimal window had no online path to a SQL VM. DMS documents online migration to SQL VM from SQL Server 2008 and later.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2019",
+      "source_os": "Linux",
+      "downtime": "minimal",
+      "management_model": "need OS access",
+      "feature_dependencies": [
+        "Windows auth / DTC"
+      ],
+      "size": "800 GB"
+    },
+    "auditRef": "A9-F02-1",
+    "expect": {
+      "primary_target": "SQL Server on Azure VM",
+      "method": "Azure DMS (online)",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
+      "recommendationStatus": "provisional",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "Azure DMS",
+      "Log shipping"
+    ]
+  },
+  {
+    "id": "dms-online-to-sql-mi-source-above-lrs-range",
+    "title": "A source above the standalone LRS range still reaches MI through DMS online",
+    "why": "Audit 9 F-02 witness: with MI Link blocked and standalone LRS documented only to SQL Server 2022, Managed Instance used to be abandoned. DMS online is the documented survivor, and P23/P24 already carry its prerequisites.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2025",
+      "downtime": "minimal",
+      "network_ports": "5022 blocked",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "Service Broker"
+      ],
+      "size": "1 TB"
+    },
+    "auditRef": "A9-F02-2",
+    "expect": {
+      "primary_target": "Azure SQL Managed Instance",
+      "method": "Azure DMS (online)",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
+      "recommendationStatus": "provisional",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "Azure DMS",
+      "never fall through to LRS unconditionally"
+    ]
+  },
+  {
+    "id": "dms-online-to-sql-vm-below-ag-floor",
+    "title": "A source below the availability-group floor reaches SQL VM through DMS online",
+    "why": "Audit 9 F-02 witness: SQL Server 2008 cannot run a distributed availability group, and hand-built log shipping is more moving parts than a managed service for the same cutover class.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2008",
+      "downtime": "minimal",
+      "management_model": "need OS access",
+      "feature_dependencies": [
+        "Windows auth / DTC"
+      ],
+      "size": "300 GB"
+    },
+    "auditRef": "A9-F02-3",
+    "expect": {
+      "primary_target": "SQL Server on Azure VM",
+      "method": "Azure DMS (online)",
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes",
+      "recommendationStatus": "provisional",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "Azure DMS",
+      "Always On AG"
+    ]
+  },
+  {
+    "id": "avs-native-restore-carries-platform-overlay",
+    "title": "An AVS data-center exit keeps a database method beside the platform",
+    "why": "Audit 9 F-04 witness: AVS is not only HCX. An AVS-hosted SQL Server is a SQL Server on a VM, so the database methods apply once the platform exists.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2019",
+      "downtime": "offline",
+      "management_model": "need OS access",
+      "driver": "data-center exit",
+      "feature_dependencies": [
+        "Windows auth / DTC"
+      ],
+      "size": "4 TB"
+    },
+    "auditRef": "A9-F04-1",
+    "expect": {
+      "primary_target": "Azure VMware Solution",
+      "method": "VMware HCX / vMotion",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "recommendationStatus": "provisional",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "VMware HCX",
+      "Not available to this target"
+    ]
   }
 ]

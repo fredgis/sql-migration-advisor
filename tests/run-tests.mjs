@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { evaluate, __guards as guards } from './engine/evaluate.mjs';
-import { validateGoldenScenarios } from './validate-scenarios.mjs';
+import { validateGoldenScenarios, validateObjectAgainstSchema } from './validate-scenarios.mjs';
 import { TARGETS, claimsFor } from '../tools/weekly-check/kb-targets.mjs';
 import { normalize as normalizeSubstantive } from '../tools/weekly-check/substantive-diff.mjs';
 
@@ -18,9 +18,13 @@ const results = [];
 // MAX_TARGET_SHARE is a tripwire against the engine collapsing to one answer, not a law
 // about the corpus. Re-baselined from 0.32 to 0.34 in v1.9 when three MI Link host-gate
 // scenarios were added (Linux source, Windows Server below the floor, Express edition),
-// taking Azure SQL Managed Instance from 23/75 to 26/78. Raise it only with the scenarios
-// that justify it named here; raising it to make a build pass is how the guard dies.
-const MAX_TARGET_SHARE = 0.34;
+// taking Azure SQL Managed Instance from 23/75 to 26/78. Re-baselined to 0.35 in v2.12 when
+// audit 9 F-02 made DMS reachable: two scenarios carrying SQL Agent and linked servers had
+// been routed to Azure SQL Database, which cannot host either, and returning them to Managed
+// Instance took it from 39/112 to 40/116 even after four DMS and AVS witnesses were added.
+// Raise it only with the scenarios that justify it named here; raising it to make a build
+// pass is how the guard dies.
+const MAX_TARGET_SHARE = 0.35;
 const MIN_DISTINCT_METHODS = 18;
 const MIN_DISTINCT_AVAILABILITY_VALUES = 5;
 const ELIGIBLE_STATES = new Set(['eligible', 'eligible_with_remediation']);
@@ -155,7 +159,7 @@ function methodContradiction(scenario, actual, data) {
       if (v && (v < floor.sqlServerMin || v > floor.sqlServerMax)) return `LRS selected for SQL Server ${v}, outside ${floor.sqlServerMin}-${floor.sqlServerMax}`;
       return null;
     }
-    if (method === 'Native backup/restore') return null;
+    if (method === 'Native backup/restore' || /^Azure DMS/.test(method)) return null;
     return `method ${JSON.stringify(method)} is not viable for Azure SQL Managed Instance`;
   }
   if (target === 'Azure SQL Database') {
@@ -164,11 +168,11 @@ function methodContradiction(scenario, actual, data) {
       if (v && v < data.sourceVersionFloors.transactionalReplicationToSqlDb.publisherSqlServerMin) return `Transactional replication selected below SQL Server ${data.sourceVersionFloors.transactionalReplicationToSqlDb.publisherSqlServerMin}`;
       return null;
     }
-    if (['BACPAC/SqlPackage', 'modern DMS (offline)', 'Data Box seed → sync delta'].includes(method)) return null;
+    if (['BACPAC/SqlPackage', 'modern DMS (offline)', 'Data Box seed → sync delta'].includes(method) || /^Azure DMS/.test(method)) return null;
     return `method ${JSON.stringify(method)} is not viable for Azure SQL Database`;
   }
   const methodAllow = {
-    'SQL Server on Azure VM': ['Distributed AG or Always On AG', 'Log shipping', 'Native backup/restore', 'Standalone assessment / native backup/restore'],
+    'SQL Server on Azure VM': ['Azure DMS (online)', 'Distributed AG or Always On AG', 'Log shipping', 'Native backup/restore', 'Standalone assessment / native backup/restore'],
     'Azure VMware Solution': ['VMware HCX / vMotion'],
     'SQL database in Fabric': ['Fabric Migration Assistant'],
     'Arc-enabled SQL Managed Instance': ['Native backup/restore after endpoint is available', 'Native backup/restore'],
@@ -702,11 +706,13 @@ try {
     v => v.some(e => /Azure Migrate \/ Arc assessment/.test(e)));
 
   // A rejected candidate must say why, otherwise the exclusion map loses the reason. SQL Server
-  // 2025 with a short window is the case: MI Link needs ports nobody confirmed, and LRS stops at
-  // 2022, so the fallback has to reject something and record it.
+  // 2025 used to be that case, because LRS stopped at 2022 and nothing else was offered; DMS now
+  // covers it, so the case moved to a rejection that still stands: transactional replication is
+  // the short-window method for Azure SQL Database, and a managed cloud source cannot grant the
+  // publisher rights it needs.
   const out3 = fresh();
-  chooseConsistentFallback({ ...onPrem, source_version: '2025', downtime: 'minimal' },
-    { sql_vm: E.UNSUPPORTED, sql_db: E.UNSUPPORTED, sql_mi: E.ELIGIBLE }, out3);
+  chooseConsistentFallback({ ...onPrem, source_location: 'AWS RDS for SQL Server', downtime: 'minimal' },
+    { sql_vm: E.UNSUPPORTED, sql_db: E.ELIGIBLE, sql_mi: E.UNSUPPORTED }, out3);
   expect('a rejected fallback candidate records its exclusion',
     Object.keys(out3.exclusions),
     v => v.some(k => k.endsWith('_method')));
@@ -1612,6 +1618,13 @@ try {
     const list = out.methodCandidates || [];
     if (!list.length) { failures.push(`${scenario.id}: ${out.primaryTarget} recommended "${out.method}" with no candidate list`); continue; }
     const chosen = list.find((c) => c.selected);
+    // An assessment produces no migration, so it correctly has no prerequisite path. Anything else
+    // that wins without one is a mapping the catalog is missing, and returning an empty array made
+    // that indistinguishable from a route with nothing to prepare.
+    const isAssessment = /assessment/i.test(out.method || '') && !/backup\/restore/i.test(out.method || '');
+    if (chosen && !isAssessment && (!chosen.prerequisitePaths || chosen.prerequisitePaths.length === 0)) {
+      failures.push(`${scenario.id}: "${out.method}" wins for ${out.primaryTarget} with no prerequisite path, so the prerequisite skill has nothing to resolve`);
+    }
     if (!chosen) failures.push(`${scenario.id}: recommended "${out.method}" is absent from its own candidate list for ${out.primaryTarget}`);
     else if (chosen.status !== 'available') failures.push(`${scenario.id}: recommended "${out.method}" is listed unavailable by its own gate — ${chosen.reason}`);
   }
@@ -1621,6 +1634,140 @@ try {
       `${coverage.dispositions.length} supported (method, target) cells: ${counts.primary} primary, ${counts.secondary} secondary, ${counts.documentary} documentary.`,
       `All ${offered.size} primary and secondary cells are offered by the matching B3 target sub-section, and no sub-section offers a method the matrix withholds from that target.`,
       `${replayed} scenarios reach a named target, and each one recommends a method that appears in its own candidate list and passes its own gate.`,
+    ]);
+}
+
+
+// The JSON a reader copies is the JSON in the skill document, not the JSON in the schema file.
+// Audit 9 F-03 found the producer example advertising `schemaVersion`, `profile` and a
+// `recommendation.primary` wrapper while its own schema required `metadata`, `normalizedProfile`,
+// `eligibilityTrace` and `recommendation` with no additional properties. Both documents claimed to
+// be authoritative, so the handoff depended on which one the model read. This validates the
+// examples against the schema they claim to follow.
+{
+  const failures = [];
+  const notes = [];
+  const DOCS = [
+    { file: path.join('skills', 'recommend-migration-path', 'SKILL.md'), schema: path.join('skills', 'recommend-migration-path', 'schemas', 'output.schema.json'), marker: '"recommendation"' },
+  ];
+
+  for (const entry of DOCS) {
+    const abs = path.join(root, entry.file);
+    if (!fs.existsSync(abs)) { failures.push(`${entry.file}: declared for JSON-example validation but missing`); continue; }
+    const schema = JSON.parse(readText(entry.schema));
+    const text = readText(entry.file);
+    const blocks = [...text.matchAll(/```json\r?\n([\s\S]*?)\r?\n```/g)].map((m) => m[1]);
+    let checked = 0;
+    for (const [i, block] of blocks.entries()) {
+      if (!block.includes(entry.marker)) continue;
+      let parsed;
+      try { parsed = JSON.parse(block); }
+      catch (err) { failures.push(`${entry.file}: JSON block ${i + 1} does not parse — ${err.message}`); continue; }
+      checked++;
+      const { errors } = validateObjectAgainstSchema(schema, parsed, `${entry.file} block ${i + 1}`);
+      for (const e of errors) failures.push(e);
+    }
+    if (!checked) failures.push(`${entry.file}: no JSON block contains ${entry.marker}, so the example is no longer being checked`);
+    else notes.push(`${entry.file}: ${checked} JSON example(s) validate against ${entry.schema}`);
+  }
+
+  add('documented-json-matches-its-schema', failures.length === 0, failures.length ? failures : notes);
+}
+
+
+// Audit 9 F-09: two D2 rows had been joined with `||`, so each line carried two records and a
+// renderer had to guess where one ended. The rules are read by a model as much as by a person, and
+// a row that parses into the wrong number of columns silently loses a rule. This checks that every
+// table row in the policy documents has the width its own header declares.
+{
+  const failures = [];
+  const notes = [];
+  const FILES = [
+    path.join('reference', 'decision-rules.md'),
+    path.join('reference', 'output-contract.md'),
+    path.join('reference', 'input-contract.md'),
+  ];
+
+  const widthOf = (row) => {
+    const inner = row.trim().replace(/^\|/, '').replace(/\|$/, '');
+    let cells = 1;
+    let code = false;
+    for (let i = 0; i < inner.length; i++) {
+      if (inner[i] === '`') code = !code;
+      else if (inner[i] === '|' && !code && inner[i - 1] !== '\\') cells++;
+    }
+    return cells;
+  };
+
+  let tables = 0;
+  for (const file of FILES) {
+    const abs = path.join(root, file);
+    if (!fs.existsSync(abs)) { failures.push(`${file}: declared for table linting but missing`); continue; }
+    const lines = readText(file).split('\n');
+    let inFence = false;
+    for (let i = 0; i < lines.length; i++) {
+      if (/^\s*```/.test(lines[i])) { inFence = !inFence; continue; }
+      if (inFence) continue;
+      const isRow = (l) => l != null && /^\s*\|/.test(l) && /\|\s*$/.test(l.trimEnd());
+      const isDivider = (l) => l != null && /^\s*\|[\s:|-]+\|\s*$/.test(l.trimEnd());
+      if (!isRow(lines[i]) || !isDivider(lines[i + 1])) continue;
+      const width = widthOf(lines[i]);
+      tables++;
+      for (let j = i; j < lines.length && isRow(lines[j]); j++) {
+        if (isDivider(lines[j])) continue;
+        const w = widthOf(lines[j]);
+        if (w !== width) failures.push(`${file}:${j + 1}: table row has ${w} columns, its header declares ${width} — ${lines[j].trim().slice(0, 90)}`);
+        if (/[^\\`]\|\|/.test(lines[j])) failures.push(`${file}:${j + 1}: two rows joined by || — split them`);
+      }
+      while (i < lines.length && isRow(lines[i + 1])) i++;
+    }
+  }
+  if (!tables) failures.push('no table was found in the policy documents, so this gate is checking nothing');
+  else notes.push(`${tables} table(s) across ${FILES.length} policy documents: every row matches the column count its header declares, and no row joins two records with ||.`);
+
+  add('policy-tables-are-well-formed', failures.length === 0, failures.length ? failures : notes);
+}
+
+
+// Audit 9 F-10: the coverage section still said 56 combinations and 50 covered after the matrix
+// gained two rows, and still listed P03 as standalone after it stopped being one. Nothing checked
+// the prose against the data it describes, so it drifted the moment the data changed. Counts a
+// reader is invited to trust have to be derived from the files that hold them.
+{
+  const failures = [];
+  const coverage = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'reference', 'advisor-coverage.json')));
+  const catalog = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'reference', 'path-catalog.json')));
+  const doc = path.join('docs', 'sql-server-to-azure-migration-prerequisite.md');
+  const text = readText(doc);
+
+  const total = coverage.dispositions.length;
+  const withPath = coverage.dispositions.filter((d) => d.status === 'path').length;
+  const outOfScope = coverage.dispositions.filter((d) => d.status === 'out-of-scope').length;
+  const standalone = catalog.paths.filter((p) => p.standaloneOnly === true).map((p) => p.id).sort();
+
+  const expectPhrase = (phrase, what) => {
+    if (!text.includes(phrase)) failures.push(`${doc}: ${what} — expected the text ${JSON.stringify(phrase)}`);
+  };
+  expectPhrase(`marks ${total} method and target combinations as supported`, `advisor-coverage.json holds ${total} cells`);
+  expectPhrase(`records all ${total}, and`, `advisor-coverage.json holds ${total} cells`);
+  expectPhrase(`| Covered by a path | ${withPath} |`, `${withPath} cells carry a path`);
+  expectPhrase(`| Out of scope | ${outOfScope} |`, `${outOfScope} cells are out of scope`);
+
+  // Every standalone path must be named in the prose, and no path may be named as standalone
+  // while the catalog says otherwise.
+  const paragraph = text.slice(Math.max(0, text.indexOf('carry no matrix cell at all')));
+  const namedStandalone = [...paragraph.slice(0, 700).matchAll(/\*\*(P[0-9]{2})\*\*/g)].map((m) => m[1]);
+  for (const id of standalone) {
+    if (!namedStandalone.includes(id)) failures.push(`${doc}: ${id} is standaloneOnly in path-catalog.json but the coverage prose does not name it`);
+  }
+  for (const id of namedStandalone.slice(0, standalone.length)) {
+    if (!standalone.includes(id)) failures.push(`${doc}: the coverage prose lists ${id} among the standalone paths, but path-catalog.json does not mark it standaloneOnly`);
+  }
+
+  add('coverage-prose-matches-coverage-data', failures.length === 0,
+    failures.length ? failures : [
+      `${doc} states ${total} supported combinations, ${withPath} covered by a path and ${outOfScope} out of scope, matching advisor-coverage.json.`,
+      `The ${standalone.length} standaloneOnly path(s) named in the prose (${standalone.join(', ')}) match path-catalog.json.`,
     ]);
 }
 

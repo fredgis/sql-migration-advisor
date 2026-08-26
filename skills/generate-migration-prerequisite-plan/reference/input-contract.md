@@ -20,16 +20,32 @@ than one path, ask only the catalog's disambiguation question. Never choose a pa
 
 ## 2. Accepted Advisor shapes
 
-The handoff accepts both shapes already emitted inside this repository:
+The canonical shape is the one `skills/recommend-migration-path/schemas/output.schema.json`
+validates, and it is the only shape the Advisor emits:
 
-1. The public card contract: `recommendation.primary.target`, `recommendation.primary.tier`,
-   `recommendation.primary.method`, `recommendationStatus`, `confidence`, `unknowns`,
-   `hardBlockers`, `evidenceRequired`, and `knowledgeBase`.
-2. The regression-mirror shape: `primary_target` or `primaryTarget`, `tier`, `method`,
-   `targetAvailabilityDuringSync`, `businessCutoverDowntime`, `recommendationStatus`,
-   `confidence`, `unknowns`, `hardBlockers`, and `evidenceRequired`.
+- `metadata.knowledgeBaseVersion`, `metadata.decisionRulesVersion`, `metadata.recommendationStatus`,
+  `metadata.confidence`;
+- `normalizedProfile`, `eligibilityTrace[]`;
+- `recommendation.target`, `.tier`, `.method`, `.targetAvailabilityDuringSync`,
+  `.businessCutoverDowntime`;
+- `alternative`, `methodCandidates[]`, `methodGateTrace`, `blockers`, `unknowns`, `assumptions`,
+  `evidenceRequired`, `nextActions`, `evidenceLinks`, `largestRisk`.
 
-Normalize the two shapes before applying prerequisite rules. The handoff is a recommendation, not
+A second shape is still accepted for the regression mirror, which reports flat fields:
+`primary_target` or `primaryTarget`, `tier`, `method`, `targetAvailabilityDuringSync`,
+`businessCutoverDowntime`, `recommendationStatus`, `confidence`, `unknowns`, `hardBlockers` and
+`evidenceRequired`.
+
+**A `recommendation.primary` wrapper is not one of them.** It was advertised here while the schema
+required `recommendation.target`, so a producer following this page emitted an object its own
+schema rejected. If an input carries `recommendation.primary`, treat it as a stale producer, read
+the fields underneath it, and say that the shape was out of date rather than failing silently.
+
+**`methodCandidates[]` is the list of methods the Advisor weighed.** When the user prefers a
+candidate marked `available` over the recommended one, resolve that candidate's
+`prerequisitePaths` instead. Do not re-run the ranking.
+
+Normalize the shapes before applying prerequisite rules. The handoff is a recommendation, not
 proof that its assumptions or user-reported evidence were verified.
 
 ## 3. Absence and evidence semantics
