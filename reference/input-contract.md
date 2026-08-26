@@ -48,10 +48,17 @@ Show the label. Record the ID.
 | Label | ID |
 |---|---|
 | On-prem | `ON_PREM` |
+| Azure VM | `AZURE_VM` |
 | AWS EC2 | `AWS_EC2` |
 | AWS RDS for SQL Server | `AWS_RDS` |
 | GCP Compute Engine | `GCP_COMPUTE` |
 | GCP Cloud SQL | `GCP_CLOUD_SQL` |
+
+`AZURE_VM` was added in v2.12. It had been folded into `ON_PREM` through the shared
+"on-prem / Azure VM" label, even though several rules turn on whether the source is already in
+Azure — the network path to a Managed Instance, the Blob upload route, and whether a data-center
+exit driver applies at all. `ON_PREM` keeps its old meaning, so an existing answer stays valid;
+a source already running in Azure should now say so.
 
 ### Source version — `source_version`
 

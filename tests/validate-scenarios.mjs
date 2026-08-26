@@ -7,6 +7,7 @@
 // silently treated as a pass, so extending the schema means extending this too.
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -104,6 +105,24 @@ export function validateGoldenScenarios(schemaPath = SCHEMA, dataPath = DATA) {
   }
 
   return { errors, unsupported: [...unsupported], count: Array.isArray(data) ? data.length : 0 };
+}
+
+// Validate an in-memory object against an in-memory schema, using the same subset. The JSON
+// examples printed in the skill documents are the contract a model actually copies, so they are
+// validated here rather than trusted: a producer example that its own schema rejects makes the
+// handoff depend on which document the model happened to read.
+export function validateObjectAgainstSchema(schema, data, label = 'root') {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'advisor-schema-'));
+  const schemaPath = path.join(dir, 'schema.json');
+  const dataPath = path.join(dir, 'data.json');
+  try {
+    fs.writeFileSync(schemaPath, JSON.stringify(schema), 'utf8');
+    fs.writeFileSync(dataPath, JSON.stringify(data), 'utf8');
+    const { errors, unsupported } = validateGoldenScenarios(schemaPath, dataPath);
+    return { errors: errors.map((e) => e.replace(/^root/, label)), unsupported };
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 }
 
 if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('validate-scenarios.mjs')) {

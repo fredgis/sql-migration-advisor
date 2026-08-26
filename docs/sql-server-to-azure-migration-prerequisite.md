@@ -571,28 +571,38 @@ different route, covered by P06.
 
 ## 32. Coverage against the Advisor method and target matrix
 
-The Advisor knowledge base marks 56 method and target combinations as supported. Each one is a
+The Advisor knowledge base marks 58 method and target combinations as supported. Each one is a
 distinct route with its own prerequisite set, so each must carry an explicit disposition here. A
 path may serve several combinations provided it carries target-specific conditional rows; what is
 not permitted is a supported combination with no disposition at all.
 
-`skills/generate-migration-prerequisite-plan/reference/advisor-coverage.json` records all 56, and
+`skills/generate-migration-prerequisite-plan/reference/advisor-coverage.json` records all 58, and
 `tests/check-prerequisite-skill.mjs` parses the Advisor matrix directly and fails when a supported
 combination is missing, when a disposition names a path that does not exist, or when a
 non-path disposition carries no reason.
 
 | Disposition | Combinations | Meaning |
 | --- | ---: | --- |
-| Covered by a path | 50 | A prerequisite set exists for this combination. Where the target is an AVS-hosted SQL Server, the method path is applied together with the §30 platform overlay. |
+| Covered by a path | 52 | A prerequisite set exists for this combination. Where the target is an AVS-hosted SQL Server, the method path is applied together with the §30 platform overlay. |
 | Out of scope | 6 | SSMA converts non-SQL-Server sources such as Oracle, Sybase, DB2, MySQL and Access. A knowledge base scoped to SQL Server sources can never reach these combinations, so the exclusion is a property of the source rather than a scoping preference. |
 
+**A supported combination is not the same as a recommendable one, and reading the two as one number
+overstates what the Advisor offers.** Each cell also carries an `advisorRole`. `primary` may be the
+single recommended method; `secondary` is a legitimate alternative that belongs in a shortlist;
+`documentary` is supported and prepared here but is never a recommendation on its own, because the
+method moves data without carrying schema, dependencies or a cutover — `bcp`, Smart Bulk Copy, Data
+Factory Copy and Azure Migrate assessment are the cases. The Advisor therefore proposes 30 of the 58
+cells, and the remaining 28 stay reachable through a standalone plan in this skill. That split is
+deliberate: counting all 58 as recommendable would promote a bulk-copy utility to a migration
+method.
+
 Coverage also runs the other way, and that direction has to be stated or it looks like an omission.
-Four paths carry no matrix cell at all: **P03** (log shipping), **P06** (Azure Migrate replication),
-**P14** (Data Box seed with delta synchronization) and **P15** (Striim online CDC). They are not
-gaps and they are not dead entries. Each documents a route Microsoft describes outside §8 — a
-legacy technique, a VM-level method the matrix does not promote, a physical seed transport that
-must pair with a separate delta mechanism, and a third-party runtime named only in narrative
-guidance. Inventing matrix cells for them would misrepresent the Advisor; deleting them would
+Three paths carry no matrix cell at all: **P06** (Azure Migrate replication), **P14** (Data Box seed
+with delta synchronization) and **P15** (Striim online CDC). They are not gaps and they are not
+dead entries. Each documents a route Microsoft describes outside §8 — a VM-level method the matrix
+does not promote, a physical seed transport that must pair with a separate delta mechanism, and a
+third-party runtime named only in narrative guidance. **P03** (log shipping) was listed here until
+§8 gained its row; it is now a matrix cell like any other. Inventing matrix cells for them would misrepresent the Advisor; deleting them would
 remove working routes a reader may legitimately choose.
 
 They are therefore marked `standaloneOnly` in `path-catalog.json`, each with a written

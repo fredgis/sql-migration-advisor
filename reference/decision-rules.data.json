@@ -1,6 +1,6 @@
 {
   "schema": "sql-migration-advisor.decision-rules-data/v1",
-  "version": "v2.11",
+  "version": "v2.12",
   "source": {
     "markdown": "reference/decision-rules.md",
     "description": "Machine-checkable constants and gates extracted from decision-rules.md v2.0."
@@ -10,12 +10,20 @@
       "sqlServerMin": 2016,
       "linuxSqlServerMin": 2017,
       "windowsServerMin": 2012,
-      "editions": ["Enterprise", "Standard", "Developer"]
+      "editions": [
+        "Enterprise",
+        "Standard",
+        "Developer"
+      ]
     },
     "standaloneLrs": {
       "sqlServerMin": 2008,
       "sqlServerMax": 2022,
-      "maxMigrationWindowDays": 30
+      "maxMigrationWindowDays": 30,
+      "controlPlane": "standalone",
+      "source": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate",
+      "sourceQuote": "SQL Server versions 2008 to 2022.",
+      "lastVerified": "2026-08-26"
     },
     "nativeRestoreToMi": {
       "sqlServerMin": 2008
@@ -45,7 +53,12 @@
     },
     "lrsToManagedInstanceConservative": {
       "sqlServerMin": 2014,
-      "documentedMethodSqlServerMin": 2012
+      "sqlServerMax": 2025,
+      "documentedMethodSqlServerMin": 2012,
+      "controlPlane": "arc",
+      "source": "https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migration-sql-mi-prepare-log-replay-service",
+      "sourceQuote": "SQL Server 2025 (17.x) | SQL Server 2025 RTM (17.0.1000.7)",
+      "lastVerified": "2026-08-26"
     },
     "sqlServerOnAzureVm": {
       "sqlServerMin": 2014
@@ -125,6 +138,10 @@
     "bcp / Smart Bulk Copy / BACPAC / ADF": {
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-load-time"
+    },
+    "Azure DMS (online)": {
+      "targetAvailabilityDuringSync": "unavailable",
+      "businessCutoverDowntime": "minutes"
     }
   },
   "crossCloudEligibility": {
