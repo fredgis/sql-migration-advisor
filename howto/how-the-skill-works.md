@@ -176,7 +176,7 @@ directly and a wrong guess silently changes the recommendation:
 | `evidence` *(4 booleans)* | the user reports that an assessment was run | Recorded as claims to verify elsewhere. They do not raise status or confidence because this skill reads no artefact |
 
 The canonical field list lives in [`reference/input-contract.md`](../reference/input-contract.md). It fixes
-20 field names and 30 stable option IDs, so the interview and the rules do not drift when a label is
+31 field names and 74 stable option IDs, so the interview and the rules do not drift when a label is
 translated or reworded.
 
 ### Tested policy, adaptive agent
