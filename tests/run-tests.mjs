@@ -2098,6 +2098,41 @@ try {
     }
   }
 
+  // The interview vocabulary is the third thing this page publishes, and AZURE_VM had been added to
+  // the contract in v2.12 without reaching it. Checking the whole OPTIONS block against prose would
+  // false-positive on every backticked word, so this holds it to the IDs the engine actually knows.
+  const optionsBlock = (() => {
+    const at = graph.indexOf('const OPTIONS =');
+    if (at === -1) return null;
+    const start = graph.indexOf('{', at);
+    let depth = 0;
+    for (let k = start; k < graph.length; k++) {
+      if (graph[k] === '{') depth++;
+      else if (graph[k] === '}') { depth--; if (!depth) return graph.slice(start, k + 1); }
+    }
+    return null;
+  })();
+  if (!optionsBlock) failures.push(`${graphPath}: has no OPTIONS block, so the interview vocabulary it publishes cannot be checked`);
+  else {
+    const contractText = readText(path.join('reference', 'input-contract.md'));
+    for (const field of ['source_location', 'source_version', 'management_model', 'intent']) {
+      const row = optionsBlock.match(new RegExp(`${field}:\\s*\\[([^\\]]*)\\]`));
+      if (!row) { failures.push(`${graphPath}: OPTIONS does not publish ${field}`); continue; }
+      const plottedIds = [...row[1].matchAll(/"([A-Z][A-Z0-9_]+)"/g)].map((m) => m[1]).filter((id) => id !== 'UNKNOWN');
+      // Bound the contract section at its own heading, or the scan bleeds into the next field and
+      // reports every ID in the document against every list.
+      const headingAt = contractText.search(new RegExp(`^### [^\\n]*\`${field}\``, 'm'));
+      if (headingAt === -1) { failures.push(`${graphPath}: reference/input-contract.md has no section for ${field}`); continue; }
+      const rest = contractText.slice(headingAt + 4);
+      const nextHeading = rest.search(/^### /m);
+      const section = nextHeading === -1 ? rest : rest.slice(0, nextHeading);
+      const contractIds = [...section.matchAll(/\|\s*`([A-Z][A-Z0-9_]+)`\s*\|/g)].map((m) => m[1]).filter((id) => id !== 'UNKNOWN');
+      for (const id of contractIds) {
+        if (!plottedIds.includes(id)) failures.push(`${graphPath}: the input contract offers ${field} = ${id}, which the published options never list`);
+      }
+    }
+  }
+
   add('rule-graph-is-current', failures.length === 0,
     failures.length ? failures : [`${graphPath} plots the same ${indexed.length} rules as the decision-rules index, stamped ${manifest.latest}.`]);
 }
