@@ -194,7 +194,12 @@ The assessments that a recommendation points to have their own requirements, and
 
 ## API Details
 
-This skill signs in to nothing and holds no credential. It reads the files shipped beside it, and it may read **one** document over the network: the knowledge base.
+This skill signs in to nothing and holds no credential. It reads the files shipped beside it, and it makes at most **two** network reads, which are different in kind and must not be traded against each other:
+
+1. **One document fetch** — the knowledge base, and only when the user asks for the live copy.
+2. **One version probe** — `version.json`, a few hundred bytes read at launch to tell the user whether a newer release exists. It carries no facts and never feeds a recommendation.
+
+Stating a single budget made these compete: an implementation that spent its one read on the version probe then had none left for the document the user had asked for, and one that read the document reported no update. Neither is optional in favour of the other, and neither may be spent twice.
 
 **The bundled copy is the default.** `../../docs/sql-server-to-azure-migration.md`, `../../reference/decision-rules.md` and the two contracts all ship at the same commit as this file. Facts and rules therefore move together, and the advice stays reproducible and citable: a reader can fetch that exact commit and see what the recommendation was based on. Freshness is handled by the weekly check and by releases, not by a moving target under the reader.
 
