@@ -157,8 +157,15 @@ link breaks. For each entry in [`claims-registry.json`](../reference/claims-regi
 the source, extracts the named section (or one named JSON field), normalises it, hashes it, and
 compares against the recorded baseline. A claim comes back verified, drifted, or unverifiable.
 
-39 claims are watched: 19 behind the Advisor knowledge base, 10 behind the prerequisite base, 10
+40 claims are watched: 20 behind the Advisor knowledge base, 10 behind the prerequisite base, 10
 behind the connectivity base.
+
+**One of them exists because two Microsoft pages disagree.** Standalone Log Replay Service is
+documented for SQL Server 2008-2022; the Azure Arc migration path lists SQL Server 2025. Both pages
+are current. The rules record both, split by control plane, rather than picking one — so the
+registry watches both pages, and a change on either becomes a question for a person instead of a
+silent drift toward whichever page was read last. A dated claim that nothing re-reads is the exact
+failure this loop exists to prevent.
 
 ### 5.4 `review` — three sequential model passes
 
@@ -251,7 +258,7 @@ Every stage, against every knowledge base.
 | Live sources **and heading anchors** (`check-doc-links.mjs`) | 🟢 + policy docs | 🟢 + catalogue contract | 🟢 + policy docs |
 | Link sweep (lychee, `evidence`) | 🟢 | 🟢 | 🟢 |
 | News collection **and routing** | 🟢 | 🟢 | 🟢 |
-| Silent source drift (`verify-claims.mjs`) | 🟢 19 claims | 🟢 10 claims | 🟢 10 claims |
+| Silent source drift (`verify-claims.mjs`) | 🟢 20 claims | 🟢 10 claims | 🟢 10 claims |
 | **Document sent to the model** | 🟢 full text | 🟢 full text | 🟢 full text |
 | **Model may raise a finding against it** | 🟢 + decision rules | 🟢 + path catalog | 🟢 + connectivity matrix |
 | Freshness stamp | 🟢 | 🟢 | 🟢 |

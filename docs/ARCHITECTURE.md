@@ -32,12 +32,13 @@ flowchart TD
       IC["reference/input-contract.md<br/>what an answer may be"]
       DR["reference/decision-rules.md<br/>the policy"]
       OC["reference/output-contract.md<br/>what an answer must look like"]
+      MM["reference/migration-methods.json<br/>what each route is: method, transport, overlay"]
       KB["docs/sql-server-to-azure-migration.md<br/>the facts, with sources"]
     end
 
     subgraph repo["The repository, which no session reads"]
       EN["tests/engine/evaluate.mjs<br/>a mirror of the rules, in JavaScript"]
-      GS["tests/golden-scenarios.json<br/>106 profiles and their expected answers"]
+      GS["tests/golden-scenarios.json<br/>116 profiles and their expected answers"]
       GA["tests/run-tests.mjs<br/>38 gates"]
       WK["tools/weekly-check/<br/>freshness and drift"]
     end
@@ -46,6 +47,7 @@ flowchart TD
     SK --> DR
     SK --> OC
     SK --> KB
+    DR --> MM
     DR -.->|hand-mirrored| EN
     GS --> EN
     GA --> EN
@@ -53,11 +55,12 @@ flowchart TD
     GA --> IC
     GA --> DR
     GA --> OC
+    GA --> MM
     WK --> KB
 
     classDef live fill:#e8f5e9,stroke:#2e7d32,color:#111
     classDef test fill:#e3f2fd,stroke:#1565c0,color:#111
-    class SK,IC,DR,OC,KB live
+    class SK,IC,DR,OC,KB,MM live
     class EN,GS,GA,WK test
 ```
 
@@ -66,13 +69,15 @@ Green is loaded in a user's session. Blue never is.
 | Path | Role |
 | --- | --- |
 | `skills/recommend-migration-path/SKILL.md` | The skill. Trigger description, interview, order of operations, output template. |
-| `reference/input-contract.md` | The vocabulary an answer may use: 73 option IDs, the canonical field names, and the three states an answer can hold. |
+| `reference/input-contract.md` | The vocabulary an answer may use: 74 option IDs, the canonical field names, and the three states an answer can hold. |
 | `reference/decision-rules.md` | The policy. Phase A eligibility, Phase B ordered ranking, tier selection, and an index of 31 addressable rules. |
 | `reference/output-contract.md` | The shape of an answer, the status vocabulary, and 15 invariants the skill checks against its own draft. |
+| `reference/migration-methods.json` | What each of the 26 routes **is**: a migration, an assessment, a transport, an overlay, or out of scope. Added in v3.0, because a route described only in prose had no identity and a transport could be counted as a migration method. |
+| `skills/generate-migration-prerequisite-plan/reference/advisor-fact-mappings.json` | The crosswalk between the two skills' field names, including the facts that **cannot** convert. Added in v3.0: "do not ask the user twice" is unimplementable without it. |
 | `skills/recommend-migration-path/schemas/` | The two contracts above in machine-checkable form. `output.schema.json` types the recommendation that `generate-migration-prerequisite-plan` consumes; `input.schema.json` types the normalized profile. |
 | `docs/sql-server-to-azure-migration.md` | The knowledge base: every target, method, limit and lever, with Microsoft Learn links. |
 | `reference/decision-rules.data.json` | The same constants in machine-readable form, so a floor can be checked rather than read. |
-| `tests/engine/evaluate.mjs` | 757 lines of JavaScript that mirror the rules. **Never executed in production.** |
+| `tests/engine/evaluate.mjs` | ~1 080 lines of JavaScript that mirror the rules. **Never executed in production.** |
 | `tests/run-tests.mjs` | 38 gates. |
 | `tools/weekly-check/` | Four jobs that check the knowledge base has not gone stale or drifted from its sources. |
 | `version.json` | Served from `main` so an installed skill can tell it is out of date. |
@@ -147,13 +152,15 @@ Three design decisions here came from defects, not from theory.
 
 **Multi-selects do not exist.** Measured across two real sessions, four multi-selects returned no values four times out of four while roughly ten single-selects all returned theirs. Rather than work around a control that silently loses answers, list questions became free text.
 
-**Every displayed option carries a stable ID.** The interview once displayed labels the rules had never heard of — `Assessment only` reaching no rule that recognised `assessment-only` — so answers were silently discarded while 86 tests stayed green. The input contract now owns 73 IDs, and a gate checks that everything the interview offers exists there.
+**Every displayed option carries a stable ID.** The interview once displayed labels the rules had never heard of — `Assessment only` reaching no rule that recognised `assessment-only` — so answers were silently discarded while 86 tests stayed green. The input contract now owns 74 IDs, and a gate checks that everything the interview offers exists there.
 
 ### Deciding
 
 **Phase A** classifies all eight target families. A family that vanishes from the trace cannot be argued with, so an invariant requires every one to appear. Five statuses: `eligible`, `eligible_with_remediation`, `unsupported`, `excluded_by_preference` and `unknown_requires_assessment`. The fourth exists because marking containers *unsupported* when the customer merely preferred managed PaaS tells a reader six months later that Arc cannot work, which was never true.
 
-**Phase B** applies ten ordered steps. The order is normative. It replaced an unweighted table of eight criteria under which two readers weighing cost against resilience differently reached two defensible answers from the same estate. When the steps do not separate the finalists, the result is a shortlist and the evidence that would break the tie — never an invented winner.
+**Phase B** applies ten ordered steps to pick the target. The order is normative. It replaced an unweighted table of eight criteria under which two readers weighing cost against resilience differently reached two defensible answers from the same estate. When the steps do not separate the finalists, the result is a shortlist and the evidence that would break the tie — never an invented winner.
+
+**Phase B also picks the method, and until v2.11 it did so differently.** Target selection evaluated all eight families and traced each one; method selection jumped straight to a single answer. The asymmetry mattered more than it looked: a method that is never enumerated is never rejected either, so nothing could notice it missing. Azure DMS stayed out of the Managed Instance and SQL VM guidance for months while the matrix declared it supported for both. §B3.0 now names candidates first, applies each method's own gate, then ranks the survivors — the answers orient the choice, simplicity breaks a tie, and the losers are named in `methodCandidates` with a reason each.
 
 Every verdict cites a rule ID, and the rule index lists all 31 with the fields each consumes and what it does when one is unknown. A reader can look a decision up and disagree with it.
 
@@ -169,7 +176,7 @@ This is the only mechanism in the whole design that protects a live answer. Ever
 
 ## 5. The mirror, and its honest limits
 
-`tests/engine/evaluate.mjs` implements the rules in JavaScript so that 106 profiles can be replayed on every commit. It is a mirror, maintained by hand, and nothing mechanically ties it to the prose.
+`tests/engine/evaluate.mjs` implements the rules in JavaScript so that 116 profiles can be replayed on every commit. It is a mirror, maintained by hand, and nothing mechanically ties it to the prose.
 
 So be precise about what a green suite proves:
 

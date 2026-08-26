@@ -62,7 +62,8 @@ version loaded and where it came from, so the advice is traceable.
 
 - **Verified knowledge** — the v3.0 knowledge base is source-backed and corrected against Microsoft Learn.
 - **Rules under regression test** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers. An executable mirror in `tests/` replays 116 scenarios through those rules on every commit. The mirror is not what runs in your session: an agent reads the rules and applies them, so this is a tested policy rather than a byte-identical guarantee.
-- **Every decision is addressable** — the card cites a rule ID for each verdict, and [`reference/decision-rules.md`](reference/decision-rules.md) ends with an index of all 28. Look one up, read what it consumes and how it treats an unknown, and argue with it.
+- **Every decision is addressable** — the card cites a rule ID for each verdict, and [`reference/decision-rules.md`](reference/decision-rules.md) ends with an index of all 31. Look one up, read what it consumes and how it treats an unknown, and argue with it.
+- **You see what lost, not just what won** — the card lists every method the knowledge base supports for the chosen target, each with a status and a reason. A method that is never enumerated is never rejected either, so its absence cannot be argued with; that is how Azure DMS stayed out of the Managed Instance guidance while the matrix declared it supported. Any candidate marked `available` can be handed to the prerequisite companion instead of the recommended one.
 - **Explicit uncertainty** — every recommendation is `provisional`, and `medium` is the confidence ceiling. Nothing higher is reachable from an interview, because the skill reads no artefact from your estate. It carries assumptions, unknowns, blockers and the evidence a tool would have to produce.
 - **It checks its own answer** — before the card is shown, the skill re-reads its draft against the 15 invariants in [`reference/output-contract.md`](reference/output-contract.md). One of them: no eligibility claim may rest on a field you never answered. A failed invariant is shown to you, never silently repaired.
 - **Freshness gates** — version bumps require substantive diffs; link checks classify bot-blocked pages; high-risk claims are tracked in [`reference/claims-registry.json`](reference/claims-registry.json).
@@ -113,17 +114,21 @@ status line. See [§ The prerequisite companion](#the-prerequisite-companion) an
 | [`docs/sql-server-to-azure-migration-prerequisite.md`](docs/sql-server-to-azure-migration-prerequisite.md) | **New.** The prerequisite knowledge base: 12 common requirements and 22 path sections, every row carrying a stable ID, an owner, the evidence it demands and a public Microsoft source. |
 | [`skills/get-connection-details/SKILL.md`](skills/get-connection-details/SKILL.md) | **Draft.** The third skill: how to connect an application to an Azure SQL family target, and why a connection is failing. Picks up where the advisor stops. |
 | [`skills/get-connection-details/reference/connectivity-matrix.json`](skills/get-connection-details/reference/connectivity-matrix.json) | **Draft.** The canonical structured source for connectivity facts. The prose is written from this file, not the reverse. |
-| [`reference/input-contract.md`](reference/input-contract.md) | What the interview may produce: 30 stable option IDs, 20 canonical field names, and the difference between *confirmed none* and *nobody checked*. |
+| [`reference/input-contract.md`](reference/input-contract.md) | What the interview may produce: 74 stable option IDs, 31 canonical field names, and the difference between *confirmed none* and *nobody checked*. |
 | [`skills/recommend-migration-path/schemas/`](skills/recommend-migration-path/schemas/) | **New.** The two contracts above in machine-checkable form: the normalized profile the skill evaluates, and the recommendation object the prerequisite companion consumes. A handoff described only in prose cannot fail a test. |
+| [`reference/migration-methods.json`](reference/migration-methods.json) | **New in v3.** What each of the 26 routes *is*: a migration, an assessment, a transport, an overlay, or out of scope. A transport moves rows and carries no cutover, so it can never be recommended as a migration method. |
+| [`skills/generate-migration-prerequisite-plan/reference/advisor-fact-mappings.json`](skills/generate-migration-prerequisite-plan/reference/advisor-fact-mappings.json) | **New in v3.** The crosswalk from advisor fields to prerequisite fields, including the four facts that deliberately *cannot* convert — a size band is not a measurement, and a mentioned dependency is not an inventory. |
 | [`reference/output-contract.md`](reference/output-contract.md) | What an answer must look like, and the 15 invariants the skill checks against its own draft before showing it. |
 | [`reference/decision-rules.md`](reference/decision-rules.md) | The decision policy: Phase A eligibility filter, Phase B ordered ranking and tier selection, and the index of all 31 addressable rules. |
 | [`examples/sample-recommendation.md`](examples/sample-recommendation.md) | A worked end-to-end example (SQL 2014 → Azure SQL MI via LRS). |
 | [`docs/sql-server-to-azure-migration.md`](docs/sql-server-to-azure-migration.md) | The knowledge base — every target family, method, tool, and commercial lever, with Microsoft Learn links. |
 | [`docs/sql-server-to-azure-migration-connectivity.md`](docs/sql-server-to-azure-migration-connectivity.md) | **Draft.** The connectivity knowledge base: endpoints, ports, authentication, driver syntax, TLS, DNS and error diagnosis, with a source register and an open-questions section. |
-| [`reference/claims-registry.json`](reference/claims-registry.json) | Hashes and source pointers for high-risk claims, used by weekly drift detection. 39 claims: 19 for the migration knowledge base, 10 for prerequisites, 10 for connectivity. |
+| [`reference/claims-registry.json`](reference/claims-registry.json) | Hashes and source pointers for high-risk claims, used by weekly drift detection. 40 claims: 20 for the migration knowledge base, 10 for prerequisites, 10 for connectivity. |
 | [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) | The same knowledge base as a branded, partner-ready PDF. |
 | [`lab/`](lab/) | A self-contained, hands-on lab: take a legacy SQL Server 2016 workload to a SQL Server on Azure VM, driven by the advisor and the HVE Squad (VM-to-VM migration). |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Deep dive: what the plugin is, how a session runs end to end, what the 38 gates defend, and where it can still be wrong. |
+| [`docs/NEWDESIGNv2.md`](docs/NEWDESIGNv2.md) | Why there is a v2: how the decision policy became versioned, addressable and testable rather than prose an implementer had to interpret. |
+| [`docs/NEWDESIGNv3.md`](docs/NEWDESIGNv3.md) | **New.** Why there is a v3: a defect that took three releases to see, why a method that is never enumerated is never rejected either, and what changed when the handoff between advisor and prerequisite companion had to carry what the recommendation knew. |
 | [`docs/WEEKLYCHECK.md`](docs/WEEKLYCHECK.md) | Deep dive on the weekly check: how all three knowledge bases are verified, reviewed and stamped each Monday, what it delivers, and what it refuses to do on its own. |
 | [`howto/how-the-skill-works.md`](howto/how-the-skill-works.md) | Implementer's guide: how the skill works, how an agent uses it, and how the weekly Action keeps the knowledge base fresh (with architecture diagrams). |
 | [`docs/sql-migration-advisor-developer-pitch.md`](docs/sql-migration-advisor-developer-pitch.md) | Developer pitch: runtime architecture, the decision process, the CI and pull-request gates, and how the knowledge base stays current. |
@@ -391,7 +396,7 @@ Three views over the same policy, in one page:
 | View | Shows |
 | --- | --- |
 | **Documented paths** | Every target and the methods that reach it, with how many scenarios exercise each |
-| **Rules** | The 28 addressable rules, the fields each one consumes, and what it decides |
+| **Rules** | The 31 addressable rules, the fields each one consumes, and what it decides |
 | **Tested coverage** | What the 116 golden scenarios actually reach |
 
 Select a node to isolate its relations. Enumerating the profiles literally is not an option — more
