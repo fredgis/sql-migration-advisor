@@ -378,7 +378,8 @@
           "type": "object",
           "required": [
             "target",
-            "method"
+            "method",
+            "controlPlane"
           ],
           "properties": {
             "target": {
@@ -398,6 +399,18 @@
             },
             "businessCutoverDowntime": {
               "$ref": "#/$defs/advisorCutoverDowntime"
+            },
+            "controlPlane": {
+              "enum": [
+                "standalone",
+                "azure-arc",
+                "ssms-migration-component",
+                "azure-migrate",
+                "azure-dms",
+                "fabric",
+                "vmware-hcx"
+              ],
+              "description": "Which control plane runs the migration, carried over from the Advisor. It selects prerequisites rather than labelling them: azure-arc pulls in the extension, identity and batch requirements and changes which source-version matrix governs the method. Required, because a handoff that omits it silently produces a standalone plan for an Arc-orchestrated migration."
             }
           }
         },

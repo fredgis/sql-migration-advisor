@@ -32,7 +32,7 @@ Chrome binary, but you only need those if you are changing `docs/` output or `to
 Run all four before opening a pull request. They are the same four CI runs.
 
 ```bash
-node tests/run-tests.mjs                        # 40 gates over 116 scenarios
+node tests/run-tests.mjs                        # 41 gates over 116 scenarios
 node tools/rules/check-rules-data.mjs --strict  # constants agree between JSON and markdown
 node tools/weekly-check/check-consistency.mjs   # versions and freshness stamps agree
 node tools/artifacts/check-artifacts.mjs        # derived artifacts are not stale
