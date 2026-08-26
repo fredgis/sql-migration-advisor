@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Normative crosswalk from the Advisor's normalizedProfile to the prerequisite skill's question fields. The consumer is told not to ask again for a fact the Advisor already established, but the two skills name and type their facts differently, so without this table the rule cannot be implemented deterministically: two implementations reading the same handoff would disagree about which questions are already answered. Every entry states what converts, what does not, and what the consumer may claim as a result. Enforced by tests/check-prerequisite-skill.mjs.",
+  "version": "v1.0",
+  "conversionKinds": {
+    "direct": "The value carries over unchanged, or through a documented label-to-ID mapping.",
+    "vocabulary": "The value carries over but the allowed values differ and must be translated.",
+    "not-convertible": "The producer value cannot establish the consumer field. The consumer must still ask. Stating why is the point of the entry: a qualitative answer is not a measurement, and a partial list is not an inventory."
+  },
+  "mappings": [
+    {
+      "advisorField": "source_version",
+      "consumerField": "source_version",
+      "conversion": "direct",
+      "note": "Same vocabulary on both sides."
+    },
+    {
+      "advisorField": "source_edition",
+      "consumerField": "source_edition",
+      "conversion": "direct",
+      "note": "Same vocabulary on both sides."
+    },
+    {
+      "advisorField": "source_os",
+      "consumerField": "source_os",
+      "conversion": "direct",
+      "note": "Same vocabulary on both sides."
+    },
+    {
+      "advisorField": "source_location",
+      "consumerField": "source_location",
+      "conversion": "direct",
+      "note": "AZURE_VM was added in v2.12. A handoff still carrying ON_PREM for a source running in Azure is not wrong, only less specific, so it converts and the consumer may refine it."
+    },
+    {
+      "advisorField": "downtime",
+      "consumerField": "downtime_tolerance",
+      "conversion": "direct",
+      "note": "Renamed, not redefined. The alias was undeclared, which is the whole defect: an implementation could read either name and neither document said they were the same fact."
+    },
+    {
+      "advisorField": "authentication",
+      "consumerField": "authentication_model",
+      "conversion": "direct",
+      "note": "Renamed, not redefined. The undeclared alias is the defect: an implementation could read either name and no document said they were the same fact."
+    },
+    {
+      "advisorField": "database_count",
+      "consumerField": "database_count",
+      "conversion": "direct",
+      "note": "Same fact and same type on both sides, so it carries over without translation."
+    },
+    {
+      "advisorField": "tde_status",
+      "consumerField": "tde_status",
+      "conversion": "direct",
+      "note": "Same vocabulary. tde_material_status is a separate fact and is never inferred from it: knowing a database is encrypted says nothing about whether the certificate is exportable."
+    },
+    {
+      "advisorField": "source_permissions",
+      "consumerField": "source_permissions",
+      "conversion": "direct",
+      "note": "Same vocabulary on both sides, so it carries over without translation."
+    },
+    {
+      "advisorField": "mi_link_ports",
+      "consumerField": "mi_link_ports_status",
+      "conversion": "vocabulary",
+      "note": "The Advisor records what the user said about ports; the consumer records a status. Only an explicit confirmation converts to CONFIRMED. Free text that merely fails to mention a block is not a confirmation.",
+      "valueMap": {
+        "PORTS_OPEN_CONFIRMED": "MI_LINK_PORTS_CONFIRMED",
+        "PORTS_BLOCKED": "MI_LINK_PORTS_BLOCKED"
+      },
+      "otherwise": "unknown"
+    },
+    {
+      "advisorField": "blob_https_reachability",
+      "consumerField": "blob_https_status",
+      "conversion": "vocabulary",
+      "note": "Renamed and re-vocabularised. An unverified upload path is unknown, never confirmed: a real session reported a backup gate as passed with the Blob path untested.",
+      "valueMap": {
+        "BLOB_HTTPS_CONFIRMED": "BLOB_HTTPS_CONFIRMED",
+        "BLOB_HTTPS_BLOCKED": "BLOB_HTTPS_BLOCKED"
+      },
+      "otherwise": "unknown"
+    },
+    {
+      "advisorField": "size",
+      "consumerField": "largest_database_size_gb",
+      "conversion": "not-convertible",
+      "note": "The Advisor holds a size band chosen from a menu; the consumer needs a number in gigabytes. A band cannot be turned into a measurement without inventing precision the user never gave. The consumer asks, and the band may be offered as the default range."
+    },
+    {
+      "advisorField": "performance",
+      "consumerField": "performance_baseline_status",
+      "conversion": "not-convertible",
+      "note": "A qualitative statement about performance is not evidence that a baseline was captured. Treating it as one would let 'the workload is bursty' satisfy a prerequisite asking for measured log-rate and latency figures."
+    },
+    {
+      "advisorField": "feature_dependencies",
+      "consumerField": "feature_inventory_status",
+      "conversion": "not-convertible",
+      "note": "A list of dependencies the user happened to mention is not proof that an inventory was run. The distinction matters because the prerequisite exists to catch the dependency nobody thought of."
+    },
+    {
+      "advisorField": "network_ports",
+      "consumerField": "network_path_status",
+      "conversion": "not-convertible",
+      "note": "The Advisor's ports field is free text about specific ports. The consumer's field is a status covering the whole network path, including DNS and private endpoints. A statement about one port does not establish the path."
+    }
+  ]
+}

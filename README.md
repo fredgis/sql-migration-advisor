@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Knowledge base v2.12" src="https://img.shields.io/badge/knowledge%20base-v2.12-2b8a3e">
+  <img alt="Knowledge base v3.0" src="https://img.shields.io/badge/knowledge%20base-v3.0-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml/badge.svg"></a>
 </p>
@@ -60,13 +60,13 @@ version loaded and where it came from, so the advice is traceable.
 
 ## Why it is trustworthy
 
-- **Verified knowledge** — the v2.12 knowledge base is source-backed and corrected against Microsoft Learn.
+- **Verified knowledge** — the v3.0 knowledge base is source-backed and corrected against Microsoft Learn.
 - **Rules under regression test** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers. An executable mirror in `tests/` replays 116 scenarios through those rules on every commit. The mirror is not what runs in your session: an agent reads the rules and applies them, so this is a tested policy rather than a byte-identical guarantee.
 - **Every decision is addressable** — the card cites a rule ID for each verdict, and [`reference/decision-rules.md`](reference/decision-rules.md) ends with an index of all 28. Look one up, read what it consumes and how it treats an unknown, and argue with it.
 - **Explicit uncertainty** — every recommendation is `provisional`, and `medium` is the confidence ceiling. Nothing higher is reachable from an interview, because the skill reads no artefact from your estate. It carries assumptions, unknowns, blockers and the evidence a tool would have to produce.
 - **It checks its own answer** — before the card is shown, the skill re-reads its draft against the 15 invariants in [`reference/output-contract.md`](reference/output-contract.md). One of them: no eligibility claim may rest on a field you never answered. A failed invariant is shown to you, never silently repaired.
 - **Freshness gates** — version bumps require substantive diffs; link checks classify bot-blocked pages; high-risk claims are tracked in [`reference/claims-registry.json`](reference/claims-registry.json).
-- **Regression protection** — [`tests/`](tests/) holds 116 golden scenarios and 35 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
+- **Regression protection** — [`tests/`](tests/) holds 116 golden scenarios and 38 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
 
 ## One version, every surface
 
@@ -76,20 +76,20 @@ The knowledge base is quoted by a skill, three manifests, a PDF, a poster, this 
 
 | Surface | Version | Up to date |
 | --- | --- | --- |
-| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v2.12` | ✅ |
-| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v2.12` | ✅ |
-| `SKILL.md` and its pinned fetch URL | `v2.12.0` | ✅ |
-| `version.json`, `plugin.json`, `marketplace.json` | `v2.12.0` | ✅ |
-| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v2.12` | ✅ |
-| Poster caption and PNG | `v2.12` | ✅ |
-| This README's badge and PDF sentence | `v2.12` | ✅ |
-| **This table** | `v2.12` | ✅ |
+| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v3.0` | ✅ |
+| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v3.0` | ✅ |
+| `SKILL.md` and its pinned fetch URL | `v3.0.0` | ✅ |
+| `version.json`, `plugin.json`, `marketplace.json` | `v3.0.0` | ✅ |
+| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v3.0` | ✅ |
+| Poster caption and PNG | `v3.0` | ✅ |
+| This README's badge and PDF sentence | `v3.0` | ✅ |
+| **This table** | `v3.0` | ✅ |
 | The six `blume/public/*.svg` mirrors | — | ✅ |
 | [`blume/docs/index.mdx`](blume/docs/index.mdx) — the docs site | — | ✅ |
-| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v2.12.0` | ✅ |
+| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v3.0.0` | ✅ |
 | [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | — | ✅ |
 | `howto/*.html` | — | ✅ |
-| The developer pitch's sample failure block | `v2.12` | ✅ |
+| The developer pitch's sample failure block | `v3.0` | ✅ |
 
 <!-- surfaces:end -->
 
@@ -123,7 +123,7 @@ status line. See [§ The prerequisite companion](#the-prerequisite-companion) an
 | [`reference/claims-registry.json`](reference/claims-registry.json) | Hashes and source pointers for high-risk claims, used by weekly drift detection. 39 claims: 19 for the migration knowledge base, 10 for prerequisites, 10 for connectivity. |
 | [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) | The same knowledge base as a branded, partner-ready PDF. |
 | [`lab/`](lab/) | A self-contained, hands-on lab: take a legacy SQL Server 2016 workload to a SQL Server on Azure VM, driven by the advisor and the HVE Squad (VM-to-VM migration). |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Deep dive: what the plugin is, how a session runs end to end, what the 35 gates defend, and where it can still be wrong. |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Deep dive: what the plugin is, how a session runs end to end, what the 38 gates defend, and where it can still be wrong. |
 | [`docs/WEEKLYCHECK.md`](docs/WEEKLYCHECK.md) | Deep dive on the weekly check: how all three knowledge bases are verified, reviewed and stamped each Monday, what it delivers, and what it refuses to do on its own. |
 | [`howto/how-the-skill-works.md`](howto/how-the-skill-works.md) | Implementer's guide: how the skill works, how an agent uses it, and how the weekly Action keeps the knowledge base fresh (with architecture diagrams). |
 | [`docs/sql-migration-advisor-developer-pitch.md`](docs/sql-migration-advisor-developer-pitch.md) | Developer pitch: runtime architecture, the decision process, the CI and pull-request gates, and how the knowledge base stays current. |
@@ -452,7 +452,7 @@ Mermaid decision diagrams. The `SKILL.md` mirrors its AI Migration Agent I/O con
 
 The same knowledge base ships as a polished, branded PDF —
 [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (27 pages,
-v2.12, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
+v3.0, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
 
@@ -518,6 +518,7 @@ base and this README on the same version. Last verified: August 2026.
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| v3.0.0 | 2026-08-26 | **The handoff between the two skills could not carry what the recommendation knew.** Three things were lost on the way. **A composite route could not be represented at all**: `advisor-coverage.json` requires a method path *and* `P27` for the eight AVS routes that move a database, while the consumer accepted exactly one path — `P27` alone describes a platform nobody migrates to, and the method path alone describes a generic SQL Server rather than AVS, so whichever was chosen, the other was dropped. `selectedMethodPath` and `appliedOverlays[]` carry both now. **The control plane was printed and discarded**: the card names Arc, DMS, SSMS or Azure Migrate, but the JSON had no field for it, so an Arc-orchestrated restore was indistinguishable from a standalone one and the Arc extension, identity and batch prerequisites vanished — it also decides which support matrix applies, which is what made the LRS defect possible. **Inherited facts had no crosswalk**: the consumer is told not to ask again, yet `size` is a band on one side and a number of gigabytes on the other, `downtime` is `downtime_tolerance`, and `mi_link_ports` is free text against a status. `advisor-fact-mappings.json` states for all 15 what converts, what needs translating, and what **cannot convert** — a qualitative note is not a measured baseline, and a mentioned dependency is not an inventory. Finally, `reference/migration-methods.json` types all 26 routes so a transport can never be counted as a migration method. Four new gates. **Breaking**: readers of `selectedPath` should move to `selectedMethodPath`; the alias stays. |
 | v2.12.0 | 2026-08-26 | **An external audit returned a NO-GO, and most of it was right.** Three findings came from the previous release. **The Log Replay Service gate covered two control planes at once**: standalone LRS is documented for SQL Server 2008-2022, while the Azure Arc path lists SQL Server 2025 RTM, so one combined rule refused a route Microsoft publishes. Both are now recorded with their source and check date rather than one being picked for them. **A failing method was eliminating its whole target** — LRS falling outside its range marked Managed Instance `unsupported` while DMS, MI Link and native restore were all still available, which is what sent SQL Server 2025 profiles to a VM. **Azure DMS still could not win** for Managed Instance or SQL VM: it was offered as a candidate but the selection cascade never returned it, so profiles carrying SQL Agent or linked servers were routed to Azure SQL Database, which cannot host either. Four witness scenarios now pin it. Also: the JSON example in the skill was invalid under its own schema and is generated against it, two rule-table rows had been joined into one, the coverage prose still said 56 combinations after the matrix reached 58, and `AZURE_VM` became a source location of its own. Three new gates: documented JSON validates against its schema, policy tables are well formed, and coverage prose matches coverage data. The claim that a supported method is a recommendable one is corrected: 28 cells stay documentary by design. |
 | v2.11.0 | 2026-08-26 | **Every method the knowledge base supports for a target is now proposed, not just the one the cascade happened to reach.** Method selection was a hand-written cascade that jumped to a single answer, so a method it never enumerated was never rejected either and nothing could see it missing — which is how Azure DMS stayed out of the SQL MI and SQL VM guidance while the matrix declared it supported for both, and how log shipping was recommended without appearing in the matrix at all. Recommendations now carry `methodCandidates`, one line per method the matrix supports for the chosen target, with a status and a reason, so a reader can see what lost and hand any qualifying candidate to the prerequisite-plan skill instead. `advisor-coverage.json` classifies all 58 supported cells as primary, secondary or documentary, and a new gate holds decision rules section B3 to that classification in both directions. |
 | v2.10.0 | 2026-08-24 | **A licensing deadline that lands ten months earlier than the one usually quoted.** The Azure VMware Solution **license-included** service is being retired — AVS itself is not — and the announcement is normally summarised by its last date, 30 August 2027. Two earlier ones decide whether a recommendation survives contact with procurement: pay-as-you-go SKUs retire **15 October 2026**, new sales end **31 October 2026**. A recommendation made today on a pay-as-you-go assumption expires in under two months, and a portable VCF subscription is bought from Broadcom in weeks. New rule `AVS-LICENSING`, mirrored into `P27-003` and the path catalog, holds AVS at `unknown_requires_assessment` until the licence is confirmed; a gate now forbids both failure modes — quoting only the 2027 date, and the overcorrection of saying AVS is going away. Zone redundancy on **MI Next-gen General Purpose is public preview**, so a GA tier label no longer makes a preview capability GA. The **Azure Copilot Migration Agent** joins the control-plane inventory as preview planning over existing Azure Migrate data, explicitly not a data-movement method and explicitly not this repository's own advisor. Connectivity: errors **47073 and 47072 arrive after the network works**, not before — receiving one closes the DNS and port questions rather than preceding them, and the old wording pointed readers away from the case that actually costs time. Two tooling defects fixed: §7's diagram rendered nowhere on GitHub because an HTML entity was decoded before Mermaid parsed it — mermaid-cli renders that form happily, which is why the PDF build never noticed — and the weekly link report read lychee's own summary rows as two unreachable links, inventing two failures while hiding the one real broken link behind them. |

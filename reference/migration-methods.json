@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Canonical identity for every route the knowledge base names, including the ones that appear only in narrative sections. Audit 9 F-06: the summary matrix in section 8 is not the whole inventory, so a route described in prose but absent from the matrix had no identity, no role and no way to be audited. Typing each one is what stops that gap from being read as missing coverage, and stops a transport from being counted as a migration method. Enforced by tests/run-tests.mjs.",
+  "version": "v1.0",
+  "kinds": {
+    "migration": "Moves a database or a machine to a target. Only these may be recommended, and only when advisor-coverage.json also marks the cell primary or secondary.",
+    "assessment": "Discovers, sizes or assesses. Produces no migration and must never be recommended as one; an assessment output correctly carries no prerequisite path.",
+    "transport": "Carries bytes for another method. It has no cutover of its own and cannot be a migration on its own, so counting it as a method overstates coverage.",
+    "overlay": "Applies in addition to a method, because of where the target is hosted or what orchestrates the move.",
+    "out_of_scope": "Documented by Microsoft but outside a SQL Server to Azure advisor. The reason is a property of the source or of the product, not a scoping preference."
+  },
+  "routes": [
+    { "id": "azure-migrate-assess", "name": "Azure Migrate (assess)", "kind": "assessment", "inMatrix": true, "why": "Discovery, sizing and business case. It does not move data." },
+    { "id": "azure-migrate-replication", "name": "Azure Migrate Server Migration (replication)", "kind": "migration", "inMatrix": false, "pathId": "P06", "why": "Replicates a whole server to a SQL VM. It is a VM-level move the matrix does not promote, so it stays reachable through a standalone plan rather than an Advisor recommendation." },
+    { "id": "dms", "name": "DMS", "kind": "migration", "inMatrix": true, "why": "Managed migration service; offline to SQL DB, SQL MI and SQL VM, online to SQL MI and SQL VM." },
+    { "id": "mi-link", "name": "MI Link", "kind": "migration", "inMatrix": true, "why": "Near-zero-downtime replication into Azure SQL Managed Instance." },
+    { "id": "lrs", "name": "Log Replay Service", "kind": "migration", "inMatrix": true, "controlPlanes": ["standalone", "azure-arc"], "why": "Managed log restore into Managed Instance. The supported source range differs by control plane, which is why the control plane is part of the recommendation." },
+    { "id": "native-restore", "name": "Native backup/restore", "kind": "migration", "inMatrix": true, "why": "The simplest complete method wherever the target can restore a backup." },
+    { "id": "ag", "name": "Distributed / Always On AG", "kind": "migration", "inMatrix": true, "why": "Availability-group seeding for a near-zero cutover to a SQL Server target." },
+    { "id": "log-shipping", "name": "Log shipping", "kind": "migration", "inMatrix": true, "why": "Ships and restores log backups for a minimal-downtime cutover. Windows-only." },
+    { "id": "hcx", "name": "HCX / vMotion", "kind": "migration", "inMatrix": true, "why": "Moves the virtual machine rather than the database, which is why it needs no platform overlay on AVS." },
+    { "id": "transactional-replication", "name": "Transactional replication", "kind": "migration", "inMatrix": true, "why": "Online movement of a subset of articles. Legitimate but rarely the whole answer." },
+    { "id": "bacpac", "name": "BACPAC / SqlPackage", "kind": "migration", "inMatrix": true, "why": "Export and import for smaller or schema-compatible workloads." },
+    { "id": "fabric-migration-assistant", "name": "Fabric Migration Assistant", "kind": "migration", "inMatrix": true, "why": "The Fabric-native migration vehicle. Preview." },
+    { "id": "bcp", "name": "bcp", "kind": "transport", "inMatrix": true, "why": "Bulk data movement. Carries no schema, no dependencies and no cutover." },
+    { "id": "smart-bulk-copy", "name": "Smart Bulk Copy", "kind": "transport", "inMatrix": true, "why": "Archived community sample for bulk data movement, not a supported Azure service." },
+    { "id": "data-factory-copy", "name": "Data Factory Copy", "kind": "transport", "inMatrix": true, "why": "Integration pipeline. Moves rows, does not migrate a database." },
+    { "id": "ssma", "name": "SSMA (heterogeneous)", "kind": "out_of_scope", "inMatrix": true, "why": "Converts non-SQL-Server sources such as Oracle, Sybase, DB2, MySQL and Access. Out of scope for a SQL Server source." },
+    { "id": "striim", "name": "Striim online CDC", "kind": "migration", "inMatrix": false, "pathId": "P15", "why": "Third-party CDC runtime named in narrative guidance only. Reachable through a standalone plan, never recommended by the Advisor, because it is not a Microsoft service." },
+    { "id": "data-box-seed", "name": "Data Box seed with delta synchronisation", "kind": "transport", "inMatrix": false, "pathId": "P14", "why": "A physical seed transport. It has no cutover of its own and must pair with a delta mechanism, which is exactly why it is a transport rather than a method." },
+    { "id": "detach-attach", "name": "Detach and attach", "kind": "migration", "inMatrix": false, "why": "Mentioned for SQL VM and container targets. It has no catalog path of its own and resolves through native backup/restore prerequisites; recorded here so its absence is deliberate rather than an oversight." },
+    { "id": "fabric-dataflow-gen2", "name": "Fabric Dataflow Gen2", "kind": "transport", "inMatrix": false, "why": "A Fabric ingestion path. Carries rows into an existing Fabric SQL database; it is not a migration of a SQL Server database." },
+    { "id": "fabric-tsql-tds", "name": "Fabric T-SQL / TDS ingestion", "kind": "transport", "inMatrix": false, "why": "Any TDS-capable tool can write into Fabric SQL database. Useful to know, not a migration route with its own gates." },
+    { "id": "expressroute-azcopy-storage-mover", "name": "ExpressRoute, AzCopy, Storage Mover", "kind": "transport", "inMatrix": false, "why": "Network and file transports that carry backups for another method. Counting them as methods would inflate coverage with plumbing." },
+    { "id": "avs-platform-overlay", "name": "Hosted SQL Server platform overlay", "kind": "overlay", "inMatrix": false, "pathId": "P27", "why": "Applies to every AVS route that moves a database, alongside the method path. HCX does not need it because it moves the machine." },
+    { "id": "arc-control-plane", "name": "SQL Server migration in Azure Arc", "kind": "overlay", "inMatrix": false, "why": "Orchestrates a move through the Azure Arc portal. It changes which prerequisites apply and which support matrix governs the method, which is why it travels in the recommendation as controlPlane." },
+    { "id": "azure-copilot-migration-agent", "name": "Azure Copilot Migration Agent", "kind": "assessment", "inMatrix": false, "why": "Reasons over collected Azure Migrate data. It neither collects nor moves data, and must never replace method selection." },
+    { "id": "fabric-mirroring", "name": "Fabric Mirroring", "kind": "out_of_scope", "inMatrix": false, "why": "Continuous replication for analytics, not a one-time migration. The knowledge base is right not to model it as a migration route." }
+  ]
+}
