@@ -24,6 +24,12 @@
 
     "recommendation": { "$ref": "#/$defs/recommendation" },
     "alternative": { "$ref": "#/$defs/alternative" },
+    "methodCandidates": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/methodCandidate" },
+      "description": "Invariant 14: every method the section 8 matrix marks primary or secondary for the chosen target appears here, including the ones that lost. A method that is never a candidate is never rejected either, so its absence cannot be argued with. Invariant 15 additionally requires the recommended method to appear here and be available."
+    },
     "methodGateTrace": { "$ref": "#/$defs/methodGateTrace" },
 
     "blockers": { "$ref": "#/$defs/statements" },
@@ -157,6 +163,37 @@
           "type": "string",
           "minLength": 1,
           "description": "The condition under which the alternative wins. An alternative with no condition is a second opinion, not a decision aid."
+        }
+      }
+    },
+
+    "methodCandidate": {
+      "type": "object",
+      "required": ["method", "role", "status", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "method": { "type": "string", "minLength": 1 },
+        "role": {
+          "enum": ["primary", "secondary"],
+          "description": "From advisor-coverage.json. A primary method may be the recommendation on its own; a secondary one is a legitimate alternative that belongs in a shortlist. Methods classified documentary are supported but never recommended, so they do not appear here."
+        },
+        "status": {
+          "enum": ["available", "unavailable", "unknown_requires_assessment"],
+          "description": "Whether the candidate passes its own gate for this profile. Three states, not two: an unverified prerequisite is not a satisfied one."
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Why the candidate is available, or why it lost. A candidate list without reasons tells the reader what was considered but not what to do about it."
+        },
+        "prerequisitePaths": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^P[0-9]{2}$" },
+          "description": "Prerequisite catalog paths that apply, so the reader can hand this candidate to the prerequisite-plan skill instead of the recommendation."
+        },
+        "selected": {
+          "type": "boolean",
+          "description": "True for the recommended method. Invariant 15 requires exactly one selected candidate, and requires it to be available."
         }
       }
     },
