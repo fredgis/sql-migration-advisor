@@ -4,9 +4,15 @@
 > **Prerequisite knowledge-base line:** `v1.5`
 
 This contract accepts either the structured result of `recommend-migration-path` or a standalone
-target-and-method selection. Both modes normalize into one selected path from
-[`path-catalog.json`](path-catalog.json), then collect only the facts that can change a prerequisite
-status for that path.
+target-and-method selection. Both modes normalize into a **method path** from
+[`path-catalog.json`](path-catalog.json) plus any **overlays** the route also requires, then collect
+only the facts that can change a prerequisite status for that combination.
+
+**One path is not always enough, and assuming it was is what lost prerequisites.** An AVS-hosted
+SQL Server needs the method path *and* `P27`: the method path alone describes a generic SQL Server,
+and `P27` alone describes a platform nobody migrates to. A physical seed transport such as `P14`
+rides alongside the method that actually cuts over. Resolve `selectedMethodPath` and
+`appliedOverlays[]` together, and apply the prerequisites of all of them.
 
 ## 1. Modes
 
@@ -27,7 +33,7 @@ validates, and it is the only shape the Advisor emits:
   `metadata.confidence`;
 - `normalizedProfile`, `eligibilityTrace[]`;
 - `recommendation.target`, `.tier`, `.method`, `.targetAvailabilityDuringSync`,
-  `.businessCutoverDowntime`;
+  `.businessCutoverDowntime`, `.controlPlane`;
 - `alternative`, `methodCandidates[]`, `methodGateTrace`, `blockers`, `unknowns`, `assumptions`,
   `evidenceRequired`, `nextActions`, `evidenceLinks`, `largestRisk`.
 
@@ -40,6 +46,12 @@ A second shape is still accepted for the regression mirror, which reports flat f
 required `recommendation.target`, so a producer following this page emitted an object its own
 schema rejected. If an input carries `recommendation.primary`, treat it as a stale producer, read
 the fields underneath it, and say that the shape was out of date rather than failing silently.
+
+**`controlPlane` is a prerequisite selector, not a label.** `azure-arc` pulls in the Arc extension,
+identity and batch requirements and changes which source-version matrix governs the method —
+standalone Log Replay Service is documented for SQL Server 2008-2022 while the Arc path lists 2025.
+Carry it into the plan; when it is absent, treat the route as `standalone` and say so rather than
+guessing.
 
 **`methodCandidates[]` is the list of methods the Advisor weighed.** When the user prefers a
 candidate marked `available` over the recommended one, resolve that candidate's

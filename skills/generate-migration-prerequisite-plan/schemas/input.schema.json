@@ -3,62 +3,183 @@
   "$id": "https://github.com/fredgis/sql-migration-advisor/skills/generate-migration-prerequisite-plan/schemas/input.schema.json",
   "title": "Migration prerequisite plan input",
   "type": "object",
-  "required": ["schemaVersion", "mode", "requestedOutput"],
+  "required": [
+    "schemaVersion",
+    "mode",
+    "requestedOutput"
+  ],
   "additionalProperties": false,
   "properties": {
-    "schemaVersion": { "const": "1.0" },
-    "mode": { "enum": ["advisor_handoff", "standalone"] },
-    "requestedOutput": { "enum": ["markdown", "json", "both"] },
-    "language": { "type": "string", "minLength": 2 },
-    "advisorOutput": { "$ref": "#/$defs/advisorOutput" },
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "mode": {
+      "enum": [
+        "advisor_handoff",
+        "standalone"
+      ]
+    },
+    "requestedOutput": {
+      "enum": [
+        "markdown",
+        "json",
+        "both"
+      ]
+    },
+    "language": {
+      "type": "string",
+      "minLength": 2
+    },
+    "advisorOutput": {
+      "$ref": "#/$defs/advisorOutput"
+    },
     "standaloneSelection": {
-      "type": ["object", "null"],
-      "required": ["target", "method"],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "target",
+        "method"
+      ],
       "additionalProperties": false,
       "properties": {
-        "target": { "type": "string", "minLength": 1 },
-        "method": { "type": "string", "minLength": 1 },
-        "tier": { "type": ["string", "null"] }
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tier": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "controlPlane": {
+          "enum": [
+            "standalone",
+            "azure-arc",
+            "ssms-migration-component",
+            "azure-migrate",
+            "azure-dms",
+            "fabric",
+            "vmware-hcx"
+          ],
+          "description": "Which control plane runs the migration. It selects prerequisites rather than labelling them: azure-arc pulls in the extension, identity and batch requirements and changes which source-version matrix governs the method. Absent means standalone, and the plan says so rather than guessing."
+        }
       }
     },
     "knownFacts": {
       "type": "object",
       "propertyNames": {
         "enum": [
-          "source_version", "source_edition", "source_os", "source_location", "database_count",
-          "largest_database_size_gb", "target_region", "target_tier", "source_permissions",
-          "target_permissions", "downtime_tolerance", "rpo", "rto", "peak_change_rate",
-          "performance_baseline_status", "tde_status", "authentication_model",
-          "feature_inventory_status", "instance_object_inventory_status", "network_path_status",
-          "dns_status", "validation_plan_status", "rollback_plan_status",
-          "application_cutover_owner", "ha_migration_pattern", "source_ha_topology",
-          "domain_model", "ag_endpoint_status", "quorum_status", "recovery_model",
-          "backup_chain_status", "blob_https_status", "blob_access_model", "tde_material_status",
-          "azure_migrate_platform", "azure_migrate_appliance_status", "test_migration_status",
-          "hcx_service_mesh_status", "mi_link_ports_status", "mi_link_capacity_status",
-          "lrs_window_days", "lrs_storage_layout_status", "schema_compatibility_status",
-          "bacpac_consistency_status", "dms_runtime_status", "replication_primary_keys_status",
-          "replication_topology", "data_box_device_status", "delta_sync_method",
-          "striim_runtime_status", "fabric_capacity_status", "fabric_workspace_role",
-          "fabric_gateway_type", "fabric_dacpac_size_mb", "arc_cluster_support_status",
-          "arc_connectivity_mode", "arc_backup_storage_class_status", "arc_external_endpoint_status",
-          "arc_restore_entrypoint", "container_image_status", "container_volume_status",
-          "bulk_copy_tool", "bulk_target_schema_status", "adf_integration_runtime_status",
+          "source_version",
+          "source_edition",
+          "source_os",
+          "source_location",
+          "database_count",
+          "largest_database_size_gb",
+          "target_region",
+          "target_tier",
+          "source_permissions",
+          "target_permissions",
+          "downtime_tolerance",
+          "rpo",
+          "rto",
+          "peak_change_rate",
+          "performance_baseline_status",
+          "tde_status",
+          "authentication_model",
+          "feature_inventory_status",
+          "instance_object_inventory_status",
+          "network_path_status",
+          "dns_status",
+          "validation_plan_status",
+          "rollback_plan_status",
+          "application_cutover_owner",
+          "ha_migration_pattern",
+          "source_ha_topology",
+          "domain_model",
+          "ag_endpoint_status",
+          "quorum_status",
+          "recovery_model",
+          "backup_chain_status",
+          "blob_https_status",
+          "blob_access_model",
+          "tde_material_status",
+          "azure_migrate_platform",
+          "azure_migrate_appliance_status",
+          "test_migration_status",
+          "hcx_service_mesh_status",
+          "mi_link_ports_status",
+          "mi_link_capacity_status",
+          "lrs_window_days",
+          "lrs_storage_layout_status",
+          "schema_compatibility_status",
+          "bacpac_consistency_status",
+          "dms_runtime_status",
+          "replication_primary_keys_status",
+          "replication_topology",
+          "data_box_device_status",
+          "delta_sync_method",
+          "striim_runtime_status",
+          "fabric_capacity_status",
+          "fabric_workspace_role",
+          "fabric_gateway_type",
+          "fabric_dacpac_size_mb",
+          "arc_cluster_support_status",
+          "arc_connectivity_mode",
+          "arc_backup_storage_class_status",
+          "arc_external_endpoint_status",
+          "arc_restore_entrypoint",
+          "container_image_status",
+          "container_volume_status",
+          "bulk_copy_tool",
+          "bulk_target_schema_status",
+          "adf_integration_runtime_status",
           "adf_connection_status",
           "dms_migration_mode",
           "dms_backup_landing_zone",
           "recovery_model_status",
-          "avs_host_quota_status", "avs_vcf_subscription_status", "avs_address_plan_status", "avs_interconnect_topology", "avs_outbound_internet_method", "azure_migrate_project_access_status", "azure_migrate_discovery_mode", "azure_migrate_source_platform"
+          "avs_host_quota_status",
+          "avs_vcf_subscription_status",
+          "avs_address_plan_status",
+          "avs_interconnect_topology",
+          "avs_outbound_internet_method",
+          "azure_migrate_project_access_status",
+          "azure_migrate_discovery_mode",
+          "azure_migrate_source_platform"
         ]
       },
       "additionalProperties": {
         "anyOf": [
-          { "enum": ["CONFIRMED", "MISSING", "UNKNOWN", "NOT_APPLICABLE"] },
-          { "type": "string", "minLength": 1 },
-          { "type": "number" },
-          { "type": "integer" },
-          { "type": "boolean" },
-          { "type": "object" }
+          {
+            "enum": [
+              "CONFIRMED",
+              "MISSING",
+              "UNKNOWN",
+              "NOT_APPLICABLE"
+            ]
+          },
+          {
+            "type": "string",
+            "minLength": 1
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "integer"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "object"
+          }
         ]
       }
     },
@@ -66,21 +187,62 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "type", "status", "collectedAt", "origin", "reference", "supports"],
+        "required": [
+          "id",
+          "type",
+          "status",
+          "collectedAt",
+          "origin",
+          "reference",
+          "supports"
+        ],
         "additionalProperties": false,
         "properties": {
-          "id": { "type": "string", "pattern": "^EV-[0-9]{3,}$" },
-          "type": { "type": "string", "minLength": 1 },
-          "status": { "enum": ["reported", "verified"] },
-          "collectedAt": { "type": "string", "format": "date-time" },
-          "origin": { "type": "string", "minLength": 1 },
-          "tool": { "type": ["string", "null"] },
-          "toolVersion": { "type": ["string", "null"] },
-          "reference": { "type": "string", "minLength": 1 },
+          "id": {
+            "type": "string",
+            "pattern": "^EV-[0-9]{3,}$"
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "reported",
+              "verified"
+            ]
+          },
+          "collectedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "origin": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tool": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "toolVersion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reference": {
+            "type": "string",
+            "minLength": 1
+          },
           "supports": {
             "type": "array",
             "minItems": 1,
-            "items": { "type": "string", "pattern": "^(COM|P[0-9]{2})-[0-9]{3}$" }
+            "items": {
+              "type": "string",
+              "pattern": "^(COM|P[0-9]{2})-[0-9]{3}$"
+            }
           }
         }
       }
@@ -89,137 +251,317 @@
   "allOf": [
     {
       "if": {
-        "required": ["mode"],
-        "properties": { "mode": { "const": "advisor_handoff" } }
+        "required": [
+          "mode"
+        ],
+        "properties": {
+          "mode": {
+            "const": "advisor_handoff"
+          }
+        }
       },
       "then": {
-        "required": ["advisorOutput"],
-        "properties": { "advisorOutput": { "type": "object" } }
+        "required": [
+          "advisorOutput"
+        ],
+        "properties": {
+          "advisorOutput": {
+            "type": "object"
+          }
+        }
       }
     },
     {
       "if": {
-        "required": ["mode"],
-        "properties": { "mode": { "const": "standalone" } }
+        "required": [
+          "mode"
+        ],
+        "properties": {
+          "mode": {
+            "const": "standalone"
+          }
+        }
       },
       "then": {
-        "required": ["standaloneSelection"],
-        "properties": { "standaloneSelection": { "type": "object" } }
+        "required": [
+          "standaloneSelection"
+        ],
+        "properties": {
+          "standaloneSelection": {
+            "type": "object"
+          }
+        }
       }
     }
   ],
-
   "$defs": {
     "advisorOutput": {
-      "type": ["object", "null"],
+      "type": [
+        "object",
+        "null"
+      ],
       "description": "The recommendation handed over by recommend-migration-path. It was previously typed as a bare object, which accepted anything: the contract between the two skills existed only in prose, so a producer change could not break a consumer test. Two shapes are documented and both are accepted here, because the Advisor renders one and the regression mirror emits the other. Whichever arrives, its vocabulary is checked against the same enums the Advisor's own schemas/output.schema.json declares, and the advisor-handoff-vocabulary gate fails the build if the two drift apart. Advisor fields remain context, not proof: no self-reported flag here can confirm an evidence-gated prerequisite.",
       "anyOf": [
-        { "$ref": "#/$defs/advisorPublicOutput" },
-        { "$ref": "#/$defs/advisorMirrorOutput" }
+        {
+          "$ref": "#/$defs/advisorPublicOutput"
+        },
+        {
+          "$ref": "#/$defs/advisorMirrorOutput"
+        }
       ]
     },
-
     "advisorPublicOutput": {
       "type": "object",
-      "required": ["metadata", "recommendation"],
+      "required": [
+        "metadata",
+        "recommendation"
+      ],
       "description": "The public contract shape of reference/output-contract.md section 2, as rendered for a reader and produced on request as JSON.",
       "properties": {
         "metadata": {
           "type": "object",
-          "required": ["recommendationStatus", "confidence"],
+          "required": [
+            "recommendationStatus",
+            "confidence"
+          ],
           "properties": {
-            "knowledgeBaseVersion": { "type": "string", "minLength": 1 },
-            "decisionRulesVersion": { "type": "string", "minLength": 1 },
-            "sourceCommit": { "type": "string", "minLength": 1 },
-            "evaluatedAt": { "type": "string", "minLength": 1 },
-            "recommendationStatus": { "$ref": "#/$defs/advisorRecommendationStatus" },
-            "confidence": { "$ref": "#/$defs/advisorConfidence" }
+            "knowledgeBaseVersion": {
+              "type": "string",
+              "minLength": 1
+            },
+            "decisionRulesVersion": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sourceCommit": {
+              "type": "string",
+              "minLength": 1
+            },
+            "evaluatedAt": {
+              "type": "string",
+              "minLength": 1
+            },
+            "recommendationStatus": {
+              "$ref": "#/$defs/advisorRecommendationStatus"
+            },
+            "confidence": {
+              "$ref": "#/$defs/advisorConfidence"
+            }
           }
         },
-        "normalizedProfile": { "type": "object" },
+        "normalizedProfile": {
+          "type": "object"
+        },
         "eligibilityTrace": {
           "type": "array",
           "items": {
             "type": "object",
             "properties": {
-              "target": { "$ref": "#/$defs/advisorTargetFamily" },
-              "status": { "$ref": "#/$defs/advisorEligibilityStatus" },
-              "ruleId": { "type": "string", "minLength": 1 },
-              "reason": { "type": "string", "minLength": 1 }
+              "target": {
+                "$ref": "#/$defs/advisorTargetFamily"
+              },
+              "status": {
+                "$ref": "#/$defs/advisorEligibilityStatus"
+              },
+              "ruleId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           }
         },
         "recommendation": {
           "type": "object",
-          "required": ["target", "method"],
+          "required": [
+            "target",
+            "method"
+          ],
           "properties": {
-            "target": { "type": "string", "minLength": 1 },
-            "tier": { "type": "string", "minLength": 1 },
-            "method": { "type": "string", "minLength": 1 },
-            "targetAvailabilityDuringSync": { "$ref": "#/$defs/advisorTargetAvailability" },
-            "businessCutoverDowntime": { "$ref": "#/$defs/advisorCutoverDowntime" }
+            "target": {
+              "type": "string",
+              "minLength": 1
+            },
+            "tier": {
+              "type": "string",
+              "minLength": 1
+            },
+            "method": {
+              "type": "string",
+              "minLength": 1
+            },
+            "targetAvailabilityDuringSync": {
+              "$ref": "#/$defs/advisorTargetAvailability"
+            },
+            "businessCutoverDowntime": {
+              "$ref": "#/$defs/advisorCutoverDowntime"
+            }
           }
         },
-        "alternative": { "type": "object" },
+        "alternative": {
+          "type": "object"
+        },
         "methodGateTrace": {
           "type": "object",
           "properties": {
-            "method": { "type": "string", "minLength": 1 },
-            "result": { "$ref": "#/$defs/advisorMethodGateStatus" },
-            "unverified": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+            "method": {
+              "type": "string",
+              "minLength": 1
+            },
+            "result": {
+              "$ref": "#/$defs/advisorMethodGateStatus"
+            },
+            "unverified": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
           }
         },
-        "blockers": { "$ref": "#/$defs/advisorStatements" },
-        "unknowns": { "$ref": "#/$defs/advisorStatements" },
-        "assumptions": { "$ref": "#/$defs/advisorStatements" },
-        "evidenceRequired": { "$ref": "#/$defs/advisorStatements" },
-        "nextActions": { "$ref": "#/$defs/advisorStatements" },
-        "evidenceLinks": { "$ref": "#/$defs/advisorStatements" },
-        "largestRisk": { "type": "string", "minLength": 1 }
+        "blockers": {
+          "$ref": "#/$defs/advisorStatements"
+        },
+        "unknowns": {
+          "$ref": "#/$defs/advisorStatements"
+        },
+        "assumptions": {
+          "$ref": "#/$defs/advisorStatements"
+        },
+        "evidenceRequired": {
+          "$ref": "#/$defs/advisorStatements"
+        },
+        "nextActions": {
+          "$ref": "#/$defs/advisorStatements"
+        },
+        "evidenceLinks": {
+          "$ref": "#/$defs/advisorStatements"
+        },
+        "largestRisk": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
-
     "advisorMirrorOutput": {
       "type": "object",
-      "required": ["primary_target", "method", "recommendationStatus", "confidence"],
+      "required": [
+        "primary_target",
+        "method",
+        "recommendationStatus",
+        "confidence"
+      ],
       "description": "The flattened shape emitted by the Advisor's regression mirror and used by its golden scenarios. It carries the same decisions under different key names, so a plan can be built from a replayed scenario as well as from a live session.",
       "properties": {
         "eligibility": {
           "type": "object",
-          "propertyNames": { "$ref": "#/$defs/advisorTargetFamily" },
-          "additionalProperties": { "$ref": "#/$defs/advisorEligibilityStatus" }
+          "propertyNames": {
+            "$ref": "#/$defs/advisorTargetFamily"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/advisorEligibilityStatus"
+          }
         },
-        "primary_target": { "type": "string", "minLength": 1 },
-        "method": { "type": "string", "minLength": 1 },
-        "tier": { "type": "string", "minLength": 1 },
-        "targetAvailabilityDuringSync": { "$ref": "#/$defs/advisorTargetAvailability" },
-        "businessCutoverDowntime": { "$ref": "#/$defs/advisorCutoverDowntime" },
-        "methodGateStatus": { "$ref": "#/$defs/advisorMethodGateStatus" },
-        "recommendationStatus": { "$ref": "#/$defs/advisorRecommendationStatus" },
-        "confidence": { "$ref": "#/$defs/advisorConfidence" }
+        "primary_target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tier": {
+          "type": "string",
+          "minLength": 1
+        },
+        "targetAvailabilityDuringSync": {
+          "$ref": "#/$defs/advisorTargetAvailability"
+        },
+        "businessCutoverDowntime": {
+          "$ref": "#/$defs/advisorCutoverDowntime"
+        },
+        "methodGateStatus": {
+          "$ref": "#/$defs/advisorMethodGateStatus"
+        },
+        "recommendationStatus": {
+          "$ref": "#/$defs/advisorRecommendationStatus"
+        },
+        "confidence": {
+          "$ref": "#/$defs/advisorConfidence"
+        }
       }
     },
-
-    "advisorRecommendationStatus": { "enum": ["provisional"] },
-    "advisorConfidence": { "enum": ["medium", "low"] },
+    "advisorRecommendationStatus": {
+      "enum": [
+        "provisional"
+      ]
+    },
+    "advisorConfidence": {
+      "enum": [
+        "medium",
+        "low"
+      ]
+    },
     "advisorEligibilityStatus": {
-      "enum": ["eligible", "eligible_with_remediation", "unsupported", "excluded_by_preference", "unknown_requires_assessment"]
+      "enum": [
+        "eligible",
+        "eligible_with_remediation",
+        "unsupported",
+        "excluded_by_preference",
+        "unknown_requires_assessment"
+      ]
     },
     "advisorTargetFamily": {
-      "enum": ["sql_vm", "avs", "sql_mi", "sql_db", "fabric_sql_db", "arc_sql_mi", "container", "arc_in_place"]
+      "enum": [
+        "sql_vm",
+        "avs",
+        "sql_mi",
+        "sql_db",
+        "fabric_sql_db",
+        "arc_sql_mi",
+        "container",
+        "arc_in_place"
+      ]
     },
     "advisorTargetAvailability": {
-      "enum": ["read-write", "read-only", "unavailable", "not-present", "unknown_requires_assessment"]
+      "enum": [
+        "read-write",
+        "read-only",
+        "unavailable",
+        "not-present",
+        "unknown_requires_assessment"
+      ]
     },
     "advisorCutoverDowntime": {
-      "enum": ["<1min", "near-zero", "minutes", "minimal", "hours", "full-restore-time", "full-load-time", "total-migration-time", "unknown_requires_assessment"]
+      "enum": [
+        "<1min",
+        "near-zero",
+        "minutes",
+        "minimal",
+        "hours",
+        "full-restore-time",
+        "full-load-time",
+        "total-migration-time",
+        "unknown_requires_assessment"
+      ]
     },
     "advisorMethodGateStatus": {
-      "enum": ["passed", "unknown_requires_assessment", "refused"]
+      "enum": [
+        "passed",
+        "unknown_requires_assessment",
+        "refused"
+      ]
     },
     "advisorStatements": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 }
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
     }
   }
 }

@@ -5,7 +5,7 @@ Apply Steps **A → D** in order. Steps map to the two engine phases:
 - **Phase B — Ranking and plan:** Steps B → D. Rank only surviving targets, then choose method, tier, blockers, cost, and assessment.
 
 Regression contract: these rules are a **prompt policy under regression test**. Replaying the same inputs through the rules mirror in `tests/` gives the same result, and 116 golden scenarios enforce it on every commit. The mirror is not what runs in a session: an agent reads these rules and applies them. Treat the contract as a tested policy, not as a guarantee that two runs produce identical wording. Every recommendation must carry the KB version, engine version, and, when available, the source commit SHA and fetch timestamp.
-Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v3.0**, verified August 2026.
+Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v3.1**, verified August 2026.
 
 Three layers, never mixed:
 - **Target** = where the DB ends up (runtime).
@@ -66,8 +66,11 @@ eligibility table the engine just produced. The full set of invariants, and the 
   with `recommendationStatus: provisional`, the reason each candidate was excluded, and the assessment to
   run next.
 - Worked case: SQL Server **2025** source, MI Link blocked (ports or prerequisites) and Azure SQL Database
-  incompatible ⇒ LRS is **not** a legal fallback (standalone LRS supports 2008–2022 only), so the answer is
-  **SQL Server on Azure VM** — or a provisional shortlist — never "Azure SQL MI via LRS".
+incompatible ⇒ standalone LRS is **not** a legal fallback (it supports 2008–2022 only), but that removes
+**the method, not the target**. **Azure DMS (online)** is documented to Azure SQL MI from SQL Server 2008
+onwards, so the answer is **Azure SQL Managed Instance via Azure DMS (online)** when its gates pass —
+falling to **SQL Server on Azure VM** or a provisional shortlist only when no MI method survives. Never
+"Azure SQL MI via LRS", and never leave the MI family while another MI method is viable.
 
 ### A1. Candidate target eligibility states
 
@@ -319,7 +322,7 @@ only one database is moving.
 | Downtime wanted | Method | Gate |
 | --- | --- | --- |
 | Near-zero / online | **MI Link** | **`MI-LINK-VERSION`**, **`MI-LINK-HOST`**, **`MI-LINK-SOURCE`**, **`MI-LINK-PORTS`.** SQL Server 2016+, **Enterprise / Standard / Developer edition**, and a host OS supported by that SQL Server version: **Windows Server 2012 or later** on every supported version, plus **Linux from SQL Server 2017** onwards (SQL Server 2016 is Windows Server only). Also sysadmin, distributed AG, AG endpoint creation, required 5022 + 11000–11999 ports, VNet connectivity; not possible from AWS RDS/GCP Cloud SQL. Unknown OS or edition makes the method `unknown_requires_assessment`; an unsupported edition, a Windows client OS or Windows Server below 2012, or a Linux host below SQL Server 2017, eliminates **MI Link only**, never the MI target. When the migration is driven from the **Azure Arc portal**, that path is documented as Windows Server only, so a Linux host keeps MI Link but loses the Arc-portal orchestration |
-| Online migration / planned cutover | **Log Replay Service (LRS)** standalone | **`LRS-VERSION`**, **`LRS-WINDOW`.** SQL Server 2008–2022 (**not 2025**); sources include SQL on VMs, AWS EC2, AWS RDS, GCP Compute Engine, GCP Cloud SQL; public endpoint/storage access; **the initial restore and log replay must complete inside the 30-day maximum window**; target is `unavailable` (RESTORING/NORECOVERY) during sync |
+| Online migration / planned cutover | **Log Replay Service (LRS)** standalone | **`LRS-VERSION`**, **`LRS-WINDOW`.** SQL Server 2008–2022 (**not 2025 on this control plane**; the Arc-orchestrated path lists 2025 and is a separate entry. Microsoft's own pages disagree here: the LRS-versus-MI-Link comparison page says "2008 and later" with no ceiling, while the standalone migration page states 2008 to 2022. This rule keeps the narrower boundary on purpose, so the failure mode is a route wrongly excluded rather than one wrongly promised; both pages are watched in `claims-registry.json`); sources include SQL on VMs, AWS EC2, AWS RDS, GCP Compute Engine, GCP Cloud SQL; public endpoint/storage access; **the initial restore and log replay must complete inside the 30-day maximum window**; target is `unavailable` (RESTORING/NORECOVERY) during sync |
 | Offline / simplest | **Native backup/restore (.bak)** | **`BACKUP-BLOB-PATH`**, **`SOURCE-PERMISSIONS`.** SQL Server 2008+; install TDE cert in destination `master` first; master/msdb not restorable. The SSMS 22 Migration Component requires `sysadmin` on the source: `LIMITED_RIGHTS` refuses that tooling path and an unstated `source_permissions` holds it at `unknown_requires_assessment` |
 | Online subset | **Transactional replication** | **`REPL-PUBLISHER`.** Publisher floor as for any SQL Server target; replicated tables need a primary key. Use when a subset of articles moves and the rest stays |
 | Smaller / schema-compatible | **BACPAC / SqlPackage** | Test the export and import at full size; not for large or dependency-heavy workloads |

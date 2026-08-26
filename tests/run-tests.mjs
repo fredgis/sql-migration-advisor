@@ -1697,6 +1697,13 @@ try {
     path.join('reference', 'decision-rules.md'),
     path.join('reference', 'output-contract.md'),
     path.join('reference', 'input-contract.md'),
+    // The skills carry their own contracts, and the row this gate first missed was in one of them.
+    ...fs.readdirSync(path.join(root, 'skills'))
+      .flatMap((skill) => {
+        const dir = path.join('skills', skill, 'reference');
+        if (!fs.existsSync(path.join(root, dir))) return [];
+        return fs.readdirSync(path.join(root, dir)).filter((f) => f.endsWith('.md')).map((f) => path.join(dir, f));
+      }),
   ];
 
   const widthOf = (row) => {
@@ -1881,6 +1888,21 @@ try {
   // what would let a bulk-copy utility be recommended as a migration.
   const roleOf = new Map();
   for (const d of coverage.dispositions) if (!roleOf.has(d.method) || d.advisorRole !== 'documentary') roleOf.set(d.method, d.advisorRole);
+  // A route outside the matrix is still a route the engine can select, which is how Data Box was
+  // typed transport and recommended as a method. Skipping them here is what let that through.
+  const enginePicksMethod = (label) => scenarios.some((s) => { try { return evaluate(s.inputs || {}).method === label; } catch { return false; } });
+  const ENGINE_METHOD_LABELS = {
+    'data-box-seed': 'Data Box seed → sync delta',
+    'azure-migrate-replication': 'Azure Migrate Server Migration (replication)',
+    'striim': 'Striim online CDC',
+  };
+  for (const [id, label] of Object.entries(ENGINE_METHOD_LABELS)) {
+    const route = (manifest.routes || []).find((r) => r.id === id);
+    if (!route) continue;
+    if (route.kind !== 'migration' && enginePicksMethod(label)) {
+      failures.push(`${id}: typed ${route.kind} in the manifest, but the engine selects ${JSON.stringify(label)} as the recommended method. A route with no cutover of its own must be an overlay on a real method, not the answer`);
+    }
+  }
   for (const r of manifest.routes || []) {
     if (!r.inMatrix) continue;
     const role = roleOf.get(r.name);
@@ -1898,6 +1920,76 @@ try {
       `${(manifest.routes || []).length} routes typed: ${Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(', ')}.`,
       `Every one of the ${matrixMethods.size} matrix methods is typed, no transport or assessment is marked recommendable, and every narrative route says why it is not in the matrix.`,
     ]);
+}
+
+// Audit 10 R-01: the prose is the production policy; tests/engine/evaluate.mjs is only a mirror. A
+// worked case that still told the model to leave Managed Instance for a VM survived the DMS fix
+// because every gate watched the mirror and none watched the sentence. A model following the stale
+// example reproduces the defect with the suite green.
+{
+  const failures = [];
+  const notes = [];
+  const WORKED_CASES = [
+    { file: path.join('reference', 'decision-rules.md'), marker: /Worked case: SQL Server \*\*2025\*\*/ },
+    { file: path.join('skills', 'recommend-migration-path', 'SKILL.md'), marker: /Worked case: a SQL Server \*\*2025\*\*/ },
+  ];
+
+  for (const entry of WORKED_CASES) {
+    const text = readText(entry.file);
+    const at = text.search(entry.marker);
+    if (at === -1) { failures.push(`${entry.file}: the SQL Server 2025 worked case is gone; it exists to stop the engine and the prose disagreeing, so removing it needs a replacement`); continue; }
+    // The case runs to the end of its list item.
+    const block = text.slice(at, at + 900).split(/\n\s*\n|\n- /)[0];
+    if (!/DMS/i.test(block)) failures.push(`${entry.file}: the SQL Server 2025 worked case never names DMS, so it still implies Managed Instance has no surviving method`);
+    if (/so the answer is \*\*SQL Server on Azure VM\*\*|so answer \*\*SQL Server on Azure VM\*\*/i.test(block)) failures.push(`${entry.file}: the SQL Server 2025 worked case sends the reader straight to a VM; DMS keeps the Managed Instance target viable`);
+    if (!/method, not the target|not the target/i.test(block)) failures.push(`${entry.file}: the SQL Server 2025 worked case must say that an LRS failure removes the method rather than the target, which is invariant 7`);
+    else notes.push(`${entry.file}: the SQL Server 2025 worked case names DMS and keeps the Managed Instance target.`);
+  }
+
+  add('worked-cases-agree-with-the-engine', failures.length === 0, failures.length ? failures : notes);
+}
+
+// Audit 10 R-02: the producer gained controlPlane, selectedMethodPath and appliedOverlays, and the
+// consumer accepted them only because nested extra properties are allowed. A field nothing requires
+// is a field that can be dropped without failing anything, so the two routes that depend on them are
+// replayed here: an Arc-orchestrated migration, whose prerequisites differ from the standalone one,
+// and an AVS route that moves a database and therefore needs its platform overlay beside the method.
+{
+  const failures = [];
+  const notes = [];
+  const FIXTURES = [
+    {
+      name: 'Arc-orchestrated migration keeps its control plane',
+      inputs: { intent: 'migrate now', source_location: 'on-prem / Azure VM', source_version: '2019', downtime: 'minimal', management_model: 'Azure Arc-enabled', feature_dependencies: ['SQL Agent'], network_ports: 'all open', size: '500 GB' },
+      expect: (out) => {
+        if (out.controlPlane !== 'azure-arc') return `controlPlane is ${JSON.stringify(out.controlPlane)}, so the Arc extension, identity and batch prerequisites would not travel`;
+        return null;
+      },
+    },
+    {
+      name: 'An AVS route that moves a database carries its platform overlay',
+      inputs: { intent: 'migrate now', source_location: 'on-prem / Azure VM', source_version: '2019', downtime: 'offline', management_model: 'need OS access', driver: 'data-center exit', feature_dependencies: ['Windows auth / DTC'], size: '4 TB' },
+      expect: (out) => {
+        if (out.primaryTarget !== 'Azure VMware Solution') return `expected the AVS target, got ${JSON.stringify(out.primaryTarget)}`;
+        const database = (out.methodCandidates || []).filter((c) => !/hcx|vmotion/i.test(c.method));
+        if (!database.length) return 'no database-moving candidate was offered for AVS';
+        const missing = database.filter((c) => !(c.prerequisitePaths || []).includes('P27'));
+        if (missing.length) return `${missing.map((c) => c.method).join(', ')} would produce a plan for a generic SQL Server rather than an AVS-hosted one`;
+        return null;
+      },
+    },
+  ];
+
+  for (const f of FIXTURES) {
+    let out;
+    try { out = evaluate(f.inputs); }
+    catch (err) { failures.push(`${f.name}: evaluate threw ${err.message}`); continue; }
+    const problem = f.expect(out);
+    if (problem) failures.push(`${f.name}: ${problem}`);
+    else notes.push(`${f.name}: ${out.primaryTarget} via ${out.method}, control plane ${out.controlPlane}.`);
+  }
+
+  add('handoff-fixtures-carry-the-new-fields', failures.length === 0, failures.length ? failures : notes);
 }
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };
 if (jsonMode) {
