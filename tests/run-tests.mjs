@@ -668,7 +668,7 @@ try {
   const expect = (label, actual, predicate) => { if (!predicate(actual)) failures.push(`${label}: got ${JSON.stringify(actual)}`); };
 
   expect('MI rejects an unknown method',
-    methodGateFailure(onPrem, TARGET_LABELS.sql_mi, 'BACPAC/SqlPackage', fresh()),
+    methodGateFailure(onPrem, TARGET_LABELS.sql_mi, 'VMware HCX / vMotion', fresh()),
     v => typeof v === 'string' && v.includes('not a supported Azure SQL Managed Instance migration method'));
   expect('SQL DB rejects an unknown method',
     methodGateFailure(onPrem, TARGET_LABELS.sql_db, 'MI Link', fresh()),
@@ -1511,6 +1511,117 @@ try {
 
   add('policy-document-urls-are-current', failures.length === 0,
     failures.length ? failures : notes.length ? notes : ['no policy document cites a URL']);
+}
+
+
+// A method the matrix marks supported but that decision-rules never lists is a method the model
+// cannot weigh: it is not rejected, it is simply never a candidate, so no gate sees it missing.
+// That is how Azure DMS stayed absent from the Managed Instance and SQL VM guidance while section 8
+// declared it supported for both. "Supported" and "recommendable" are two different questions, so
+// advisor-coverage.json answers the second one with advisorRole, and this gate holds B3 to it in
+// both directions: every primary and secondary cell is offered, and nothing is offered that the
+// matrix does not support for that target.
+{
+  const coverage = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'reference', 'advisor-coverage.json')));
+  const rulesText = readText(path.join('reference', 'decision-rules.md'));
+
+  const SECTION_OF = {
+    'SQL VM': '→ SQL Server on Azure VM',
+    'AVS': '→ AVS',
+    'SQL MI': '→ Azure SQL Managed Instance',
+    'SQL DB': '→ Azure SQL Database',
+    'Fabric SQL DB': '→ SQL database in Fabric',
+    'Arc SQL MI': '→ Arc-enabled SQL MI / container',
+    'SQL container': '→ Arc-enabled SQL MI / container',
+  };
+  const ALIAS = {
+    'DMS': /\bDMS\b/i,
+    'MI Link': /\bMI Link\b/i,
+    'Log Replay Service': /\bLog Replay Service\b|\bLRS\b/i,
+    'Native backup/restore': /native backup\/restore|backup\/restore/i,
+    'Distributed / Always On AG': /Distributed AG|Always On AG/i,
+    'Log shipping': /\blog shipping\b/i,
+    'HCX / vMotion': /\bHCX\b|vMotion/i,
+    'Transactional replication': /transactional replication/i,
+    'BACPAC / SqlPackage': /\bBACPAC\b/i,
+    'Fabric Migration Assistant': /Fabric Migration Assistant/i,
+  };
+
+  const heads = [...rulesText.matchAll(/^#### (→ [^\n]+)$/gm)];
+  const sectionText = new Map();
+  heads.forEach((h, i) => {
+    const start = h.index + h[0].length;
+    const nextHead = rulesText.slice(start).search(/^#{1,4} /m);
+    const end = nextHead === -1 ? rulesText.length : start + nextHead;
+    sectionText.set(h[1], rulesText.slice(start, end));
+  });
+  const bodyFor = (target) => {
+    const want = SECTION_OF[target];
+    for (const [head, text] of sectionText) if (head.startsWith(want)) return text;
+    return null;
+  };
+  // Lines that name a method in order to rule it out must not be read as an offer.
+  const positiveOnly = (text) => text
+    .split('\n')
+    .map((line) => line.replace(/(not available to this target|not supported to|do not offer)[^|]*/gi, ' ').replace(/[A-Za-z ]*\\b(?:is unavailable|is not available)/gi, ' '))
+    .join('\n');
+
+  const failures = [];
+  const offered = new Set();
+
+  for (const cell of coverage.dispositions) {
+    if (cell.advisorRole !== 'primary' && cell.advisorRole !== 'secondary') continue;
+    if (cell.status === 'out-of-scope') continue;
+    const body = bodyFor(cell.target);
+    if (!body) { failures.push(`${cell.target}: no "#### ${SECTION_OF[cell.target]}" sub-section in B3`); continue; }
+    const alias = ALIAS[cell.method];
+    if (!alias) { failures.push(`${cell.method}: role ${cell.advisorRole} but no match pattern in this gate`); continue; }
+    if (!alias.test(positiveOnly(body))) {
+      failures.push(`${cell.method} → ${cell.target} is ${cell.advisorRole} in advisor-coverage.json and section 8 supports it, but B3 "${SECTION_OF[cell.target]}" never offers it`);
+    }
+    offered.add(`${cell.method}\u0000${cell.target}`);
+  }
+
+  const supported = new Set(coverage.dispositions.map((d) => `${d.method}\u0000${d.target}`));
+  const documentary = new Set(coverage.dispositions.filter((d) => d.advisorRole === 'documentary').map((d) => `${d.method}\u0000${d.target}`));
+  for (const [head, text] of sectionText) {
+    const targets = Object.entries(SECTION_OF).filter(([, s]) => head.startsWith(s)).map(([t]) => t);
+    if (!targets.length) continue;
+    const body = [...positiveOnly(text).matchAll(/\*\*([^*]+)\*\*/g)].map((m) => m[1]).join(' | ');
+    for (const [method, alias] of Object.entries(ALIAS)) {
+      if (!alias.test(body)) continue;
+      const ok = targets.some((t) => supported.has(`${method}\u0000${t}`));
+      if (!ok) failures.push(`B3 "${head}" offers ${method}, which the section 8 matrix does not support for ${targets.join(' / ')}`);
+      const doc = targets.every((t) => documentary.has(`${method}\u0000${t}`) || !supported.has(`${method}\u0000${t}`));
+      if (ok && doc) failures.push(`B3 "${head}" offers ${method}, classified documentary for ${targets.join(' / ')} — either recommend it and change the role, or drop it from B3`);
+    }
+  }
+
+  const counts = { primary: 0, secondary: 0, documentary: 0 };
+  for (const d of coverage.dispositions) counts[d.advisorRole] = (counts[d.advisorRole] || 0) + 1;
+
+  // A recommendation that is absent from its own candidate list, or present but rejected by its own
+  // gate, is the failure this whole mechanism exists to catch: it means the winner was reached by a
+  // route nothing evaluated. Replaying every golden scenario is what turns that from a belief into
+  // a check.
+  let replayed = 0;
+  for (const scenario of scenarios) {
+    const out = evaluate(scenario.inputs || {});
+    if (!out.primaryTarget || out.primaryTarget === 'provisional shortlist only') continue;
+    replayed++;
+    const list = out.methodCandidates || [];
+    if (!list.length) { failures.push(`${scenario.id}: ${out.primaryTarget} recommended "${out.method}" with no candidate list`); continue; }
+    const chosen = list.find((c) => c.selected);
+    if (!chosen) failures.push(`${scenario.id}: recommended "${out.method}" is absent from its own candidate list for ${out.primaryTarget}`);
+    else if (chosen.status !== 'available') failures.push(`${scenario.id}: recommended "${out.method}" is listed unavailable by its own gate — ${chosen.reason}`);
+  }
+
+  add('b3-offers-every-recommendable-method', failures.length === 0,
+    failures.length ? failures : [
+      `${coverage.dispositions.length} supported (method, target) cells: ${counts.primary} primary, ${counts.secondary} secondary, ${counts.documentary} documentary.`,
+      `All ${offered.size} primary and secondary cells are offered by the matching B3 target sub-section, and no sub-section offers a method the matrix withholds from that target.`,
+      `${replayed} scenarios reach a named target, and each one recommends a method that appears in its own candidate list and passes its own gate.`,
+    ]);
 }
 
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };

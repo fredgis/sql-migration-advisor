@@ -135,7 +135,7 @@ if (matrixHeader !== -1) {
     });
   }
 }
-check('advisor-matrix-cells', supportedCells.length === 56, `expected 56 supported cells, parsed ${supportedCells.length}`);
+check('advisor-matrix-cells', supportedCells.length === 58, `expected 58 supported cells, parsed ${supportedCells.length}`);
 
 const dispositionKey = entry => `${entry.method}|${entry.target}`;
 const dispositions = new Map(coverage.dispositions.map(entry => [dispositionKey(entry), entry]));

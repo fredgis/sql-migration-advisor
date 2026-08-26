@@ -43,6 +43,8 @@ recommendation
   target, tier, method
 alternative
   target, method, the condition under which it wins
+methodCandidates[]        one entry per method the matrix supports for the chosen target:
+                          method, role (primary | secondary), status, reason, prerequisite paths
 methodGateTrace           the gate result for the selected method
 blockers[]
 unknowns[]
@@ -76,6 +78,8 @@ Run every invariant below **before** showing the card. This is the only mechanis
 | 11 | Every one of the eight target families appears in the Phase A trace: SQL VM, AVS, SQL MI, SQL DB, Fabric SQL DB, Arc-enabled SQL MI, container, Arc in-place. A family that silently disappears cannot be argued with |
 | 12 | `unsupported` marks a technical incompatibility only. A target the user ruled out by preference is `excluded_by_preference`, because a preference can be revisited and an incompatibility cannot |
 | 13 | `normalizedProfile` is present, so the reader can see what the skill thinks it was told |
+| 14 | **Every method the section 8 matrix marks `primary` or `secondary` for the chosen target appears in `methodCandidates`, with a status and a reason.** This is invariant 11 applied to methods. A method that is never a candidate is never rejected either, so its absence cannot be argued with — which is how Azure DMS stayed out of the Managed Instance and SQL VM guidance while the matrix declared it supported for both |
+| 15 | The recommended method appears in `methodCandidates` and is marked available there. A winner absent from its own candidate list was reached by a route nothing evaluated |
 
 **When an invariant fails, do not repair the output silently.** Expose the inconsistency, return a provisional shortlist or name the missing evidence, and say which invariant broke. A card that quietly corrects itself hides the fact that the rules disagreed.
 

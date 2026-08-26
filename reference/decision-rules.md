@@ -5,7 +5,7 @@ Apply Steps **A → D** in order. Steps map to the two engine phases:
 - **Phase B — Ranking and plan:** Steps B → D. Rank only surviving targets, then choose method, tier, blockers, cost, and assessment.
 
 Regression contract: these rules are a **prompt policy under regression test**. Replaying the same inputs through the rules mirror in `tests/` gives the same result, and 90 golden scenarios enforce it on every commit. The mirror is not what runs in a session: an agent reads these rules and applies them. Treat the contract as a tested policy, not as a guarantee that two runs produce identical wording. Every recommendation must carry the KB version, engine version, and, when available, the source commit SHA and fetch timestamp.
-Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v2.10**, verified August 2026.
+Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v2.11**, verified August 2026.
 
 Three layers, never mixed:
 - **Target** = where the DB ends up (runtime).
@@ -242,11 +242,47 @@ to the Fabric Migration Assistant and to cross-instance Service Broker.
 
 ### B3. Pick the method (given target + downtime + version + source + network)
 
+**Method selection is a comparison, not a lookup.** Phase A evaluates all eight target families and
+records why each one stands or falls; the same discipline applies here. A method that is never
+considered cannot be argued with, and a table read as a lookup produced exactly that: Azure DMS is
+documented for SQL VM and SQL MI in §5.1, §5.2 and the §8 matrix, and for a long time no rule ever
+offered it, so it was never rejected either — it simply never appeared.
+
+#### B3.0 How to pick
+
+1. **Enumerate the candidates.** For the selected target, the candidate methods are the ones the
+   knowledge base marks supported for that target in its §8 matrix and describes in §5.1–§5.5. That
+   list is the source; the tables below carry the gates, not a shorter catalogue.
+2. **Apply the hard gates.** Source version floor, source type, ports, permissions, capacity,
+   downtime class. A gate can only *remove* a candidate or hold it at `unknown_requires_assessment` —
+   never promote one.
+3. **Rank what survives, in this order.** Each step either settles the choice or hands an unchanged
+   order to the next:
+
+   | # | Step | Settles the choice when |
+   | --- | --- | --- |
+   | 1 | **Meet the stated downtime tolerance.** An offline answer does not need an online method; a near-zero answer cannot use one that stops the source | A candidate cannot meet the window the user stated |
+   | 2 | **Follow what the answers actually say.** Database count, largest size, network path, permissions, source location: the interview exists to orient this choice, so a candidate contradicted by an answer loses to one supported by it | An answer speaks directly to a candidate |
+   | 3 | **Prefer the simpler operation when the outcome is comparable.** Fewer moving parts, fewer prerequisites, fewer things to rehearse. A managed orchestration earns its setup on a wave of databases and loses to a plain restore on a single one | One candidate reaches the same result with materially less machinery |
+   | 4 | **Prefer the one that fails better.** Reversibility, restartability, and how much of the work survives an interruption | Cutover risk differs |
+   | 5 | **Prefer the one whose prerequisites are already confirmed** over one that adds new evidence to collect | The readiness state differs and nothing above separated them |
+
+4. **When the steps do not separate the finalists, say so.** Return the shortlist with what would
+   break the tie, exactly as §B1 requires for targets: **never invent a winner.** Judgment is allowed
+   here — the steps order the comparison, they do not replace reading the profile — but an
+   unexplained preference is not judgment, it is a coin toss with a confident voice.
+
+5. **Name the losers.** The recommendation states the candidates that were considered and why each
+   was set aside. One line each is enough; silence is what let a documented method disappear.
+
 #### → SQL Server on Azure VM
 
 | Downtime wanted | Method | Gate |
 | --- | --- | --- |
 | Near-zero | **Distributed AG** or **Always On AG** | **`AG-VERSION`.** Distributed AG: source **2016+**. Always On AG: source **2012+**. Both: AD DS or workgroup AG + certs, AG endpoints, ports open, planned failover window |
+| Online subset | **Transactional replication** | **`REPL-PUBLISHER`.** Publisher floor as for any SQL Server target; replicated tables need a primary key. Use when a subset of articles moves and the rest stays |
+| Smaller / schema-compatible | **BACPAC / SqlPackage** | Test the export and import at full size; not for large or dependency-heavy workloads |
+| Offline **or** minimal | **Azure DMS** (offline or online) | **`DMS-MODE`**, **`SOURCE-PERMISSIONS`.** Source **2008+**; target SQL Server version and edition **at or above the source**; target VM registered with the **SQL Server IaaS Agent extension in Full management mode**. DMS restores backups you supply — each one in **its own file**, never appended. **Online** additionally requires the FULL recovery model and an unbroken log chain. Rank it against a plain restore by step 3 of §B3.0: it earns its setup on a wave, not on a single database. Prerequisites `P25` offline, `P26` online |
 | Minimal | **Log shipping** | Windows source and log backup chain feasible |
 | Offline | **Native backup/restore** — direct `BACKUP TO URL` from **2012 SP1 CU2+**, or local backup + upload below that build or when URL prerequisites are unavailable; detach/attach for special large-file cases | Confirm the build for SQL Server 2012 (SP1 CU2 or later). 2012/2014 use page blob + storage-account credential, 1 TB max; 2016+ use block blob + SAS, up to 12.8 TB striped. TDE cert installed first when encrypted. **`BACKUP-BLOB-PATH`** applies to the **Blob-staged variants only**: for those, `blob_https_reachability` must be `BLOB_HTTPS_CONFIRMED` before the gate reports `passed`, `BLOB_HTTPS_UNKNOWN` yields `unknown_requires_assessment`, and an unverified upload path is the single most common reason a cutover date slips because it is invisible until someone tries it. `BLOB_HTTPS_BLOCKED` does **not** eliminate the method here: this target has a file system, so the knowledge base's backup-to-a-file-and-copy route survives. Move to that variant and hold the gate at `unknown_requires_assessment` until the file-transfer route is proven and measured for the largest database — a route nobody has timed is not a route |
 | Whole VM/instance | **Azure Migrate** replication | use for rehost/business case; validate SQL consistency |
@@ -256,7 +292,27 @@ Arc-enabled source: SQL migration in Azure Arc can orchestrate offline native ba
 
 #### → AVS
 
-- **VMware HCX / vMotion**. No DMS/MI Link; preserve VMware operational model and existing SQL HA patterns.
+**Two different moves, and conflating them is what left this section with one line.** HCX and vMotion
+move the **virtual machine**; every other method moves the **database** into a SQL Server that AVS
+hosts. An AVS-hosted SQL Server is a SQL Server on a VM, so the VM methods apply once the platform
+exists — the target's own prerequisites live in the `P27` overlay.
+
+| Downtime wanted | Method | Gate |
+| --- | --- | --- |
+| Near-zero, whole VM | **VMware HCX / vMotion** | Preserves the VMware operational model and existing SQL HA patterns. Moves the machine, not the database, so nothing inside SQL Server changes |
+| Near-zero, database | **Distributed AG** or **Always On AG** | **`AG-VERSION`.** Same floors as the VM target: Distributed AG source **2016+**, Always On AG **2012+**; AD DS or workgroup AG with certificates, AG endpoints and the documented ports |
+| Offline | **Native backup/restore** | **`BACKUP-BLOB-PATH`**, **`SOURCE-PERMISSIONS`.** The target has a file system, so a local `.bak` copied into it stays available when the Blob path is blocked |
+| Minimal, database | **Log shipping** | **`BACKUP-BLOB-PATH`**, **`SOURCE-PERMISSIONS`.** SQL Server 2008+, Windows-only. Simpler to stand up than an AG when the cutover can absorb one log-restore interval; confirm the secondary restore mode, since `NORECOVERY` leaves the target unavailable until cutover |
+| Online subset | **Transactional replication** | **`REPL-PUBLISHER`.** Publisher floor as for any SQL Server target; tables need a primary key |
+| Smaller / schema-compatible | **BACPAC / SqlPackage** | Test export and import; not for large or dependency-heavy workloads |
+
+**Not available to this target:** MI Link and Azure DMS — the §8 matrix marks both `➖` for AVS.
+Do not offer them here, and do not infer from `→ SQL Server on Azure VM` that they apply.
+
+Rank the surviving candidates with §B3.0: the stated window first, then what the answers say, then
+the simpler operation. Moving the whole machine is the least disruptive option when the estate is
+already VMware and the operational model is the reason for choosing AVS; it is the wrong tool when
+only one database is moving.
 
 #### → Azure SQL Managed Instance
 
@@ -265,6 +321,9 @@ Arc-enabled source: SQL migration in Azure Arc can orchestrate offline native ba
 | Near-zero / online | **MI Link** | **`MI-LINK-VERSION`**, **`MI-LINK-HOST`**, **`MI-LINK-SOURCE`**, **`MI-LINK-PORTS`.** SQL Server 2016+, **Enterprise / Standard / Developer edition**, and a host OS supported by that SQL Server version: **Windows Server 2012 or later** on every supported version, plus **Linux from SQL Server 2017** onwards (SQL Server 2016 is Windows Server only). Also sysadmin, distributed AG, AG endpoint creation, required 5022 + 11000–11999 ports, VNet connectivity; not possible from AWS RDS/GCP Cloud SQL. Unknown OS or edition makes the method `unknown_requires_assessment`; an unsupported edition, a Windows client OS or Windows Server below 2012, or a Linux host below SQL Server 2017, eliminates **MI Link only**, never the MI target. When the migration is driven from the **Azure Arc portal**, that path is documented as Windows Server only, so a Linux host keeps MI Link but loses the Arc-portal orchestration |
 | Online migration / planned cutover | **Log Replay Service (LRS)** standalone | **`LRS-VERSION`**, **`LRS-WINDOW`.** SQL Server 2008–2022 (**not 2025**); sources include SQL on VMs, AWS EC2, AWS RDS, GCP Compute Engine, GCP Cloud SQL; public endpoint/storage access; **the initial restore and log replay must complete inside the 30-day maximum window**; target is `unavailable` (RESTORING/NORECOVERY) during sync |
 | Offline / simplest | **Native backup/restore (.bak)** | **`BACKUP-BLOB-PATH`**, **`SOURCE-PERMISSIONS`.** SQL Server 2008+; install TDE cert in destination `master` first; master/msdb not restorable. The SSMS 22 Migration Component requires `sysadmin` on the source: `LIMITED_RIGHTS` refuses that tooling path and an unstated `source_permissions` holds it at `unknown_requires_assessment` |
+| Online subset | **Transactional replication** | **`REPL-PUBLISHER`.** Publisher floor as for any SQL Server target; replicated tables need a primary key. Use when a subset of articles moves and the rest stays |
+| Smaller / schema-compatible | **BACPAC / SqlPackage** | Test the export and import at full size; not for large or dependency-heavy workloads |
+| Offline **or** minimal | **Azure DMS** (offline or online) | **`DMS-MODE`**, **`SOURCE-PERMISSIONS`.** Source **2008+**; provision the target instance first; source login needs `sysadmin` or `CONTROL SERVER`, migration account Contributor on the instance and storage. DMS restores backups you supply — each in **its own file** in an SMB share or Blob container, never appended. **Online** additionally requires the FULL recovery model and an unbroken log chain. **This is the online path that survives when MI Link is unavailable and LRS does not qualify**; against native backup/restore it is the heavier option, so apply step 3 of §B3.0. Prerequisites `P23` offline, `P24` online |
 | Online subset | **Transactional replication** | **`REPL-PUBLISHER`.** Use when tables/articles fit and publisher rights exist |
 | Data-only / bulk | bcp / Smart Bulk Copy / BACPAC / ADF | data movement only; validate schema/features separately |
 
@@ -299,11 +358,24 @@ Not supported to SQL DB: native `.bak` restore, detach/attach, MI Link, local SQ
 #### → SQL database in Fabric (GA target; Migration Assistant in Preview)
 
 - **Fabric Migration Assistant (Preview)**: **`FABRIC-ASSISTANT`.** Schema via **DACPAC ≤ 20 MB**; data via **Fabric Data Factory copy job** + **on-prem data gateway**. No VNet gateway/Private Link for the assistant. `targetAvailabilityDuringSync=not-present`, `businessCutoverDowntime=full load time`; use for Fabric-native/analytics-first simple schemas, not broad enterprise OLTP by default. **`previewAcceptable=false` disqualifies this method only, never the target.** Alternative Fabric SQL database ingestion paths include T-SQL, transactional replication (SQL Server 2022 RTM CU12+ publisher), Fabric pipelines / Data Factory copy jobs, Dataflow Gen2, and any TDS-capable tool; do not eliminate Fabric solely because assistant limits do not fit.
+- **BACPAC / SqlPackage**: the export-and-import path when the assistant is refused — because the schema exceeds the 20 MB DACPAC ceiling, because the preview is unacceptable, or because no gateway exists. Same caution as everywhere else: test the export and the import at full size, and do not choose it for large or dependency-heavy workloads.
+- **Transactional replication**: **`REPL-PUBLISHER`.** Publisher must be SQL Server **2022 RTM CU12+**, push subscriber only, and Private Link is not supported for replication into Fabric SQL database.
 
 #### → Arc-enabled SQL MI / container
 
-- **Arc-enabled SQL MI:** native backup/restore and MI-compatible data movement after endpoint is available; operate through Arc data controller.
-- **Container:** backup/restore via mounted volume, detach/attach where appropriate, BACPAC, bcp, ADF. Customer owns HA/patch/backup.
+Both targets are customer-operated, so the method list is the same shape as a VM target: a restore
+path, an online subset path, and an export path. The difference is where the files land.
+
+| Target | Downtime wanted | Method | Gate |
+| --- | --- | --- | --- |
+| Arc-enabled SQL MI | Offline | **Native backup/restore** | Through the pod, PVC or the documented Blob workflow; the backup storage class is fixed at deployment, so it is a precondition and not a step. Prerequisites `P17` direct, `P18` when a client endpoint must be reachable first |
+| Arc-enabled SQL MI | Online subset | **Transactional replication** | **`REPL-PUBLISHER`.** Publisher floor as for any SQL Server target; tables need a primary key |
+| Container | Offline | **Backup/restore via mounted volume** | Persistent volume for `/var/opt/mssql` and the backup path, explicit Linux target paths on restore. Prerequisites `P19` |
+| Container | Online subset | **Transactional replication** | **`REPL-PUBLISHER`.** Same floor |
+| Either | Smaller / schema-compatible | **BACPAC / SqlPackage** | Test export and import at full size |
+
+**Customer owns HA/patch/backup** on both targets. Rank with §B3.0; on these targets the simpler
+operation usually wins, because every additional moving part is one the customer will also operate.
 
 #### Large estates / multi-TB (any target) — seed-then-sync
 
@@ -443,6 +515,7 @@ The normative wording stays in the sections above. This index is the address boo
 | `MI-LINK-VERSION` | hard method gate | `source_version` | Method `unknown_requires_assessment` | B3 |
 | `MI-LINK-HOST` | hard method gate | `source_os`, `source_edition`, `source_version` | Method `unknown_requires_assessment`; a **known** unsupported edition or host eliminates MI Link only, never the MI target | A0, B3 |
 | `MI-LINK-PORTS` | hard method gate | `mi_link_ports` | Method `unknown_requires_assessment` | B3 |
+| `DMS-MODE` | hard method gate | `source_version`, `source_permissions`, `downtime`, `database_count` | Method `unknown_requires_assessment`; online mode is never assumed without a confirmed FULL recovery model and log chain | B3 |
 | `BACKUP-BLOB-PATH` | hard method gate | `blob_https_reachability` | **Gate cannot report `passed`**; `unknown_requires_assessment`. Blocked eliminates the Blob-staged variant only; a target with a file system keeps the copy-a-file variant | B3 |
 | `MI-LINK-CAPACITY` | hard method gate | `database_count`, tier | Capacity `unknown_requires_assessment` | B3 |
 | `LRS-VERSION` | hard method gate | `source_version` | Method `unknown_requires_assessment` | B3 |
