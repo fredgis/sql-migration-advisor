@@ -1991,6 +1991,53 @@ try {
 
   add('handoff-fixtures-carry-the-new-fields', failures.length === 0, failures.length ? failures : notes);
 }
+
+// Audit 11: the consumer accepted a handoff with no controlPlane, because the field had been typed
+// on the standalone-selection node instead of the advisor recommendation. A required field is only
+// required if removing it fails something, so this asserts both directions: the documented producer
+// example is accepted, and the same object with controlPlane deleted is rejected. It also pins the
+// two enums to each other, since a hand-copied second list is a second thing to drift.
+{
+  const failures = [];
+  const producer = JSON.parse(readText(path.join('skills', 'recommend-migration-path', 'schemas', 'output.schema.json')));
+  const consumer = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'schemas', 'input.schema.json')));
+  const producerEnum = producer.$defs?.recommendation?.properties?.controlPlane?.enum;
+  const consumerRec = consumer.$defs?.advisorPublicOutput?.properties?.recommendation;
+  const consumerEnum = consumerRec?.properties?.controlPlane?.enum;
+
+  if (!producerEnum) failures.push('the producer recommendation no longer types controlPlane');
+  if (!consumerEnum) failures.push('advisorPublicOutput.recommendation does not type controlPlane, so a handoff can arrive without one');
+  if (producerEnum && consumerEnum && JSON.stringify(producerEnum) !== JSON.stringify(consumerEnum)) {
+    failures.push(`the two controlPlane enums disagree: producer ${JSON.stringify(producerEnum)} vs consumer ${JSON.stringify(consumerEnum)}`);
+  }
+  if (consumerRec && !(consumerRec.required || []).includes('controlPlane')) {
+    failures.push('advisorPublicOutput.recommendation types controlPlane but does not require it; an omitted control plane silently produces a standalone plan for an Arc-orchestrated migration');
+  }
+
+  // Take the example the skill actually publishes, not a hand-written one.
+  const skill = readText(path.join('skills', 'recommend-migration-path', 'SKILL.md'));
+  const block = skill.match(/```json\r?\n([\s\S]*?)\r?\n```/);
+  if (!block) failures.push('the producer SKILL.md no longer carries a JSON example to replay');
+  else {
+    let example;
+    try { example = JSON.parse(block[1]); } catch (err) { failures.push(`the producer example does not parse: ${err.message}`); }
+    if (example) {
+      const accepted = validateObjectAgainstSchema({ $defs: consumer.$defs, ...consumer.$defs.advisorPublicOutput }, example, 'handoff');
+      if (accepted.errors.length) failures.push(`the documented producer example is rejected by the consumer: ${accepted.errors.join('; ')}`);
+
+      const stripped = JSON.parse(JSON.stringify(example));
+      delete stripped.recommendation.controlPlane;
+      const rejected = validateObjectAgainstSchema({ $defs: consumer.$defs, ...consumer.$defs.advisorPublicOutput }, stripped, 'handoff');
+      if (!rejected.errors.length) failures.push('a handoff with controlPlane removed is still accepted, so the field is documented rather than required');
+    }
+  }
+
+  add('handoff-requires-a-control-plane', failures.length === 0,
+    failures.length ? failures : [
+      `controlPlane is required by advisorPublicOutput.recommendation and shares the producer enum (${consumerEnum.length} values).`,
+      'The documented producer example is accepted; the same object without controlPlane is rejected.',
+    ]);
+}
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };
 if (jsonMode) {
   process.stdout.write(JSON.stringify({ summary, results }, null, 2) + '\n');
