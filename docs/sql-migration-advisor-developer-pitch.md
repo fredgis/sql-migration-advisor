@@ -117,9 +117,8 @@ Added in v2.0.0, and the reason is a defect rather than a design preference.
 The interview's vocabulary used to live in `SKILL.md` and again in the rules, in two wordings that
 slowly stopped matching. Four displayed options reached no rule at all, so 86 passing scenarios
 coexisted with an interview whose answers were quietly discarded. The input contract now owns the
-30 option IDs and the 20 canonical field names, and it separates three states that were previously
-one: `NONE_CONFIRMED` when the user checked and there are none, `UNKNOWN` when nobody checked, and
-`NOT_APPLICABLE`. Conflating the first two is what once told a user their dependencies were unknown
+74 option IDs and the 31 canonical field names, and it separates three states that were previously
+one: `NONE_CONFIRMED` when the user checked and there are none, `UNKNOWN` when nobody checked, and`NOT_APPLICABLE`. Conflating the first two is what once told a user their dependencies were unknown
 immediately after they answered that there were none.
 
 The output contract owns the status vocabulary, the card structure, and the 15 invariants of the

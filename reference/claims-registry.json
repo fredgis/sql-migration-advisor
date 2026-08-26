@@ -25,6 +25,18 @@
     ]
   },
   {
+    "claim_id": "lrs-arc-supported-source-versions",
+    "claim": "Which SQL Server source versions are supported for a Log Replay Service migration orchestrated through the Azure Arc portal, which is a different list from the standalone LRS page?",
+    "source_url": "https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migration-sql-mi-prepare-log-replay-service",
+    "source_section": "Supported SQL Server versions",
+    "last_verified": "2026-08-26",
+    "verification_hash": "",
+    "affected_rules": [
+      "lrs-minimum-source-version",
+      "mi-offline-migration"
+    ]
+  },
+  {
     "claim_id": "native-restore-mi-min-source",
     "claim": "What minimum SQL Server source version and limits apply to native backup and restore to Azure SQL Managed Instance?",
     "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/restore-sample-database-quickstart",
