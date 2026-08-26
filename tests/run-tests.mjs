@@ -2060,6 +2060,44 @@ try {
   if (!stamp) failures.push(`${graphPath}: carries no GRAPH_VERSION, so nothing can tell whether it is current`);
   else if (stamp[1] !== manifest.latest) failures.push(`${graphPath}: stamped ${stamp[1]}, the release is ${manifest.latest}`);
 
+  // The Rules tab was not the only stale one. "Tested coverage" and "Documented paths" are derived
+  // from the scenario corpus, and both still showed a world without Azure DMS online and with Data
+  // Box as a method, because nothing recomputed them. Numbers a reader is invited to trust have to
+  // come from the run that produced them.
+  const replay = new Map();
+  for (const scenario of scenarios) {
+    let out;
+    try { out = evaluate(scenario.inputs || {}); } catch { continue; }
+    const key = `${out.primaryTarget}\u0000${out.method}`;
+    replay.set(key, (replay.get(key) || 0) + 1);
+  }
+  const arrayIn = (name) => {
+    const at = graph.indexOf(`const ${name} = [`);
+    if (at === -1) return null;
+    const start = graph.indexOf('[', at);
+    let depth = 0;
+    for (let k = start; k < graph.length; k++) {
+      if (graph[k] === '[') depth++;
+      else if (graph[k] === ']') { depth--; if (!depth) return graph.slice(start, k + 1); }
+    }
+    return null;
+  };
+  const coverage = arrayIn('TARGET_METHODS');
+  if (!coverage) failures.push(`${graphPath}: the Tested coverage tab has no TARGET_METHODS array`);
+  else {
+    const rows = [...coverage.matchAll(/\[\s*"([^"]+)",\s*"([^"]+)",\s*(\d+)\s*\]/g)].map((m) => [m[1], m[2], Number(m[3])]);
+    const plottedTotal = rows.reduce((sum, r) => sum + r[2], 0);
+    if (plottedTotal !== scenarios.length) failures.push(`${graphPath}: Tested coverage totals ${plottedTotal} scenarios, the corpus holds ${scenarios.length}`);
+    for (const [target, method, n] of rows) {
+      const actual = replay.get(`${target}\u0000${method}`) || 0;
+      if (actual !== n) failures.push(`${graphPath}: Tested coverage says ${target} via ${method} appears ${n} time(s); replaying the corpus gives ${actual}`);
+    }
+    for (const [key, n] of replay) {
+      const [target, method] = key.split('\u0000');
+      if (!rows.some((r) => r[0] === target && r[1] === method)) failures.push(`${graphPath}: ${target} via ${method} wins ${n} scenario(s) but is absent from the Tested coverage tab`);
+    }
+  }
+
   add('rule-graph-is-current', failures.length === 0,
     failures.length ? failures : [`${graphPath} plots the same ${indexed.length} rules as the decision-rules index, stamped ${manifest.latest}.`]);
 }
