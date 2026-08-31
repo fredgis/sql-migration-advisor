@@ -5,7 +5,7 @@ Apply Steps **A → D** in order. Steps map to the two engine phases:
 - **Phase B — Ranking and plan:** Steps B → D. Rank only surviving targets, then choose method, tier, blockers, cost, and assessment.
 
 Regression contract: these rules are a **prompt policy under regression test**. Replaying the same inputs through the rules mirror in `tests/` gives the same result, and 116 golden scenarios enforce it on every commit. The mirror is not what runs in a session: an agent reads these rules and applies them. Treat the contract as a tested policy, not as a guarantee that two runs produce identical wording. Every recommendation must carry the KB version, engine version, and, when available, the source commit SHA and fetch timestamp.
-Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v3.1**, verified August 2026.
+Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v3.2**, verified August 2026.
 
 Three layers, never mixed:
 - **Target** = where the DB ends up (runtime).
@@ -361,7 +361,8 @@ Not supported to SQL DB: native `.bak` restore, detach/attach, MI Link, local SQ
 #### → SQL database in Fabric (GA target; Migration Assistant in Preview)
 
 - **Fabric Migration Assistant (Preview)**: **`FABRIC-ASSISTANT`.** Schema via **DACPAC ≤ 20 MB**; data via **Fabric Data Factory copy job** + **on-prem data gateway**. No VNet gateway/Private Link for the assistant. `targetAvailabilityDuringSync=not-present`, `businessCutoverDowntime=full load time`; use for Fabric-native/analytics-first simple schemas, not broad enterprise OLTP by default. **`previewAcceptable=false` disqualifies this method only, never the target.** Alternative Fabric SQL database ingestion paths include T-SQL, transactional replication (SQL Server 2022 RTM CU12+ publisher), Fabric pipelines / Data Factory copy jobs, Dataflow Gen2, and any TDS-capable tool; do not eliminate Fabric solely because assistant limits do not fit.
-- **BACPAC / SqlPackage**: the export-and-import path when the assistant is refused — because the schema exceeds the 20 MB DACPAC ceiling, because the preview is unacceptable, or because no gateway exists. Same caution as everywhere else: test the export and the import at full size, and do not choose it for large or dependency-heavy workloads.
+- **DACPAC / SqlPackage**: the schema artefact the Migration Assistant itself imports, subject to the **20 MB** ceiling. Microsoft documents a **DACPAC** path into Fabric SQL database, not a BACPAC import, and §8 marks the cell `✅ (DACPAC)` for exactly that reason. The two are different artefacts — a BACPAC carries schema *and* data, a DACPAC carries schema only — so offering "BACPAC export and import" here promised a route the product does not have.
+- **When the assistant is refused** — preview unacceptable, no gateway, or the schema exceeds the DACPAC ceiling — do not substitute a BACPAC import. Evaluate the separately documented Fabric ingestion paths instead: **T-SQL**, **transactional replication** (SQL Server 2022 RTM CU12+ publisher), **Fabric Data Factory copy jobs or pipelines**, **Dataflow Gen2**, and **bcp** with Entra ID (`-G`). Fabric SQL database accepts no SQL authentication.
 - **Transactional replication**: **`REPL-PUBLISHER`.** Publisher must be SQL Server **2022 RTM CU12+**, push subscriber only, and Private Link is not supported for replication into Fabric SQL database.
 
 #### → Arc-enabled SQL MI / container
@@ -377,8 +378,20 @@ path, an online subset path, and an export path. The difference is where the fil
 | Container | Online subset | **Transactional replication** | **`REPL-PUBLISHER`.** Same floor |
 | Either | Smaller / schema-compatible | **BACPAC / SqlPackage** | Test export and import at full size |
 
-**Customer owns HA/patch/backup** on both targets. Rank with §B3.0; on these targets the simpler
-operation usually wins, because every additional moving part is one the customer will also operate.
+**The two targets do not share an operating model, and saying they do erases the reason to choose
+one over the other.**
+
+- **Arc-enabled SQL MI** is a managed service on customer infrastructure. The Arc data controller
+  provides built-in health monitoring, failure detection and automatic failover, sets up the
+  availability group and coordinates failover and upgrade *without user intervention*; it also
+  provides automated backups and point-in-time restore, with the HA level depending on the service
+  tier. What the **customer owns** is the Kubernetes platform underneath: cluster, storage classes,
+  capacity, networking and disaster recovery.
+- **SQL Server in a container** is not managed. The **customer owns HA/patch/backup** outright —
+  engine patching, backup scheduling and any availability topology are theirs to build and operate.
+
+Rank with §B3.0; on these targets the simpler operation usually wins, because every additional
+moving part is one the customer will also operate.
 
 #### Large estates / multi-TB (any target) — seed-then-sync
 
@@ -399,6 +412,7 @@ The source-of-truth downtime model is the pair `targetAvailabilityDuringSync` + 
 | **Native backup/restore** | `not-present` | `full restore time` | `extended` |
 | **Transactional replication** | `read-write` (subscriber accessible) | `near-zero` | `minimal` |
 | **DMS offline** | `not-present` | `total migration execution time` | `extended` |
+| **DMS online** | `unavailable` (the destination is restored from backups and log backups while the source stays in service) | the final synchronization and cutover interval — **minimal, but not guaranteed sub-minute** | `minimal` |
 | **Distributed / Always On AG** | `read-only` (readable secondary, if configured) | `near-zero` (planned failover) | `minimal` |
 | **Log shipping** | `read-only` when the secondary is restored WITH STANDBY (queryable between restore jobs, and readers are disconnected for each one); `unavailable` when it is restored WITH NORECOVERY | `minimal` | `minimal` |
 | **BACPAC / bcp / ADF / Data Box** | `not-present` | `full load time` | `extended` |
@@ -406,7 +420,7 @@ The source-of-truth downtime model is the pair `targetAvailabilityDuringSync` + 
 Rules:
 - For LRS, emit `targetAvailabilityDuringSync=unavailable` and a planned cutover duration; do not use the extended/load-time class.
 - If `target = Azure SQL MI Business Critical` and `method = LRS`, add warning `lrsBusinessCriticalCutoverCanTakeHours=true`; rank MI Link higher whenever all MI Link prerequisites are satisfiable.
-- Reserve `minimal downtime` wording for MI Link when comparing MI migration methods.
+- Reserve `minimal downtime` wording for MI Link **when comparing it with LRS**, not with online DMS. Both MI Link and online DMS are minimal-downtime methods; what separates them is the cutover length — MI Link is sub-minute, online DMS is the final synchronization interval. Saying "only MI Link is minimal" contradicts a method §B3 now selects.
 
 ### C2. Cutover blockers and remediations
 

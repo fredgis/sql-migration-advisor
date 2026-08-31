@@ -49,18 +49,18 @@ unrecognized answers remain `unknown`.
 | 8 | P08 | Azure SQL Managed Instance | Managed Instance Link | Microsoft-supported |
 | 9 | P09 | Azure SQL Managed Instance | Log Replay Service | Microsoft-supported |
 | 10 | P10 | Azure SQL Managed Instance | Native Backup/Restore | Microsoft-supported |
-| 11 | P11 | Azure SQL Database | BACPAC / SqlPackage | Microsoft-supported |
+| 11 | P11 | SQL DB / SQL VM / SQL MI / Fabric SQL DB / Arc SQL MI / SQL container | BACPAC / SqlPackage | Microsoft-supported |
 | 12 | P12 | Azure SQL Database | Modern DMS Offline | Microsoft-supported |
-| 13 | P13 | SQL MI / SQL DB / Fabric SQL DB | Transactional Replication | Microsoft-supported with target-specific limits |
+| 13 | P13 | SQL MI / SQL DB / Fabric SQL DB / SQL VM / Arc SQL MI / SQL container | Transactional Replication | Microsoft-supported with target-specific limits |
 | 14 | P14 | Azure SQL Database | Data Box Seed then Delta Synchronization | Composed pattern, not one migration service |
 | 15 | P15 | Azure SQL Database | Striim Online CDC | Third-party migration runtime |
-| 16 | P16 | SQL Database in Fabric | Fabric Migration Assistant | Preview tool; GA target |
-| 17 | P17 | Arc-enabled SQL Managed Instance | Native Backup/Restore Direct | Microsoft-supported |
-| 18 | P18 | Arc-enabled SQL Managed Instance | Native Backup/Restore after Endpoint Availability | Microsoft-supported |
-| 19 | P19 | SQL Server Container | Backup/Restore through Mounted Volume | Microsoft-supported engine pattern |
-| 20 | P20 | SQL MI / SQL DB | bcp | Microsoft-supported utility |
-| 21 | P21 | SQL MI / SQL DB / Fabric SQL DB | Data Factory Copy | Microsoft-supported |
-| 22 | P22 | SQL MI / SQL DB | Smart Bulk Copy | Archived Azure sample; not a product or service |
+| 16 | P16 | Fabric SQL DB | Fabric Migration Assistant | Preview tool; GA target |
+| 17 | P17 | Arc SQL MI | Native Backup/Restore Direct | Microsoft-supported |
+| 18 | P18 | Arc SQL MI | Native Backup/Restore after Endpoint Availability | Microsoft-supported |
+| 19 | P19 | SQL container | Backup/Restore through Mounted Volume | Microsoft-supported engine pattern |
+| 20 | P20 | SQL MI / SQL DB / Fabric SQL DB / SQL VM / Arc SQL MI / SQL container | bcp | Microsoft-supported utility |
+| 21 | P21 | SQL MI / SQL DB / Fabric SQL DB / SQL VM / Arc SQL MI / SQL container | Data Factory Copy | Microsoft-supported |
+| 22 | P22 | SQL MI / SQL DB / SQL VM | Smart Bulk Copy | Archived Azure sample; not a product or service |
 | 23 | P23 | Azure SQL Managed Instance | Modern DMS Offline | Microsoft-supported |
 | 24 | P24 | Azure SQL Managed Instance | Modern DMS Online | Microsoft-supported |
 | 25 | P25 | SQL Server on Azure VM | Modern DMS Offline | Microsoft-supported |
