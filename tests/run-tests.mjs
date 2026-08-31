@@ -2136,6 +2136,75 @@ try {
   add('rule-graph-is-current', failures.length === 0,
     failures.length ? failures : [`${graphPath} plots the same ${indexed.length} rules as the decision-rules index, stamped ${manifest.latest}.`]);
 }
+
+// Weekly check 2026-08-31. Section 8 marks BACPAC / SqlPackage as `✅ (DACPAC)` for Fabric SQL
+// database, because Microsoft documents a DACPAC schema import there and not a BACPAC import. The
+// B3 guidance offered "BACPAC export and import" for that target anyway, and the coverage gate
+// accepted it: that gate matches the method *row*, so a qualifier living in one *cell* is invisible
+// to it. The two artefacts are not interchangeable — a BACPAC carries schema and data, a DACPAC
+// carries schema only — so the guidance was promising a route the product does not have.
+//
+// Only artefact qualifiers are checked. `(online + offline)` names modes of the row's own method and
+// the guidance may word those freely; `(DACPAC)` names something else entirely, and for that cell
+// the row's own name must not be offered at all.
+{
+  const failures = [];
+  const notes = [];
+  const kb = readText(path.join('docs', 'sql-server-to-azure-migration.md'));
+  const rules = readText(path.join('reference', 'decision-rules.md'));
+
+  const SECTION_OF = {
+    'SQL VM': '→ SQL Server on Azure VM', 'AVS': '→ AVS', 'SQL MI': '→ Azure SQL Managed Instance',
+    'SQL DB': '→ Azure SQL Database', 'Fabric SQL DB': '→ SQL database in Fabric',
+    'Arc SQL MI': '→ Arc-enabled SQL MI / container', 'SQL container': '→ Arc-enabled SQL MI / container',
+  };
+  const MODE_WORDS = /^(online|offline|only|assess|preview)$/i;
+
+  const heads = [...rules.matchAll(/^#### (→ [^\n]+)$/gm)];
+  const bodyFor = (target) => {
+    const want = SECTION_OF[target];
+    for (const h of heads) {
+      if (!h[1].startsWith(want)) continue;
+      const from = h.index + h[0].length;
+      const next = rules.slice(from).search(/^#{1,4} /m);
+      return next === -1 ? rules.slice(from) : rules.slice(from, from + next);
+    }
+    return null;
+  };
+
+  const start = kb.search(/^## 8\./m);
+  const legend = kb.indexOf('✅ supported ·', start);
+  const rows = kb.slice(start, legend === -1 ? undefined : legend).split('\n').filter((l) => /^\|/.test(l));
+  const header = rows[0].split('|').map((c) => c.trim()).filter(Boolean);
+
+  let checked = 0;
+  for (const row of rows.slice(2)) {
+    const cells = row.split('|').map((c) => c.trim());
+    const method = cells[1];
+    if (!method) continue;
+    const head = method.split('/')[0].trim();
+    for (let col = 2; col < cells.length - 1; col++) {
+      const target = header[col - 1];
+      const qualifier = cells[col].match(/^✅\s*\(([^)]+)\)$/);
+      if (!qualifier || !SECTION_OF[target]) continue;
+      const artefacts = qualifier[1].split(/\s*\+\s*|\s+/).filter((w) => /^[A-Za-z]{4,}$/.test(w) && !MODE_WORDS.test(w));
+      if (!artefacts.length) continue;
+      checked++;
+      const body = bodyFor(target);
+      if (body === null) { failures.push(`section 8 qualifies ${method} for ${target}, but B3 has no sub-section for that target`); continue; }
+      for (const frag of [...body.matchAll(/\*\*([^*]+)\*\*/g)].map((m) => m[1])) {
+        if (!new RegExp(`\\b${head}\\b`, 'i').test(frag)) continue;
+        failures.push(`section 8 supports ${method} for ${target} only as "${qualifier[1]}", but B3 offers "${frag.trim()}" there — the matrix names one artefact and the guidance another`);
+      }
+    }
+  }
+
+  if (!checked) failures.push('section 8 has no artefact-qualified cell, so this gate is checking nothing');
+  else notes.push(`${checked} artefact-qualified cell(s) in section 8: the guidance for those targets never offers the row's own artefact name.`);
+
+  add('matrix-cell-qualifiers-reach-the-guidance', failures.length === 0, failures.length ? failures : notes);
+}
+
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };
 if (jsonMode) {
   process.stdout.write(JSON.stringify({ summary, results }, null, 2) + '\n');

@@ -39,7 +39,7 @@ flowchart TD
     subgraph repo["The repository, which no session reads"]
       EN["tests/engine/evaluate.mjs<br/>a mirror of the rules, in JavaScript"]
       GS["tests/golden-scenarios.json<br/>116 profiles and their expected answers"]
-      GA["tests/run-tests.mjs<br/>42 gates"]
+      GA["tests/run-tests.mjs<br/>43 gates"]
       WK["tools/weekly-check/<br/>freshness and drift"]
     end
 
@@ -78,7 +78,7 @@ Green is loaded in a user's session. Blue never is.
 | `docs/sql-server-to-azure-migration.md` | The knowledge base: every target, method, limit and lever, with Microsoft Learn links. |
 | `reference/decision-rules.data.json` | The same constants in machine-readable form, so a floor can be checked rather than read. |
 | `tests/engine/evaluate.mjs` | ~1 080 lines of JavaScript that mirror the rules. **Never executed in production.** |
-| `tests/run-tests.mjs` | 42 gates. |
+| `tests/run-tests.mjs` | 43 gates. |
 | `tools/weekly-check/` | Four jobs that check the knowledge base has not gone stale or drifted from its sources. |
 | `version.json` | Served from `main` so an installed skill can tell it is out of date. |
 | `.claude-plugin/` | The plugin manifest, and the marketplace manifest that lets this repository publish itself. |
@@ -189,7 +189,7 @@ The traffic runs both ways, and the August 2026 weekly review is the case to rem
 
 ---
 
-## 6. The 42 gates
+## 6. The 43 gates
 
 Grouped by what they defend.
 
