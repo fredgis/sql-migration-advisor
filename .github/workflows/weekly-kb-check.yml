@@ -232,7 +232,7 @@ jobs:
       - name: Sign in to Azure (GitHub OIDC, no stored secret)
         id: azlogin
         continue-on-error: true
-        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2
+        uses: azure/login@7ddb5af1ef8758cf1353cf3b42f940aee27ba21c # v3.0.2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -354,7 +354,7 @@ jobs:
         id: chrome
         if: steps.decide.outputs.pr_required == 'true' || github.event.inputs.force_pr == 'true'
         continue-on-error: true
-        uses: browser-actions/setup-chrome@2e1d749697dd1612b833dba4a722266286fbefcd # v2
+        uses: browser-actions/setup-chrome@48ad923757ca74d66703209fe939badbdf80f2f4 # v2
         with:
           install-dependencies: true
 
