@@ -59,9 +59,131 @@
       "items": {
         "$ref": "#/$defs/eligibilityEntry"
       },
-      "description": "Invariant 11: every one of the eight target families appears, including the ones that lost. A family that silently disappears cannot be argued with, which is why the count is pinned at exactly 8, with no repeats. A ninth entry means a family was listed twice, and eight entries with a duplicate means one family is missing.",
+      "description": "Invariant 11: every one of the eight target families appears, including the ones that lost. A family that silently disappears cannot be argued with. uniqueItems compares whole entries, so on its own it allows the same family twice under two different reasons while another family is missing; the allOf below names each family and requires it exactly once, which is the constraint invariant 11 actually states.",
       "maxItems": 8,
-      "uniqueItems": true
+      "uniqueItems": true,
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "target"
+            ],
+            "properties": {
+              "target": {
+                "const": "sql_vm"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "target"
+            ],
+            "properties": {
+              "target": {
+                "const": "avs"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "target"
+            ],
+            "properties": {
+              "target": {
+                "const": "sql_mi"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "target"
+            ],
+            "properties": {
+              "target": {
+                "const": "sql_db"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "target"
+            ],
+            "properties": {
+              "target": {
+                "const": "fabric_sql_db"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "target"
+            ],
+            "properties": {
+              "target": {
+                "const": "arc_sql_mi"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "target"
+            ],
+            "properties": {
+              "target": {
+                "const": "container"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "target"
+            ],
+            "properties": {
+              "target": {
+                "const": "arc_in_place"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
     },
     "recommendation": {
       "$ref": "#/$defs/recommendation"

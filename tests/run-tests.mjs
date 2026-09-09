@@ -285,6 +285,20 @@ try {
     if (advisorOut.properties?.eligibilityTrace?.minItems !== 8) {
       failures.push('eligibilityTrace must require all eight target families (minItems: 8)');
     }
+    // uniqueItems compares whole entries, so it permits sql_mi twice under two reasons while a
+    // family is missing. The constraint invariant 11 states is per-family, so the schema names
+    // each one, and this check keeps that list equal to the vocabulary it is meant to cover.
+    const containsTargets = (advisorOut.properties?.eligibilityTrace?.allOf || [])
+      .map((branch) => branch?.contains?.properties?.target?.const)
+      .filter((value) => typeof value === 'string');
+    if (!same([...containsTargets].sort(), schemaFamilies)) {
+      failures.push(`eligibilityTrace names ${JSON.stringify([...containsTargets].sort())} family-by-family, but targetFamily declares ${JSON.stringify(schemaFamilies)}`);
+    }
+    for (const branch of advisorOut.properties?.eligibilityTrace?.allOf || []) {
+      if (branch?.minContains !== 1 || branch?.maxContains !== 1) {
+        failures.push(`eligibilityTrace branch for ${branch?.contains?.properties?.target?.const} must require the family exactly once (minContains and maxContains of 1)`);
+      }
+    }
 
     // 4. The consumer no longer accepts an untyped object, and it accepts both documented shapes.
     const handoff = prereqIn.$defs?.advisorOutput;
@@ -2302,6 +2316,57 @@ try {
   add('skill-versions-agree-with-the-manifest', failures.length === 0,
     failures.length ? failures : [`${checked} version string(s) across the skills all state ${kb} or ${release}.`]);
 }
+// Six catalog paths cover several target families under one slash-separated target string, and
+// their prerequisite rows are already conditioned per family. Nothing carried the selected family
+// into the plan, so a Fabric subscriber could inherit the Managed Instance rows while the output
+// looked complete. The discriminator is derived from the target string rather than hand-written,
+// so the two cannot drift; the same block keeps overlays out of primary resolution, because P27
+// advertised the target names AVS and Azure VMware Solution and could win on its own.
+{
+  const failures = [];
+  const catalog = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'reference', 'path-catalog.json')));
+  const outSchema = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'schemas', 'output.schema.json')));
+  let multi = 0;
+
+  for (const p of catalog.paths) {
+    const expected = p.target.split(' / ').map(s => s.trim());
+    if (!Array.isArray(p.targetVariants)) { failures.push(`${p.id} declares no targetVariants, so nothing says which family was selected`); continue; }
+    if (expected.length > 1) multi++;
+    if (expected.join('|') !== p.targetVariants.join('|')) {
+      failures.push(`${p.id}: targetVariants ${JSON.stringify(p.targetVariants)} does not match its target string ${JSON.stringify(expected)}`);
+    }
+  }
+
+  for (const key of ['selectedMethodPath', 'selectedPath']) {
+    const node = outSchema.properties?.[key];
+    if (!node) { failures.push(`the output schema no longer defines ${key}`); continue; }
+    if (!(node.required || []).includes('targetVariant')) {
+      failures.push(`${key} does not require targetVariant, so a multi-family path can be planned without saying which family it is`);
+    }
+  }
+
+  const overlays = catalog.paths.filter(p => p.overlay);
+  if (!overlays.length) failures.push('no catalog entry is marked overlay, so the AVS platform layer has nowhere to live');
+  for (const p of overlays) {
+    if (!p.attachesToTargetVariant) {
+      failures.push(`${p.id} is an overlay but names no attachesToTargetVariant, so nothing says which resolved target pulls it in`);
+    } else if (!catalog.paths.some(other => !other.overlay && (other.targetVariants || []).includes(p.attachesToTargetVariant))) {
+      failures.push(`${p.id} attaches to ${p.attachesToTargetVariant}, which no non-overlay path can resolve to, so that target becomes unreachable`);
+    }
+    for (const alias of p.advisorAliases || []) {
+      if ((p.targetVariants || []).some(v => v.toLowerCase() === alias.toLowerCase())) {
+        failures.push(`${p.id} lists its own target ${alias} as an advisorAlias, so a request naming only the target resolves to the overlay instead of a method path`);
+      }
+    }
+  }
+
+  add('overlays-and-target-variants-are-resolvable', failures.length === 0,
+    failures.length ? failures : [
+      `${catalog.paths.length} paths carry a targetVariants list derived from their target string, ${multi} of them covering more than one family.`,
+      `${overlays.length} overlay(s) attach to a resolvable target and advertise no target name as an alias, so an AVS-only request returns the method candidates rather than the platform layer alone.`
+    ]);
+}
+
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };
 if (jsonMode) {
   process.stdout.write(JSON.stringify({ summary, results }, null, 2) + '\n');

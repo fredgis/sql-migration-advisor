@@ -38,9 +38,14 @@ validates, and it is the only shape the Advisor emits:
   `evidenceRequired`, `nextActions`, `evidenceLinks`, `largestRisk`.
 
 A second shape is still accepted for the regression mirror, which reports flat fields:
-`primary_target` or `primaryTarget`, `tier`, `method`, `targetAvailabilityDuringSync`,
+`primary_target`, `tier`, `method`, `targetAvailabilityDuringSync`,
 `businessCutoverDowntime`, `recommendationStatus`, `confidence`, `unknowns`, `hardBlockers` and
 `evidenceRequired`.
+
+**`primary_target` is the only accepted spelling.** This page also advertised `primaryTarget`
+while the schema defined and required the snake_case form alone, so a producer following the
+camelCase reading failed validation before its path was ever resolved. One canonical spelling is
+cheaper than a normalization layer that has to be kept in step with both sides.
 
 **A `recommendation.primary` wrapper is not one of them.** It was advertised here while the schema
 required `recommendation.target`, so a producer following this page emitted an object its own
@@ -73,7 +78,7 @@ proof that its assumptions or user-reported evidence were verified.
 
 | Value | Meaning | Prerequisite effect |
 | --- | --- | --- |
-| `CONFIRMED` | A typed answer or evidence record satisfies the requirement | `confirmed` |
+| `CONFIRMED` | A typed answer or an inherited Advisor fact satisfies the requirement, as **stated**. The skill makes no network calls and cannot check the claim against Azure | `confirmed` |
 | `MISSING` | A typed answer establishes that the requirement is not met | `missing` |
 | `UNKNOWN` | Not assessed, blank, declined, ambiguous or unrecognized | `unknown` |
 | `NOT_APPLICABLE` | The applicability condition is demonstrably false | `not_applicable` |

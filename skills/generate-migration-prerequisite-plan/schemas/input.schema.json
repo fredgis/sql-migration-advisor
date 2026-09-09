@@ -296,11 +296,8 @@
   ],
   "$defs": {
     "advisorOutput": {
-      "type": [
-        "object",
-        "null"
-      ],
-      "description": "The recommendation handed over by recommend-migration-path. It was previously typed as a bare object, which accepted anything: the contract between the two skills existed only in prose, so a producer change could not break a consumer test. Two shapes are documented and both are accepted here, because the Advisor renders one and the regression mirror emits the other. Whichever arrives, its vocabulary is checked against the same enums the Advisor's own schemas/output.schema.json declares, and the advisor-handoff-vocabulary gate fails the build if the two drift apart. Advisor fields remain context, not proof: no self-reported flag here can confirm an evidence-gated prerequisite.",
+      "type": "object",
+      "description": "The recommendation handed over by recommend-migration-path. It was previously typed as a bare object, which accepted anything: the contract between the two skills existed only in prose, so a producer change could not break a consumer test. Two shapes are documented and both are accepted here, because the Advisor renders one and the regression mirror emits the other. Whichever arrives, its vocabulary is checked against the same enums the Advisor's own schemas/output.schema.json declares, and the advisor-handoff-vocabulary gate fails the build if the two drift apart. Advisor fields remain context, not proof: no self-reported flag here can confirm an evidence-gated prerequisite. The type was briefly declared as object-or-null while both anyOf branches required an object, so null was advertised and rejected at the same time; an absent handoff is expressed by omitting the key, never by sending null.",
       "anyOf": [
         {
           "$ref": "#/$defs/advisorPublicOutput"

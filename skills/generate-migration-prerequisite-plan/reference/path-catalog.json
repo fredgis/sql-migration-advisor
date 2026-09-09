@@ -34,6 +34,9 @@
       "slug": "sql-vm-distributed-ag",
       "title": "SQL Server on Azure VM — Distributed Availability Group",
       "target": "SQL Server on Azure VM",
+      "targetVariants": [
+        "SQL Server on Azure VM"
+      ],
       "method": "Distributed Availability Group",
       "advisorAliases": [
         "Distributed AG",
@@ -65,6 +68,9 @@
       "slug": "sql-vm-always-on-ag",
       "title": "SQL Server on Azure VM — Always On Availability Group",
       "target": "SQL Server on Azure VM",
+      "targetVariants": [
+        "SQL Server on Azure VM"
+      ],
       "method": "Always On Availability Group",
       "advisorAliases": [
         "Always On AG",
@@ -96,6 +102,9 @@
       "slug": "sql-vm-log-shipping",
       "title": "SQL Server on Azure VM — Log Shipping",
       "target": "SQL Server on Azure VM",
+      "targetVariants": [
+        "SQL Server on Azure VM"
+      ],
       "method": "Log shipping",
       "advisorAliases": [
         "Log shipping"
@@ -121,6 +130,9 @@
       "slug": "sql-vm-native-backup-restore",
       "title": "SQL Server on Azure VM — Native Backup/Restore",
       "target": "SQL Server on Azure VM",
+      "targetVariants": [
+        "SQL Server on Azure VM"
+      ],
       "method": "Native backup/restore",
       "advisorAliases": [
         "Native backup/restore"
@@ -147,6 +159,9 @@
       "slug": "sql-vm-standalone-assessment-native-restore",
       "title": "SQL Server on Azure VM — Standalone Assessment then Native Backup/Restore",
       "target": "SQL Server on Azure VM",
+      "targetVariants": [
+        "SQL Server on Azure VM"
+      ],
       "method": "Standalone assessment then Native Backup/Restore",
       "advisorAliases": [
         "Standalone assessment / native backup/restore"
@@ -173,6 +188,9 @@
       "slug": "sql-vm-azure-migrate-replication",
       "title": "SQL Server on Azure VM — Azure Migrate Replication",
       "target": "SQL Server on Azure VM",
+      "targetVariants": [
+        "SQL Server on Azure VM"
+      ],
       "method": "Azure Migrate replication",
       "advisorAliases": [
         "Azure Migrate",
@@ -202,6 +220,9 @@
       "slug": "avs-hcx-vmotion",
       "title": "Azure VMware Solution — VMware HCX / vMotion",
       "target": "Azure VMware Solution",
+      "targetVariants": [
+        "Azure VMware Solution"
+      ],
       "method": "VMware HCX / vMotion",
       "advisorAliases": [
         "VMware HCX / vMotion",
@@ -227,6 +248,9 @@
       "slug": "sql-mi-managed-instance-link",
       "title": "Azure SQL Managed Instance — Managed Instance Link",
       "target": "Azure SQL Managed Instance",
+      "targetVariants": [
+        "Azure SQL Managed Instance"
+      ],
       "method": "Managed Instance Link",
       "advisorAliases": [
         "MI Link",
@@ -257,6 +281,9 @@
       "slug": "sql-mi-log-replay-service",
       "title": "Azure SQL Managed Instance — Log Replay Service",
       "target": "Azure SQL Managed Instance",
+      "targetVariants": [
+        "Azure SQL Managed Instance"
+      ],
       "method": "Log Replay Service",
       "advisorAliases": [
         "LRS",
@@ -286,6 +313,9 @@
       "slug": "sql-mi-native-backup-restore",
       "title": "Azure SQL Managed Instance — Native Backup/Restore",
       "target": "Azure SQL Managed Instance",
+      "targetVariants": [
+        "Azure SQL Managed Instance"
+      ],
       "method": "Native backup/restore",
       "advisorAliases": [
         "Native backup/restore"
@@ -313,6 +343,13 @@
       "slug": "sql-db-bacpac-sqlpackage",
       "title": "Azure SQL Database — BACPAC / SqlPackage",
       "target": "Azure SQL Database / SQL Server on Azure VM / Azure SQL Managed Instance / Azure Arc-enabled SQL Managed Instance / SQL Server in a container",
+      "targetVariants": [
+        "Azure SQL Database",
+        "SQL Server on Azure VM",
+        "Azure SQL Managed Instance",
+        "Azure Arc-enabled SQL Managed Instance",
+        "SQL Server in a container"
+      ],
       "method": "BACPAC / SqlPackage",
       "advisorAliases": [
         "BACPAC/SqlPackage",
@@ -340,6 +377,9 @@
       "slug": "sql-db-modern-dms-offline",
       "title": "Azure SQL Database — Modern DMS Offline",
       "target": "Azure SQL Database",
+      "targetVariants": [
+        "Azure SQL Database"
+      ],
       "method": "Modern DMS offline",
       "advisorAliases": [
         "modern DMS (offline)",
@@ -367,6 +407,14 @@
       "slug": "transactional-replication-managed-targets",
       "title": "SQL MI / SQL DB / Fabric SQL DB — Transactional Replication",
       "target": "Azure SQL Managed Instance / Azure SQL Database / SQL database in Fabric / SQL Server on Azure VM / Azure Arc-enabled SQL Managed Instance / SQL Server in a container",
+      "targetVariants": [
+        "Azure SQL Managed Instance",
+        "Azure SQL Database",
+        "SQL database in Fabric",
+        "SQL Server on Azure VM",
+        "Azure Arc-enabled SQL Managed Instance",
+        "SQL Server in a container"
+      ],
       "method": "Transactional replication",
       "advisorAliases": [
         "Transactional replication"
@@ -394,6 +442,9 @@
       "slug": "sql-db-data-box-seed-delta",
       "title": "Azure SQL Database — Data Box Seed then Delta Synchronization",
       "target": "Azure SQL Database",
+      "targetVariants": [
+        "Azure SQL Database"
+      ],
       "method": "Data Box seed then Delta Synchronization",
       "advisorAliases": [
         "Data Box seed → sync delta",
@@ -424,6 +475,9 @@
       "slug": "sql-db-striim-online-cdc",
       "title": "Azure SQL Database — Striim Online CDC",
       "target": "Azure SQL Database",
+      "targetVariants": [
+        "Azure SQL Database"
+      ],
       "method": "Striim Online CDC",
       "advisorAliases": [
         "STRIIM (online)",
@@ -452,6 +506,9 @@
       "slug": "fabric-migration-assistant",
       "title": "SQL Database in Fabric — Fabric Migration Assistant",
       "target": "SQL database in Fabric",
+      "targetVariants": [
+        "SQL database in Fabric"
+      ],
       "method": "Fabric Migration Assistant",
       "advisorAliases": [
         "Fabric Migration Assistant"
@@ -477,6 +534,9 @@
       "slug": "arc-mi-native-backup-direct",
       "title": "Arc-enabled SQL Managed Instance — Native Backup/Restore Direct",
       "target": "Azure Arc-enabled SQL Managed Instance",
+      "targetVariants": [
+        "Azure Arc-enabled SQL Managed Instance"
+      ],
       "method": "Native Backup/Restore Direct",
       "advisorAliases": [
         "Native backup/restore"
@@ -506,6 +566,9 @@
       "slug": "arc-mi-native-backup-after-endpoint",
       "title": "Arc-enabled SQL Managed Instance — Native Backup/Restore after Endpoint Availability",
       "target": "Azure Arc-enabled SQL Managed Instance",
+      "targetVariants": [
+        "Azure Arc-enabled SQL Managed Instance"
+      ],
       "method": "Native Backup/Restore after Endpoint Availability",
       "advisorAliases": [
         "Native backup/restore after endpoint is available"
@@ -536,6 +599,9 @@
       "slug": "sql-container-mounted-volume-restore",
       "title": "SQL Server Container — Backup/Restore through Mounted Volume",
       "target": "SQL Server in a container",
+      "targetVariants": [
+        "SQL Server in a container"
+      ],
       "method": "Backup/Restore through Mounted Volume",
       "advisorAliases": [
         "Backup/restore via mounted volume"
@@ -561,6 +627,14 @@
       "slug": "bulk-copy-bcp",
       "title": "SQL MI / SQL DB / Fabric SQL DB — bcp",
       "target": "Azure SQL Managed Instance / Azure SQL Database / SQL database in Fabric / SQL Server on Azure VM / Azure Arc-enabled SQL Managed Instance / SQL Server in a container",
+      "targetVariants": [
+        "Azure SQL Managed Instance",
+        "Azure SQL Database",
+        "SQL database in Fabric",
+        "SQL Server on Azure VM",
+        "Azure Arc-enabled SQL Managed Instance",
+        "SQL Server in a container"
+      ],
       "method": "bcp",
       "advisorAliases": [
         "bcp",
@@ -591,6 +665,14 @@
       "slug": "adf-copy-managed-targets",
       "title": "SQL MI / SQL DB / Fabric SQL DB — Data Factory Copy",
       "target": "Azure SQL Managed Instance / Azure SQL Database / SQL database in Fabric / SQL Server on Azure VM / Azure Arc-enabled SQL Managed Instance / SQL Server in a container",
+      "targetVariants": [
+        "Azure SQL Managed Instance",
+        "Azure SQL Database",
+        "SQL database in Fabric",
+        "SQL Server on Azure VM",
+        "Azure Arc-enabled SQL Managed Instance",
+        "SQL Server in a container"
+      ],
       "method": "Data Factory Copy",
       "advisorAliases": [
         "Data Factory Copy",
@@ -619,6 +701,11 @@
       "slug": "smart-bulk-copy",
       "title": "SQL MI / SQL DB — Smart Bulk Copy",
       "target": "Azure SQL Managed Instance / Azure SQL Database / SQL Server on Azure VM",
+      "targetVariants": [
+        "Azure SQL Managed Instance",
+        "Azure SQL Database",
+        "SQL Server on Azure VM"
+      ],
       "method": "Smart Bulk Copy",
       "advisorAliases": [
         "Smart Bulk Copy",
@@ -651,6 +738,9 @@
       "slug": "dms-managed-instance-offline",
       "title": "Azure SQL Managed Instance — Modern DMS Offline",
       "target": "Azure SQL Managed Instance",
+      "targetVariants": [
+        "Azure SQL Managed Instance"
+      ],
       "method": "Modern DMS Offline",
       "advisorAliases": [
         "DMS",
@@ -683,6 +773,9 @@
       "slug": "dms-managed-instance-online",
       "title": "Azure SQL Managed Instance — Modern DMS Online",
       "target": "Azure SQL Managed Instance",
+      "targetVariants": [
+        "Azure SQL Managed Instance"
+      ],
       "method": "Modern DMS Online",
       "advisorAliases": [
         "DMS",
@@ -716,6 +809,9 @@
       "slug": "dms-azure-vm-offline",
       "title": "SQL Server on Azure VM — Modern DMS Offline",
       "target": "SQL Server on Azure VM",
+      "targetVariants": [
+        "SQL Server on Azure VM"
+      ],
       "method": "Modern DMS Offline",
       "advisorAliases": [
         "DMS",
@@ -748,6 +844,9 @@
       "slug": "dms-azure-vm-online",
       "title": "SQL Server on Azure VM — Modern DMS Online",
       "target": "SQL Server on Azure VM",
+      "targetVariants": [
+        "SQL Server on Azure VM"
+      ],
       "method": "Modern DMS Online",
       "advisorAliases": [
         "DMS",
@@ -781,13 +880,18 @@
       "slug": "avs-hosted-sql-platform",
       "title": "Azure VMware Solution — hosted SQL Server platform overlay",
       "target": "Azure VMware Solution",
+      "targetVariants": [
+        "Azure VMware Solution"
+      ],
       "method": "Hosted SQL Server platform overlay",
       "advisorAliases": [
-        "AVS",
-        "Azure VMware Solution"
+        "Hosted SQL Server platform overlay",
+        "AVS platform overlay"
       ],
       "supportStatus": "supported",
       "overlay": true,
+      "attachesToTargetVariant": "Azure VMware Solution",
+      "overlayNote": "Never a selectedMethodPath. This entry describes the platform that hosts SQL Server, not a way of moving data, so it attaches to whichever method path was resolved for an Azure VMware Solution target and appears in appliedOverlays[]. It previously carried AVS and Azure VMware Solution as advisorAliases, which are target names, so a request naming only the target resolved straight to the overlay and produced a readiness plan for a platform nobody migrates to. A target-only request now returns unresolved_path with the method candidates instead.",
       "licensingBoundary": {
         "prerequisite": "P27-003",
         "rule": "VCF licence coverage must span the whole planned period. An existing license-included reservation covers the hosts only until the earlier of its own expiry and 2027-08-30; portable VCF licensing is required from that boundary onward.",
@@ -819,6 +923,12 @@
       "slug": "azure-migrate-assessment",
       "title": "Azure Migrate assessment for SQL Server estates",
       "target": "SQL Server on Azure VM / Azure VMware Solution / Azure SQL Managed Instance / Azure SQL Database",
+      "targetVariants": [
+        "SQL Server on Azure VM",
+        "Azure VMware Solution",
+        "Azure SQL Managed Instance",
+        "Azure SQL Database"
+      ],
       "method": "Azure Migrate assessment",
       "advisorAliases": [
         "Azure Migrate",

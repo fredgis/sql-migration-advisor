@@ -92,7 +92,7 @@ Free text cannot produce `typed_answer` or `verified_evidence`.
 | 1 | The target/method resolves to exactly one of the 28 catalog paths as `selectedMethodPath`, or the output is `unresolved_path` and contains no invented prerequisite plan. **A route may additionally require overlays**, which appear in `appliedOverlays[]` and never replace the method path |
 | 1b | **An AVS-hosted SQL Server carries both**: the method path that moves the data, and `P27` for the platform that hosts it. Emitting only one loses the other, which is what the single-path shape forced — `P27` alone describes a platform nobody migrates to, and the method path alone describes a generic SQL Server target rather than AVS. |
 | 2 | Every prerequisite has a stable ID, applicability statement, requirement type, blocking flag, evidence requirement, official public source and `lastVerified` date. |
-| 3 | `confirmed` rests on a typed fact or verified evidence; free-text confidence language is never enough. |
+| 3 | `confirmed` rests on a typed fact drawn from the declared vocabulary, or on an inherited Advisor fact; free-text confidence language is never enough. This skill makes no network calls, so `confirmed` records a stated fact, not an independently verified one, and the plan must never present it as Azure-side verification. |
 | 4 | Every unanswered or ambiguous hard-gate fact remains `unknown` and appears in `unknowns`. |
 | 5 | A known unmet blocking prerequisite is `missing`, appears in `blockers`, and makes the overall plan `blocked`. |
 | 6 | `not_applicable` is used only when the applicability condition is demonstrably false. |
@@ -105,7 +105,8 @@ Free text cannot produce `typed_answer` or `verified_evidence`.
 | 13 | Every blocking prerequisite is represented in the summary counts. |
 | 14 | `P22` is present only after an explicit, informed user opt-in that names its archived, out-of-support status; when the tooling answer is unknown the output resolves to `P20` (`bcp`) or returns the shortlist, never to `P22`. |
 | 15 | A refusal and a plan never mix: `unresolved_path` carries `unresolvedReason`, `candidatePaths` and `disambiguation` and no plan fields, while any other status carries the plan fields and none of the refusal fields. |
-| 16 | An `advisor_handoff` run carries `inheritedAdvisorFacts`; a handoff without it is a contract failure, not an empty list. |
+| 16 | An `advisor_handoff` run carries `inheritedAdvisorFacts` and `metadata.sourceAdvisor`; a handoff without either is a contract failure, not an empty list. |
+| 17 | `selectedMethodPath.targetVariant` names which target family of the path was selected, and it is one of that path's `targetVariants`. Six paths cover several families under one slash-separated target string, and their prerequisite rows are already conditioned per family, so a plan without this field applies the wrong publisher floors, connectivity requirements and role assignments while looking complete. |
 
 If an invariant fails, expose the invariant and stop before rendering a readiness verdict. Do not
 repair the plan silently.
