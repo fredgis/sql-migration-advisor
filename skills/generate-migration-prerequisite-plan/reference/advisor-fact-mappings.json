@@ -66,23 +66,23 @@
       "advisorField": "mi_link_ports",
       "consumerField": "mi_link_ports_status",
       "conversion": "vocabulary",
-      "note": "The Advisor records what the user said about ports; the consumer records a status. Only an explicit confirmation converts to CONFIRMED. Free text that merely fails to mention a block is not a confirmation.",
+      "note": "The Advisor records what the user said about ports; the consumer records a status. Only an explicit confirmation converts to CONFIRMED. Free text that merely fails to mention a block is not a confirmation. The emitted value is the consumer's own vocabulary: blocked ports are MISSING, which makes the prerequisite a blocker, and anything else is UNKNOWN. This side used to emit MI_LINK_PORTS_CONFIRMED and lowercase unknown, neither of which questions.json accepts, so a confirmed answer became unknown and blocked ports never became a blocker. The emitted value is the consumer's own vocabulary: blocked ports are MISSING, which makes the prerequisite a blocker, and anything else is UNKNOWN. This side used to emit MI_LINK_PORTS_CONFIRMED and lowercase unknown, neither of which questions.json accepts, so a confirmed answer became unknown and blocked ports never became a blocker.",
       "valueMap": {
-        "PORTS_CONFIRMED_OPEN": "MI_LINK_PORTS_CONFIRMED",
-        "PORTS_BLOCKED": "MI_LINK_PORTS_BLOCKED"
+        "PORTS_CONFIRMED_OPEN": "CONFIRMED",
+        "PORTS_BLOCKED": "MISSING"
       },
-      "otherwise": "unknown"
+      "otherwise": "UNKNOWN"
     },
     {
       "advisorField": "blob_https_reachability",
       "consumerField": "blob_https_status",
       "conversion": "vocabulary",
-      "note": "Renamed and re-vocabularised. An unverified upload path is unknown, never confirmed: a real session reported a backup gate as passed with the Blob path untested.",
+      "note": "Renamed and re-vocabularised. An unverified upload path is unknown, never confirmed: a real session reported a backup gate as passed with the Blob path untested. The emitted value is the consumer's own vocabulary: blocked ports are MISSING, which makes the prerequisite a blocker, and anything else is UNKNOWN. This side used to emit MI_LINK_PORTS_CONFIRMED and lowercase unknown, neither of which questions.json accepts, so a confirmed answer became unknown and blocked ports never became a blocker. The emitted value is the consumer's own vocabulary: blocked ports are MISSING, which makes the prerequisite a blocker, and anything else is UNKNOWN. This side used to emit MI_LINK_PORTS_CONFIRMED and lowercase unknown, neither of which questions.json accepts, so a confirmed answer became unknown and blocked ports never became a blocker.",
       "valueMap": {
-        "BLOB_HTTPS_CONFIRMED": "BLOB_HTTPS_CONFIRMED",
-        "BLOB_HTTPS_BLOCKED": "BLOB_HTTPS_BLOCKED"
+        "BLOB_HTTPS_CONFIRMED": "CONFIRMED",
+        "BLOB_HTTPS_BLOCKED": "MISSING"
       },
-      "otherwise": "unknown"
+      "otherwise": "UNKNOWN"
     },
     {
       "advisorField": "size",

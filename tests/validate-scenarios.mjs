@@ -19,6 +19,8 @@ const SUPPORTED = new Set([
   '$schema', '$id', 'title', 'description', '$defs', '$ref',
   'type', 'required', 'additionalProperties', 'properties',
   'enum', 'pattern', 'minLength', 'minItems', 'items',
+  'const', 'maxItems', 'uniqueItems', 'contains', 'minContains', 'maxContains',
+  'allOf', 'anyOf', 'not', 'if', 'then', 'else', 'minimum', 'format', '$comment'
 ]);
 
 function typeOf(value) {
@@ -63,16 +65,47 @@ export function validateGoldenScenarios(schemaPath = SCHEMA, dataPath = DATA) {
     if (s.enum && !s.enum.includes(value)) {
       errors.push(`${at}: ${JSON.stringify(value)} is not one of ${JSON.stringify(s.enum)}`);
     }
+    if ('const' in s && JSON.stringify(s.const) !== JSON.stringify(value)) {
+      errors.push(`${at}: expected the constant ${JSON.stringify(s.const)}, got ${JSON.stringify(value)}`);
+    }
     if (s.pattern && typeof value === 'string' && !new RegExp(s.pattern, 'u').test(value)) {
       errors.push(`${at}: ${JSON.stringify(value)} does not match ${s.pattern}`);
     }
     if (s.minLength != null && typeof value === 'string' && value.length < s.minLength) {
       errors.push(`${at}: shorter than ${s.minLength} characters`);
     }
+    if (s.minimum != null && typeof value === 'number' && value < s.minimum) {
+      errors.push(`${at}: below the minimum of ${s.minimum}`);
+    }
+    if (s.format === 'uri' && typeof value === 'string' && !/^[a-z][a-z0-9+.-]*:/i.test(value)) {
+      errors.push(`${at}: ${JSON.stringify(value)} is not a URI`);
+    }
 
     if (typeOf(value) === 'array') {
       if (s.minItems != null && value.length < s.minItems) {
         errors.push(`${at}: has ${value.length} item(s), needs at least ${s.minItems}`);
+      }
+      if (s.maxItems != null && value.length > s.maxItems) {
+        errors.push(`${at}: has ${value.length} item(s), at most ${s.maxItems} allowed`);
+      }
+      if (s.uniqueItems) {
+        const seen = new Set();
+        for (const item of value) {
+          const key = JSON.stringify(item);
+          if (seen.has(key)) { errors.push(`${at}: repeated item ${key}`); break; }
+          seen.add(key);
+        }
+      }
+      // uniqueItems compares whole entries, so on its own it lets one family appear twice under two
+      // reasons while another is missing. contains with minContains/maxContains is what expresses
+      // "each of these exactly once", and it went unenforced until this validator learned it.
+      if (s.contains) {
+        const matches = value.filter((item) => probe(s.contains, item).length === 0).length;
+        const min = s.minContains == null ? 1 : s.minContains;
+        if (matches < min) errors.push(`${at}: ${matches} item(s) match contains, needs at least ${min}`);
+        if (s.maxContains != null && matches > s.maxContains) {
+          errors.push(`${at}: ${matches} item(s) match contains, at most ${s.maxContains} allowed`);
+        }
       }
       if (s.items) value.forEach((item, i) => check(s.items, item, `${at}[${i}]`));
     }
@@ -90,6 +123,30 @@ export function validateGoldenScenarios(schemaPath = SCHEMA, dataPath = DATA) {
         if (key in value) check(sub, value[key], `${at}.${key}`);
       }
     }
+
+    // Applicators last: they compose the checks above rather than replacing them.
+    for (const branch of s.allOf || []) check(branch, value, at);
+    if (s.anyOf) {
+      const outcomes = s.anyOf.map((branch) => probe(branch, value));
+      if (!outcomes.some((o) => o.length === 0)) {
+        errors.push(`${at}: matches none of the ${s.anyOf.length} accepted shapes (${outcomes.map((o) => o[0]).join(' | ')})`);
+      }
+    }
+    if (s.not && probe(s.not, value).length === 0) {
+      errors.push(`${at}: matches a shape the schema forbids`);
+    }
+    if (s.if) {
+      const taken = probe(s.if, value).length === 0 ? s.then : s.else;
+      if (taken) check(taken, value, at);
+    }
+  };
+
+  // Run a subschema without recording its result: applicators such as anyOf, not and if need to
+  // know whether a branch matches, and a failed probe is a decision rather than an error.
+  const probe = (node, value) => {
+    const mark = errors.length;
+    check(node, value, '');
+    return errors.splice(mark);
   };
 
   // Name each scenario by id rather than index, so a failure points at the entry a

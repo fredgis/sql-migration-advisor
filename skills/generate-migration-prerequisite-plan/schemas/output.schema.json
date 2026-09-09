@@ -118,7 +118,7 @@
         "targetVariant": {
           "type": "string",
           "minLength": 1,
-          "description": "Which target family of the catalog path was actually selected. Six catalog paths cover several families under one slash-separated target string, so the path id alone does not say whether the subscriber is a Managed Instance, a Fabric SQL database or a container. The prerequisite rows for those paths are already written per family (publisher version floors, connectivity, roles, supported features), and without this field nothing feeds those conditions. It must be one of the selected path's targetVariants."
+          "description": "Which target family was selected. Six method paths cover several families under one slash-separated target string, so the path id alone does not say whether the subscriber is a Managed Instance, a Fabric SQL database or a container, and their prerequisite rows are already written per family. It is one of the method path's targetVariants, or of an applied overlay's: an AVS-hosted SQL Server takes its method from a path that names the platform underneath and its target name from P27, so requiring the method path to supply the variant would block the nine AVS routes the coverage map declares."
         }
       },
       "description": "Deprecated alias for selectedMethodPath, emitted for readers written against the single-path shape. New readers use selectedMethodPath and appliedOverlays[]."
@@ -167,6 +167,11 @@
         "blockingUnknown": {
           "type": "integer",
           "minimum": 0
+        },
+        "reported": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Prerequisites satisfied by a stated fact the skill cannot verify. Counted separately so a readiness verdict never presents them as confirmed."
         }
       }
     },
@@ -218,10 +223,12 @@
           "status": {
             "enum": [
               "confirmed",
+              "reported",
               "missing",
               "unknown",
               "not_applicable"
-            ]
+            ],
+            "description": "confirmed is backed by an evidence record; reported is a typed answer the skill has no way to verify, because it makes no network calls; missing is a typed answer establishing the requirement is unmet; unknown is not established; not_applicable means the applicability condition is demonstrably false. reported was added because a readiness plan is read as a go/no-go artefact, and labelling a user assertion confirmed lends it an authority the source does not earn. It counts as neither confirmed nor missing in the summary."
           },
           "blocking": {
             "type": "boolean"
@@ -250,14 +257,43 @@
             "minItems": 1,
             "items": {
               "type": "string",
-              "format": "uri"
+              "format": "uri",
+              "pattern": "^https://(learn\\.microsoft\\.com|azure\\.microsoft\\.com|(www\\.)?github\\.com|(www\\.|developer\\.)?striim\\.com)/",
+              "description": "An official public source. The host is constrained rather than left to format: uri, which accepted any public page and let a fabricated prerequisite cite anything at all. Microsoft domains carry the product documentation; github.com carries the archived Smart Bulk Copy sample that P22 documents as a community sample, and striim.com the third-party method P15 documents as third-party. Both are labelled as such in the plan, never as Azure services."
             }
           },
           "lastVerified": {
             "type": "string",
             "format": "date"
           }
-        }
+        },
+        "allOf": [
+          {
+            "$comment": "Invariant 19: evidence-gated prerequisites need an evidence record before confirmed.",
+            "if": {
+              "required": [
+                "status",
+                "evidenceRequired"
+              ],
+              "properties": {
+                "status": {
+                  "const": "confirmed"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "acceptedEvidence"
+              ],
+              "properties": {
+                "acceptedEvidence": {
+                  "type": "array",
+                  "minItems": 1
+                }
+              }
+            }
+          }
+        ]
       }
     },
     "blockers": {
@@ -432,7 +468,7 @@
         "targetVariant": {
           "type": "string",
           "minLength": 1,
-          "description": "Which target family of the catalog path was actually selected. Six catalog paths cover several families under one slash-separated target string, so the path id alone does not say whether the subscriber is a Managed Instance, a Fabric SQL database or a container. The prerequisite rows for those paths are already written per family (publisher version floors, connectivity, roles, supported features), and without this field nothing feeds those conditions. It must be one of the selected path's targetVariants."
+          "description": "Which target family was selected. Six method paths cover several families under one slash-separated target string, so the path id alone does not say whether the subscriber is a Managed Instance, a Fabric SQL database or a container, and their prerequisite rows are already written per family. It is one of the method path's targetVariants, or of an applied overlay's: an AVS-hosted SQL Server takes its method from a path that names the platform underneath and its target name from P27, so requiring the method path to supply the variant would block the nine AVS routes the coverage map declares."
         }
       },
       "description": "The catalog path that moves the data. A route may also require overlays, which belong in appliedOverlays[] and never replace this."

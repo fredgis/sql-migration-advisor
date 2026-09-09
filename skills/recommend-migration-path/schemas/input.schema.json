@@ -4,48 +4,162 @@
   "title": "Normalized migration profile",
   "description": "The profile recommend-migration-path evaluates, after the interview has converted labels and prose into canonical IDs. reference/input-contract.md remains the prose authority; this file is the machine-checkable form of its section 4 canonical fields. It types the shape, not the full option vocabulary: the option IDs are already guarded by the interview-conforms-to-contract gate, and restating several hundred of them here would create a second copy to drift. Written in the JSON Schema subset implemented by tests/validate-scenarios.mjs.",
   "type": "object",
-  "required": ["intent", "source_location", "source_version", "management_model", "feature_dependencies", "downtime"],
+  "required": [
+    "intent",
+    "source_location",
+    "source_version",
+    "management_model",
+    "feature_dependencies",
+    "downtime"
+  ],
   "additionalProperties": false,
-
   "properties": {
     "scope": {
-      "enum": ["SINGLE_DB", "FEW_DATABASES", "LARGE_ESTATE", "UNKNOWN"],
+      "enum": [
+        "SINGLE_DB",
+        "FEW_DATABASES",
+        "LARGE_ESTATE",
+        "UNKNOWN"
+      ],
       "description": "Drives the estate-discovery branch. When UNKNOWN the profile is treated as a single one and the estate branch does not fire."
     },
-    "source_location": { "$ref": "#/$defs/answer" },
-    "source_version": { "$ref": "#/$defs/answer" },
-    "intent": { "$ref": "#/$defs/answer" },
-    "driver": { "$ref": "#/$defs/answer" },
-    "management_model": { "$ref": "#/$defs/answer" },
-    "kubernetes_model": { "$ref": "#/$defs/answer" },
-    "source_os": { "$ref": "#/$defs/answer" },
-    "source_edition": { "$ref": "#/$defs/answer" },
-    "clr_permission_set": { "$ref": "#/$defs/answer" },
-    "tde_status": { "$ref": "#/$defs/answer" },
-    "source_permissions": { "$ref": "#/$defs/answer" },
-    "authentication": { "$ref": "#/$defs/answer" },
-
+    "source_location": {
+      "enum": [
+        "ON_PREM",
+        "AZURE_VM",
+        "AWS_EC2",
+        "AWS_RDS",
+        "GCP_COMPUTE",
+        "GCP_CLOUD_SQL",
+        "NONE_CONFIRMED",
+        "UNKNOWN",
+        "NOT_APPLICABLE"
+      ],
+      "description": "Constrained to the IDs section 3 of reference/input-contract.md tabulates for this field, plus the three absence markers. It used to be a bare non-empty string, so a failed normalization such as \"SQL Server 2037\" or \"fully managed\" validated and reached the rules layer looking like a canonical profile. The enum is generated from the contract table rather than copied, and canonical-ids-match-the-contract fails the build if the two drift."
+    },
+    "source_version": {
+      "enum": [
+        "SQL2008",
+        "SQL2012",
+        "SQL2014",
+        "SQL2016",
+        "SQL2017_2019",
+        "SQL2022",
+        "SQL2025",
+        "NONE_CONFIRMED",
+        "UNKNOWN",
+        "NOT_APPLICABLE"
+      ],
+      "description": "Constrained to the IDs section 3 of reference/input-contract.md tabulates for this field, plus the three absence markers. It used to be a bare non-empty string, so a failed normalization such as \"SQL Server 2037\" or \"fully managed\" validated and reached the rules layer looking like a canonical profile. The enum is generated from the contract table rather than copied, and canonical-ids-match-the-contract fails the build if the two drift."
+    },
+    "intent": {
+      "enum": [
+        "MIGRATE_NOW",
+        "MODERNIZE_IN_PLACE",
+        "ASSESSMENT_ONLY",
+        "REHOST_FIRST",
+        "NONE_CONFIRMED",
+        "UNKNOWN",
+        "NOT_APPLICABLE"
+      ],
+      "description": "Constrained to the IDs section 3 of reference/input-contract.md tabulates for this field, plus the three absence markers. It used to be a bare non-empty string, so a failed normalization such as \"SQL Server 2037\" or \"fully managed\" validated and reached the rules layer looking like a canonical profile. The enum is generated from the contract table rather than copied, and canonical-ids-match-the-contract fails the build if the two drift."
+    },
+    "driver": {
+      "enum": [
+        "EOS_ESU",
+        "COST",
+        "APP_MODERNIZATION",
+        "DATACENTER_EXIT",
+        "FABRIC_ANALYTICS",
+        "SOVEREIGNTY_EDGE",
+        "NONE_CONFIRMED",
+        "UNKNOWN",
+        "NOT_APPLICABLE"
+      ],
+      "description": "Constrained to the IDs section 3 of reference/input-contract.md tabulates for this field, plus the three absence markers. It used to be a bare non-empty string, so a failed normalization such as \"SQL Server 2037\" or \"fully managed\" validated and reached the rules layer looking like a canonical profile. The enum is generated from the contract table rather than copied, and canonical-ids-match-the-contract fails the build if the two drift."
+    },
+    "management_model": {
+      "enum": [
+        "MANAGED_PAAS",
+        "OS_CONTROL",
+        "KUBERNETES",
+        "NONE_CONFIRMED",
+        "UNKNOWN",
+        "NOT_APPLICABLE"
+      ],
+      "description": "Constrained to the IDs section 3 of reference/input-contract.md tabulates for this field, plus the three absence markers. It used to be a bare non-empty string, so a failed normalization such as \"SQL Server 2037\" or \"fully managed\" validated and reached the rules layer looking like a canonical profile. The enum is generated from the contract table rather than copied, and canonical-ids-match-the-contract fails the build if the two drift."
+    },
+    "kubernetes_model": {
+      "enum": [
+        "ARC_MANAGED_ENGINE",
+        "DIY_CONTAINER",
+        "NONE_CONFIRMED",
+        "UNKNOWN",
+        "NOT_APPLICABLE"
+      ],
+      "description": "Constrained to the IDs section 3 of reference/input-contract.md tabulates for this field, plus the three absence markers. It used to be a bare non-empty string, so a failed normalization such as \"SQL Server 2037\" or \"fully managed\" validated and reached the rules layer looking like a canonical profile. The enum is generated from the contract table rather than copied, and canonical-ids-match-the-contract fails the build if the two drift."
+    },
+    "source_os": {
+      "$ref": "#/$defs/answer"
+    },
+    "source_edition": {
+      "$ref": "#/$defs/answer"
+    },
+    "clr_permission_set": {
+      "$ref": "#/$defs/answer"
+    },
+    "tde_status": {
+      "$ref": "#/$defs/answer"
+    },
+    "source_permissions": {
+      "$ref": "#/$defs/answer"
+    },
+    "authentication": {
+      "$ref": "#/$defs/answer"
+    },
     "feature_dependencies": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 },
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
       "description": "A list, not prose, so a rule can read a subtype such as PolyBase to an external RDBMS directly. An empty list is not the same as NONE_CONFIRMED: use the marker to record that the user checked."
     },
-
     "size": {
-      "enum": ["UNDER_150_GB", "FROM_150_GB_TO_4_TB", "FROM_4_TB_TO_128_TB", "OVER_128_TB", "UNKNOWN"],
+      "enum": [
+        "UNDER_150_GB",
+        "FROM_150_GB_TO_4_TB",
+        "FROM_4_TB_TO_128_TB",
+        "OVER_128_TB",
+        "UNKNOWN"
+      ],
       "description": "Feeds the Hyperscale ceiling, the seeding strategy and tier selection. UNKNOWN holds the tier at unknown_requires_assessment rather than defaulting it."
     },
     "downtime": {
-      "enum": ["NEAR_ZERO", "MINIMAL", "OFFLINE", "UNKNOWN"],
+      "enum": [
+        "NEAR_ZERO",
+        "MINIMAL",
+        "OFFLINE",
+        "UNKNOWN"
+      ],
       "description": "The tolerance the business stated. Never inferred backwards from the method that was chosen."
     },
     "compliance": {
-      "enum": ["STANDARD_COMMERCIAL", "EU_DATA_BOUNDARY", "GOVERNMENT_SOVEREIGN", "EDGE_AIR_GAPPED", "UNKNOWN"],
+      "enum": [
+        "STANDARD_COMMERCIAL",
+        "EU_DATA_BOUNDARY",
+        "GOVERNMENT_SOVEREIGN",
+        "EDGE_AIR_GAPPED",
+        "UNKNOWN"
+      ],
       "description": "Regional and sovereignty constraints. When UNKNOWN, sovereignty-restricted targets are not ranked first."
     },
-
-    "network_bandwidth": { "$ref": "#/$defs/answer" },
-    "mi_link_ports": { "$ref": "#/$defs/answer" },
+    "network_bandwidth": {
+      "$ref": "#/$defs/answer"
+    },
+    "mi_link_ports": {
+      "$ref": "#/$defs/answer"
+    },
     "blob_https_reachability": {
       "$ref": "#/$defs/answer",
       "description": "Gates every backup-based or BACPAC path to Azure Blob through BACKUP-BLOB-PATH. When this is unknown the method gate cannot report passed; it becomes unknown_requires_assessment."
@@ -54,17 +168,28 @@
       "$ref": "#/$defs/answer",
       "description": "Legacy, superseded by network_bandwidth, mi_link_ports and blob_https_reachability. The mirror reads it as their union so scenarios written before the split still run. Not to be collected by a new interview."
     },
-
-    "rpo": { "$ref": "#/$defs/freeText" },
-    "rto": { "$ref": "#/$defs/freeText" },
-    "target_region": { "$ref": "#/$defs/freeText" },
+    "rpo": {
+      "$ref": "#/$defs/freeText"
+    },
+    "rto": {
+      "$ref": "#/$defs/freeText"
+    },
+    "target_region": {
+      "$ref": "#/$defs/freeText"
+    },
     "performance": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "description": "null means the question was asked and left unanswered, which is not the same as absent. When unresolved the tier becomes unknown_requires_assessment rather than defaulting to General Purpose."
     },
-    "tenant_count": { "$ref": "#/$defs/freeText" },
-    "fabric_constraints": { "$ref": "#/$defs/freeText" },
-
+    "tenant_count": {
+      "$ref": "#/$defs/freeText"
+    },
+    "fabric_constraints": {
+      "$ref": "#/$defs/freeText"
+    },
     "database_count": {
       "type": "integer",
       "description": "Read against MI Link capacity: 100 links on General Purpose and Business Critical, 500 on Next-gen General Purpose."
@@ -78,32 +203,89 @@
       "minLength": 1,
       "description": "Never treated as recent when absent. The Arc wizard batch limit is 10 per batch from 1.1.3348.364 and 1 otherwise, so an unknown version yields unknown_requires_assessment."
     },
-
-    "evidence": { "$ref": "#/$defs/evidence" }
+    "evidence": {
+      "$ref": "#/$defs/evidence"
+    },
+    "feature_dependencies_state": {
+      "enum": [
+        "ANSWERED",
+        "NONE_CONFIRMED",
+        "UNKNOWN",
+        "NOT_APPLICABLE"
+      ],
+      "description": "Whether the dependency question was answered, and how. feature_dependencies is a list, and a list cannot say why it is empty: NONE_CONFIRMED means the user checked and found none, which clears a PaaS blocker, while UNKNOWN means blank, declined or unrecognised, which must hold the candidate at unknown_requires_assessment. The distinction was documented in the description of the list and enforced nowhere, so an unanswered question and a confirmed absence validated identically. ANSWERED means the list carries at least one dependency."
+    }
   },
-
   "$defs": {
     "answer": {
       "type": "string",
       "minLength": 1,
       "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
     },
-
     "freeText": {
       "type": "string",
       "description": "Recorded as written, never converted into a gate result. Free prose is context, not evidence."
     },
-
     "evidence": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "dependenciesToolConfirmed": { "type": "boolean" },
-        "performanceMeasured": { "type": "boolean" },
-        "regionAvailabilityConfirmed": { "type": "boolean" },
-        "architectSignedOff": { "type": "boolean" }
+        "dependenciesToolConfirmed": {
+          "type": "boolean"
+        },
+        "performanceMeasured": {
+          "type": "boolean"
+        },
+        "regionAvailabilityConfirmed": {
+          "type": "boolean"
+        },
+        "architectSignedOff": {
+          "type": "boolean"
+        }
       },
       "description": "Four self-reported booleans. They are recorded as claims to verify elsewhere and have no effect on the recommendation, because this skill reads no artefact. They once promoted a recommendation to validated and high, which turned an unverified statement into an assurance; that path no longer exists."
     }
-  }
+  },
+  "allOf": [
+    {
+      "$comment": "The state and the list cannot contradict each other.",
+      "if": {
+        "required": [
+          "feature_dependencies_state"
+        ],
+        "properties": {
+          "feature_dependencies_state": {
+            "const": "ANSWERED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "feature_dependencies": {
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "$comment": "A confirmed absence is an empty list, never a populated one.",
+      "if": {
+        "required": [
+          "feature_dependencies_state"
+        ],
+        "properties": {
+          "feature_dependencies_state": {
+            "const": "NONE_CONFIRMED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "feature_dependencies": {
+            "maxItems": 0
+          }
+        }
+      }
+    }
+  ]
 }

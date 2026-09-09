@@ -10,7 +10,7 @@ is available on request. Both formats must represent exactly the same state.
 
 | Scope | Allowed values |
 | --- | --- |
-| Individual prerequisite | `confirmed` · `missing` · `unknown` · `not_applicable` |
+| Individual prerequisite | `confirmed` · `reported` · `missing` · `unknown` · `not_applicable` |
 | Overall plan | `ready` · `ready_with_conditions` · `blocked` · `unknown_requires_assessment` |
 | Requirement type | `required` · `conditional` · `recommended` |
 | Evidence status | `reported` · `verified` |
@@ -38,7 +38,7 @@ metadata
   language
   sourceAdvisor                  present only in advisor_handoff mode
 selectedMethodPath
-  id, title, target, method, tier, supportStatus
+  id, title, target, targetVariant, method, tier, supportStatus
 appliedOverlays[]                one entry per overlay the route also requires
   id, title, role, why
 selectedPath                     deprecated alias for selectedMethodPath, emitted for readers
@@ -106,7 +106,9 @@ Free text cannot produce `typed_answer` or `verified_evidence`.
 | 14 | `P22` is present only after an explicit, informed user opt-in that names its archived, out-of-support status; when the tooling answer is unknown the output resolves to `P20` (`bcp`) or returns the shortlist, never to `P22`. |
 | 15 | A refusal and a plan never mix: `unresolved_path` carries `unresolvedReason`, `candidatePaths` and `disambiguation` and no plan fields, while any other status carries the plan fields and none of the refusal fields. |
 | 16 | An `advisor_handoff` run carries `inheritedAdvisorFacts` and `metadata.sourceAdvisor`; a handoff without either is a contract failure, not an empty list. |
-| 17 | `selectedMethodPath.targetVariant` names which target family of the path was selected, and it is one of that path's `targetVariants`. Six paths cover several families under one slash-separated target string, and their prerequisite rows are already conditioned per family, so a plan without this field applies the wrong publisher floors, connectivity requirements and role assignments while looking complete. |
+| 17 | `selectedMethodPath.targetVariant` names which target family was selected. It is one of the method path's `targetVariants`, **or** of an applied overlay's, because an AVS-hosted SQL Server takes its data-movement method from a path that names the underlying platform and its target name from `P27`. When the variant comes from an overlay, that overlay is in `appliedOverlays[]`. Six method paths cover several families under one slash-separated target string, and their prerequisite rows are already conditioned per family, so a plan without this field applies the wrong publisher floors, connectivity requirements and role assignments while looking complete. |
+| 18 | Every `prerequisites[].id` exists in the bundled prerequisite knowledge base, and every `officialSources` entry is one of the documented hosts. The ID pattern admits `P10-999` and a generic URI admits any public page, so a fabricated row with a plausible citation satisfied the shape while inventing a requirement. Membership is the check, not the shape. |
+| 19 | A prerequisite whose `evidenceRequired` is set cannot be `confirmed` without a matching `acceptedEvidence` entry. A typed answer alone moves it to `reported`, which counts as neither confirmed nor missing in the readiness summary. `confirmed` is reserved for a requirement backed by an evidence record, because a readiness plan is read as a go/no-go artefact and its labels carry more authority than its caveats. |
 
 If an invariant fails, expose the invariant and stop before rendering a readiness verdict. Do not
 repair the plan silently.

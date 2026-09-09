@@ -39,8 +39,8 @@ validates, and it is the only shape the Advisor emits:
 
 A second shape is still accepted for the regression mirror, which reports flat fields:
 `primary_target`, `tier`, `method`, `targetAvailabilityDuringSync`,
-`businessCutoverDowntime`, `recommendationStatus`, `confidence`, `unknowns`, `hardBlockers` and
-`evidenceRequired`.
+`businessCutoverDowntime`, `controlPlane`, `recommendationStatus`, `confidence`, `unknowns`,
+`hardBlockers` and `evidenceRequired`.
 
 **`primary_target` is the only accepted spelling.** This page also advertised `primaryTarget`
 while the schema defined and required the snake_case form alone, so a producer following the
@@ -55,8 +55,11 @@ the fields underneath it, and say that the shape was out of date rather than fai
 **`controlPlane` is a prerequisite selector, not a label.** `azure-arc` pulls in the Arc extension,
 identity and batch requirements and changes which source-version matrix governs the method —
 standalone Log Replay Service is documented for SQL Server 2008-2022 while the Arc path lists 2025.
-Carry it into the plan; when it is absent, treat the route as `standalone` and say so rather than
-guessing.
+It is required by both accepted shapes, so a handoff cannot arrive without one. This page used to
+say that an absent value should be read as `standalone`, which is the defect it was written to
+prevent: a route orchestrated by Arc would have been planned as a standalone migration, missing the
+extension, identity and batch prerequisites. There is no default. An input with no `controlPlane`
+is a contract failure and is reported as one.
 
 **`methodCandidates[]` is the list of methods the Advisor weighed.** When the user prefers a
 candidate marked `available` over the recommended one, resolve that candidate's

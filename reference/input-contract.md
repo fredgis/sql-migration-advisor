@@ -179,6 +179,7 @@ Three questions ask whether something exists before asking what it is, so that *
 | `driver` | ID | 6 driver IDs | Fabric branch, AVS branch, ranking preference | No driver-specific branch fires; ranking falls back to compatibility |
 | `management_model` | ID | 3 model IDs | PaaS vs IaaS vs Kubernetes family | Blocks the family split; return a shortlist |
 | `feature_dependencies` | list | See §5 | Phase A eligibility for SQL MI and SQL DB | SQL MI and SQL DB held at `unknown_requires_assessment` |
+| `feature_dependencies_state` | ID | `ANSWERED` · `NONE_CONFIRMED` · `UNKNOWN` · `NOT_APPLICABLE` | Says why the list is empty, which the list itself cannot | Treated as `UNKNOWN`: an empty list without a state is not a confirmed absence |
 | `size` | ID | `UNDER_150_GB` · `FROM_150_GB_TO_4_TB` · `FROM_4_TB_TO_128_TB` · `OVER_128_TB` | Hyperscale ceiling, seeding strategy, tier selection | Tier held at `unknown_requires_assessment` |
 | `downtime` | ID | `NEAR_ZERO` · `MINIMAL` · `OFFLINE` | Method ranking and the cutover class | `businessCutoverDowntime` becomes `unknown_requires_assessment`; never inferred from the chosen method |
 | `network_bandwidth` | ID | See §6 | Seeding strategy, Data Box | Seeding strategy not asserted |

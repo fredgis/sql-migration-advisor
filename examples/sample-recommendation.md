@@ -48,11 +48,11 @@ A worked example showing the two-tier interview, preliminary recommendation card
 | Azure SQL Managed Instance | eligible_with_remediation | Fits SQL Agent, cross-DB, linked servers; requires TDE cert, login, SSIS remediation |
 | Azure SQL Database | unsupported | Linked servers, cross-DB use, and SQL Agent dependency would require significant refactor |
 | SQL Server on Azure VM | eligible | Maximum compatibility, but higher operational burden than requested |
-| Azure VMware Solution | unsupported | Not a VMware data-center-exit requirement |
-| Arc-enabled SQL MI | unsupported | Kubernetes/edge not requested |
-| SQL Server container | unsupported | DIY operations conflicts with managed PaaS preference |
+| Azure VMware Solution | excluded_by_preference | No VMware-continuity requirement was stated. Technically compatible, not selected |
+| Arc-enabled SQL MI | excluded_by_preference | No Kubernetes, edge or multi-cloud operating model was selected |
+| SQL Server container | excluded_by_preference | Customer-operated patching, backups and HA conflict with the managed-PaaS preference |
 | SQL database in Fabric | unsupported | Production OLTP lift-and-shift with instance features is outside this preview fit |
-| Arc in-place | eligible alternative control plane | Useful for ESU/assessment while preparing the Azure move |
+| Arc in-place | excluded_by_preference | Useful for ESU cover while the move is prepared, but the stated intent is to migrate now |
 
 ## Phase B ranking summary
 
@@ -62,7 +62,7 @@ SQL MI ranks first because it preserves instance-level compatibility with much l
 
 > **Preliminary recommendation — `Finance DB group (3 DBs)`**
 > **Azure SQL Managed Instance — General Purpose** via **Log Replay Service** · status **provisional** · confidence **medium**
-> KB **v2.4** · commit **abc1234** · fetched **2026-07-27T10:45:00Z**
+> KB **v3.5** (bundled, same commit as the skill) · rules **v3.5**
 
 SQL MI is the recommended assessment path because the workload needs SQL Agent, cross-database queries, and linked servers, while the team wants managed PaaS; SQL Server 2014 and blocked MI Link ports 5022/11000–11999 make MI Link unavailable, so LRS is the practical online method with planned cutover downtime.
 
@@ -113,100 +113,156 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
 
 ```json
 {
-  "profile": {
-    "source": {
-      "location": "on-prem",
-      "version": "SQL Server 2014",
-      "edition": "Enterprise",
-      "os": "Windows Server 2016",
-      "compatibilityLevel": 120,
-      "haTopology": "none; log backups every 15 minutes"
-    },
-    "workload": {
-      "scope": "3 finance databases",
-      "largestDatabaseGb": 1229,
-      "peakLogGeneration": "20 GB/hour",
-      "tierDrivers": ["moderate latency", "moderate IOPS", "steady usage"]
-    },
-    "dependencies": {
-      "sqlAgent": true,
-      "crossDatabaseQueries": true,
-      "linkedServers": true,
-      "filestream": false,
-      "polybaseKind": null,
-      "dtcKind": null,
-      "sqlClrPermissionSet": "none",
-      "ssis": true
-    },
-    "businessContinuity": {
-      "downtimeTolerance": "minimal",
-      "rpo": "15 minutes",
-      "rto": "4 hours",
-      "rollbackPlan": "keep source read-only during rollback window"
-    },
-    "security": {
-      "tde": true,
-      "authentication": ["Windows", "SQL"],
-      "sovereignty": "standard commercial"
-    },
-    "network": {
-      "expressRoute": true,
-      "miLinkPort5022": "blocked",
-      "miLinkPorts11000To11999": "blocked",
-      "port1433": "open",
-      "port443": "open",
-      "adReachableFromAzure": true
-    },
-    "commercial": {
-      "softwareAssurance": true,
-      "ahbEligible": true,
-      "esuViaArcDuringProject": true
-    }
-  },
-  "recommendation": {
+  "metadata": {
+    "knowledgeBaseVersion": "v3.5",
+    "decisionRulesVersion": "v3.5",
+    "sourceCommit": "bundled",
+    "evaluatedAt": "2026-09-09T18:20:00Z",
     "recommendationStatus": "provisional",
-    "primary": {
-      "target": "Azure SQL Managed Instance",
-      "tier": "General Purpose",
+    "confidence": "medium"
+  },
+  "normalizedProfile": {
+    "source_version": "SQL_SERVER_2014",
+    "management_model": "MANAGED_PAAS",
+    "downtime": "MINIMAL",
+    "feature_dependencies": {
+      "state": "ANSWERED",
+      "items": [
+        "SQL_AGENT",
+        "CROSS_DB_QUERY",
+        "LINKED_SERVERS"
+      ]
+    },
+    "mi_link_ports": "PORTS_BLOCKED"
+  },
+  "eligibilityTrace": [
+    {
+      "target": "sql_vm",
+      "status": "eligible",
+      "ruleId": "MANAGEMENT-MODEL",
+      "reason": "Maximum compatibility, kept as the alternative; carries the operational burden the customer asked to avoid."
+    },
+    {
+      "target": "avs",
+      "status": "excluded_by_preference",
+      "ruleId": "AVS-DRIVER",
+      "reason": "No VMware-continuity requirement was stated, so the platform was not selected. Technically compatible."
+    },
+    {
+      "target": "sql_mi",
+      "status": "eligible_with_remediation",
+      "ruleId": "MANAGEMENT-MODEL",
+      "reason": "SQL Agent, cross-database queries and linked servers fit the instance surface; TDE certificate, logins and SSIS packages need remediation first."
+    },
+    {
+      "target": "sql_db",
+      "status": "unsupported",
+      "ruleId": "DTC-TOPOLOGY",
+      "reason": "Linked servers, cross-database use and SQL Agent would all require refactoring the application."
+    },
+    {
+      "target": "fabric_sql_db",
+      "status": "unsupported",
+      "ruleId": "FABRIC-FIT",
+      "reason": "A production OLTP estate with instance-level features is outside the target surface."
+    },
+    {
+      "target": "arc_sql_mi",
+      "status": "excluded_by_preference",
+      "ruleId": "MANAGEMENT-MODEL",
+      "reason": "No Kubernetes, edge or multi-cloud operating model was selected."
+    },
+    {
+      "target": "container",
+      "status": "excluded_by_preference",
+      "ruleId": "MANAGEMENT-MODEL",
+      "reason": "Customer-operated patching, backups and HA conflict with the stated managed-PaaS preference."
+    },
+    {
+      "target": "arc_in_place",
+      "status": "excluded_by_preference",
+      "ruleId": "ARC-IN-PLACE",
+      "reason": "Useful for ESU cover while the move is prepared, but the stated intent is to migrate now."
+    }
+  ],
+  "recommendation": {
+    "target": "Azure SQL Managed Instance",
+    "tier": "General Purpose",
+    "method": "Log Replay Service",
+    "targetAvailabilityDuringSync": "unavailable",
+    "businessCutoverDowntime": "minutes",
+    "controlPlane": "ssms-migration-component"
+  },
+  "alternative": {
+    "target": "SQL Server on Azure VM",
+    "method": "Native backup/restore",
+    "condition": "VM-only dependencies or measured I/O beyond the selected Managed Instance tier are found during assessment."
+  },
+  "methodCandidates": [
+    {
       "method": "Log Replay Service",
-      "targetAvailabilityDuringSync": "unavailable",
-      "businessCutoverDowntime": "minutes on General Purpose with a small final backup; validate in rehearsal",
-      "controlPlane": "SSMS 22 Migration Component"
+      "role": "primary",
+      "status": "available",
+      "reason": "Source is SQL Server 2014, inside the documented 2008-2022 range, and the migration fits the 30-day window.",
+      "selected": true
     },
-    "alternative": {
-      "target": "SQL Server on Azure VM",
-      "method": "native backup/restore or log shipping",
-      "winsIf": "VM-only dependencies or unsuitable MI performance requirements are discovered"
+    {
+      "method": "MI Link",
+      "role": "primary",
+      "status": "unavailable",
+      "reason": "Ports 5022 and 11000-11999 are blocked, and SQL Server 2014 is below the 2016 floor."
     },
-    "confidence": "medium",
-    "assumptions": [
-      "No FILESTREAM/FileTable, heterogeneous DTC, external RDBMS PolyBase connector, or SQL CLR dependency",
-      "Linked servers can be recreated on SQL MI",
-      "Region feature availability is confirmed before deployment"
-    ],
-    "unknowns": [
-      "Tool-confirmed dependency inventory",
-      "Measured peak IOPS, log-write latency, and LRS cutover rehearsal",
-      "Region capacity and final network throughput"
-    ],
-    "hardBlockers": [
-      "MI Link unavailable because source version is 2014 and required ports 5022 plus 11000–11999 are blocked"
-    ],
-    "evidenceRequired": [
-      "SSMS 22 Migration Component assessment",
-      "Dependency discovery for linked servers, jobs, and SSIS",
-      "Test restore with TDE certificate installed first",
-      "Extended Events capture, RML Utilities or OStress replay, Query Store and DMV analysis"
-    ],
-    "evidence": [
-      "Tier 1 and Tier 2 interview answers",
-      "SQL migration knowledge base v2.4"
+    {
+      "method": "Native backup/restore",
+      "role": "primary",
+      "status": "available",
+      "reason": "Supported, but needs a full offline restore window the customer ruled out."
+    },
+    {
+      "method": "Azure DMS online",
+      "role": "primary",
+      "status": "unknown_requires_assessment",
+      "reason": "Recovery model and log-backup chain were not established."
+    },
+    {
+      "method": "Transactional replication",
+      "role": "secondary",
+      "status": "unknown_requires_assessment",
+      "reason": "Only suitable for a subset of tables with qualifying primary keys."
+    }
+  ],
+  "methodGateTrace": {
+    "method": "Log Replay Service",
+    "result": "passed",
+    "unverified": [
+      "Blob upload path"
     ]
   },
-  "knowledgeBase": {
-    "version": "v2.4",
-    "commit": "abc1234",
-    "verifiedAt": "2026-07-27T10:45:00Z"
-  }
+  "blockers": [
+    "MI Link is unavailable: ports 5022 and 11000-11999 are blocked and the source is below the 2016 floor."
+  ],
+  "unknowns": [
+    "Measured peak IOPS and log-write latency",
+    "Region capacity for the selected tier",
+    "Blob upload path for the staged backups"
+  ],
+  "assumptions": [
+    "No FILESTREAM, heterogeneous DTC, PolyBase to an external RDBMS or SQL CLR dependency",
+    "Linked servers can be recreated on Managed Instance"
+  ],
+  "evidenceRequired": [
+    "SSMS 22 Migration Component assessment",
+    "Dependency discovery for linked servers, jobs and SSIS",
+    "Test restore with the TDE certificate installed first"
+  ],
+  "nextActions": [
+    "Run the assessment",
+    "Confirm the Blob upload path",
+    "Rehearse the cutover against the stated RPO and RTO"
+  ],
+  "evidenceLinks": [
+    "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate"
+  ],
+  "largestRisk": "An assumed General Purpose tier misses the measured I/O and latency requirement; resolve it with a workload replay and Query Store analysis before provisioning."
 }
 ```

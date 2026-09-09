@@ -256,6 +256,7 @@ const TARGET_ALIASES = {
   'SQL container': 'SQL Server in a container'
 };
 const catalogTargetById = new Map(catalog.paths.map(entry => [entry.id, entry.target]));
+const catalogVariantsById = new Map(catalog.paths.map(entry => [entry.id, entry.targetVariants || []]));
 for (const entry of coverage.dispositions) {
   if (entry.status !== 'path') continue;
   const expectedTarget = TARGET_ALIASES[entry.target];
@@ -266,6 +267,17 @@ for (const entry of coverage.dispositions) {
     `coverage-target-named-${entry.method}-${entry.target}`,
     covered,
     `none of ${JSON.stringify(entry.paths)} names "${expectedTarget}" (the catalog form of coverage target "${entry.target}") in its target field`
+  );
+  // Third review pass on microsoft/sql-migration-agent#27: invariant 17 requires the plan to name
+  // the selected family in targetVariant, and targetVariants was derived from each path's own
+  // target string. For AVS that string lives on the overlay, not on the method path, so nine
+  // documented AVS routes could satisfy neither the invariant nor the coverage map. The invariant
+  // reads the union of the method path and its overlays, and so does this check.
+  const variantUnion = new Set((entry.paths || []).flatMap(id => catalogVariantsById.get(id) || []));
+  check(
+    `coverage-target-variant-available-${entry.method}-${entry.target}`,
+    variantUnion.has(expectedTarget),
+    `no path in ${JSON.stringify(entry.paths)} offers "${expectedTarget}" as a targetVariant, so a plan for this route cannot satisfy invariant 17`
   );
 }
 
@@ -317,10 +329,16 @@ check('input-schema-mode-non-null',
     branch.then?.required?.length === 1 &&
     branch.then?.properties?.[branch.then.required[0]]?.type === 'object'),
   'the payload selected by each input mode must be a non-null object');
+// The expected vocabulary used to be hard-coded here, so the gate could only ever confirm that the
+// schema still said what this file said in the past. It now reads the row the output contract
+// publishes, which is the document a reader is pointed at, so adding a status means changing the
+// contract rather than changing the test.
+const contractStatuses = (outputContract.match(/\|\s*Individual prerequisite\s*\|([^|]+)\|/) || [, ''])[1]
+  .split('·').map((s) => s.replace(/`/g, '').trim()).filter(Boolean);
+check('output-schema-statuses-declared', contractStatuses.length >= 4, 'the output contract no longer publishes a prerequisite status row to check against');
 check('output-schema-statuses',
-  JSON.stringify(outputSchema.properties.prerequisites.items.properties.status.enum) ===
-  JSON.stringify(['confirmed', 'missing', 'unknown', 'not_applicable']),
-  'output prerequisite status vocabulary drifted');
+  JSON.stringify(outputSchema.properties.prerequisites.items.properties.status.enum) === JSON.stringify(contractStatuses),
+  `output prerequisite status vocabulary drifted: schema has ${JSON.stringify(outputSchema.properties.prerequisites.items.properties.status.enum)}, output-contract.md publishes ${JSON.stringify(contractStatuses)}`);
 
 check('skill-frontmatter-name', /^name: generate-migration-prerequisite-plan$/mu.test(skill), 'frontmatter name must match the folder');
 

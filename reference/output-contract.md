@@ -40,7 +40,7 @@ metadata
 normalizedProfile
 eligibilityTrace[]        one entry per target: status, rule ID, reason
 recommendation
-  target, tier, method
+  target, tier, method, targetAvailabilityDuringSync, businessCutoverDowntime, controlPlane
 alternative
   target, method, the condition under which it wins
 methodCandidates[]        one entry per method the matrix supports for the chosen target:
