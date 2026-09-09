@@ -50,7 +50,10 @@
         "database_count": {},
         "migration_batch_size": {},
         "arc_extension_version": {},
-        "evidence": {}
+        "evidence": {},
+        "feature_dependencies_state": {
+          "$ref": "#/$defs/answerEcho"
+        }
       }
     },
     "eligibilityTrace": {
@@ -514,6 +517,13 @@
           "description": "What is not verified when the result is unknown_requires_assessment. Naming it is the difference between a gate a reader can close and one they can only worry about."
         }
       }
+    },
+    "answerEcho": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "What the skill believes it was told for this field, echoed back so a misreading is visible rather than buried."
     }
   }
 }

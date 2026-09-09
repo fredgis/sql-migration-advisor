@@ -1814,6 +1814,7 @@ try {
   const mappings = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'reference', 'advisor-fact-mappings.json')));
   const questions = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'reference', 'questions.json')));
   const consumerFields = new Set((questions.questions || questions).map((q) => q.field || q.id).filter(Boolean));
+  const consumerEffects = new Map((questions.questions || questions).map((q) => [q.field || q.id, q.effects || {}]));
   const advisorContract = readText(path.join('reference', 'input-contract.md'));
 
   const KINDS = new Set(Object.keys(mappings.conversionKinds || {}));
@@ -1836,6 +1837,22 @@ try {
     for (const key of Object.keys(m.valueMap || {})) {
       if (!new RegExp(`\`${key}\``).test(advisorContract)) {
         failures.push(`${at}: the map expects the Advisor to emit \`${key}\`, which reference/input-contract.md never declares`);
+      }
+    }
+    // Third pass of the same review: fixing the key side and writing this gate to guard the key
+    // side left the other half untouched. The map emitted MI_LINK_PORTS_CONFIRMED and a lowercase
+    // `unknown` into a question that accepts only CONFIRMED, MISSING and UNKNOWN, so a confirmed
+    // answer still became unknown and blocked ports never became a blocker. A crosswalk is two
+    // vocabularies, and a gate that reads one of them is half a gate.
+    const accepted = Object.keys(consumerEffects.get(m.consumerField) || {});
+    if (accepted.length) {
+      for (const value of Object.values(m.valueMap || {})) {
+        if (!accepted.includes(value)) {
+          failures.push(`${at}: the map emits \`${value}\`, which questions.json does not accept for ${m.consumerField} (${accepted.join(', ')})`);
+        }
+      }
+      if (m.otherwise !== undefined && !accepted.includes(m.otherwise)) {
+        failures.push(`${at}: the fallback emits ${JSON.stringify(m.otherwise)}, which questions.json does not accept for ${m.consumerField} (${accepted.join(', ')})`);
       }
     }
   }
@@ -2364,6 +2381,234 @@ try {
     failures.length ? failures : [
       `${catalog.paths.length} paths carry a targetVariants list derived from their target string, ${multi} of them covering more than one family.`,
       `${overlays.length} overlay(s) attach to a resolvable target and advertise no target name as an alias, so an AVS-only request returns the method candidates rather than the platform layer alone.`
+    ]);
+}
+
+// A skill that declares no file-reading tool cannot detect a missing, malformed or stale bundle,
+// so a sentence promising it is a promise the runtime cannot keep. The claim was removed from one
+// skill and left standing in the other, then removed from one block and left standing in another
+// block of the same file. This gate reads the front matter for a read capability and refuses the
+// claim wherever there is none.
+{
+  const failures = [];
+  const READ_TOOLS = /\b(read|view|file|glob|grep|bash|shell|powershell|str_replace|edit)\b/i;
+  const CLAIMS = [
+    /if\s+(a|any)\s+file\s+is\s+missing/i,
+    /reports?\s+a\s+different\s+[a-z-]*\s*knowledge-base\s+version/i,
+    /\bload\s+and\s+verify\s+policy\b/i,
+    /verify\s+(that\s+)?(the\s+)?(bundled\s+)?files?\s+(are|is)\s+(present|intact|valid)/i,
+    /\b(compare|verify|check)\s+(the\s+)?checksum/i
+  ];
+  let scanned = 0;
+  for (const dir of fs.readdirSync(path.join(root, 'skills'), { withFileTypes: true })) {
+    if (!dir.isDirectory()) continue;
+    const rel = path.join('skills', dir.name, 'SKILL.md');
+    if (!fs.existsSync(path.join(root, rel))) continue;
+    const text = readText(rel);
+    const front = text.split('---')[1] || '';
+    const allowed = (front.match(/allowed-tools:.*/i) || [''])[0];
+    if (READ_TOOLS.test(allowed)) continue;
+    scanned++;
+    text.split('\n').forEach((line, i) => {
+      for (const claim of CLAIMS) {
+        if (claim.test(line)) {
+          failures.push(`${rel}:${i + 1}: claims runtime file inspection while allowed-tools grants no read capability — ${line.trim().slice(0, 90)}`);
+        }
+      }
+    });
+  }
+  if (!scanned) failures.push('no SKILL.md was scanned, so this gate is checking nothing');
+  add('skills-do-not-claim-tools-they-lack', failures.length === 0,
+    failures.length ? failures : [`${scanned} skill(s) declaring no read capability make no runtime file-integrity claim.`]);
+}
+
+// Both contracts listed the recommendation fields by hand. The producer contract named three where
+// its schema requires six, so a producer following the page emitted an object its own schema
+// rejects, and the consumer's mirror list omitted controlPlane while its schema required it. A
+// prose list that nothing derives from the schema drifts the moment a field is added.
+{
+  const failures = [];
+  const advisorOut = JSON.parse(readText(path.join('skills', 'recommend-migration-path', 'schemas', 'output.schema.json')));
+  const prereqIn = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'schemas', 'input.schema.json')));
+
+  const surfaces = [
+    {
+      file: path.join('reference', 'output-contract.md'),
+      fields: (advisorOut.$defs?.recommendation || advisorOut.properties?.recommendation)?.required || [],
+      label: 'the producer recommendation'
+    },
+    {
+      file: path.join('skills', 'generate-migration-prerequisite-plan', 'reference', 'input-contract.md'),
+      fields: prereqIn.$defs?.advisorMirrorOutput?.required || [],
+      label: 'the regression mirror'
+    }
+  ];
+  for (const surface of surfaces) {
+    if (!surface.fields.length) { failures.push(`${surface.file}: could not read the required field list for ${surface.label} from its schema`); continue; }
+    const text = readText(surface.file);
+    for (const field of surface.fields) {
+      if (!text.includes(field)) failures.push(`${surface.file}: the schema requires \`${field}\` for ${surface.label}, and this page never names it`);
+    }
+  }
+  add('contracts-name-every-field-their-schema-requires', failures.length === 0,
+    failures.length ? failures : [`${surfaces.map(s => `${s.fields.length} required field(s) for ${s.label}`).join(' and ')} are all named by the page that documents them.`]);
+}
+
+// Invariant 11 requires the Markdown and the JSON to be renderings of the same object with
+// identical counts. The template had no placeholder for appliedOverlays, targetVariant or the
+// unresolved-path response, so an AVS plan could drop P27 from the Markdown while the JSON kept
+// it, and a refusal had no shape to render at all. A template that cannot express a required
+// field is a silent divergence, not a formatting gap.
+{
+  const failures = [];
+  const template = readText(path.join('skills', 'generate-migration-prerequisite-plan', 'templates', 'prerequisite-plan.md'));
+  const outSchema = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'schemas', 'output.schema.json')));
+
+  const mustRender = ['targetVariant', 'appliedOverlays', 'unresolvedReason', 'candidatePaths', 'disambiguation'];
+  for (const field of mustRender) {
+    if (!template.includes(field)) failures.push(`the template has no placeholder for \`${field}\`, so the Markdown cannot carry what the JSON does`);
+  }
+  // And the fields must be ones the schema actually declares, so this list cannot outlive them.
+  const declared = new Set([
+    ...Object.keys(outSchema.properties || {}),
+    ...Object.keys(outSchema.properties?.selectedMethodPath?.properties || {})
+  ]);
+  for (const field of mustRender) {
+    if (!declared.has(field)) failures.push(`the template renders \`${field}\`, which the output schema no longer declares`);
+  }
+  add('template-renders-what-the-contract-requires', failures.length === 0,
+    failures.length ? failures : [`${mustRender.length} required field(s) have a placeholder in the Markdown template and are declared by the output schema.`]);
+}
+
+// The interview's vocabulary lived in a description, so the schema validated "is a non-empty
+// string" and a failed normalization reached the rules layer looking like a canonical profile.
+// The enums are generated from the tables the input contract already holds, because a third
+// hand-copied copy of the vocabulary is how the first two drifted.
+{
+  const failures = [];
+  const schema = JSON.parse(readText(path.join('skills', 'recommend-migration-path', 'schemas', 'input.schema.json')));
+  const contract = readText(path.join('reference', 'input-contract.md'));
+  const MARKERS = ['NONE_CONFIRMED', 'UNKNOWN', 'NOT_APPLICABLE'];
+
+  const start = contract.indexOf('## 3. Option IDs');
+  const end = contract.indexOf('\n## 4.', start);
+  if (start < 0 || end < 0) failures.push('reference/input-contract.md no longer has a section 3 of option IDs to generate from');
+  const tabulated = new Map();
+  for (const block of contract.slice(start, end).split(/\n### /).slice(1)) {
+    const heading = block.split('\n')[0];
+    const fields = [...heading.matchAll(/`([a-z][a-z0-9_]*)`/g)].map((m) => m[1]);
+    const ids = [...new Set([...block.matchAll(/\|\s*[^|]+\|\s*`([A-Z][A-Z0-9_]*)`\s*\|/g)].map((m) => m[1]))];
+    if (fields.length === 1 && ids.length) tabulated.set(fields[0], ids);
+  }
+  if (tabulated.size < 8) failures.push(`only ${tabulated.size} field(s) could be read out of section 3, so this gate would pass by reading nothing`);
+
+  for (const [field, ids] of tabulated) {
+    const node = schema.properties?.[field];
+    if (!node) { failures.push(`${field} is tabulated in the contract but absent from input.schema.json`); continue; }
+    if (!node.enum) { failures.push(`${field} accepts any string although the contract tabulates ${ids.length} option ID(s) for it`); continue; }
+    for (const id of ids) {
+      if (!node.enum.includes(id)) failures.push(`${field}: the contract declares \`${id}\` and the schema enum does not accept it`);
+    }
+    for (const value of node.enum) {
+      if (!ids.includes(value) && !MARKERS.includes(value)) failures.push(`${field}: the schema accepts \`${value}\`, which the contract does not tabulate and which is not an absence marker`);
+    }
+  }
+  add('canonical-ids-match-the-contract', failures.length === 0,
+    failures.length ? failures : [`${tabulated.size} interview field(s) accept exactly the IDs reference/input-contract.md tabulates, plus the documented absence markers.`]);
+}
+
+// The output schema validated prerequisite IDs against the shape Pxx-nnn and sources as generic
+// URIs, so a fabricated row such as P10-999 citing any public page satisfied the declared contract.
+// The value of this skill is a sourced plan, and syntactically valid but semantically unchecked IDs
+// and citations look authoritative while carrying invented requirements. Membership and domain are
+// mechanical and are checked here; whether a page supports the requirement it is cited for is not,
+// and that stays with the weekly review rather than being dressed up as a gate.
+{
+  const failures = [];
+  const kb = readText(path.join('docs', 'sql-server-to-azure-migration-prerequisite.md'));
+  const outSchema = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'schemas', 'output.schema.json')));
+  const known = new Set([...kb.matchAll(/^\|\s*((?:COM|P[0-9]{2})-[0-9]{3})\s*\|/gm)].map((m) => m[1]));
+  if (known.size < 200) failures.push(`only ${known.size} prerequisite ID(s) could be read from the knowledge base, so this gate would pass by reading nothing`);
+
+  const idNode = outSchema.properties?.prerequisites?.items?.properties?.id;
+  if (!idNode?.pattern) failures.push('the output schema no longer constrains the prerequisite id at all');
+  else {
+    const re = new RegExp(idNode.pattern);
+    const invented = ['P10-999', 'COM-999', 'P99-001'].filter((id) => re.test(id) && !known.has(id));
+    if (!invented.length) failures.push('the pattern already rejects every fabricated id tried here, so this gate proves nothing');
+  }
+
+  const sourceNode = outSchema.properties?.prerequisites?.items?.properties?.officialSources?.items;
+  if (!sourceNode) failures.push('the output schema no longer describes officialSources');
+  else if (!sourceNode.pattern) failures.push('officialSources accepts any URI: a prerequisite can cite an arbitrary public page and still satisfy the contract');
+  else {
+    const re = new RegExp(sourceNode.pattern);
+    const allowed = ['https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate', 'https://azure.microsoft.com/updates?id=569535'];
+    const refused = ['https://example.com/whatever', 'http://learn.microsoft.com.evil.test/x'];
+    for (const url of allowed) if (!re.test(url)) failures.push(`officialSources rejects ${url}, which the knowledge base cites`);
+    for (const url of refused) if (re.test(url)) failures.push(`officialSources accepts ${url}, which is not a Microsoft source`);
+  }
+
+  // Every source the knowledge base already cites must satisfy the pattern the schema declares,
+  // so the allow-list can never be narrower than the corpus it governs.
+  if (sourceNode?.pattern) {
+    const re = new RegExp(sourceNode.pattern);
+    const cited = [...new Set([...kb.matchAll(/\((https:\/\/[^)\s]+)\)/g)].map((m) => m[1]))];
+    const rejected = cited.filter((url) => !re.test(url));
+    if (rejected.length) failures.push(`officialSources would reject ${rejected.length} URL(s) the knowledge base cites, starting with ${rejected[0]}`);
+  }
+
+  add('prerequisites-are-bound-to-the-catalog-and-microsoft-sources', failures.length === 0,
+    failures.length ? failures : [
+      `${known.size} prerequisite ID(s) read from the knowledge base; the id pattern still admits fabricated ids, which is why membership is checked here rather than left to the pattern.`,
+      'officialSources accepts Microsoft domains and refuses look-alikes, and admits every URL the knowledge base already cites.'
+    ]);
+}
+
+// Every schema constraint in this repository was declarative until now: the schemas were read for
+// their structure and never executed against a payload, so eligibilityTrace could claim eight
+// unique families while admitting a repeat, advisorOutput could advertise null against two
+// object-only branches, and metadata could accept anything. tests/schema-validator.mjs covers the
+// keyword set these schemas use, and this gate runs the shipped fixtures through it. The self-tests
+// come first: a validator that accepts everything would make every check below vacuous.
+{
+  const failures = [];
+  const advisorOut = JSON.parse(readText(path.join('skills', 'recommend-migration-path', 'schemas', 'output.schema.json')));
+
+  const example = (readText(path.join('examples', 'sample-recommendation.md')).match(/```json\n([\s\S]*?)```/) || [])[1];
+  if (!example) failures.push('examples/sample-recommendation.md no longer carries a JSON block to validate');
+
+  let parsed = null;
+  if (example) {
+    try { parsed = JSON.parse(example); } catch (error) { failures.push(`the example JSON does not parse: ${error.message}`); }
+  }
+
+  if (parsed) {
+    // The validator must reject as well as accept, or none of this proves anything.
+    const selfTests = [
+      ['a ninth eligibility entry', (doc) => { doc.eligibilityTrace.push({ ...doc.eligibilityTrace[0] }); }],
+      ['a repeated target family', (doc) => { doc.eligibilityTrace[1] = { ...doc.eligibilityTrace[0], reason: 'a different reason entirely' }; }],
+      ['an invented eligibility status', (doc) => { doc.eligibilityTrace[0].status = 'eligible alternative control plane'; }],
+      ['a control plane outside the enum', (doc) => { doc.recommendation.controlPlane = 'SSMS 22 Migration Component'; }],
+      ['a missing required recommendation field', (doc) => { delete doc.recommendation.businessCutoverDowntime; }]
+    ];
+    for (const [what, breakIt] of selfTests) {
+      const copy = JSON.parse(JSON.stringify(parsed));
+      breakIt(copy);
+      if (validateObjectAgainstSchema(advisorOut, copy).errors.length === 0) {
+        failures.push(`the validator accepts ${what}, so it is not checking what this gate claims`);
+      }
+    }
+
+    const { errors, unsupported } = validateObjectAgainstSchema(advisorOut, parsed, 'examples/sample-recommendation.md');
+    for (const error of errors) failures.push(error);
+    for (const keyword of unsupported) failures.push(`the schema uses \`${keyword}\`, which the validator ignores, so any constraint written with it is unenforced`);
+  }
+
+  add('shipped-fixtures-validate-against-their-schema', failures.length === 0,
+    failures.length ? failures : [
+      'The shipped recommendation example validates against the advisor output schema.',
+      'The validator rejects a ninth entry, a repeated family, an invented status, a control plane outside the enum and a missing required field.'
     ]);
 }
 

@@ -6,7 +6,7 @@
 >
 > **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of August 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
 >
-> **Version.** v3.4 — 26 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
+> **Version.** v3.5 — 26 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**
@@ -661,13 +661,14 @@ flowchart LR
 
 ## 17. Document version & changelog
 
-Current version: **v3.4** (2026-09-09).
+Current version: **v3.5** (2026-09-09).
 
 <details>
-<summary><b>Version history</b> (current: v3.4)</summary>
+<summary><b>Version history</b> (current: v3.5)</summary>
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v3.5 | 2026-09-09 | **No knowledge-base fact changed. The stamp moves so the document, the rules, the contracts, the schemas and the path catalog stay pinned to one commit.** A third review pass on the Microsoft fork raised thirteen findings against the skills that read this document, and all thirteen were founded. Nothing on this page changed; what changed is that its claims are now enforced. The contracts that describe the recommendation are derived from the schemas rather than retyped by hand, the interview vocabulary is generated from the tables in section 3 of the input contract, and the shipped example is validated against the schema it is supposed to demonstrate. |
 | v3.4 | 2026-09-09 | **No knowledge-base fact changed. The stamp moves so the document, the rules, the contracts and the path catalog stay pinned to one commit.** A second review pass on the Microsoft fork raised eleven findings against the skills that read this document, and ten were real. The one that touches this page indirectly: the guidance told the assistant to reserve "minimal downtime" for MI Link, while §C1 of the decision rules already classified online DMS as minimal with a cutover that is not guaranteed sub-minute. A skill following the stricter sentence under-ranks or rejects a DMS-online candidate that the rules select, which is exactly the case this document describes for a SQL Server 2025 source whose MI Link is unavailable. |
 | v3.3 | 2026-09-09 | **Two matrix claims contradicted the guidance that reads them.** The DMS row marked AVS `➖`, meaning an indirect route exists, while the decision rules said DMS is unavailable there and cited that very symbol as proof; Microsoft's supported-scenarios matrix lists SQL DB, SQL MI and SQL VM as DMS targets and no AVS. The cell is `❌` now, matching MI Link beside it. The §12 minimum-downtime row also said AVS achieves `~h (vMotion)` while §11 called HCX the zero-downtime option: the row now separates HCX live migration from bulk and cold modes, which are the ones that need an outage. |
 | v3.2 | 2026-08-31 | **The weekly review found a route the guidance offered and the product does not have.** Section 8 already marked BACPAC / SqlPackage as `✅ (DACPAC)` for SQL database in Fabric, because Microsoft documents a DACPAC schema import there; the decision rules offered a BACPAC export-and-import path anyway. The two are different artefacts — a BACPAC carries schema and data, a DACPAC carries schema only — so the guidance contradicted this document's own matrix. Also corrected: Hyperscale was described as the only viable SQL DB choice above 4 TB **or** with heavy concurrent write I/O, which is wrong below 4 TB where Business Critical is explicitly intended for high-transaction-rate, low-latency workloads. |
