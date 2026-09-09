@@ -466,7 +466,8 @@
         "primary_target",
         "method",
         "recommendationStatus",
-        "confidence"
+        "confidence",
+        "controlPlane"
       ],
       "description": "The flattened shape emitted by the Advisor's regression mirror and used by its golden scenarios. It carries the same decisions under different key names, so a plan can be built from a replayed scenario as well as from a live session.",
       "properties": {
@@ -505,6 +506,18 @@
         },
         "confidence": {
           "$ref": "#/$defs/advisorConfidence"
+        },
+        "controlPlane": {
+          "enum": [
+            "standalone",
+            "azure-arc",
+            "ssms-migration-component",
+            "azure-migrate",
+            "azure-dms",
+            "fabric",
+            "vmware-hcx"
+          ],
+          "description": "Which control plane runs the migration, mirrored from the Advisor. Required here for the same reason as in the public shape: an absent value produces a standalone plan for what may be an Arc-orchestrated migration."
         }
       }
     },

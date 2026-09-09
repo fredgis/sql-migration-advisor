@@ -325,12 +325,10 @@
     {
       "method": "BACPAC / SqlPackage",
       "target": "Fabric SQL DB",
-      "status": "path",
-      "paths": [
-        "P11"
-      ],
-      "advisorRole": "secondary",
-      "roleReason": "Legitimate for smaller or schema-compatible workloads. Belongs in a shortlist rather than a default recommendation."
+      "status": "out-of-scope",
+      "advisorRole": "documentary",
+      "roleReason": "Section 8 supports this cell only as DACPAC. Microsoft documents a DACPAC schema import into Fabric SQL database and no BACPAC import, so the row's own artefact is not a route here and must not be planned as one.",
+      "reason": "The Fabric cell is qualified (DACPAC) in section 8. A BACPAC carries schema and data; a DACPAC carries schema only. Offering the BACPAC artefact for this target would promise a route the product does not have."
     },
     {
       "method": "BACPAC / SqlPackage",

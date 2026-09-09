@@ -312,7 +312,7 @@
       "id": "P11",
       "slug": "sql-db-bacpac-sqlpackage",
       "title": "Azure SQL Database — BACPAC / SqlPackage",
-      "target": "Azure SQL Database / SQL Server on Azure VM / Azure SQL Managed Instance / SQL database in Fabric / Azure Arc-enabled SQL Managed Instance / SQL Server in a container",
+      "target": "Azure SQL Database / SQL Server on Azure VM / Azure SQL Managed Instance / Azure Arc-enabled SQL Managed Instance / SQL Server in a container",
       "method": "BACPAC / SqlPackage",
       "advisorAliases": [
         "BACPAC/SqlPackage",

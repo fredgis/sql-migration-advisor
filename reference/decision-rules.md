@@ -5,7 +5,7 @@ Apply Steps **A → D** in order. Steps map to the two engine phases:
 - **Phase B — Ranking and plan:** Steps B → D. Rank only surviving targets, then choose method, tier, blockers, cost, and assessment.
 
 Regression contract: these rules are a **prompt policy under regression test**. Replaying the same inputs through the rules mirror in `tests/` gives the same result, and 116 golden scenarios enforce it on every commit. The mirror is not what runs in a session: an agent reads these rules and applies them. Treat the contract as a tested policy, not as a guarantee that two runs produce identical wording. Every recommendation must carry the KB version, engine version, and, when available, the source commit SHA and fetch timestamp.
-Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v3.2**, verified August 2026.
+Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v3.3**, verified August 2026.
 
 Three layers, never mixed:
 - **Target** = where the DB ends up (runtime).
@@ -37,7 +37,7 @@ Normalize questionnaire/free-form answers into these fields before filtering:
 | `compliance` | `STANDARD_COMMERCIAL` · `EU_DATA_BOUNDARY` · `GOVERNMENT_SOVEREIGN` · `EDGE_AIR_GAPPED` · unknown |
 | `network_bandwidth` | `GOOD_BANDWIDTH` · `LIMITED_WAN` · `VERY_LARGE_MULTI_TB` · unknown. Drives seeding strategy only. |
 | `mi_link_ports` | `PORTS_CONFIRMED_OPEN` · `PORTS_BLOCKED` · unknown. Only `PORTS_CONFIRMED_OPEN` lets MI Link be confirmed. |
-| `blob_https_reachability` | `BLOB_HTTPS_CONFIRMED` · `BLOB_HTTPS_BLOCKED` · `BLOB_HTTPS_UNKNOWN`. Gates the backup-based paths that stage through Azure Blob — Backup to URL, BACPAC, LRS and log replay. It does **not** gate transports that never touch Blob: Data Box, detach/attach and file-level copies into a target that has a file system. Unknown holds the method gate at `unknown_requires_assessment` rather than `passed`. |
+| `blob_https_reachability` | `BLOB_HTTPS_CONFIRMED` · `BLOB_HTTPS_BLOCKED` · `BLOB_HTTPS_UNKNOWN`. Gates the backup-based paths that stage through Azure Blob — Backup to URL, LRS, log replay, and a BACPAC **only when that workflow stages the file in Blob**. It does **not** gate transports that never touch Blob: Data Box, detach/attach, file-level copies into a target that has a file system, and a local BACPAC imported directly with SqlPackage. Unknown holds the method gate at `unknown_requires_assessment` rather than `passed`. |
 | `clr_permission_set` | `CLR_SAFE` · `CLR_EXTERNAL_ACCESS` · `CLR_UNSAFE` · unknown. Gates `CLR-PERMISSION`. **SAFE is not a clearance**: under `clr strict security` the engine treats SAFE and EXTERNAL_ACCESS as UNSAFE unless signed or hash-trusted. |
 | `tde_status` | `TDE_ENABLED` · `TDE_NOT_ENABLED` · unknown. A backup-based method needs the server certificate in the target before restore. |
 | `source_permissions` | `SYSADMIN_AVAILABLE` · `LIMITED_RIGHTS` · unknown. Gates **`SOURCE-PERMISSIONS`**. The SSMS 22 Migration Component requires `sysadmin` on the source. |
@@ -305,11 +305,11 @@ exists — the target's own prerequisites live in the `P27` overlay.
 | Near-zero, whole VM | **VMware HCX / vMotion** | Preserves the VMware operational model and existing SQL HA patterns. Moves the machine, not the database, so nothing inside SQL Server changes |
 | Near-zero, database | **Distributed AG** or **Always On AG** | **`AG-VERSION`.** Same floors as the VM target: Distributed AG source **2016+**, Always On AG **2012+**; AD DS or workgroup AG with certificates, AG endpoints and the documented ports |
 | Offline | **Native backup/restore** | **`BACKUP-BLOB-PATH`**, **`SOURCE-PERMISSIONS`.** The target has a file system, so a local `.bak` copied into it stays available when the Blob path is blocked |
-| Minimal, database | **Log shipping** | **`BACKUP-BLOB-PATH`**, **`SOURCE-PERMISSIONS`.** SQL Server 2008+, Windows-only. Simpler to stand up than an AG when the cutover can absorb one log-restore interval; confirm the secondary restore mode, since `NORECOVERY` leaves the target unavailable until cutover |
+| Minimal, database | **Log shipping** | **`SOURCE-PERMISSIONS`.** SQL Server 2008+, Windows-only. Needs a proven backup share or folder and a copy path the secondary can reach; Azure Blob is not inherent to log shipping, so test `BACKUP-BLOB-PATH` only when Blob is deliberately chosen as the transport. Simpler to stand up than an AG when the cutover can absorb one log-restore interval; confirm the secondary restore mode, since `NORECOVERY` leaves the target unavailable until cutover |
 | Online subset | **Transactional replication** | **`REPL-PUBLISHER`.** Publisher floor as for any SQL Server target; tables need a primary key |
 | Smaller / schema-compatible | **BACPAC / SqlPackage** | Test export and import; not for large or dependency-heavy workloads |
 
-**Not available to this target:** MI Link and Azure DMS — the §8 matrix marks both `➖` for AVS.
+**Not available to this target:** MI Link and Azure DMS — the §8 matrix marks both `❌` for AVS. Neither service lists an AVS-hosted SQL Server as a destination.
 Do not offer them here, and do not infer from `→ SQL Server on Azure VM` that they apply.
 
 Rank the surviving candidates with §B3.0: the stated window first, then what the answers say, then
