@@ -173,7 +173,7 @@ Three questions ask whether something exists before asking what it is, so that *
 | Field | Type | Values | Consumed by | When `UNKNOWN` |
 |---|---|---|---|---|
 | `scope` | ID | `SINGLE_DB` · `FEW_DATABASES` · `LARGE_ESTATE` | Estate-discovery branch | Treated as a single profile; the estate branch does not fire |
-| `source_location` | ID | 5 location IDs | MI Link, transactional replication, native restore, cross-cloud matrix | MI Link and replication become `unknown_requires_assessment` |
+| `source_location` | ID | 6 location IDs | MI Link, transactional replication, native restore, cross-cloud matrix | MI Link and replication become `unknown_requires_assessment` |
 | `source_version` | ID | 7 version IDs | Every version floor: MI Link 2016+, LRS 2008–2022, AG 2012+, DAG 2016+, replication publisher 2016+, Arc 2014+ | All version-gated methods become `unknown_requires_assessment` |
 | `intent` | ID | 4 intent IDs | Arc in-place control-plane path | Assumed `MIGRATE_NOW`, stated as an assumption |
 | `driver` | ID | 6 driver IDs | Fabric branch, AVS branch, ranking preference | No driver-specific branch fires; ranking falls back to compatibility |

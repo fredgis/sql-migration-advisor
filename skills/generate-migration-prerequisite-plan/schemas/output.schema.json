@@ -43,6 +43,37 @@
         "language": {
           "type": "string",
           "minLength": 2
+        },
+        "sourceAdvisor": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Where the recommendation came from, present only in advisor_handoff mode. Typed so the provenance can be checked rather than merely carried.",
+          "properties": {
+            "knowledgeBaseVersion": {
+              "type": "string",
+              "minLength": 1
+            },
+            "decisionRulesVersion": {
+              "type": "string",
+              "minLength": 1
+            },
+            "recommendationStatus": {
+              "type": "string",
+              "minLength": 1
+            },
+            "confidence": {
+              "type": "string",
+              "minLength": 1
+            },
+            "controlPlane": {
+              "type": "string",
+              "minLength": 1
+            },
+            "evaluatedAt": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
         }
       }
     },

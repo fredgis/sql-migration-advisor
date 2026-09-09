@@ -1815,6 +1815,15 @@ try {
     if (m.conversion === 'vocabulary' && (!m.valueMap || !Object.keys(m.valueMap).length)) failures.push(`${at}: declared as a vocabulary conversion but carries no valueMap`);
     if (m.conversion === 'vocabulary' && !m.otherwise) failures.push(`${at}: a vocabulary conversion must say what happens to a value the map does not cover`);
     if (m.conversion === 'not-convertible' && m.valueMap) failures.push(`${at}: not-convertible entries must not carry a valueMap`);
+    // Review of microsoft/sql-migration-agent#27: the map keys are producer option IDs, and one of
+    // them was written PORTS_OPEN_CONFIRMED while the contract says PORTS_CONFIRMED_OPEN. The gate
+    // checked that both field *names* existed and never looked at the *values*, so a transposed
+    // pair silently turned a confirmed answer into an unknown one downstream.
+    for (const key of Object.keys(m.valueMap || {})) {
+      if (!new RegExp(`\`${key}\``).test(advisorContract)) {
+        failures.push(`${at}: the map expects the Advisor to emit \`${key}\`, which reference/input-contract.md never declares`);
+      }
+    }
   }
 
   // The fields the audit named are the ones a reader will look for. If one silently leaves the
@@ -2032,6 +2041,22 @@ try {
     }
   }
 
+  // Review of microsoft/sql-migration-agent#27: the public shape required controlPlane and the
+  // mirror shape did not, so the same Arc-orchestrated migration was rejected through one door and
+  // waved through the other. Both shapes carry the same decision and must carry the same field.
+  const mirror = consumer.$defs?.advisorMirrorOutput;
+  if (!mirror) failures.push('advisorMirrorOutput is gone; the mirror handoff shape can no longer be checked');
+  else {
+    const mirrorEnum = mirror.properties?.controlPlane?.enum;
+    if (!mirrorEnum) failures.push('advisorMirrorOutput does not type controlPlane, so a mirror handoff can arrive without one and be planned as standalone');
+    else if (producerEnum && JSON.stringify(mirrorEnum) !== JSON.stringify(producerEnum)) {
+      failures.push(`the mirror controlPlane enum disagrees with the producer: ${JSON.stringify(mirrorEnum)} vs ${JSON.stringify(producerEnum)}`);
+    }
+    if (!(mirror.required || []).includes('controlPlane')) {
+      failures.push('advisorMirrorOutput types controlPlane but does not require it; the public shape does, and one shape enforcing what the other waves through is the defect');
+    }
+  }
+
   add('handoff-requires-a-control-plane', failures.length === 0,
     failures.length ? failures : [
       `controlPlane is required by advisorPublicOutput.recommendation and shares the producer enum (${consumerEnum.length} values).`,
@@ -2205,6 +2230,78 @@ try {
   add('matrix-cell-qualifiers-reach-the-guidance', failures.length === 0, failures.length ? failures : notes);
 }
 
+
+// Review of microsoft/sql-migration-agent#27: the input contract said "5 location IDs" while its own
+// table listed six, because AZURE_VM was added to the table and the sentence beside it was not.
+// A count typed by hand next to the data it counts is a count that drifts, so it is derived here.
+{
+  const failures = [];
+  const contract = readText(path.join('reference', 'input-contract.md'));
+  const notes = [];
+
+  // Each vocabulary section is a "### Field — `name`" heading followed by a two-column table.
+  const heads = [...contract.matchAll(/^### [^\n]*?`([a-z_]+)`[^\n]*$/gm)];
+  const idsFor = (field) => {
+    for (let i = 0; i < heads.length; i++) {
+      if (heads[i][1] !== field) continue;
+      const from = heads[i].index + heads[i][0].length;
+      const next = contract.slice(from).search(/^#{2,3} /m);
+      const body = next === -1 ? contract.slice(from) : contract.slice(from, from + next);
+      return [...body.matchAll(/\|\s*`([A-Z][A-Z0-9_]+)`\s*\|/g)].map((m) => m[1]);
+    }
+    return null;
+  };
+
+  for (const m of contract.matchAll(/\|\s*`([a-z_]+)`\s*\|[^|]*\|\s*(\d+)\s+(location|option|value)s?\s+IDs?\s*\|/g)) {
+    const [, field, stated] = m;
+    const actual = idsFor(field);
+    if (!actual) { failures.push(`${field}: a row states a vocabulary count but the contract has no table for that field`); continue; }
+    if (actual.length !== Number(stated)) failures.push(`reference/input-contract.md: the ${field} row states ${stated} IDs, its own table lists ${actual.length} (${actual.join(', ')})`);
+    else notes.push(`${field}: ${actual.length} IDs, matching the table.`);
+  }
+
+  if (!notes.length && !failures.length) failures.push('no vocabulary count was found to check; the row format changed and this gate is now blind');
+  add('vocabulary-counts-match-their-tables', failures.length === 0, failures.length ? failures : notes);
+}
+
+// Review of microsoft/sql-migration-agent#27: the vendored skill announced knowledge base v3.2 in
+// five places and v3.1 in a sixth, because a bump rewrote the stamps it recognised and missed one
+// inside an example. A skill that states two different versions of its own facts cannot be trusted
+// about either, so every version string in a skill document must agree with the release manifest.
+{
+  const failures = [];
+  const manifest = JSON.parse(readText('version.json'));
+  const kb = manifest.knowledgeBase;              // e.g. v3.2
+  const release = manifest.latest;                // e.g. v3.2.0
+  let checked = 0;
+
+  // Only the advisor is stamped with the coordinated line. The prerequisite and connectivity skills
+  // carry their own knowledge bases with their own versions, which is why this is scoped by name
+  // rather than applied to every skill folder.
+  const file = path.join('skills', 'recommend-migration-path', 'SKILL.md');
+  if (!fs.existsSync(path.join(root, file))) failures.push(`${file} is missing`);
+  else {
+    readText(file).split('\n').forEach((line, i) => {
+      // Changelog-style rows record what was true then.
+      if (/^\|\s*v[0-9]/.test(line.trim())) return;
+      // Two other shapes name a version legitimately without claiming to be the current one: prose
+      // recalling when a rule changed ("Until v2.4 the question offered..."), and the worked example
+      // of the update notice, whose whole point is to show an older version beside a newer one.
+      if (/\b(until|since|before|from)\s+v[0-9]/i.test(line)) return;
+      if (/A newer version is available/i.test(line)) return;
+      for (const m of line.matchAll(/\bv([0-9]+\.[0-9]+(?:\.[0-9]+)?)\b/g)) {
+        const found = `v${m[1]}`;
+        checked++;
+        const ok = m[1].split('.').length === 3 ? found === release : found === kb;
+        if (!ok) failures.push(`${file}:${i + 1}: states ${found}, but the release is ${release} on knowledge-base line ${kb} — ${line.trim().slice(0, 90)}`);
+      }
+    });
+  }
+
+  if (!checked) failures.push('no version string was found in any SKILL.md, so this gate is checking nothing');
+  add('skill-versions-agree-with-the-manifest', failures.length === 0,
+    failures.length ? failures : [`${checked} version string(s) across the skills all state ${kb} or ${release}.`]);
+}
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };
 if (jsonMode) {
   process.stdout.write(JSON.stringify({ summary, results }, null, 2) + '\n');

@@ -68,7 +68,7 @@
       "conversion": "vocabulary",
       "note": "The Advisor records what the user said about ports; the consumer records a status. Only an explicit confirmation converts to CONFIRMED. Free text that merely fails to mention a block is not a confirmation.",
       "valueMap": {
-        "PORTS_OPEN_CONFIRMED": "MI_LINK_PORTS_CONFIRMED",
+        "PORTS_CONFIRMED_OPEN": "MI_LINK_PORTS_CONFIRMED",
         "PORTS_BLOCKED": "MI_LINK_PORTS_BLOCKED"
       },
       "otherwise": "unknown"

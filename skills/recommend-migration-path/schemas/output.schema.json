@@ -59,7 +59,9 @@
       "items": {
         "$ref": "#/$defs/eligibilityEntry"
       },
-      "description": "Invariant 11: every one of the eight target families appears, including the ones that lost. A family that silently disappears cannot be argued with, which is why the floor is 8 rather than 1."
+      "description": "Invariant 11: every one of the eight target families appears, including the ones that lost. A family that silently disappears cannot be argued with, which is why the count is pinned at exactly 8, with no repeats. A ninth entry means a family was listed twice, and eight entries with a duplicate means one family is missing.",
+      "maxItems": 8,
+      "uniqueItems": true
     },
     "recommendation": {
       "$ref": "#/$defs/recommendation"

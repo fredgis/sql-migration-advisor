@@ -6,7 +6,7 @@
 >
 > **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of August 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
 >
-> **Version.** v3.2 — 26 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
+> **Version.** v3.3 — 26 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**
@@ -332,7 +332,7 @@ Microsoft describes LRS as an online migration with expected downtime during cut
 | Method / tool | SQL VM | AVS | SQL MI | SQL DB | Fabric SQL DB | Arc SQL MI | SQL container |
 | --- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | Azure Migrate (assess) | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ |
-| DMS | ✅ (online + offline) | ➖ | ✅ (online + offline) | ✅ (offline only) | ❌ | ➖ | ➖ |
+| DMS | ✅ (online + offline) | ❌ | ✅ (online + offline) | ✅ (offline only) | ❌ | ➖ | ➖ |
 | MI Link | ↩ reverse | ❌ | ✅ | ❌ | ❌ | ➖³ | ❌ |
 | Log Replay Service | ❌ | ❌ | ✅ | ❌ | ❌ | ➖ | ❌ |
 | Native backup/restore | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ |
@@ -438,7 +438,7 @@ Microsoft describes LRS as an online migration with expected downtime during cut
 | Service Broker | ✅ | ✅ | ✅³ | ❌ | ❌ | ✅ |
 | SQL CLR / linked servers | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
 | SQL Agent | ✅ | ✅ | ✅ | ❌ (Elastic Jobs) | ❌ | ✅ |
-| Min. downtime achievable | near-zero (AG / DAG, planned failover) | ~h (vMotion) | ~min (MI Link) | min–h | ~min with transactional replication (SQL Server 2022 RTM CU12+ publisher, primary keys on replicated tables); otherwise h | depends |
+| Min. downtime achievable | near-zero (AG / DAG, planned failover) | near-zero with HCX vMotion / live migration; ~h with HCX bulk or cold migration | ~min (MI Link) | min–h | ~min with transactional replication (SQL Server 2022 RTM CU12+ publisher, primary keys on replicated tables); otherwise h | depends |
 | Managed patch / upgrade | Auto-patch | ❌ | ✅ Evergreen | ✅ Evergreen | ✅ Evergreen | ❌ |
 | Azure Hybrid Benefit | ✅ | ✅ | ✅ | ✅ GP/BC vCore provisioned; ❌ DTU/serverless/Fabric SQL DB; ⚠️ Hyperscale single DBs with provisioned compute **created before 15 Dec 2023** only, and only until Dec 2026 | n/a | ✅ |
 | Sovereignty / edge | ✅ | ✅ | limited regions | limited regions | limited regions | ✅ (Arc) |
@@ -661,13 +661,14 @@ flowchart LR
 
 ## 17. Document version & changelog
 
-Current version: **v3.2** (2026-08-26).
+Current version: **v3.3** (2026-08-26).
 
 <details>
-<summary><b>Version history</b> (current: v3.2)</summary>
+<summary><b>Version history</b> (current: v3.3)</summary>
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v3.3 | 2026-09-09 | **Two matrix claims contradicted the guidance that reads them.** The DMS row marked AVS `➖`, meaning an indirect route exists, while the decision rules said DMS is unavailable there and cited that very symbol as proof; Microsoft's supported-scenarios matrix lists SQL DB, SQL MI and SQL VM as DMS targets and no AVS. The cell is `❌` now, matching MI Link beside it. The §12 minimum-downtime row also said AVS achieves `~h (vMotion)` while §11 called HCX the zero-downtime option: the row now separates HCX live migration from bulk and cold modes, which are the ones that need an outage. |
 | v3.2 | 2026-08-31 | **The weekly review found a route the guidance offered and the product does not have.** Section 8 already marked BACPAC / SqlPackage as `✅ (DACPAC)` for SQL database in Fabric, because Microsoft documents a DACPAC schema import there; the decision rules offered a BACPAC export-and-import path anyway. The two are different artefacts — a BACPAC carries schema and data, a DACPAC carries schema only — so the guidance contradicted this document's own matrix. Also corrected: Hyperscale was described as the only viable SQL DB choice above 4 TB **or** with heavy concurrent write I/O, which is wrong below 4 TB where Business Critical is explicitly intended for high-transaction-rate, low-latency workloads. |
 | v3.1 | 2026-08-26 | **The standalone Log Replay Service ceiling now says why it is narrower than one Microsoft page.** The LRS-versus-MI-Link comparison page states "2008 and later" with no ceiling; the standalone migration page states 2008 to 2022. Both are current and they disagree. The rule keeps the narrower boundary deliberately, so the failure mode is a route wrongly excluded rather than one wrongly promised, and both pages are watched in the claims registry. The Arc-orchestrated path remains a separate entry listing SQL Server 2025. |
 | v3.0 | 2026-08-26 | **Routes the document describes in prose had no identity, so nothing could say whether their absence from the summary matrix was deliberate.** `reference/migration-methods.json` now types all 26 of them as migration, assessment, transport, overlay or out of scope, with a written reason each. The distinction it enforces is that a transport is not a method: `bcp`, Data Factory Copy, Smart Bulk Copy, Data Box seed, Dataflow Gen2 and the file transports carry bytes for something else and have no cutover of their own, so counting them as migration methods overstated what the tool can recommend. Fabric Mirroring stays out as continuous replication rather than a one-time migration. |

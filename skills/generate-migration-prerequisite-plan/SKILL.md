@@ -85,7 +85,7 @@ the contracts move together and a plan stays reproducible: a reader can fetch th
 what the readiness verdict was based on. Freshness comes from releasing a new version, not from
 reaching outside at run time.
 
-Read these bundled files before asking anything:
+These bundled files ship with the skill and are in context when it runs. Apply them before asking anything:
 
 1. [`reference/input-contract.md`](reference/input-contract.md)
 2. [`reference/output-contract.md`](reference/output-contract.md)
