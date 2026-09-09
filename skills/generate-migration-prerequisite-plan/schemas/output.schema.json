@@ -19,7 +19,7 @@
         "mode",
         "language"
       ],
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "schemaVersion": {
           "const": "1.0"
@@ -83,6 +83,7 @@
         "id",
         "title",
         "target",
+        "targetVariant",
         "method",
         "supportStatus"
       ],
@@ -113,6 +114,11 @@
         "supportStatus": {
           "type": "string",
           "minLength": 1
+        },
+        "targetVariant": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Which target family of the catalog path was actually selected. Six catalog paths cover several families under one slash-separated target string, so the path id alone does not say whether the subscriber is a Managed Instance, a Fabric SQL database or a container. The prerequisite rows for those paths are already written per family (publisher version floors, connectivity, roles, supported features), and without this field nothing feeds those conditions. It must be one of the selected path's targetVariants."
         }
       },
       "description": "Deprecated alias for selectedMethodPath, emitted for readers written against the single-path shape. New readers use selectedMethodPath and appliedOverlays[]."
@@ -391,6 +397,7 @@
         "id",
         "title",
         "target",
+        "targetVariant",
         "method",
         "supportStatus"
       ],
@@ -421,6 +428,11 @@
         "supportStatus": {
           "type": "string",
           "minLength": 1
+        },
+        "targetVariant": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Which target family of the catalog path was actually selected. Six catalog paths cover several families under one slash-separated target string, so the path id alone does not say whether the subscriber is a Managed Instance, a Fabric SQL database or a container. The prerequisite rows for those paths are already written per family (publisher version floors, connectivity, roles, supported features), and without this field nothing feeds those conditions. It must be one of the selected path's targetVariants."
         }
       },
       "description": "The catalog path that moves the data. A route may also require overlays, which belong in appliedOverlays[] and never replace this."
@@ -576,7 +588,26 @@
       "then": {
         "required": [
           "inheritedAdvisorFacts"
-        ]
+        ],
+        "properties": {
+          "metadata": {
+            "required": [
+              "sourceAdvisor"
+            ],
+            "properties": {
+              "sourceAdvisor": {
+                "required": [
+                  "knowledgeBaseVersion",
+                  "decisionRulesVersion",
+                  "recommendationStatus",
+                  "confidence",
+                  "controlPlane",
+                  "evaluatedAt"
+                ]
+              }
+            }
+          }
+        }
       }
     }
   ]
