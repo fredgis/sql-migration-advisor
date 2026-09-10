@@ -2389,6 +2389,11 @@ try {
 // skill and left standing in the other, then removed from one block and left standing in another
 // block of the same file. This gate reads the front matter for a read capability and refuses the
 // claim wherever there is none.
+//
+// The mirror image is worse and was shipped for three releases: a skill that bundles reference
+// files, declares no way to open them, and is then told to apply them. Agent Skills progressively
+// load SKILL.md alone, so those files never arrive, and the model either stops or reconstructs
+// version floors and citations from memory. So the gate now runs in both directions.
 {
   const failures = [];
   const READ_TOOLS = /\b(read|view|file|glob|grep|bash|shell|powershell|str_replace|edit)\b/i;
@@ -2400,6 +2405,7 @@ try {
     /\b(compare|verify|check)\s+(the\s+)?checksum/i
   ];
   let scanned = 0;
+  let bundled = 0;
   for (const dir of fs.readdirSync(path.join(root, 'skills'), { withFileTypes: true })) {
     if (!dir.isDirectory()) continue;
     const rel = path.join('skills', dir.name, 'SKILL.md');
@@ -2407,7 +2413,19 @@ try {
     const text = readText(rel);
     const front = text.split('---')[1] || '';
     const allowed = (front.match(/allowed-tools:.*/i) || [''])[0];
-    if (READ_TOOLS.test(allowed)) continue;
+    const canRead = READ_TOOLS.test(allowed);
+
+    // Does the skill ship files it is expected to apply?
+    const carries = ['reference', 'references', 'schemas', 'templates']
+      .some((folder) => fs.existsSync(path.join(root, 'skills', dir.name, folder)));
+    if (carries) {
+      bundled++;
+      if (!canRead) {
+        failures.push(`${rel}: bundles reference or schema files and declares no read capability, so nothing can open them at run time — ${allowed.trim() || 'allowed-tools is absent'}`);
+      }
+    }
+
+    if (canRead) continue;
     scanned++;
     text.split('\n').forEach((line, i) => {
       for (const claim of CLAIMS) {
@@ -2417,9 +2435,12 @@ try {
       }
     });
   }
-  if (!scanned) failures.push('no SKILL.md was scanned, so this gate is checking nothing');
-  add('skills-do-not-claim-tools-they-lack', failures.length === 0,
-    failures.length ? failures : [`${scanned} skill(s) declaring no read capability make no runtime file-integrity claim.`]);
+  if (!bundled) failures.push('no skill was found bundling reference files, so this gate is checking nothing');
+  add('skills-can-open-what-they-ship', failures.length === 0,
+    failures.length ? failures : [
+      `${bundled} skill(s) bundle reference or schema files, and every one of them declares a read capability.`,
+      `${scanned} skill(s) declaring no read capability make no runtime file-integrity claim.`
+    ]);
 }
 
 // Both contracts listed the recommendation fields by hand. The producer contract named three where
@@ -2609,6 +2630,145 @@ try {
     failures.length ? failures : [
       'The shipped recommendation example validates against the advisor output schema.',
       'The validator rejects a ninth entry, a repeated family, an invented status, a control plane outside the enum and a missing required field.'
+    ]);
+}
+
+// The exemplar in SKILL.md gave MI Link a business cutover of "minutes" while the normative
+// method-semantics table three sections above says "< 1 minute". The enum accepts both, so nothing
+// caught it, and that distinction is what decides whether a near-zero-downtime workload keeps MI
+// Link or is pushed to another method. Every JSON exemplar is checked against the table beside it.
+{
+  const failures = [];
+  const rules = readText(path.join('reference', 'decision-rules.md'));
+  const normative = new Map();
+  for (const line of rules.split('\n')) {
+    const row = line.match(/^\|\s*\*\*([^*]+)\*\*\s*\|\s*`([^`]+)`[^|]*\|\s*([^|]+)\|/);
+    if (!row) continue;
+    const cutover = (row[3].match(/`([^`]+)`/) || [])[1];
+    if (cutover) normative.set(row[1].trim(), { availability: row[2], cutover });
+  }
+  if (normative.size < 5) failures.push(`only ${normative.size} method(s) could be read out of the C1 downtime table, so this gate would pass by reading nothing`);
+
+  const ALIASES = { 'Azure DMS (online)': 'DMS online', 'Azure DMS online': 'DMS online', 'Azure DMS (offline)': 'DMS offline' };
+  // The C1 table is prose and the schema is an enum, so the two say the same thing in different
+  // words. Comparing them raw would make this gate fail on vocabulary rather than on meaning.
+  const asEnum = (cell) => {
+    const text = cell.trim().toLowerCase();
+    if (/^<\s*1\s*minute$/.test(text)) return '<1min';
+    if (text === 'near-zero') return 'near-zero';
+    if (text === 'minimal') return 'minimal';
+    if (text === 'minutes') return 'minutes';
+    if (text === 'hours') return 'hours';
+    if (text === 'full restore time') return 'full-restore-time';
+    if (text === 'full load time') return 'full-load-time';
+    if (/total migration/.test(text)) return 'total-migration-time';
+    return null;
+  };
+  const files = [
+    path.join('skills', 'recommend-migration-path', 'SKILL.md'),
+    path.join('examples', 'sample-recommendation.md')
+  ];
+  let checked = 0;
+  for (const file of files) {
+    for (const block of readText(file).matchAll(/```json\n([\s\S]*?)```/g)) {
+      let parsed;
+      try { parsed = JSON.parse(block[1]); } catch { continue; }
+      const recommendation = parsed.recommendation;
+      if (!recommendation?.method || !recommendation.businessCutoverDowntime) continue;
+      const name = ALIASES[recommendation.method] || recommendation.method;
+      const expected = normative.get(name);
+      if (!expected) continue;
+      const wanted = asEnum(expected.cutover);
+      if (!wanted) continue;
+      checked++;
+      if (wanted !== recommendation.businessCutoverDowntime) {
+        failures.push(`${file}: the exemplar gives ${name} a business cutover of \`${recommendation.businessCutoverDowntime}\`, and the C1 table in decision-rules.md says \`${expected.cutover}\` (\`${wanted}\`)`);
+      }
+    }
+  }
+  if (!checked) failures.push('no exemplar could be matched against the downtime table, so this gate is checking nothing');
+  add('exemplars-agree-with-the-downtime-table', failures.length === 0,
+    failures.length ? failures : [`${checked} exemplar(s) state the business cutover the C1 table gives their method, across ${normative.size} documented methods.`]);
+}
+
+// Adding a status to an enum is the easy half. `reported` shipped in the schema and in an
+// invariant, and nothing consumed it: the overall-status derivation had no branch for it, the
+// summary had no count, and the template had no column and no marker. A label with no rendering
+// and no readiness rule is worse than no label, because the nearest thing on the page is
+// `confirmed`. Every status the contract publishes must appear in all four places.
+{
+  const failures = [];
+  const dir = path.join('skills', 'generate-migration-prerequisite-plan');
+  const contract = readText(path.join(dir, 'reference', 'output-contract.md'));
+  const template = readText(path.join(dir, 'templates', 'prerequisite-plan.md'));
+  const schema = JSON.parse(readText(path.join(dir, 'schemas', 'output.schema.json')));
+
+  const statuses = schema.properties?.prerequisites?.items?.properties?.status?.enum || [];
+  if (statuses.length < 4) failures.push(`only ${statuses.length} prerequisite status(es) found in the schema, so this gate is checking nothing`);
+
+  const derivation = contract.slice(contract.indexOf('Overall status is derived'), contract.indexOf('## 2.'));
+  const summaryRow = (contract.match(/\n\s{2}confirmed[^\n]*/) || [''])[0];
+  // Read the two structures that actually render, not the whole file: a status named only in a
+  // paragraph is a status the reader never sees in the table. The first attempt at this gate
+  // matched anywhere in the template and passed with the column and the marker both deleted.
+  const summaryHeader = (template.match(/^\|\s*Area\s*\|(?:[^|\n]*\|)+\s*$/m) || [''])[0];
+  const statusLegend = (template.match(/`<[^`]*confirmed[^`]*>`/) || [''])[0];
+  if (!summaryHeader) failures.push('the template has no readiness summary header row to check');
+  if (!statusLegend) failures.push('the template has no status legend cell to check');
+
+  for (const status of statuses) {
+    // not_applicable is derived from applicability, never counted as readiness evidence.
+    if (status === 'not_applicable') continue;
+    const label = status.replace(/_/g, ' ');
+    if (!derivation.includes(status)) failures.push(`the overall-status derivation never mentions \`${status}\`, so a plan carrying one matches no branch`);
+    if (!summaryRow.includes(status)) failures.push(`the summary object has no count for \`${status}\``);
+    if (summaryHeader && !new RegExp(`\\|\\s*${label}\\s*\\|`, 'i').test(summaryHeader)) {
+      failures.push(`the readiness summary table has no \`${status}\` column, so the Markdown cannot report what the JSON counts`);
+    }
+    if (statusLegend && !statusLegend.includes(status)) {
+      failures.push(`the status legend offers no marker for \`${status}\`, so a row carrying it renders as something else`);
+    }
+  }
+  add('every-status-is-consumed-everywhere', failures.length === 0,
+    failures.length ? failures : [`${statuses.length} prerequisite status(es), each named by the derivation, the summary counts and the Markdown template.`]);
+}
+
+// Four documents gave three answers for one unknown. The input contract said each field is asked
+// at most once and an ambiguous answer becomes UNKNOWN; SKILL.md said to ask again; questions.json
+// mapped bulk_copy_tool UNKNOWN to unresolved_path; and invariant 14 allowed resolving to P20, a
+// tool the user never chose. questions.json is the machine-readable one, so it wins, and the prose
+// is checked against it rather than against a copy of itself.
+{
+  const failures = [];
+  const dir = path.join('skills', 'generate-migration-prerequisite-plan');
+  const questions = JSON.parse(readText(path.join(dir, 'reference', 'questions.json')));
+  const skill = readText(path.join(dir, 'SKILL.md'));
+  const contract = readText(path.join(dir, 'reference', 'output-contract.md'));
+  const inputContract = readText(path.join(dir, 'reference', 'input-contract.md'));
+
+  const unresolving = (questions.questions || questions).filter((q) => (q.effects || {}).UNKNOWN === 'unresolved_path');
+  if (!unresolving.length) failures.push('no question maps UNKNOWN to unresolved_path, so this gate is checking nothing');
+
+  for (const question of unresolving) {
+    // The paths the same question can resolve to when it IS answered.
+    const resolved = Object.entries(question.effects).filter(([value]) => value !== 'UNKNOWN').map(([, path_]) => path_);
+    for (const target of resolved) {
+      if (!/^P\d{2}$/.test(target)) continue;
+      const defaults = new RegExp(`unknown[^.]{0,80}resolves? to \`?${target}\`?`, 'i');
+      if (defaults.test(contract)) {
+        failures.push(`output-contract.md lets an unknown ${question.id} resolve to ${target}, while questions.json maps it to unresolved_path`);
+      }
+    }
+  }
+  // "Do not ask again" is the instruction, not the defect. Match the imperative form only, so the
+  // sentence that forbids re-asking does not trip the check that forbids re-asking.
+  const reAsks = skill.split('\n').some((line) => /\bask again\b/i.test(line) && !/\b(do not|never|don't|rather than|instead of)\b[^.]{0,40}\bask again\b/i.test(line));
+  if (reAsks && /\bask(ed)?\s+(each field\s+)?at most once/i.test(inputContract)) {
+    failures.push('SKILL.md says to ask again while the input contract says each field is asked at most once');
+  }
+  add('unknown-answers-resolve-the-same-way-everywhere', failures.length === 0,
+    failures.length ? failures : [
+      `${unresolving.length} question(s) map UNKNOWN to unresolved_path, and neither the skill nor the output contract offers a different outcome.`
     ]);
 }
 

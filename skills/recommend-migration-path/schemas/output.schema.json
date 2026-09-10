@@ -18,41 +18,318 @@
     "normalizedProfile": {
       "type": "object",
       "additionalProperties": false,
-      "description": "What the skill believes it was told, after labels and prose were converted to canonical IDs. Invariant 13: it is always present, so a misreading is visible rather than buried. Its property names are the ones input.schema.json defines, and normalized-profile-matches-input-schema keeps the two in step. Fields are optional here because a profile may be partial; nothing is required beyond what the interview established.",
+      "description": "What the skill believes it was told, after labels and prose were converted to canonical IDs. Invariant 13: it is always present, so a misreading is visible rather than buried. Its property names are the ones input.schema.json defines, and normalized-profile-matches-input-schema keeps the two in step. Fields are optional here because a profile may be partial; nothing is required beyond what the interview established. Each property mirrors the definition input.schema.json gives it, plus null for a field the interview never established. It used to type every field as {}, which accepts anything: the shipped example carried SQL_SERVER_2014 where the contract tabulates SQL2014, and an object where feature_dependencies must be an array, and validation reported nothing.",
       "properties": {
-        "scope": {},
-        "source_location": {},
-        "source_version": {},
-        "intent": {},
-        "driver": {},
-        "management_model": {},
-        "kubernetes_model": {},
-        "source_os": {},
-        "source_edition": {},
-        "clr_permission_set": {},
-        "tde_status": {},
-        "source_permissions": {},
-        "authentication": {},
-        "feature_dependencies": {},
-        "size": {},
-        "downtime": {},
-        "compliance": {},
-        "network_bandwidth": {},
-        "mi_link_ports": {},
-        "blob_https_reachability": {},
-        "network_ports": {},
-        "rpo": {},
-        "rto": {},
-        "target_region": {},
-        "performance": {},
-        "tenant_count": {},
-        "fabric_constraints": {},
-        "database_count": {},
-        "migration_batch_size": {},
-        "arc_extension_version": {},
-        "evidence": {},
+        "scope": {
+          "enum": [
+            "SINGLE_DB",
+            "FEW_DATABASES",
+            "LARGE_ESTATE",
+            "UNKNOWN",
+            null
+          ],
+          "description": "Drives the estate-discovery branch. When UNKNOWN the profile is treated as a single one and the estate branch does not fire."
+        },
+        "source_location": {
+          "enum": [
+            "ON_PREM",
+            "AZURE_VM",
+            "AWS_EC2",
+            "AWS_RDS",
+            "GCP_COMPUTE",
+            "GCP_CLOUD_SQL",
+            "NONE_CONFIRMED",
+            "UNKNOWN",
+            "NOT_APPLICABLE",
+            null
+          ],
+          "description": "Constrained to the IDs section 3 of reference/input-contract.md tabulates for this field, plus the three absence markers. It used to be a bare non-empty string, so a failed normalization such as \"SQL Server 2037\" or \"fully managed\" validated and reached the rules layer looking like a canonical profile. The enum is generated from the contract table rather than copied, and canonical-ids-match-the-contract fails the build if the two drift."
+        },
+        "source_version": {
+          "enum": [
+            "SQL2008",
+            "SQL2012",
+            "SQL2014",
+            "SQL2016",
+            "SQL2017_2019",
+            "SQL2022",
+            "SQL2025",
+            "NONE_CONFIRMED",
+            "UNKNOWN",
+            "NOT_APPLICABLE",
+            null
+          ],
+          "description": "Constrained to the IDs section 3 of reference/input-contract.md tabulates for this field, plus the three absence markers. It used to be a bare non-empty string, so a failed normalization such as \"SQL Server 2037\" or \"fully managed\" validated and reached the rules layer looking like a canonical profile. The enum is generated from the contract table rather than copied, and canonical-ids-match-the-contract fails the build if the two drift."
+        },
+        "intent": {
+          "enum": [
+            "MIGRATE_NOW",
+            "MODERNIZE_IN_PLACE",
+            "ASSESSMENT_ONLY",
+            "REHOST_FIRST",
+            "NONE_CONFIRMED",
+            "UNKNOWN",
+            "NOT_APPLICABLE",
+            null
+          ],
+          "description": "Constrained to the IDs section 3 of reference/input-contract.md tabulates for this field, plus the three absence markers. It used to be a bare non-empty string, so a failed normalization such as \"SQL Server 2037\" or \"fully managed\" validated and reached the rules layer looking like a canonical profile. The enum is generated from the contract table rather than copied, and canonical-ids-match-the-contract fails the build if the two drift."
+        },
+        "driver": {
+          "enum": [
+            "EOS_ESU",
+            "COST",
+            "APP_MODERNIZATION",
+            "DATACENTER_EXIT",
+            "FABRIC_ANALYTICS",
+            "SOVEREIGNTY_EDGE",
+            "NONE_CONFIRMED",
+            "UNKNOWN",
+            "NOT_APPLICABLE",
+            null
+          ],
+          "description": "Constrained to the IDs section 3 of reference/input-contract.md tabulates for this field, plus the three absence markers. It used to be a bare non-empty string, so a failed normalization such as \"SQL Server 2037\" or \"fully managed\" validated and reached the rules layer looking like a canonical profile. The enum is generated from the contract table rather than copied, and canonical-ids-match-the-contract fails the build if the two drift."
+        },
+        "management_model": {
+          "enum": [
+            "MANAGED_PAAS",
+            "OS_CONTROL",
+            "KUBERNETES",
+            "NONE_CONFIRMED",
+            "UNKNOWN",
+            "NOT_APPLICABLE",
+            null
+          ],
+          "description": "Constrained to the IDs section 3 of reference/input-contract.md tabulates for this field, plus the three absence markers. It used to be a bare non-empty string, so a failed normalization such as \"SQL Server 2037\" or \"fully managed\" validated and reached the rules layer looking like a canonical profile. The enum is generated from the contract table rather than copied, and canonical-ids-match-the-contract fails the build if the two drift."
+        },
+        "kubernetes_model": {
+          "enum": [
+            "ARC_MANAGED_ENGINE",
+            "DIY_CONTAINER",
+            "NONE_CONFIRMED",
+            "UNKNOWN",
+            "NOT_APPLICABLE",
+            null
+          ],
+          "description": "Constrained to the IDs section 3 of reference/input-contract.md tabulates for this field, plus the three absence markers. It used to be a bare non-empty string, so a failed normalization such as \"SQL Server 2037\" or \"fully managed\" validated and reached the rules layer looking like a canonical profile. The enum is generated from the contract table rather than copied, and canonical-ids-match-the-contract fails the build if the two drift."
+        },
+        "source_os": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
+        },
+        "source_edition": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
+        },
+        "clr_permission_set": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
+        },
+        "tde_status": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
+        },
+        "source_permissions": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
+        },
+        "authentication": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
+        },
+        "feature_dependencies": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "A list, not prose, so a rule can read a subtype such as PolyBase to an external RDBMS directly. An empty list is not the same as NONE_CONFIRMED: use the marker to record that the user checked."
+        },
+        "size": {
+          "enum": [
+            "UNDER_150_GB",
+            "FROM_150_GB_TO_4_TB",
+            "FROM_4_TB_TO_128_TB",
+            "OVER_128_TB",
+            "UNKNOWN",
+            null
+          ],
+          "description": "Feeds the Hyperscale ceiling, the seeding strategy and tier selection. UNKNOWN holds the tier at unknown_requires_assessment rather than defaulting it."
+        },
+        "downtime": {
+          "enum": [
+            "NEAR_ZERO",
+            "MINIMAL",
+            "OFFLINE",
+            "UNKNOWN",
+            null
+          ],
+          "description": "The tolerance the business stated. Never inferred backwards from the method that was chosen."
+        },
+        "compliance": {
+          "enum": [
+            "STANDARD_COMMERCIAL",
+            "EU_DATA_BOUNDARY",
+            "GOVERNMENT_SOVEREIGN",
+            "EDGE_AIR_GAPPED",
+            "UNKNOWN",
+            null
+          ],
+          "description": "Regional and sovereignty constraints. When UNKNOWN, sovereignty-restricted targets are not ranked first."
+        },
+        "network_bandwidth": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
+        },
+        "mi_link_ports": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
+        },
+        "blob_https_reachability": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
+        },
+        "network_ports": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
+        },
+        "rpo": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Recorded as written, never converted into a gate result. Free prose is context, not evidence."
+        },
+        "rto": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Recorded as written, never converted into a gate result. Free prose is context, not evidence."
+        },
+        "target_region": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Recorded as written, never converted into a gate result. Free prose is context, not evidence."
+        },
+        "performance": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "null means the question was asked and left unanswered, which is not the same as absent. When unresolved the tier becomes unknown_requires_assessment rather than defaulting to General Purpose."
+        },
+        "tenant_count": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Recorded as written, never converted into a gate result. Free prose is context, not evidence."
+        },
+        "fabric_constraints": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Recorded as written, never converted into a gate result. Free prose is context, not evidence."
+        },
+        "database_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Read against MI Link capacity: 100 links on General Purpose and Business Critical, 500 on Next-gen General Purpose."
+        },
+        "migration_batch_size": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Only evaluated when the Arc portal migration is used."
+        },
+        "arc_extension_version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "description": "Never treated as recent when absent. The Arc wizard batch limit is 10 per batch from 1.1.3348.364 and 1 otherwise, so an unknown version yields unknown_requires_assessment."
+        },
+        "evidence": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "dependenciesToolConfirmed": {
+              "type": "boolean"
+            },
+            "performanceMeasured": {
+              "type": "boolean"
+            },
+            "regionAvailabilityConfirmed": {
+              "type": "boolean"
+            },
+            "architectSignedOff": {
+              "type": "boolean"
+            }
+          },
+          "description": "Four self-reported booleans. They are recorded as claims to verify elsewhere and have no effect on the recommendation, because this skill reads no artefact. They once promoted a recommendation to validated and high, which turned an unverified statement into an assurance; that path no longer exists."
+        },
         "feature_dependencies_state": {
-          "$ref": "#/$defs/answerEcho"
+          "enum": [
+            "ANSWERED",
+            "NONE_CONFIRMED",
+            "UNKNOWN",
+            "NOT_APPLICABLE",
+            null
+          ],
+          "description": "Whether the dependency question was answered, and how. feature_dependencies is a list, and a list cannot say why it is empty: NONE_CONFIRMED means the user checked and found none, which clears a PaaS blocker, while UNKNOWN means blank, declined or unrecognised, which must hold the candidate at unknown_requires_assessment. The distinction was documented in the description of the list and enforced nowhere, so an unanswered question and a confirmed absence validated identically. ANSWERED means the list carries at least one dependency."
         }
       }
     },
@@ -516,7 +793,31 @@
           },
           "description": "What is not verified when the result is unknown_requires_assessment. Naming it is the difference between a gate a reader can close and one they can only worry about."
         }
-      }
+      },
+      "allOf": [
+        {
+          "$comment": "Invariant 10: a listed unverified field holds the gate open.",
+          "if": {
+            "required": [
+              "unverified"
+            ],
+            "properties": {
+              "unverified": {
+                "type": "array",
+                "minItems": 1
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "result": {
+                "const": "unknown_requires_assessment"
+              }
+            }
+          }
+        }
+      ],
+      "description": "The gate for the recommended method. Invariant 10 says a method gate may not report passed while any field it consumes is unknown, and the shipped example asserted passed with the Blob upload path listed as unverified. The two fields are tied together here, so the contradiction is no longer expressible."
     },
     "answerEcho": {
       "type": [

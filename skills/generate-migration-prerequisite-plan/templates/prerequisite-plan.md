@@ -32,15 +32,19 @@ register appears in an unresolved response.
 
 **📊 Readiness summary**
 
-| Area | Confirmed | Missing | Unknown | Not applicable |
-| --- | ---: | ---: | ---: | ---: |
-| `<area>` | `<count>` | `<count>` | `<count>` | `<count>` |
+| Area | Confirmed | Reported | Missing | Unknown | Not applicable |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `<area>` | `<count>` | `<count>` | `<count>` | `<count>` | `<count>` |
+
+Reported items are counted apart from confirmed ones. They are answers the skill was given and has
+no way to check, so a plan whose blockers are all reported reaches `ready_with_conditions` and
+never `ready`.
 
 **📋 Prerequisites**
 
 | Area | Prerequisite | Status | Blocking | Owner | Evidence required | Official source |
 | --- | --- | --- | :---: | --- | --- | --- |
-| `<area>` | `<requirement>` | `<✅ confirmed / ❌ missing / ❓ unknown / ➖ not applicable>` | `<yes/no>` | `<role>` | `<evidence>` | `<source title>` |
+| `<area>` | `<requirement>` | `<✅ confirmed / 🗣 reported / ❌ missing / ❓ unknown / ➖ not applicable>` | `<yes/no>` | `<role>` | `<evidence>` | `<source title>` |
 
 **🚧 Blocking actions**
 
