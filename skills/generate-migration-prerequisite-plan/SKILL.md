@@ -94,7 +94,7 @@ each of them has to be opened:
 4. [`reference/questions.json`](reference/questions.json)
 5. [`schemas/input.schema.json`](schemas/input.schema.json)
 6. [`schemas/output.schema.json`](schemas/output.schema.json)
-7. [`reference/knowledge-base.md`](reference/knowledge-base.md)
+7. [`docs/sql-server-to-azure-migration-prerequisite.md`](../../docs/sql-server-to-azure-migration-prerequisite.md)
 
 If one of them cannot be read, name that file and stop. Never compensate with remembered or invented
 prerequisites: a requirement recalled rather than read carries no source, and a plan whose citations
