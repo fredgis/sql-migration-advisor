@@ -1,7 +1,7 @@
 ---
 name: get-connection-details
 description: "Azure SQL connection failures and connection setup. Use when an app or tool cannot reach Azure SQL Database, Managed Instance, SQL Server on Azure VM or Fabric: connection timeouts, login errors 18456 or 40615, a connection that works from one network but not another, or which port, connection string, firewall or NSG rule to use. Prefer this over general debugging when the failure is a SQL connection."
-allowed-tools: ask_user
+allowed-tools: ask_user, view, grep, glob
 ---
 
 # get-connection-details
@@ -16,6 +16,12 @@ fact.
 
 Knowledge base: [`docs/sql-server-to-azure-migration-connectivity.md`](../../docs/sql-server-to-azure-migration-connectivity.md) v0.10 ·
 structured source: [`reference/connectivity-matrix.json`](reference/connectivity-matrix.json)
+
+Read [`reference/connectivity-matrix.json`](reference/connectivity-matrix.json),
+[`reference/input-contract.md`](reference/input-contract.md) and
+[`reference/output-contract.md`](reference/output-contract.md) before answering. Only `SKILL.md`
+arrives with the skill, so those three have to be opened. If one cannot be read, name it and stop:
+a port number or a driver requirement recalled rather than read is one nobody can check.
 
 ## What this skill does
 

@@ -15,14 +15,18 @@ is available on request. Both formats must represent exactly the same state.
 | Requirement type | `required` · `conditional` · `recommended` |
 | Evidence status | `reported` · `verified` |
 
-Overall status is derived:
+Overall status is derived, in this order, and the first branch that matches wins:
 
 - `blocked` when at least one applicable blocking prerequisite is `missing`;
 - `unknown_requires_assessment` when no blocker is known missing but at least one applicable
   blocking prerequisite is `unknown`;
-- `ready_with_conditions` when all blocking prerequisites are confirmed but a required
-  non-blocking prerequisite is missing/unknown;
-- `ready` when every applicable required prerequisite is confirmed.
+- `ready_with_conditions` when all blocking prerequisites are settled but at least one of them is
+  `reported` rather than `confirmed`, **or** a required non-blocking prerequisite is missing or
+  unknown. **`reported` caps readiness here and can never reach `ready`**: the skill makes no
+  network calls, so a stated fact is not a verified one, and a plan read as a go/no-go artefact
+  must not present an assertion as clearance;
+- `ready` when every applicable required prerequisite is `confirmed`, meaning each one carries an
+  evidence record.
 
 Recommended items never block readiness.
 
@@ -45,7 +49,7 @@ selectedPath                     deprecated alias for selectedMethodPath, emitte
                                  written against the single-path shape
 overallStatus
 summary
-  confirmed, missing, unknown, notApplicable, blockingMissing, blockingUnknown
+  confirmed, reported, missing, unknown, notApplicable, blockingMissing, blockingUnknown
 prerequisites[]
   id
   area
@@ -103,7 +107,7 @@ Free text cannot produce `typed_answer` or `verified_evidence`.
 | 11 | The Markdown table and JSON arrays are renderings of the same object and have identical counts and statuses. |
 | 12 | No output chooses a different target/method, provisions resources, executes migration, or claims architect approval. |
 | 13 | Every blocking prerequisite is represented in the summary counts. |
-| 14 | `P22` is present only after an explicit, informed user opt-in that names its archived, out-of-support status; when the tooling answer is unknown the output resolves to `P20` (`bcp`) or returns the shortlist, never to `P22`. |
+| 14 | `P22` is present only after an explicit, informed user opt-in that names its archived, out-of-support status. When the tooling answer is unknown the output is `unresolved_path` carrying both candidates, never `P22` and never a silent fall back to `P20`. This used to allow resolving to `P20`, which handed the user a tool they never chose while three other documents said the answer was unresolved. |
 | 15 | A refusal and a plan never mix: `unresolved_path` carries `unresolvedReason`, `candidatePaths` and `disambiguation` and no plan fields, while any other status carries the plan fields and none of the refusal fields. |
 | 16 | An `advisor_handoff` run carries `inheritedAdvisorFacts` and `metadata.sourceAdvisor`; a handoff without either is a contract failure, not an empty list. |
 | 17 | `selectedMethodPath.targetVariant` names which target family was selected. It is one of the method path's `targetVariants`, **or** of an applied overlay's, because an AVS-hosted SQL Server takes its data-movement method from a path that names the underlying platform and its target name from `P27`. When the variant comes from an overlay, that overlay is in `appliedOverlays[]`. Six method paths cover several families under one slash-separated target string, and their prerequisite rows are already conditioned per family, so a plan without this field applies the wrong publisher floors, connectivity requirements and role assignments while looking complete. |

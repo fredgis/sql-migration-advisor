@@ -397,7 +397,13 @@ for (const doc of [
   }
 }
 
-check('skill-ask-user', /^allowed-tools: ask_user$/mu.test(skill), 'the guided interview must declare ask_user');
+// The interview must be able to ask, and it must be able to read what it ships: Agent Skills load
+// SKILL.md alone, so a policy under references/ that nothing can open is a policy the model
+// reconstructs from memory. Both halves are checked, and the exact-match anchor is gone because it
+// made "ask_user and nothing else" the passing condition.
+check('skill-ask-user', /^allowed-tools:.*\bask_user\b/mu.test(skill), 'the guided interview must declare ask_user');
+check('skill-can-read-its-policy', /^allowed-tools:.*\b(view|read|grep|glob)\b/mu.test(skill),
+  'the skill bundles contracts, schemas and a knowledge base, so it must declare a tool that can open them');
 check('skill-contracts-wired',
   ['input-contract.md', 'output-contract.md', 'path-catalog.json', 'questions.json', 'input.schema.json', 'output.schema.json', 'sql-server-to-azure-migration-prerequisite.md'].every(name => skill.includes(name)),
   'SKILL.md must reference every local contract, both schemas and the KB');

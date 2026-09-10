@@ -62,7 +62,7 @@ SQL MI ranks first because it preserves instance-level compatibility with much l
 
 > **Preliminary recommendation — `Finance DB group (3 DBs)`**
 > **Azure SQL Managed Instance — General Purpose** via **Log Replay Service** · status **provisional** · confidence **medium**
-> KB **v3.5** (bundled, same commit as the skill) · rules **v3.5**
+> KB **v3.6** (bundled, same commit as the skill) · rules **v3.6**
 
 SQL MI is the recommended assessment path because the workload needs SQL Agent, cross-database queries, and linked servers, while the team wants managed PaaS; SQL Server 2014 and blocked MI Link ports 5022/11000–11999 make MI Link unavailable, so LRS is the practical online method with planned cutover downtime.
 
@@ -114,25 +114,23 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
 ```json
 {
   "metadata": {
-    "knowledgeBaseVersion": "v3.5",
-    "decisionRulesVersion": "v3.5",
+    "knowledgeBaseVersion": "v3.6",
+    "decisionRulesVersion": "v3.6",
     "sourceCommit": "bundled",
     "evaluatedAt": "2026-09-09T18:20:00Z",
     "recommendationStatus": "provisional",
     "confidence": "medium"
   },
   "normalizedProfile": {
-    "source_version": "SQL_SERVER_2014",
+    "source_version": "SQL2014",
     "management_model": "MANAGED_PAAS",
     "downtime": "MINIMAL",
-    "feature_dependencies": {
-      "state": "ANSWERED",
-      "items": [
-        "SQL_AGENT",
-        "CROSS_DB_QUERY",
-        "LINKED_SERVERS"
-      ]
-    },
+    "feature_dependencies": [
+      "SQL Agent jobs",
+      "cross-database queries",
+      "linked servers"
+    ],
+    "feature_dependencies_state": "ANSWERED",
     "mi_link_ports": "PORTS_BLOCKED"
   },
   "eligibilityTrace": [
@@ -229,13 +227,19 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
       "role": "secondary",
       "status": "unknown_requires_assessment",
       "reason": "Only suitable for a subset of tables with qualifying primary keys."
+    },
+    {
+      "method": "BACPAC / SqlPackage",
+      "role": "secondary",
+      "status": "unavailable",
+      "reason": "Carries schema and data but no instance-level objects, and the estate depends on SQL Agent jobs and linked servers."
     }
   ],
   "methodGateTrace": {
     "method": "Log Replay Service",
-    "result": "passed",
+    "result": "unknown_requires_assessment",
     "unverified": [
-      "Blob upload path"
+      "Blob upload path for the staged backups (BACKUP-BLOB-PATH)"
     ]
   },
   "blockers": [

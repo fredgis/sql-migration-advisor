@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Knowledge base v3.5" src="https://img.shields.io/badge/knowledge%20base-v3.5-2b8a3e">
+  <img alt="Knowledge base v3.6" src="https://img.shields.io/badge/knowledge%20base-v3.6-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml/badge.svg"></a>
 </p>
@@ -60,14 +60,14 @@ version loaded and where it came from, so the advice is traceable.
 
 ## Why it is trustworthy
 
-- **Verified knowledge** — the v3.5 knowledge base is source-backed and corrected against Microsoft Learn.
+- **Verified knowledge** — the v3.6 knowledge base is source-backed and corrected against Microsoft Learn.
 - **Rules under regression test** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers. An executable mirror in `tests/` replays 116 scenarios through those rules on every commit. The mirror is not what runs in your session: an agent reads the rules and applies them, so this is a tested policy rather than a byte-identical guarantee.
 - **Every decision is addressable** — the card cites a rule ID for each verdict, and [`reference/decision-rules.md`](reference/decision-rules.md) ends with an index of all 31. Look one up, read what it consumes and how it treats an unknown, and argue with it.
 - **You see what lost, not just what won** — the card lists every method the knowledge base supports for the chosen target, each with a status and a reason. A method that is never enumerated is never rejected either, so its absence cannot be argued with; that is how Azure DMS stayed out of the Managed Instance guidance while the matrix declared it supported. Any candidate marked `available` can be handed to the prerequisite companion instead of the recommended one.
 - **Explicit uncertainty** — every recommendation is `provisional`, and `medium` is the confidence ceiling. Nothing higher is reachable from an interview, because the skill reads no artefact from your estate. It carries assumptions, unknowns, blockers and the evidence a tool would have to produce.
 - **It checks its own answer** — before the card is shown, the skill re-reads its draft against the 15 invariants in [`reference/output-contract.md`](reference/output-contract.md). One of them: no eligibility claim may rest on a field you never answered. A failed invariant is shown to you, never silently repaired.
 - **Freshness gates** — version bumps require substantive diffs; link checks classify bot-blocked pages; high-risk claims are tracked in [`reference/claims-registry.json`](reference/claims-registry.json).
-- **Regression protection** — [`tests/`](tests/) holds 116 golden scenarios and 52 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
+- **Regression protection** — [`tests/`](tests/) holds 116 golden scenarios and 55 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
 
 ## One version, every surface
 
@@ -77,20 +77,20 @@ The knowledge base is quoted by a skill, three manifests, a PDF, a poster, this 
 
 | Surface | Version | Up to date |
 | --- | --- | --- |
-| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v3.5` | ✅ |
-| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v3.5` | ✅ |
-| `SKILL.md` and its pinned fetch URL | `v3.5.0` | ✅ |
-| `version.json`, `plugin.json`, `marketplace.json` | `v3.5.0` | ✅ |
-| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v3.5` | ✅ |
-| Poster caption and PNG | `v3.5` | ✅ |
-| This README's badge and PDF sentence | `v3.5` | ✅ |
-| **This table** | `v3.5` | ✅ |
+| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v3.6` | ✅ |
+| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v3.6` | ✅ |
+| `SKILL.md` and its pinned fetch URL | `v3.6.0` | ✅ |
+| `version.json`, `plugin.json`, `marketplace.json` | `v3.6.0` | ✅ |
+| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v3.6` | ✅ |
+| Poster caption and PNG | `v3.6` | ✅ |
+| This README's badge and PDF sentence | `v3.6` | ✅ |
+| **This table** | `v3.6` | ✅ |
 | The six `blume/public/*.svg` mirrors | — | ✅ |
 | [`blume/docs/index.mdx`](blume/docs/index.mdx) — the docs site | — | ✅ |
-| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v3.5.0` | ✅ |
-| [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | `v3.5.0` | ✅ |
+| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v3.6.0` | ✅ |
+| [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | `v3.6.0` | ✅ |
 | `howto/*.html` | — | ✅ |
-| The developer pitch's sample failure block | `v3.5` | ✅ |
+| The developer pitch's sample failure block | `v3.6` | ✅ |
 
 <!-- surfaces:end -->
 
@@ -126,7 +126,7 @@ status line. See [§ The prerequisite companion](#the-prerequisite-companion) an
 | [`reference/claims-registry.json`](reference/claims-registry.json) | Hashes and source pointers for high-risk claims, used by weekly drift detection. 40 claims: 20 for the migration knowledge base, 10 for prerequisites, 10 for connectivity. |
 | [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) | The same knowledge base as a branded, partner-ready PDF. |
 | [`lab/`](lab/) | A self-contained, hands-on lab: take a legacy SQL Server 2016 workload to a SQL Server on Azure VM, driven by the advisor and the HVE Squad (VM-to-VM migration). |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Deep dive: what the plugin is, how a session runs end to end, what the 52 gates defend, and where it can still be wrong. |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Deep dive: what the plugin is, how a session runs end to end, what the 55 gates defend, and where it can still be wrong. |
 | [`docs/NEWDESIGNv2.md`](docs/NEWDESIGNv2.md) | Why there is a v2: how the decision policy became versioned, addressable and testable rather than prose an implementer had to interpret. |
 | [`docs/NEWDESIGNv3.md`](docs/NEWDESIGNv3.md) | **New.** Why there is a v3: a defect that took three releases to see, why a method that is never enumerated is never rejected either, and what changed when the handoff between advisor and prerequisite companion had to carry what the recommendation knew. |
 | [`docs/WEEKLYCHECK.md`](docs/WEEKLYCHECK.md) | Deep dive on the weekly check: how all three knowledge bases are verified, reviewed and stamped each Monday, what it delivers, and what it refuses to do on its own. |
@@ -457,7 +457,7 @@ Mermaid decision diagrams. The `SKILL.md` mirrors its AI Migration Agent I/O con
 
 The same knowledge base ships as a polished, branded PDF —
 [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (27 pages,
-v3.5, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
+v3.6, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
 
@@ -523,6 +523,7 @@ base and this README on the same version. Last verified: August 2026.
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| v3.6.0 | 2026-09-10 | **Eleven findings, all founded, five of them created by the release shipped the day before.** The worst was not a defect in a file but a wrong premise underneath three releases of fixes. Asked twice to reconcile `allowed-tools: ask_user` with instructions that apply thousands of lines of bundled policy, I removed the claim rather than granting the access, and wrote that the policy ships in context. Agent Skills load `SKILL.md` alone: everything under `reference/` and `schemas/` has to be opened. So the skills could not read their own rules and had to work from memory, which is the failure this repository exists to prevent. All three skills now declare read tools, are told to load their contracts before evaluating, and to name the file they could not read and stop. A gate fails any skill that bundles policy it has no way to open, which caught `get-connection-details` carrying the same defect unreviewed. **Four of my own fixes from v3.5.0 were wrong.** I rewrote a broken knowledge-base link into a different broken one, because the port script checked that no upstream path survived and never that the new target resolved; it now resolves every link on disk. The rebuilt example asserted a `passed` method gate while listing the Blob upload path as unverified, which invariant 10 forbids, and it carried `SQL_SERVER_2014` where the contract tabulates `SQL2014`. The fixture gate passed both because `normalizedProfile` typed every field as `{}`; it mirrors the input schema now, and rejects both on sight. `reported` was added to the status enum with nothing consuming it: no branch in the readiness derivation, no count, no column, no marker. And a version-stamp exclusion I added to protect the sentence "Until v2.4 the question offered" also froze a literal `v3.1` into the message the skill emits at the end of every assessment; it is a placeholder now. Also: the exemplar gave MI Link a cutover of `minutes` where the C1 table says under a minute; the candidate list showed two of the six methods the coverage data marks selectable; `advisor-coverage.json` defined `role` and shipped with only one of the two skills; and four documents gave three different answers for an unknown tooling choice. The fork layout moves to `references/`, which is the only one `apm pack` reads. 52 gates to 55. |
 | v3.5.0 | 2026-09-09 | **Thirteen findings, all founded, and four of them created by the previous two releases the same week.** The one that mattered most was a schema constraint that had never been executed: nothing in this repository validated an instance, so every schema could say anything and stay green. `eligibilityTrace` was pinned to eight unique entries and still admitted `sql_mi` twice under two reasons with a family missing; the crosswalk emitted `MI_LINK_PORTS_CONFIRMED` and a lowercase `unknown` into a question accepting only `CONFIRMED`, `MISSING` and `UNKNOWN`, so a confirmed answer became unknown and blocked ports never became a blocker. The gate written the day before to prevent exactly that checked the map's **keys** and never its **values**. The scenario validator was taught `contains`, `const`, `uniqueItems`, `allOf`, `anyOf`, `if/then` and the rest, and now runs the shipped fixtures with self-tests that reject each defect this review found. **Invariant 17, added the day before, blocked nine documented AVS routes**: it required the target family to come from the method path, and for AVS the target name lives on the `P27` overlay, so it contradicted invariant 1b. It reads the union now. Also: the producer contract never named three fields its own schema requires; the interview accepted any string where the contract tabulates 79 option IDs; `feature_dependencies` could not say why it was empty; a prerequisite could cite any public page; the shipped example still taught `recommendation.primary`, `winsIf`, `hardBlockers` and a control-plane label the enum rejects; the template could not render `appliedOverlays`, so an AVS plan dropped `P27` from the Markdown while the JSON kept it; and `confirmed` was reserved for evidence but granted on assertion, which now splits into `reported` and `confirmed`. One finding is answered on the pull request rather than implemented: enforcing exactly one selected method would settle, in a schema commit, a contradiction nine documents disagree about. |
 | v3.4.0 | 2026-09-09 | **The same reviewer came back and went deeper: eleven findings, ten real, and five of them created by the previous day's fixes.** The sharpest was mine twice over. Answering v3.3.0 I claimed `eligibilityTrace` was safe because it was pinned to eight entries with `uniqueItems`; `uniqueItems` compares whole entries, so `sql_mi` could appear twice under two different reasons while another family vanished. The schema now names each family and requires it exactly once. I also justified leaving `sourceAdvisor` loose by pointing at `additionalProperties: true`, and the reviewer turned that straight around: the open object was the problem, not the excuse. `metadata` is closed and an `advisor_handoff` must carry its provenance. **Six catalog paths fuse several target families into one slash-separated string**, and their prerequisite rows are already written per family, so a Fabric subscriber could inherit the Managed Instance update-policy row and a container the Azure VM firewall rows. Nothing carried the selected family into the plan; `targetVariant` now does, derived from the target string so the two cannot drift. **P27 advertised `AVS` and `Azure VMware Solution` as method aliases** although it is a platform overlay, so asking for the target alone produced a readiness plan for a platform nobody migrates to, while invariant 1b had said since v3.1 that an AVS route carries both paths. And `advisorOutput` was typed object-or-null with two object-only branches, so null was advertised and rejected at once. One finding was answered rather than implemented: enforcing exactly one selected method would freeze into the contract a rule that nine documents contradict, and that argument belongs on the pull request, not in a commit. |
 | v3.3.0 | 2026-09-09 | **A reviewer on the Microsoft fork found nine defects, and eight were real.** The worst was a transposition: the fact crosswalk expected the Advisor to emit `PORTS_OPEN_CONFIRMED` while the contract declares `PORTS_CONFIRMED_OPEN`, so a user who confirmed their MI Link ports had that answer turned into `unknown` and the question asked again. The gate checked that both field *names* existed and never looked at the *values*. **`controlPlane` was required by the public handoff shape and unknown to the mirror shape**, so the same Arc-orchestrated migration was refused through one door and waved through the other. **The path catalog still offered BACPAC into Fabric SQL database** — the route v3.2 removed from the rules but not from the catalog, so asking for that pair still produced a readiness plan. Both skills also claimed to *read* their contracts and stop if a file were missing, while declaring `ask_user` as their only tool: they now say the policy ships in context, and integrity is enforced by the build gates that can actually check it. Plus the weekly review: the DMS row marked AVS `➖` while the rules called it unavailable and cited that symbol as proof, and the minimum-downtime row said AVS needs hours while §11 called HCX zero-downtime. Three new gates: crosswalk values must exist in the contract, vocabulary counts are derived from their own tables, and every version string in the advisor skill must match the manifest. |
