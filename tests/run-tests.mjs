@@ -2772,6 +2772,42 @@ try {
     ]);
 }
 
+// A skill is told to open its policy before evaluating anything, and a link that resolves to
+// nothing turns that instruction into a refusal. This shipped: the mandatory load list named
+// reference/knowledge-base.md, which is the fork's layout, while upstream the file is under docs/.
+// The installed plugin stopped rather than answering, which is the correct behaviour meeting an
+// incorrect path.
+//
+// The same check already ran in the port script, against the fork only. Running it on one side of
+// a pair and not the other is the defect this repository keeps finding, so it runs here too.
+{
+  const failures = [];
+  let checked = 0;
+  const scan = (rel) => {
+    const text = readText(rel);
+    const from = path.dirname(path.join(root, rel));
+    for (const link of text.matchAll(/\]\(([^)#:\s]+\.(?:md|json))\)/g)) {
+      checked++;
+      if (!fs.existsSync(path.resolve(from, link[1]))) {
+        failures.push(`${rel}: link to ${link[1]} resolves to nothing`);
+      }
+    }
+  };
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(path.join(root, dir), { withFileTypes: true })) {
+      const rel = path.join(dir, entry.name);
+      if (entry.isDirectory()) { walk(rel); continue; }
+      if (entry.name.endsWith('.md')) scan(rel);
+    }
+  };
+  walk('skills');
+  for (const file of ['reference/input-contract.md', 'reference/output-contract.md', 'reference/decision-rules.md']) scan(file);
+
+  if (checked < 25) failures.push(`only ${checked} link(s) were resolved, so this gate is checking almost nothing`);
+  add('every-link-resolves-to-a-file-that-exists', failures.length === 0,
+    failures.length ? failures : [`${checked} relative link(s) across the skills and the policy documents all resolve to a file that exists.`]);
+}
+
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };
 if (jsonMode) {
   process.stdout.write(JSON.stringify({ summary, results }, null, 2) + '\n');
