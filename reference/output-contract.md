@@ -25,6 +25,25 @@ Promoting a recommendation to validated means reading real artefacts and recordi
 | `medium` | Triage is complete and internally consistent. The ceiling for this skill |
 | `low` | At least one decision-driving unknown remains, or two answers conflict |
 
+### Control plane
+
+`controlPlane` names what orchestrates the migration, and it selects prerequisites rather than
+labelling the result: `azure-arc` pulls in the Arc extension, identity and batch requirements and
+changes which source-version matrix governs the method.
+
+| Value | Orchestrated by |
+|---|---|
+| `standalone` | the source and target instances, with no orchestration layer |
+| `azure-arc` | SQL Server enabled by Azure Arc |
+| `ssms-migration-component` | the SSMS 22 Migration Component |
+| `azure-migrate` | Azure Migrate |
+| `azure-dms` | Azure Database Migration Service |
+| `fabric` | the Fabric Migration Assistant |
+| `vmware-hcx` | VMware HCX |
+
+The schema has declared these seven since v3.1 and this page named none of them, so a producer had
+to read the schema to learn a vocabulary the contract was supposed to publish.
+
 ---
 
 ## 2. Structure
@@ -67,7 +86,7 @@ Run every invariant below **before** showing the card. This is the only mechanis
 |---|---|
 | 1 | The primary target is `eligible` or `eligible_with_remediation`, never one just marked `unsupported` |
 | 2 | The alternative target is also `eligible` or `eligible_with_remediation` |
-| 3 | The selected method passes its own gate: source version range, ports, source type, capacity, permissions |
+| 3 | The selected method is not `unavailable`: nothing it consumes rules it out. Its gate may be `passed`, or `unknown_requires_assessment` when a field it depends on is unproven, and a recommendation resting on an unproven gate is provisional and says which evidence would settle it |
 | 4 | The selected tier violates no capacity or feature limit |
 | 5 | Every hard-gate unknown appears in both `unknowns` and `evidenceRequired` |
 | 6 | An `unsupported` target never appears as primary or alternative |
@@ -79,7 +98,7 @@ Run every invariant below **before** showing the card. This is the only mechanis
 | 12 | `unsupported` marks a technical incompatibility only. A target the user ruled out by preference is `excluded_by_preference`, because a preference can be revisited and an incompatibility cannot |
 | 13 | `normalizedProfile` is present, so the reader can see what the skill thinks it was told |
 | 14 | **Every method the section 8 matrix marks `primary` or `secondary` for the chosen target appears in `methodCandidates`, with a status and a reason.** This is invariant 11 applied to methods. A method that is never a candidate is never rejected either, so its absence cannot be argued with — which is how Azure DMS stayed out of the Managed Instance and SQL VM guidance while the matrix declared it supported for both |
-| 15 | The recommended method appears in `methodCandidates` and is marked available there. A winner absent from its own candidate list was reached by a route nothing evaluated |
+| 15 | The recommended method appears in `methodCandidates`, and **its status there and its `methodGateTrace` result answer the same question, so they must agree**: `available` with `passed`, `unknown_requires_assessment` with `unknown_requires_assessment`, and never `unavailable` or `refused` for a method that won. The two use different words for the same three states, which is why they drifted apart unnoticed in the shipped exemplars. This invariant used to demand `available` outright, which made the ordinary case unrepresentable: a method that is viable, recommended, and waiting on one unproven field had no honest shape, so the card either claimed a gate it had not passed or dropped the candidate that won |
 
 **When an invariant fails, do not repair the output silently.** Expose the inconsistency, return a provisional shortlist or name the missing evidence, and say which invariant broke. A card that quietly corrects itself hides the fact that the rules disagreed.
 

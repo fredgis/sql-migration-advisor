@@ -39,8 +39,14 @@ validates, and it is the only shape the Advisor emits:
 
 A second shape is still accepted for the regression mirror, which reports flat fields:
 `primary_target`, `tier`, `method`, `targetAvailabilityDuringSync`,
-`businessCutoverDowntime`, `controlPlane`, `recommendationStatus`, `confidence`, `unknowns`,
-`hardBlockers` and `evidenceRequired`.
+`businessCutoverDowntime`, `controlPlane`, `methodGateStatus`, `recommendationStatus`,
+`confidence` and `eligibility`.
+
+**This list is derived from the mirror schema, not written beside it.** It used to name `unknowns`,
+`hardBlockers` and `evidenceRequired`, which the mirror declares nowhere and never emits, so a
+producer following the page sent three fields the consumer could not read. The check that guards
+this ran in one direction only, from the schema to the prose, which is why prose naming a field
+that does not exist went unnoticed.
 
 **`primary_target` is the only accepted spelling.** This page also advertised `primaryTarget`
 while the schema defined and required the snake_case form alone, so a producer following the
@@ -65,7 +71,7 @@ is a contract failure and is reported as one.
 candidate marked `available` over the recommended one, resolve that candidate's
 `prerequisitePaths` instead. Do not re-run the ranking.
 
-**Inherited facts are resolved through `reference/advisor-fact-mappings.json`, not by guesswork.**
+**Inherited facts are resolved through [`advisor-fact-mappings.json`](advisor-fact-mappings.json), not by guesswork.**
 The two skills name and type their facts differently, so "do not ask again" was impossible to apply
 consistently: `size` is a band here and a number in gigabytes there, `downtime` is
 `downtime_tolerance`, and `mi_link_ports` is free text against a status. The crosswalk states, for
