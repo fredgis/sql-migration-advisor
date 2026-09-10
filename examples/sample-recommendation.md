@@ -62,7 +62,7 @@ SQL MI ranks first because it preserves instance-level compatibility with much l
 
 > **Preliminary recommendation — `Finance DB group (3 DBs)`**
 > **Azure SQL Managed Instance — General Purpose** via **Log Replay Service** · status **provisional** · confidence **medium**
-> KB **v3.6** (bundled, same commit as the skill) · rules **v3.6**
+> KB **v3.7** (bundled, same commit as the skill) · rules **v3.7**
 
 SQL MI is the recommended assessment path because the workload needs SQL Agent, cross-database queries, and linked servers, while the team wants managed PaaS; SQL Server 2014 and blocked MI Link ports 5022/11000–11999 make MI Link unavailable, so LRS is the practical online method with planned cutover downtime.
 
@@ -114,14 +114,16 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
 ```json
 {
   "metadata": {
-    "knowledgeBaseVersion": "v3.6",
-    "decisionRulesVersion": "v3.6",
+    "knowledgeBaseVersion": "v3.7",
+    "decisionRulesVersion": "v3.7",
     "sourceCommit": "bundled",
     "evaluatedAt": "2026-09-09T18:20:00Z",
     "recommendationStatus": "provisional",
     "confidence": "medium"
   },
   "normalizedProfile": {
+    "intent": "MIGRATE_NOW",
+    "source_location": "ON_PREM",
     "source_version": "SQL2014",
     "management_model": "MANAGED_PAAS",
     "downtime": "MINIMAL",
@@ -143,7 +145,7 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
     {
       "target": "avs",
       "status": "excluded_by_preference",
-      "ruleId": "AVS-DRIVER",
+      "ruleId": "AVS-LICENSING",
       "reason": "No VMware-continuity requirement was stated, so the platform was not selected. Technically compatible."
     },
     {
@@ -161,7 +163,7 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
     {
       "target": "fabric_sql_db",
       "status": "unsupported",
-      "ruleId": "FABRIC-FIT",
+      "ruleId": "FABRIC-TARGET",
       "reason": "A production OLTP estate with instance-level features is outside the target surface."
     },
     {
@@ -200,8 +202,8 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
     {
       "method": "Log Replay Service",
       "role": "primary",
-      "status": "available",
-      "reason": "Source is SQL Server 2014, inside the documented 2008-2022 range, and the migration fits the 30-day window.",
+      "status": "unknown_requires_assessment",
+      "reason": "Source is SQL Server 2014, inside the documented 2008-2022 range, and the migration fits the 30-day window. Held here because the Blob upload path that stages its backups is unproven.",
       "selected": true
     },
     {

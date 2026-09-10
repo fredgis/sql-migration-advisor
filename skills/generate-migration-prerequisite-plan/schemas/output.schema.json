@@ -228,7 +228,7 @@
               "unknown",
               "not_applicable"
             ],
-            "description": "confirmed is backed by an evidence record; reported is a typed answer the skill has no way to verify, because it makes no network calls; missing is a typed answer establishing the requirement is unmet; unknown is not established; not_applicable means the applicability condition is demonstrably false. reported was added because a readiness plan is read as a go/no-go artefact, and labelling a user assertion confirmed lends it an authority the source does not earn. It counts as neither confirmed nor missing in the summary."
+            "description": "confirmed means a question in questions.json feeds this prerequisite and the typed answer satisfies it, or an acceptedEvidence record does. reported is a typed claim about a prerequisite no question feeds, which the skill has no way to check because it makes no network calls. missing is a typed answer establishing the requirement is unmet; unknown is not established; not_applicable means the applicability condition is demonstrably false. The discriminator between confirmed and reported is the question mapping, not the evidenceRequired column: that column is required on all 291 rows, and keying on it made confirmed unreachable. The condition therefore lives in a gate that can read questions.json rather than in a schema that cannot."
           },
           "blocking": {
             "type": "boolean"
@@ -266,34 +266,7 @@
             "type": "string",
             "format": "date"
           }
-        },
-        "allOf": [
-          {
-            "$comment": "Invariant 19: evidence-gated prerequisites need an evidence record before confirmed.",
-            "if": {
-              "required": [
-                "status",
-                "evidenceRequired"
-              ],
-              "properties": {
-                "status": {
-                  "const": "confirmed"
-                }
-              }
-            },
-            "then": {
-              "required": [
-                "acceptedEvidence"
-              ],
-              "properties": {
-                "acceptedEvidence": {
-                  "type": "array",
-                  "minItems": 1
-                }
-              }
-            }
-          }
-        ]
+        }
       }
     },
     "blockers": {

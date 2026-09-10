@@ -581,9 +581,40 @@
       "description": "Three states, not two. With only passed and refused, an unverified prerequisite has nowhere to go and gets reported as passed, which is what happened to a real session whose Blob upload path nobody had tested. Invariant 10: a gate may not report passed while any field it consumes is unknown."
     },
     "ruleId": {
-      "type": "string",
-      "pattern": "^[A-Z][A-Z0-9-]+$",
-      "description": "The rule that decided this line, as it appears in reference/decision-rules.md. One short token, enough for a reader to look it up and challenge it."
+      "enum": [
+        "AG-VERSION",
+        "ARC-IN-PLACE",
+        "ARC-WIZARD-BATCH",
+        "AVS-LICENSING",
+        "BACKUP-BLOB-PATH",
+        "CLR-PERMISSION",
+        "COPILOT-AGENT",
+        "DEPENDENCY-INVENTORY",
+        "DMS-MODE",
+        "DOWNTIME-CLASS",
+        "DTC-TOPOLOGY",
+        "FABRIC-ASSISTANT",
+        "FABRIC-TARGET",
+        "FILESTREAM-PAAS",
+        "HYPERSCALE-CEILING",
+        "LINKED-SERVERS",
+        "LRS-VERSION",
+        "LRS-WINDOW",
+        "MANAGEMENT-MODEL",
+        "MI-LINK-CAPACITY",
+        "MI-LINK-HOST",
+        "MI-LINK-PORTS",
+        "MI-LINK-SOURCE",
+        "MI-LINK-VERSION",
+        "MI-TIER",
+        "OUTPUT-CONSISTENCY",
+        "POLYBASE-KIND",
+        "RANK-ORDER",
+        "REPL-PUBLISHER",
+        "SOURCE-PERMISSIONS",
+        "SQLDB-TIER"
+      ],
+      "description": "The rule that decided this line, as it appears in reference/decision-rules.md. The enum is generated from that index rather than written beside it, because a permissive pattern accepted any capitalised token and the shipped exemplars cited seven rules that do not exist: a reader following the contract's promise to look a verdict up found nothing to challenge."
     },
     "statements": {
       "type": "array",

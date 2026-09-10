@@ -11,7 +11,7 @@ is available on request. Both formats must represent exactly the same state.
 | Scope | Allowed values |
 | --- | --- |
 | Individual prerequisite | `confirmed` · `reported` · `missing` · `unknown` · `not_applicable` |
-| Overall plan | `ready` · `ready_with_conditions` · `blocked` · `unknown_requires_assessment` |
+| Overall plan | `ready` · `ready_with_conditions` · `blocked` · `unknown_requires_assessment` · `unresolved_path` |
 | Requirement type | `required` · `conditional` · `recommended` |
 | Evidence status | `reported` · `verified` |
 
@@ -112,14 +112,14 @@ Free text cannot produce `typed_answer` or `verified_evidence`.
 | 16 | An `advisor_handoff` run carries `inheritedAdvisorFacts` and `metadata.sourceAdvisor`; a handoff without either is a contract failure, not an empty list. |
 | 17 | `selectedMethodPath.targetVariant` names which target family was selected. It is one of the method path's `targetVariants`, **or** of an applied overlay's, because an AVS-hosted SQL Server takes its data-movement method from a path that names the underlying platform and its target name from `P27`. When the variant comes from an overlay, that overlay is in `appliedOverlays[]`. Six method paths cover several families under one slash-separated target string, and their prerequisite rows are already conditioned per family, so a plan without this field applies the wrong publisher floors, connectivity requirements and role assignments while looking complete. |
 | 18 | Every `prerequisites[].id` exists in the bundled prerequisite knowledge base, and every `officialSources` entry is one of the documented hosts. The ID pattern admits `P10-999` and a generic URI admits any public page, so a fabricated row with a plausible citation satisfied the shape while inventing a requirement. Membership is the check, not the shape. |
-| 19 | A prerequisite whose `evidenceRequired` is set cannot be `confirmed` without a matching `acceptedEvidence` entry. A typed answer alone moves it to `reported`, which counts as neither confirmed nor missing in the readiness summary. `confirmed` is reserved for a requirement backed by an evidence record, because a readiness plan is read as a go/no-go artefact and its labels carry more authority than its caveats. |
+| 19 | A prerequisite that **no question in `questions.json` feeds** cannot be `confirmed` without a matching `acceptedEvidence` entry; a typed claim about it is `reported`. A prerequisite that a question **does** feed is settled by the typed answer, exactly as invariant 3 and the input contract say. The discriminator is the question mapping, not the `evidenceRequired` column: that column is required on all 291 rows, so keying on it made `confirmed` unreachable and `ready` impossible, which is a rule no plan could ever satisfy. 122 rows are answerable and 169 are evidence-only, and the gate derives both counts rather than trusting this sentence. |
 
 If an invariant fails, expose the invariant and stop before rendering a readiness verdict. Do not
 repair the plan silently.
 
 ## 5. Markdown rendering
 
-Use the bundled [`templates/prerequisite-plan.md`](../templates/prerequisite-plan.md). The detailed
+Use the bundled [`../templates/prerequisite-plan.md`](../templates/prerequisite-plan.md). The detailed
 table uses this column order:
 
 | Area | Prerequisite | Status | Blocking | Owner | Evidence required | Official source |
@@ -128,6 +128,7 @@ table uses this column order:
 Status markers:
 
 - `✅ confirmed`
+- `🗣 reported`
 - `❌ missing`
 - `❓ unknown`
 - `➖ not applicable`

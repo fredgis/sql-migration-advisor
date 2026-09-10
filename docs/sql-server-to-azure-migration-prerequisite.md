@@ -630,7 +630,8 @@ The companion skill must reject or expose a policy-integrity failure when:
 - Markdown and JSON statuses differ;
 - Smart Bulk Copy is described as an Azure service or supported product;
 - Smart Bulk Copy (P22) is resolved without an explicit, informed opt-in, or is offered as the
-  fallback when the tooling question goes unanswered; the fallback is P20 (`bcp`) or the shortlist;
+  fallback when the tooling question goes unanswered; an unanswered tooling choice stays
+  `unresolved_path` and carries both candidates, never P20 and never P22;
 - a refusal and a plan are mixed: an `unresolved_path` answer carries plan fields such as
   `selectedPath`, `prerequisites` or `blockers`, or a resolved plan borrows the refusal vocabulary
   of `unresolvedReason`, `candidatePaths` or `disambiguation`;

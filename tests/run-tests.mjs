@@ -2808,6 +2808,159 @@ try {
     failures.length ? failures : [`${checked} relative link(s) across the skills and the policy documents all resolve to a file that exists.`]);
 }
 
+// Six of the nine findings in the third review round were regressions from the round before, and
+// every one had the same shape: a change verified where it was made and nowhere else. A gate
+// written from a fix inherits the blind spot of that fix, which is how the link check that shipped
+// that morning read Markdown links and missed the two stale paths written in code spans.
+//
+// So these checks are derived from the *set* of surfaces a token appears on, not from the file
+// that changed. Four sweeps, each of which would have caught findings that reached a reviewer:
+//
+//   vocabulary   a schema enum value must be named by the document that publishes that vocabulary
+//   stale names  a normative field list may not mandate a name the schema does not declare
+//   paths        every repository path in a code span must resolve, not just Markdown links
+//   agreement    two fields that answer the same question must say the same thing in the fixtures
+{
+  const failures = [];
+  const advisorOut = JSON.parse(readText(path.join('skills', 'recommend-migration-path', 'schemas', 'output.schema.json')));
+  const prereqOut = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'schemas', 'output.schema.json')));
+  const prereqIn = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'schemas', 'input.schema.json')));
+
+  // 1. Vocabulary: an enum the schema declares must be named by the page that publishes it.
+  const vocabularies = [
+    { values: prereqOut.properties.overallStatus?.enum || [], doc: path.join('skills', 'generate-migration-prerequisite-plan', 'reference', 'output-contract.md'), label: 'overall plan status' },
+    { values: advisorOut.$defs?.eligibilityStatus?.enum || [], doc: path.join('reference', 'output-contract.md'), label: 'eligibility status' },
+    { values: advisorOut.$defs?.methodCandidate?.properties?.status?.enum || [], doc: path.join('reference', 'output-contract.md'), label: 'method candidate status' },
+    { values: advisorOut.$defs?.recommendation?.properties?.controlPlane?.enum || [], doc: path.join('reference', 'output-contract.md'), label: 'control plane' }
+  ];
+  let vocabChecked = 0;
+  for (const vocabulary of vocabularies) {
+    if (!vocabulary.values.length) { failures.push(`the ${vocabulary.label} vocabulary could not be read from its schema`); continue; }
+    const text = readText(vocabulary.doc);
+    for (const value of vocabulary.values) {
+      vocabChecked++;
+      if (!text.includes(value)) failures.push(`${vocabulary.doc}: the schema declares \`${value}\` in the ${vocabulary.label} vocabulary and this page never names it`);
+    }
+  }
+
+  // 2. Stale names: a normative field list may not mandate what the schema does not declare.
+  const declared = new Set([
+    ...Object.keys(advisorOut.properties || {}),
+    ...Object.keys(advisorOut.$defs?.recommendation?.properties || {}),
+    ...Object.keys(prereqIn.$defs?.advisorMirrorOutput?.properties || {}),
+    ...Object.keys(prereqIn.$defs?.advisorPublicOutput?.properties || {})
+  ]);
+  const RETIRED = ['hardBlockers', 'winsIf', 'primary'];
+  for (const file of [path.join('skills', 'recommend-migration-path', 'SKILL.md'), path.join('reference', 'decision-rules.md'), path.join('reference', 'output-contract.md')]) {
+    readText(file).split('\n').forEach((line, i) => {
+      for (const name of RETIRED) {
+        if (declared.has(name)) continue;
+        // A normative list item or a JSON key, not prose recalling that the name was retired.
+        if (new RegExp(`^\\s*[-*]\\s*\`${name}\\[?\\]?\`|^\\s*${name}:`).test(line)) {
+          failures.push(`${file}:${i + 1}: mandates \`${name}\`, which no shipped schema declares`);
+        }
+      }
+    });
+  }
+
+  // 3. Paths in code spans, resolved as a sibling of the file or from the repository root.
+  let pathsChecked = 0;
+  const walkDocs = (dir, into) => {
+    for (const entry of fs.readdirSync(path.join(root, dir), { withFileTypes: true })) {
+      const rel = path.join(dir, entry.name);
+      if (entry.isDirectory()) { walkDocs(rel, into); continue; }
+      if (entry.name.endsWith('.md')) into.push(rel);
+    }
+  };
+  const docs = [];
+  walkDocs('skills', docs);
+  for (const extra of ['reference/input-contract.md', 'reference/output-contract.md', 'reference/decision-rules.md']) docs.push(extra);
+  for (const file of docs) {
+    for (const span of readText(file).matchAll(/`((?:skills|docs|reference|references|schemas|templates|examples)\/[A-Za-z0-9._/-]+\.(?:md|json))`/g)) {
+      pathsChecked++;
+      const asSibling = path.resolve(path.dirname(path.join(root, file)), span[1]);
+      const fromRoot = path.resolve(root, span[1]);
+      if (!fs.existsSync(asSibling) && !fs.existsSync(fromRoot)) {
+        failures.push(`${file}: the code span \`${span[1]}\` resolves to nothing, as a sibling or from the repository root`);
+      }
+    }
+  }
+
+  // 4. Agreement: the selected candidate and its gate answer the same question in every fixture.
+  // They answer it in different words, which is exactly why they drifted: a candidate is
+  // available or unavailable, a gate passed or refused, and the same three states carry two
+  // vocabularies. The mapping is written once here rather than assumed equal.
+  const AGREES = { available: 'passed', unknown_requires_assessment: 'unknown_requires_assessment', unavailable: 'refused' };
+  let fixtures = 0;
+  for (const file of [path.join('examples', 'sample-recommendation.md'), path.join('skills', 'recommend-migration-path', 'SKILL.md')]) {
+    for (const block of readText(file).matchAll(/```json\n([\s\S]*?)```/g)) {
+      let parsed;
+      try { parsed = JSON.parse(block[1]); } catch { continue; }
+      if (!Array.isArray(parsed.methodCandidates) || !parsed.methodGateTrace) continue;
+      fixtures++;
+      const selected = parsed.methodCandidates.find((candidate) => candidate.selected);
+      if (!selected) { failures.push(`${file}: a fixture lists method candidates and marks none selected`); continue; }
+      if (AGREES[selected.status] !== parsed.methodGateTrace.result) {
+        failures.push(`${file}: the selected candidate ${selected.method} is \`${selected.status}\`, whose gate result must be \`${AGREES[selected.status]}\`, and the trace reports \`${parsed.methodGateTrace.result}\``);
+      }
+      if (selected.status === 'unavailable') failures.push(`${file}: the selected candidate is marked unavailable`);
+    }
+  }
+
+  if (vocabChecked < 12 || pathsChecked < 20 || !fixtures) {
+    failures.push(`this gate swept ${vocabChecked} vocabulary value(s), ${pathsChecked} code-span path(s) and ${fixtures} fixture(s), which is too little to be checking anything`);
+  }
+  add('surfaces-agree-across-the-whole-set', failures.length === 0,
+    failures.length ? failures : [
+      `${vocabChecked} vocabulary value(s) named by the page that publishes them.`,
+      `${pathsChecked} repository path(s) in code spans all resolve.`,
+      `${fixtures} fixture(s) where the selected candidate and its gate agree, and no normative list mandates a retired field name.`
+    ]);
+}
+
+// Invariant 19 keyed `confirmed` on `evidenceRequired`, which the schema requires on all 291
+// prerequisite rows. So every row was evidence-gated, no typed answer could ever produce
+// `confirmed`, and `ready` became unreachable: a rule no plan could satisfy, written and shipped
+// without anyone asking whether an instance satisfying it exists.
+//
+// The discriminator is derivable rather than invented. A prerequisite a question feeds can be
+// settled by a typed answer; one no question feeds can only be settled by evidence. This gate
+// proves both populations are non-empty, so the rule has instances on each side, and it fails if
+// the contract goes back to keying on a column every row carries.
+{
+  const failures = [];
+  const dir = path.join('skills', 'generate-migration-prerequisite-plan');
+  const questions = JSON.parse(readText(path.join(dir, 'reference', 'questions.json')));
+  const contract = readText(path.join(dir, 'reference', 'output-contract.md'));
+  const schema = JSON.parse(readText(path.join(dir, 'schemas', 'output.schema.json')));
+  const kb = readText(path.join('docs', 'sql-server-to-azure-migration-prerequisite.md'));
+
+  const all = [...new Set([...kb.matchAll(/^\|\s*((?:COM|P[0-9]{2})-[0-9]{3})\s*\|/gm)].map((m) => m[1]))];
+  const fed = new Set((questions.questions || questions).flatMap((q) => q.consumedBy || []));
+  const answerable = all.filter((id) => fed.has(id));
+  const evidenceOnly = all.filter((id) => !fed.has(id));
+
+  if (!answerable.length) failures.push('no prerequisite is fed by a question, so a typed answer can never produce confirmed and ready is unreachable');
+  if (!evidenceOnly.length) failures.push('every prerequisite is fed by a question, so the reported status can never apply');
+
+  // The column that made the rule unsatisfiable must not become the discriminator again.
+  const item = schema.properties?.prerequisites?.items;
+  const requiresEvidenceColumn = (item?.required || []).includes('evidenceRequired');
+  const keysOnIt = /`evidenceRequired`[^|]{0,80}cannot be `confirmed`/.test(contract);
+  if (requiresEvidenceColumn && keysOnIt) {
+    failures.push('invariant 19 keys confirmed on evidenceRequired while the schema requires that column on every row, which makes confirmed unreachable');
+  }
+  if (!/questions\.json/.test(contract.slice(contract.indexOf('| 19 |'), contract.indexOf('| 19 |') + 700))) {
+    failures.push('invariant 19 no longer names the question mapping as the discriminator between confirmed and reported');
+  }
+
+  add('the-confirmed-rule-has-instances-on-both-sides', failures.length === 0,
+    failures.length ? failures : [
+      `${answerable.length} prerequisite(s) a question feeds, settled by a typed answer; ${evidenceOnly.length} that no question feeds, settled only by evidence.`,
+      'Both populations are non-empty, so confirmed and reported are each reachable and ready is not ruled out by construction.'
+    ]);
+}
+
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };
 if (jsonMode) {
   process.stdout.write(JSON.stringify({ summary, results }, null, 2) + '\n');
