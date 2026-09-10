@@ -67,6 +67,11 @@ const rewritesFor = (prefix) => [
   [/`(?:\.\.\/)*docs\/sql-server-to-azure-migration(?:-prerequisite)?\.md`/g, `\`${prefix}knowledge-base.md\``],
   [/\((?:\.\.\/)*templates\/prerequisite-plan\.md\)/g, `(${prefix}prerequisite-plan-template.md)`],
   [/`(?:\.\.\/)*templates\/prerequisite-plan\.md`/g, `\`${prefix}prerequisite-plan-template.md\``],
+  // Repository-root paths written in code spans. These resolve upstream and nowhere here once the
+  // folders move, and they are invisible to a check that reads Markdown links only: that is how
+  // two of them reached a reviewer, and how two more survived the commit meant to fix them.
+  [/(skills\/[a-z-]+\/)templates\/prerequisite-plan\.md/g, '$1references/prerequisite-plan-template.md'],
+  [/(skills\/[a-z-]+\/)(?:reference|schemas)\//g, '$1references/'],
   [/\((?:\.\.\/)*(?:reference|references|schemas)\/([a-z0-9.-]+)\)/g, `(${prefix}$1)`],
   [/`(?:\.\.\/)*(?:reference|references|schemas)\/([a-z0-9.-]+)`/g, `\`${prefix}$1\``]
 ];
@@ -116,19 +121,24 @@ if (fs.existsSync(advisorSkill)) {
 
 console.log(`Ported ${copied} file(s) at ${release} on knowledge-base line ${kbLine}.`);
 
-// Every relative link in the ported skills must resolve to a file that exists.
+// Every reference in the ported skills must resolve to a file that exists, whether it is written
+// as a Markdown link or as a path in a code span. Reading only one of the two forms is how the
+// stale paths survived the rename, twice.
 const problems = [];
+const resolves = (from, target) => fs.existsSync(path.resolve(path.dirname(from), target)) || fs.existsSync(path.resolve(DEST, target));
 const walk = (dir) => {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) { if (entry.name !== '.git' && entry.name !== 'node_modules') walk(full); continue; }
     if (!entry.name.endsWith('.md')) continue;
     const text = read(full);
-    if (/(?:\.\.\/)+docs\//.test(text)) problems.push(`${path.relative(DEST, full)}: an upstream docs/ path survived`);
+    const where = path.relative(DEST, full);
+    if (/(?:\.\.\/)+docs\//.test(text)) problems.push(`${where}: an upstream docs/ path survived`);
     for (const link of text.matchAll(/\]\(([^)#:\s]+\.(?:md|json))\)/g)) {
-      if (!fs.existsSync(path.resolve(path.dirname(full), link[1]))) {
-        problems.push(`${path.relative(DEST, full)}: link to ${link[1]} resolves to nothing`);
-      }
+      if (!resolves(full, link[1])) problems.push(`${where}: link to ${link[1]} resolves to nothing`);
+    }
+    for (const span of text.matchAll(/`((?:skills|docs|reference|references|schemas|templates|examples)\/[A-Za-z0-9._/-]+\.(?:md|json))`/g)) {
+      if (!resolves(full, span[1])) problems.push(`${where}: code span ${span[1]} resolves to nothing`);
     }
   }
 };
