@@ -124,7 +124,7 @@ One sentence on why this is the recommended assessment path.
 | 🎯 **Target / tier** | … |
 | 🔁 **Migration method** | … |
 | 👁️ **Target availability during sync** | read-write · read-only · unavailable · not-present |
-| ⏱️ **Business cutover downtime** | near-zero · < 1 minute · minutes · hours · full restore time · total migration execution time · unknown_requires_assessment |
+| ⏱️ **Business cutover downtime** | near-zero · < 1 minute · minimal · minutes · hours · full restore time · full load time · total migration time · unknown_requires_assessment |
 | 🧭 **Assess / orchestrate** | … |
 | 💰 **Cost view** | Cost levers only; no estimate until sizing and pricing are done |
 

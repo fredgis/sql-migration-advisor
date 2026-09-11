@@ -25,10 +25,12 @@
             "SINGLE_DB",
             "FEW_DATABASES",
             "LARGE_ESTATE",
+            "NONE_CONFIRMED",
             "UNKNOWN",
+            "NOT_APPLICABLE",
             null
           ],
-          "description": "Drives the estate-discovery branch. When UNKNOWN the profile is treated as a single one and the estate branch does not fire."
+          "description": "Constrained to the IDs reference/input-contract.md tabulates for this field, plus the absence markers. It used to be a bare non-empty string while advisor-fact-mappings.json mapped its exact values, so a plausible variant validated here and fell through to the crosswalk fallback: a port the user reported blocked stopped being a blocker."
         },
         "source_location": {
           "enum": [
@@ -43,7 +45,7 @@
             "NOT_APPLICABLE",
             null
           ],
-          "description": "Constrained to the IDs section 3 of reference/input-contract.md tabulates for this field, plus the three absence markers. It used to be a bare non-empty string, so a failed normalization such as \"SQL Server 2037\" or \"fully managed\" validated and reached the rules layer looking like a canonical profile. The enum is generated from the contract table rather than copied, and canonical-ids-match-the-contract fails the build if the two drift."
+          "description": "Constrained to the IDs reference/input-contract.md tabulates for this field, plus the absence markers. It used to be a bare non-empty string while advisor-fact-mappings.json mapped its exact values, so a plausible variant validated here and fell through to the crosswalk fallback: a port the user reported blocked stopped being a blocker."
         },
         "source_version": {
           "enum": [
@@ -59,7 +61,7 @@
             "NOT_APPLICABLE",
             null
           ],
-          "description": "Constrained to the IDs section 3 of reference/input-contract.md tabulates for this field, plus the three absence markers. It used to be a bare non-empty string, so a failed normalization such as \"SQL Server 2037\" or \"fully managed\" validated and reached the rules layer looking like a canonical profile. The enum is generated from the contract table rather than copied, and canonical-ids-match-the-contract fails the build if the two drift."
+          "description": "Constrained to the IDs reference/input-contract.md tabulates for this field, plus the absence markers. It used to be a bare non-empty string while advisor-fact-mappings.json mapped its exact values, so a plausible variant validated here and fell through to the crosswalk fallback: a port the user reported blocked stopped being a blocker."
         },
         "intent": {
           "enum": [
@@ -72,7 +74,7 @@
             "NOT_APPLICABLE",
             null
           ],
-          "description": "Constrained to the IDs section 3 of reference/input-contract.md tabulates for this field, plus the three absence markers. It used to be a bare non-empty string, so a failed normalization such as \"SQL Server 2037\" or \"fully managed\" validated and reached the rules layer looking like a canonical profile. The enum is generated from the contract table rather than copied, and canonical-ids-match-the-contract fails the build if the two drift."
+          "description": "Constrained to the IDs reference/input-contract.md tabulates for this field, plus the absence markers. It used to be a bare non-empty string while advisor-fact-mappings.json mapped its exact values, so a plausible variant validated here and fell through to the crosswalk fallback: a port the user reported blocked stopped being a blocker."
         },
         "driver": {
           "enum": [
@@ -87,7 +89,7 @@
             "NOT_APPLICABLE",
             null
           ],
-          "description": "Constrained to the IDs section 3 of reference/input-contract.md tabulates for this field, plus the three absence markers. It used to be a bare non-empty string, so a failed normalization such as \"SQL Server 2037\" or \"fully managed\" validated and reached the rules layer looking like a canonical profile. The enum is generated from the contract table rather than copied, and canonical-ids-match-the-contract fails the build if the two drift."
+          "description": "Constrained to the IDs reference/input-contract.md tabulates for this field, plus the absence markers. It used to be a bare non-empty string while advisor-fact-mappings.json mapped its exact values, so a plausible variant validated here and fell through to the crosswalk fallback: a port the user reported blocked stopped being a blocker."
         },
         "management_model": {
           "enum": [
@@ -99,7 +101,7 @@
             "NOT_APPLICABLE",
             null
           ],
-          "description": "Constrained to the IDs section 3 of reference/input-contract.md tabulates for this field, plus the three absence markers. It used to be a bare non-empty string, so a failed normalization such as \"SQL Server 2037\" or \"fully managed\" validated and reached the rules layer looking like a canonical profile. The enum is generated from the contract table rather than copied, and canonical-ids-match-the-contract fails the build if the two drift."
+          "description": "Constrained to the IDs reference/input-contract.md tabulates for this field, plus the absence markers. It used to be a bare non-empty string while advisor-fact-mappings.json mapped its exact values, so a plausible variant validated here and fell through to the crosswalk fallback: a port the user reported blocked stopped being a blocker."
         },
         "kubernetes_model": {
           "enum": [
@@ -110,7 +112,7 @@
             "NOT_APPLICABLE",
             null
           ],
-          "description": "Constrained to the IDs section 3 of reference/input-contract.md tabulates for this field, plus the three absence markers. It used to be a bare non-empty string, so a failed normalization such as \"SQL Server 2037\" or \"fully managed\" validated and reached the rules layer looking like a canonical profile. The enum is generated from the contract table rather than copied, and canonical-ids-match-the-contract fails the build if the two drift."
+          "description": "Constrained to the IDs reference/input-contract.md tabulates for this field, plus the absence markers. It used to be a bare non-empty string while advisor-fact-mappings.json mapped its exact values, so a plausible variant validated here and fell through to the crosswalk fallback: a port the user reported blocked stopped being a blocker."
         },
         "source_os": {
           "type": [
@@ -178,9 +180,11 @@
             "FROM_4_TB_TO_128_TB",
             "OVER_128_TB",
             "UNKNOWN",
+            "NONE_CONFIRMED",
+            "NOT_APPLICABLE",
             null
           ],
-          "description": "Feeds the Hyperscale ceiling, the seeding strategy and tier selection. UNKNOWN holds the tier at unknown_requires_assessment rather than defaulting it."
+          "description": "Constrained to the IDs reference/input-contract.md tabulates for this field, plus the absence markers. It used to be a bare non-empty string while advisor-fact-mappings.json mapped its exact values, so a plausible variant validated here and fell through to the crosswalk fallback: a port the user reported blocked stopped being a blocker."
         },
         "downtime": {
           "enum": [
@@ -188,9 +192,11 @@
             "MINIMAL",
             "OFFLINE",
             "UNKNOWN",
+            "NONE_CONFIRMED",
+            "NOT_APPLICABLE",
             null
           ],
-          "description": "The tolerance the business stated. Never inferred backwards from the method that was chosen."
+          "description": "Constrained to the IDs reference/input-contract.md tabulates for this field, plus the absence markers. It used to be a bare non-empty string while advisor-fact-mappings.json mapped its exact values, so a plausible variant validated here and fell through to the crosswalk fallback: a port the user reported blocked stopped being a blocker."
         },
         "compliance": {
           "enum": [
@@ -199,33 +205,46 @@
             "GOVERNMENT_SOVEREIGN",
             "EDGE_AIR_GAPPED",
             "UNKNOWN",
+            "NONE_CONFIRMED",
+            "NOT_APPLICABLE",
             null
           ],
-          "description": "Regional and sovereignty constraints. When UNKNOWN, sovereignty-restricted targets are not ranked first."
+          "description": "Constrained to the IDs reference/input-contract.md tabulates for this field, plus the absence markers. It used to be a bare non-empty string while advisor-fact-mappings.json mapped its exact values, so a plausible variant validated here and fell through to the crosswalk fallback: a port the user reported blocked stopped being a blocker."
         },
         "network_bandwidth": {
-          "type": [
-            "string",
-            "null"
+          "enum": [
+            "GOOD_BANDWIDTH",
+            "LIMITED_WAN",
+            "VERY_LARGE_MULTI_TB",
+            "UNKNOWN",
+            "NONE_CONFIRMED",
+            "NOT_APPLICABLE",
+            null
           ],
-          "minLength": 1,
-          "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
+          "description": "Constrained to the IDs reference/input-contract.md tabulates for this field, plus the absence markers. It used to be a bare non-empty string while advisor-fact-mappings.json mapped its exact values, so a plausible variant validated here and fell through to the crosswalk fallback: a port the user reported blocked stopped being a blocker."
         },
         "mi_link_ports": {
-          "type": [
-            "string",
-            "null"
+          "enum": [
+            "PORTS_CONFIRMED_OPEN",
+            "PORTS_BLOCKED",
+            "UNKNOWN",
+            "NONE_CONFIRMED",
+            "NOT_APPLICABLE",
+            null
           ],
-          "minLength": 1,
-          "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
+          "description": "Constrained to the IDs reference/input-contract.md tabulates for this field, plus the absence markers. It used to be a bare non-empty string while advisor-fact-mappings.json mapped its exact values, so a plausible variant validated here and fell through to the crosswalk fallback: a port the user reported blocked stopped being a blocker."
         },
         "blob_https_reachability": {
-          "type": [
-            "string",
-            "null"
+          "enum": [
+            "BLOB_HTTPS_CONFIRMED",
+            "BLOB_HTTPS_BLOCKED",
+            "BLOB_HTTPS_UNKNOWN",
+            "NONE_CONFIRMED",
+            "UNKNOWN",
+            "NOT_APPLICABLE",
+            null
           ],
-          "minLength": 1,
-          "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
+          "description": "Constrained to the IDs reference/input-contract.md tabulates for this field, plus the absence markers. It used to be a bare non-empty string while advisor-fact-mappings.json mapped its exact values, so a plausible variant validated here and fell through to the crosswalk fallback: a port the user reported blocked stopped being a blocker."
         },
         "network_ports": {
           "type": [
@@ -330,6 +349,36 @@
             null
           ],
           "description": "Whether the dependency question was answered, and how. feature_dependencies is a list, and a list cannot say why it is empty: NONE_CONFIRMED means the user checked and found none, which clears a PaaS blocker, while UNKNOWN means blank, declined or unrecognised, which must hold the candidate at unknown_requires_assessment. The distinction was documented in the description of the list and enforced nowhere, so an unanswered question and a confirmed absence validated identically. ANSWERED means the list carries at least one dependency."
+        },
+        "preview_acceptable": {
+          "enum": [
+            "PREVIEW_ACCEPTED",
+            "PREVIEW_REFUSED",
+            "UNKNOWN",
+            null
+          ],
+          "description": "Whether the customer accepts a service or capability still in preview. Two indexed rules read it, MI-TIER for zone redundancy and COPILOT-AGENT for the control-plane branch, and the profile could not carry it: additionalProperties is false, so a decision those rules made could not be reproduced from a schema-valid input. UNKNOWN holds the preview option rather than granting it."
+        },
+        "ancillary_services": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "SSIS, SSRS, SSAS, TDE, SQL Agent jobs, logins and the rest of what sits around the database. Question 12 collects it and the closed profile had nowhere to put it, so emitting the answer failed validation and omitting it dropped facts the remediation and the handoff both read."
+        },
+        "ancillary_services_state": {
+          "enum": [
+            "ANSWERED",
+            "NONE_CONFIRMED",
+            "UNKNOWN",
+            "NOT_APPLICABLE",
+            null
+          ],
+          "description": "Why the ancillary list is empty, which the list itself cannot say. Same distinction as feature_dependencies_state: a confirmed absence clears remediation work, an unanswered question does not."
         }
       }
     },
@@ -791,7 +840,8 @@
           "type": "array",
           "items": {
             "type": "string",
-            "pattern": "^P[0-9]{2}$"
+            "pattern": "^P(0[1-9]|1[0-9]|2[0-8])$",
+            "description": "A path in the bundled catalog, which runs P01 to P28. The previous pattern accepted P00 and P29 to P99, so a plan could cite a path nobody ships."
           },
           "description": "Prerequisite catalog paths that apply, so the reader can hand this candidate to the prerequisite-plan skill instead of the recommendation."
         },

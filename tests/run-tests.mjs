@@ -2511,17 +2511,17 @@ try {
   const contract = readText(path.join('reference', 'input-contract.md'));
   const MARKERS = ['NONE_CONFIRMED', 'UNKNOWN', 'NOT_APPLICABLE'];
 
-  const start = contract.indexOf('## 3. Option IDs');
-  const end = contract.indexOf('\n## 4.', start);
-  if (start < 0 || end < 0) failures.push('reference/input-contract.md no longer has a section 3 of option IDs to generate from');
+  // Read every field the contract tabulates, not only those in section 3. The network answers are
+  // documented in section 6, so scoping this to one section left mi_link_ports and
+  // blob_https_reachability as free strings while the crosswalk mapped their exact values.
   const tabulated = new Map();
-  for (const block of contract.slice(start, end).split(/\n### /).slice(1)) {
+  for (const block of contract.split(/\n### /).slice(1)) {
     const heading = block.split('\n')[0];
     const fields = [...heading.matchAll(/`([a-z][a-z0-9_]*)`/g)].map((m) => m[1]);
     const ids = [...new Set([...block.matchAll(/\|\s*[^|]+\|\s*`([A-Z][A-Z0-9_]*)`\s*\|/g)].map((m) => m[1]))];
     if (fields.length === 1 && ids.length) tabulated.set(fields[0], ids);
   }
-  if (tabulated.size < 8) failures.push(`only ${tabulated.size} field(s) could be read out of section 3, so this gate would pass by reading nothing`);
+  if (tabulated.size < 12) failures.push(`only ${tabulated.size} field(s) could be read out of the contract, so this gate would pass by reading nothing`);
 
   for (const [field, ids] of tabulated) {
     const node = schema.properties?.[field];
@@ -2831,15 +2831,35 @@ try {
     { values: prereqOut.properties.overallStatus?.enum || [], doc: path.join('skills', 'generate-migration-prerequisite-plan', 'reference', 'output-contract.md'), label: 'overall plan status' },
     { values: advisorOut.$defs?.eligibilityStatus?.enum || [], doc: path.join('reference', 'output-contract.md'), label: 'eligibility status' },
     { values: advisorOut.$defs?.methodCandidate?.properties?.status?.enum || [], doc: path.join('reference', 'output-contract.md'), label: 'method candidate status' },
-    { values: advisorOut.$defs?.recommendation?.properties?.controlPlane?.enum || [], doc: path.join('reference', 'output-contract.md'), label: 'control plane' }
+    { values: advisorOut.$defs?.recommendation?.properties?.controlPlane?.enum || [], doc: path.join('reference', 'output-contract.md'), label: 'control plane' },
+    // The card renders these two, and the table that documents it omitted `minimal` and
+    // `full-load-time`, so an online DMS or a BACPAC recommendation had no token to render with.
+    // Prose and enum spell the same states differently, so both sides are reduced to letters
+    // before comparing: `< 1 minute` against `<1min`, `full restore time` against
+    // `full-restore-time`. Comparing the raw tokens would fail on punctuation rather than meaning.
+    {
+      values: advisorOut.$defs?.businessCutoverDowntime?.enum || [],
+      doc: path.join('reference', 'output-contract.md'),
+      label: 'business cutover downtime',
+      loose: true
+    },
+    {
+      values: advisorOut.$defs?.targetAvailabilityDuringSync?.enum || [],
+      doc: path.join('reference', 'output-contract.md'),
+      label: 'target availability during sync',
+      loose: true
+    }
   ];
   let vocabChecked = 0;
+  const letters = (text) => text.toLowerCase().replace(/[^a-z0-9]/g, '');
   for (const vocabulary of vocabularies) {
     if (!vocabulary.values.length) { failures.push(`the ${vocabulary.label} vocabulary could not be read from its schema`); continue; }
     const text = readText(vocabulary.doc);
+    const reduced = letters(text);
     for (const value of vocabulary.values) {
       vocabChecked++;
-      if (!text.includes(value)) failures.push(`${vocabulary.doc}: the schema declares \`${value}\` in the ${vocabulary.label} vocabulary and this page never names it`);
+      const present = vocabulary.loose ? reduced.includes(letters(value)) : text.includes(value);
+      if (!present) failures.push(`${vocabulary.doc}: the schema declares \`${value}\` in the ${vocabulary.label} vocabulary and this page never names it`);
     }
   }
 
@@ -3037,6 +3057,234 @@ try {
       `${validated} JSON block(s) across ${docs.length} document(s) validate against the schema their shape selects.`,
       `${illustrated} illustrate a shape no schema describes, each with a stated reason; an unclassified block fails this gate rather than being skipped.`
     ]);
+}
+
+// The card and the object are two renderings of one assessment, and a reader trusts whichever they
+// look at first. In the shipped example they disagreed three ways: Fabric was excluded as a
+// "preview fit" although only the Migration Assistant is preview, Arc in-place was called eligible
+// in the prose and excluded_by_preference in the object, and the rendered lines carried no rule ID
+// although the contract requires one on every eligibility line.
+//
+// C4 is checked in the same place because it is the same failure: a confidence the object does not
+// support. The example claimed medium while its own selected gate was unknown.
+{
+  const failures = [];
+  const file = path.join('examples', 'sample-recommendation.md');
+  const text = readText(file);
+  const block = text.match(/```json\r?\n([\s\S]*?)\r?\n```/);
+  if (!block) failures.push(`${file} carries no JSON object to render from`);
+  else {
+    const doc = JSON.parse(block[1]);
+    const markdown = text.slice(0, block.index) + text.slice(block.index + block[0].length);
+
+    // Every trace entry must be rendered with the status the object gives it, and a rule ID.
+    let rendered = 0;
+    for (const entry of doc.eligibilityTrace || []) {
+      const row = markdown.split('\n').find((line) => line.startsWith('|') && line.includes(entry.status) && line.includes(entry.reason.slice(0, 40)));
+      if (!row) { failures.push(`${file}: the card never renders \`${entry.target}\` as \`${entry.status}\` with the reason the object gives it`); continue; }
+      rendered++;
+      if (!row.includes(`[${entry.ruleId}]`)) failures.push(`${file}: the rendered line for \`${entry.target}\` carries no \`[${entry.ruleId}]\`, so the audit trail stops at the Markdown`);
+    }
+    if (rendered < 8) failures.push(`${file}: only ${rendered} of the eight target families are rendered from the object`);
+
+    // C4: a selected candidate held at unknown is a decision-driving unknown.
+    const selected = (doc.methodCandidates || []).find((candidate) => candidate.selected);
+    const unknown = selected?.status === 'unknown_requires_assessment' || doc.methodGateTrace?.result === 'unknown_requires_assessment';
+    if (unknown && doc.metadata?.confidence !== 'low') {
+      failures.push(`${file}: confidence is \`${doc.metadata?.confidence}\` while the selected method waits on an unproven field; C4 reserves medium for a satisfied gate`);
+    }
+    if (unknown && !/confidence \*\*low\*\*/.test(markdown)) {
+      failures.push(`${file}: the card states a confidence the object does not support`);
+    }
+  }
+  add('the-card-renders-the-object-it-ships-with', failures.length === 0,
+    failures.length ? failures : ['Every target family is rendered with the status, reason and rule ID the object gives it, and the stated confidence is the one C4 allows.']);
+}
+
+// A skill told to load its policy is only as good as the list it is given. Three files the
+// contracts require at run time were absent from it: the exact Advisor-to-question value map, the
+// coverage data that defines the `role` vocabulary, and the Markdown template. Each omission has a
+// consequence the model cannot see, so it guesses instead of stopping.
+//
+// The list is checked against what the skill actually ships, so adding a reference file without
+// listing it fails the build.
+{
+  const failures = [];
+  const dir = path.join('skills', 'generate-migration-prerequisite-plan');
+  const skill = readText(path.join(dir, 'SKILL.md'));
+  const shipped = [];
+  for (const folder of ['reference', 'schemas', 'templates']) {
+    const full = path.join(root, dir, folder);
+    if (!fs.existsSync(full)) continue;
+    for (const name of fs.readdirSync(full)) shipped.push(`${folder}/${name}`);
+  }
+  if (shipped.length < 8) failures.push(`only ${shipped.length} bundled file(s) found, so this gate would pass by finding nothing`);
+
+  const listed = new Set([...skill.matchAll(/^\d+\.\s*\[`([^`]+)`\]/gm)].map((m) => m[1]));
+  for (const file of shipped) {
+    if (!listed.has(file)) failures.push(`${dir} ships ${file} and the mandatory load list never names it, so the skill is expected to apply a file it was never told to open`);
+  }
+  add('the-load-list-names-every-file-the-skill-ships', failures.length === 0,
+    failures.length ? failures : [`${shipped.length} bundled file(s), each named in the load list the skill reads before asking anything.`]);
+}
+
+// A path advertising a question that no prerequisite of that path consumes asks for an answer that
+// cannot change anything, while the applicability filter says not to ask it. The existing check is
+// question-level: it asks whether a question is consumed anywhere, which P23 to P26 satisfied
+// through paths they have nothing to do with. The gap is per path, so the check is too.
+{
+  const failures = [];
+  const dir = path.join('skills', 'generate-migration-prerequisite-plan', 'reference');
+  const catalog = JSON.parse(readText(path.join(dir, 'path-catalog.json')));
+  const questions = JSON.parse(readText(path.join(dir, 'questions.json')));
+  const consumers = new Map((questions.questions || questions).map((q) => [q.id, new Set((q.consumedBy || []).map((id) => id.split('-')[0]))]));
+
+  let checked = 0;
+  for (const entry of catalog.paths) {
+    for (const field of entry.questionFields || []) {
+      const who = consumers.get(field);
+      if (!who) continue; // common fields are covered by their own check
+      checked++;
+      if (!who.has(entry.id) && !who.has('COM')) {
+        failures.push(`${entry.id} advertises \`${field}\`, and no ${entry.id} prerequisite consumes it: the answer cannot change the plan, so the question should not be asked`);
+      }
+    }
+  }
+  if (checked < 50) failures.push(`only ${checked} path-scoped question field(s) were checked, which is too few to mean anything`);
+  add('every-path-question-can-change-that-path', failures.length === 0,
+    failures.length ? failures : [`${checked} path-scoped question field(s), each consumed by a prerequisite of the path that asks it.`]);
+}
+
+// Prose that quotes a count of its own data goes stale silently, and this one was wrong for three
+// releases: the page said 30 recommendable and 28 documentary while the coverage map held 16
+// primary, 13 secondary and 29 documentary. Counted by hand once, never recounted.
+{
+  const failures = [];
+  const coverage = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'reference', 'advisor-coverage.json')));
+  const text = readText(path.join('docs', 'sql-server-to-azure-migration-prerequisite.md'));
+  const roles = {};
+  for (const entry of coverage.dispositions || []) roles[entry.advisorRole] = (roles[entry.advisorRole] || 0) + 1;
+  const outOfScope = (coverage.dispositions || []).filter((entry) => entry.status === 'out-of-scope').length;
+  const recommendable = (roles.primary || 0) + (roles.secondary || 0);
+
+  if (!recommendable) failures.push('no recommendable disposition found in the coverage map, so this gate is checking nothing');
+  const claims = [
+    [`proposes ${recommendable} of the`, 'the recommendable total'],
+    [`${roles.primary} as \`primary\``, 'the primary count'],
+    [`${roles.secondary} as \`secondary\``, 'the secondary count'],
+    [`other ${roles.documentary} are \`documentary\``, 'the documentary count'],
+    [`seven are \`out-of-scope\``, 'the out-of-scope count']
+  ];
+  for (const [needle, label] of claims) {
+    if (!text.includes(needle)) failures.push(`the prerequisite knowledge base does not state ${label} the coverage map holds (expected to find "${needle}")`);
+  }
+  if (outOfScope !== 7) failures.push(`the coverage map now holds ${outOfScope} out-of-scope disposition(s), and the page still says seven`);
+
+  add('coverage-counts-are-derived-not-remembered', failures.length === 0,
+    failures.length ? failures : [`${recommendable} recommendable (${roles.primary} primary, ${roles.secondary} secondary), ${roles.documentary} documentary, ${outOfScope} out of scope, each number stated by the page that quotes it.`]);
+}
+
+// The knowledge base and the catalog describe the same paths, and they drifted: v3.3 removed Fabric
+// from P11 in the catalog and the rules, and the KB kept offering it in two places. Mandatory
+// policy loading then reads both, so the skill either builds a plan for a route the rules forbid or
+// refuses one the KB says is supported.
+{
+  const failures = [];
+  const catalog = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'reference', 'path-catalog.json')));
+  const kb = readText(path.join('docs', 'sql-server-to-azure-migration-prerequisite.md'));
+  const SHORT = {
+    'Azure SQL Database': 'SQL DB', 'SQL Server on Azure VM': 'SQL VM', 'Azure SQL Managed Instance': 'SQL MI',
+    'SQL database in Fabric': 'Fabric SQL DB', 'Azure Arc-enabled SQL Managed Instance': 'Arc SQL MI',
+    'SQL Server in a container': 'SQL container', 'Azure VMware Solution': 'AVS'
+  };
+  let compared = 0;
+  const names = (target) => [target, SHORT[target]].filter(Boolean);
+  for (const entry of catalog.paths) {
+    const row = kb.split('\n').find((line) => new RegExp(`^\\|\\s*\\d+\\s*\\|\\s*${entry.id}\\s*\\|`).test(line));
+    if (!row) continue;
+    compared++;
+    // The knowledge base writes a single target in full and a list in short form, so both
+    // spellings count as naming the same family.
+    const declared = row.split('|')[3].split('/').map((part) => part.trim());
+    for (const [long, short] of Object.entries(SHORT)) {
+      const inKb = declared.some((part) => part === long || part === short);
+      const inCatalog = (entry.targetVariants || []).includes(long);
+      if (inKb !== inCatalog) {
+        failures.push(`${entry.id}: the knowledge base ${inKb ? 'lists' : 'omits'} ${short} and the catalog ${inCatalog ? 'lists' : 'omits'} it, so the two disagree about where this path can go`);
+      }
+    }
+  }
+  if (compared < 20) failures.push(`only ${compared} path row(s) could be compared, which is too few to mean anything`);
+  add('the-knowledge-base-and-the-catalog-agree-on-targets', failures.length === 0,
+    failures.length ? failures : [`${compared} path(s) list the same target families in the knowledge base and in the catalog.`]);
+}
+
+// A route the Advisor can recommend and the handoff contract refuses is a dead end the user only
+// discovers after choosing it. P06, P14 and P15 are standaloneOnly and absent from the coverage
+// map, while B3 offered two of them as ranking outcomes without saying so.
+{
+  const failures = [];
+  const dir = path.join('skills', 'generate-migration-prerequisite-plan', 'reference');
+  const catalog = JSON.parse(readText(path.join(dir, 'path-catalog.json')));
+  const coverage = JSON.parse(readText(path.join(dir, 'advisor-coverage.json')));
+  const rules = readText(path.join('reference', 'decision-rules.md'));
+  const reachable = new Set((coverage.dispositions || []).flatMap((entry) => entry.paths || []));
+
+  let marked = 0;
+  const unreachable = catalog.paths.filter((entry) => entry.standaloneOnly || !reachable.has(entry.id));
+  if (!unreachable.length) failures.push('no standalone-only path was found, so this gate is checking nothing');
+  // Scope to the ranking section. A1 classifies targets, so matching there turned every row that
+  // mentions Azure into a hit; matching the full catalog method name found nothing at all, because
+  // the rules abbreviate it. The needles name each route as B3 writes it.
+  const b3 = rules.indexOf('### B3');
+  const afterB3 = rules.indexOf('\n## ', b3);
+  const ranking = rules.slice(b3, afterB3 > 0 ? afterB3 : rules.length);
+  const NEEDLES = { P06: 'Azure Migrate replication', P14: 'Data Box', P15: 'Striim' };
+  let scanned = 0;
+  for (const entry of unreachable) {
+    const needle = NEEDLES[entry.id];
+    if (!needle) { failures.push(`${entry.id} is standalone-only and this gate has no way to find it in the ranking section`); continue; }
+    const named = ranking.split('\n').filter((line) => line.includes('|') && line.includes('**') && line.includes(needle));
+    scanned += named.length;
+    for (const line of named) {
+      if (!/standalone planning only|documentary/i.test(line)) {
+        failures.push(`${entry.id} (${entry.method}) is reachable only from a standalone plan, and B3 offers it as a ranking outcome without saying so: ${line.trim().slice(0, 90)}`);
+      } else marked++;
+    }
+  }
+  if (!scanned) failures.push('no ranking line names any standalone-only route, so this gate is checking nothing');
+  add('routes-the-handoff-refuses-say-so', failures.length === 0,
+    failures.length ? failures : [`${unreachable.length} standalone-only path(s); the ${marked} rule line(s) that name them say the handoff cannot carry them.`]);
+}
+
+// The Advisor emits a method name and the planner resolves it through the catalog aliases. Nothing
+// checked that the two spellings meet: the shipped exemplars emitted "Azure DMS (online)" and the
+// catalog listed "DMS online", so the handoff resolved on the target alone and could land on the
+// offline plan.
+{
+  const failures = [];
+  const catalog = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'reference', 'path-catalog.json')));
+  const aliases = new Set();
+  for (const entry of catalog.paths) for (const alias of entry.advisorAliases || []) aliases.add(alias.toLowerCase());
+
+  const emitted = new Set();
+  for (const file of [path.join('skills', 'recommend-migration-path', 'SKILL.md'), path.join('examples', 'sample-recommendation.md')]) {
+    for (const block of readText(file).matchAll(/```json\r?\n([\s\S]*?)\r?\n```/g)) {
+      let parsed;
+      try { parsed = JSON.parse(block[1]); } catch { continue; }
+      if (parsed.recommendation?.method) emitted.add(parsed.recommendation.method);
+      for (const candidate of parsed.methodCandidates || []) if (candidate.method) emitted.add(candidate.method);
+      if (parsed.alternative?.method) emitted.add(parsed.alternative.method);
+    }
+  }
+  if (emitted.size < 5) failures.push(`only ${emitted.size} method name(s) were read out of the shipped exemplars, which is too few to mean anything`);
+  for (const method of emitted) {
+    if (!aliases.has(method.toLowerCase())) {
+      failures.push(`the exemplars emit \`${method}\` and no catalog path declares it as an alias, so the planner resolves this handoff on the target alone`);
+    }
+  }
+  add('every-emitted-method-resolves-in-the-catalog', failures.length === 0,
+    failures.length ? failures : [`${emitted.size} method name(s) emitted by the shipped exemplars, each declared as an alias by at least one catalog path.`]);
 }
 
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };

@@ -6,7 +6,7 @@
 >
 > **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of August 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
 >
-> **Version.** v3.8 — 26 August 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
+> **Version.** v3.9 — 11 September 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**
@@ -661,13 +661,14 @@ flowchart LR
 
 ## 17. Document version & changelog
 
-Current version: **v3.8** (2026-09-09).
+Current version: **v3.9** (2026-09-09).
 
 <details>
-<summary><b>Version history</b> (current: v3.8)</summary>
+<summary><b>Version history</b> (current: v3.9)</summary>
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v3.9 | 2026-09-11 | **Two knowledge-base corrections.** P11 no longer lists SQL database in Fabric: v3.3 removed that route from the rules and the catalog because Microsoft documents a DACPAC schema import there, and this page kept offering it in two places, so a skill loading both could build a plan the rules forbid. The role counts were also wrong, and had been for three releases: the coverage map holds 16 `primary`, 13 `secondary` and 29 `documentary` cells, not the 30 recommendable and 28 documentary stated here. Both numbers are derived by a gate now rather than counted once by hand. |
 | v3.8 | 2026-09-11 | **No knowledge-base fact changed.** The stamp moves so every surface stays pinned to one commit. The release is about the fork: for three review rounds fixes landed here and never reached the vendored copy, because the port script patched the advisor `SKILL.md` without ever reading its content. |
 | v3.7 | 2026-09-10 | **No knowledge-base fact changed, with one exception on this page: the integrity rule set no longer offers `P20` as the fallback for an unanswered tooling choice.** Three other documents already said such a choice stays unresolved, and this one still named a tool the user never picked. The rest of the release is about the surfaces that read this document rather than the document itself. |
 | v3.6 | 2026-09-10 | **No knowledge-base fact changed. The stamp moves so the document, the rules, the contracts, the schemas and the path catalog stay pinned to one commit.** A fourth review pass on the Microsoft fork raised eleven findings against the skills that read this document, and all eleven were founded. The one that matters most is not on this page but decides whether it is ever consulted: the skills declared `ask_user` as their only tool while being told to apply several thousand lines from their bundled policy. Agent Skills load `SKILL.md` alone, so those files never arrived, and a skill that cannot open this document has to reconstruct version floors, method gates and citations from memory. All three skills now declare read tools and are told to name the file they could not read and stop. |

@@ -45,14 +45,14 @@ A worked example showing the two-tier interview, preliminary recommendation card
 
 | Target | Status | Reason |
 | --- | --- | --- |
-| Azure SQL Managed Instance | eligible_with_remediation | Fits SQL Agent, cross-DB, linked servers; requires TDE cert, login, SSIS remediation |
-| Azure SQL Database | unsupported | Linked servers, cross-DB use, and SQL Agent dependency would require significant refactor |
-| SQL Server on Azure VM | eligible | Maximum compatibility, but higher operational burden than requested |
-| Azure VMware Solution | excluded_by_preference | No VMware-continuity requirement was stated. Technically compatible, not selected |
-| Arc-enabled SQL MI | excluded_by_preference | No Kubernetes, edge or multi-cloud operating model was selected |
-| SQL Server container | excluded_by_preference | Customer-operated patching, backups and HA conflict with the managed-PaaS preference |
-| SQL database in Fabric | unsupported | Production OLTP lift-and-shift with instance features is outside this preview fit |
-| Arc in-place | excluded_by_preference | Useful for ESU cover while the move is prepared, but the stated intent is to migrate now |
+| SQL Server on Azure VM | eligible | Maximum compatibility, kept as the alternative; carries the operational burden the customer asked to avoid. `[MANAGEMENT-MODEL]` |
+| Azure VMware Solution | excluded_by_preference | No VMware-continuity requirement was stated, so the platform was not selected. Technically compatible. `[AVS-LICENSING]` |
+| Azure SQL Managed Instance | eligible_with_remediation | SQL Agent, cross-database queries and linked servers fit the instance surface; TDE certificate, logins and SSIS packages need remediation first. `[MANAGEMENT-MODEL]` |
+| Azure SQL Database | unsupported | Linked servers, cross-database use and SQL Agent would all require refactoring the application. `[LINKED-SERVERS]` |
+| SQL database in Fabric | unsupported | The instance-feature dependency set is outside the Fabric SQL database target surface. The target itself is generally available; only the Fabric Migration Assistant is preview. `[FABRIC-TARGET]` |
+| Arc-enabled SQL MI | excluded_by_preference | No Kubernetes, edge or multi-cloud operating model was selected. `[MANAGEMENT-MODEL]` |
+| SQL Server container | excluded_by_preference | Customer-operated patching, backups and HA conflict with the stated managed-PaaS preference. `[MANAGEMENT-MODEL]` |
+| Arc in-place | excluded_by_preference | Useful for ESU cover while the move is prepared, but the stated intent is to migrate now. `[ARC-IN-PLACE]` |
 
 ## Phase B ranking summary
 
@@ -61,8 +61,8 @@ SQL MI ranks first because it preserves instance-level compatibility with much l
 ## Output card
 
 > **Preliminary recommendation — `Finance DB group (3 DBs)`**
-> **Azure SQL Managed Instance — General Purpose** via **Log Replay Service** · status **provisional** · confidence **medium**
-> KB **v3.7** (bundled, same commit as the skill) · rules **v3.7**
+> **Azure SQL Managed Instance — General Purpose** via **Log Replay Service** · status **provisional** · confidence **low**
+> KB **v3.9** (bundled, same commit as the skill) · rules **v3.9**
 
 SQL MI is the recommended assessment path because the workload needs SQL Agent, cross-database queries, and linked servers, while the team wants managed PaaS; SQL Server 2014 and blocked MI Link ports 5022/11000–11999 make MI Link unavailable, so LRS is the practical online method with planned cutover downtime.
 
@@ -82,10 +82,10 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
 **🥈 Best alternative** — **SQL Server on Azure VM** with native backup/restore or log shipping; wins if dependency discovery finds file-system dependencies, unsupported linked-server providers, third-party agents, or performance requirements not suitable for SQL MI GP/BC.
 
 **🚫 Excluded or constrained targets (Phase A eligibility)**
-- **Azure SQL Database** — unsupported: SQL Agent, linked servers, and cross-DB dependencies require refactoring.
+- **Azure SQL Database** — unsupported: linked servers, cross-database use and SQL Agent would all require refactoring the application. `[LINKED-SERVERS]`
 - **SQL MI Link method** — unsupported: source is SQL Server 2014 and required MI Link ports 5022 plus 11000–11999 are not approved in the required directions.
-- **Fabric SQL DB** — unsupported: preview path is not a fit for this OLTP instance-feature lift-and-shift.
-- **Arc in-place** — eligible as an interim control plane for ESU, assessment, and migration orchestration, not the final runtime target.
+- **SQL database in Fabric** — unsupported: the instance-feature dependency set is outside that target surface. The target is generally available; only the Fabric Migration Assistant is preview. `[FABRIC-TARGET]`
+- **Arc in-place** — excluded_by_preference: useful for ESU cover while the move is prepared, but the stated intent is to migrate now. `[ARC-IN-PLACE]`
 
 **🚧 Blockers & required evidence**
 - **TDE** → install the source TDE certificate in destination `master` before restoring encrypted databases; otherwise restore fails.
@@ -114,12 +114,12 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
 ```json
 {
   "metadata": {
-    "knowledgeBaseVersion": "v3.7",
-    "decisionRulesVersion": "v3.7",
+    "knowledgeBaseVersion": "v3.9",
+    "decisionRulesVersion": "v3.9",
     "sourceCommit": "bundled",
     "evaluatedAt": "2026-09-09T18:20:00Z",
     "recommendationStatus": "provisional",
-    "confidence": "medium"
+    "confidence": "low"
   },
   "normalizedProfile": {
     "intent": "MIGRATE_NOW",
@@ -157,14 +157,14 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
     {
       "target": "sql_db",
       "status": "unsupported",
-      "ruleId": "DTC-TOPOLOGY",
+      "ruleId": "LINKED-SERVERS",
       "reason": "Linked servers, cross-database use and SQL Agent would all require refactoring the application."
     },
     {
       "target": "fabric_sql_db",
       "status": "unsupported",
       "ruleId": "FABRIC-TARGET",
-      "reason": "A production OLTP estate with instance-level features is outside the target surface."
+      "reason": "The instance-feature dependency set is outside the Fabric SQL database target surface. The target itself is generally available; only the Fabric Migration Assistant is preview."
     },
     {
       "target": "arc_sql_mi",
@@ -215,8 +215,8 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
     {
       "method": "Native backup/restore",
       "role": "primary",
-      "status": "available",
-      "reason": "Supported, but needs a full offline restore window the customer ruled out."
+      "status": "unknown_requires_assessment",
+      "reason": "Supported for this target, but the Blob upload path that stages the backups is unproven and source permissions were not established. The stated minimal-downtime preference also argues against a full offline restore."
     },
     {
       "method": "Azure DMS online",

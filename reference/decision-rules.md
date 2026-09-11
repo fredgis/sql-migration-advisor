@@ -5,7 +5,7 @@ Apply Steps **A → D** in order. Steps map to the two engine phases:
 - **Phase B — Ranking and plan:** Steps B → D. Rank only surviving targets, then choose method, tier, blockers, cost, and assessment.
 
 Regression contract: these rules are a **prompt policy under regression test**. Replaying the same inputs through the rules mirror in `tests/` gives the same result, and 116 golden scenarios enforce it on every commit. The mirror is not what runs in a session: an agent reads these rules and applies them. Treat the contract as a tested policy, not as a guarantee that two runs produce identical wording. Every recommendation must carry the KB version, engine version, and, when available, the source commit SHA and fetch timestamp.
-Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v3.8**, verified August 2026.
+Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v3.9**, verified August 2026.
 
 Three layers, never mixed:
 - **Target** = where the DB ends up (runtime).
@@ -76,7 +76,9 @@ falling to **SQL Server on Azure VM** or a provisional shortlist only when no MI
 
 Classify each target independently. Only `eligible` and `eligible_with_remediation` survive to Phase B. `unknown_requires_assessment` may be carried into the shortlist, flagged, but it can never be the primary recommendation.
 
-**`excluded_by_preference` is not `unsupported`.** When the stated management model rules a family out — managed PaaS excluding SQL VM, or OS control excluding SQL MI and SQL DB — nothing technical has failed. Record `excluded_by_preference`, name the answer that caused it, and say it can be revisited. `unsupported` is reserved for a target that cannot host the workload as it stands, and a reader six months later must be able to tell the two apart.
+**`excluded_by_preference` is not `unsupported`.** When the stated management model rules a family out — managed PaaS excluding the DIY container, or OS control excluding SQL MI and SQL DB — nothing technical has failed. Record `excluded_by_preference`, name the answer that caused it, and say it can be revisited. `unsupported` is reserved for a target that cannot host the workload as it stands, and a reader six months later must be able to tell the two apart.
+
+**SQL Server on Azure VM is never excluded by preference.** This paragraph used to offer "managed PaaS excluding SQL VM" as the example, which its own table contradicts one row below: none of these rules eliminate SQL VM. The distinction matters because SQL VM is the standing alternative, and invariant 2 requires the alternative to be eligible. Ranking may place SQL VM last; eligibility keeps it in.
 
 | Candidate target | Ruled out when — `unsupported` unless the cell marks it a *preference* | `eligible_with_remediation` examples | Notes |
 | --- | --- | --- | --- |
@@ -226,7 +228,7 @@ If a tier-driving input is missing, emit `unknown_requires_assessment` for tier 
 
 **Zone redundancy on Next-gen General Purpose is public preview.** The tier is GA; that capability is
 not, and a GA tier label must not quietly make its preview options GA too. When resilience is what
-selects the tier, treat zone redundancy as available only if `previewAcceptable` is true. Otherwise
+selects the tier, treat zone redundancy as available only if `preview_acceptable = PREVIEW_ACCEPTED`. Otherwise
 say the option exists in preview and rank on the GA feature set — the same treatment already applied
 to the Fabric Migration Assistant and to cross-instance Service Broker.
 
@@ -289,7 +291,7 @@ offered it, so it was never rejected either — it simply never appeared.
 | Minimal | **Log shipping** | Windows source and log backup chain feasible |
 | Offline | **Native backup/restore** — direct `BACKUP TO URL` from **2012 SP1 CU2+**, or local backup + upload below that build or when URL prerequisites are unavailable; detach/attach for special large-file cases | Confirm the build for SQL Server 2012 (SP1 CU2 or later). 2012/2014 use page blob + storage-account credential, 1 TB max; 2016+ use block blob + SAS, up to 12.8 TB striped. TDE cert installed first when encrypted. **`BACKUP-BLOB-PATH`** applies to the **Blob-staged variants only**: for those, `blob_https_reachability` must be `BLOB_HTTPS_CONFIRMED` before the gate reports `passed`, `BLOB_HTTPS_UNKNOWN` yields `unknown_requires_assessment`, and an unverified upload path is the single most common reason a cutover date slips because it is invisible until someone tries it. `BLOB_HTTPS_BLOCKED` does **not** eliminate the method here: this target has a file system, so the knowledge base's backup-to-a-file-and-copy route survives. Move to that variant and hold the gate at `unknown_requires_assessment` until the file-transfer route is proven and measured for the largest database — a route nobody has timed is not a route |
 | Whole VM/instance | **Azure Migrate** replication | use for rehost/business case; validate SQL consistency |
-| Multi-TB / limited WAN | **Data Box** seed → sync delta | test one full backup/AzCopy/Data Box run |
+| Multi-TB / limited WAN | **Data Box** seed → sync delta *(standalone planning only)* | test one full backup/AzCopy/Data Box run |
 
 Arc-enabled source: SQL migration in Azure Arc can orchestrate offline native backup/restore lift-and-shift to SQL VM and can be a phased on-ramp to MI/SQL DB later.
 
@@ -334,8 +336,10 @@ LRS and Arc version paths:
 - **Standalone LRS** (PowerShell/CLI/API): SQL Server **2008–2022**. SQL Server **2012 SP1 CU2+** can `BACKUP TO URL` directly to Blob (page blob to 1 TB on 2012/2014, block blob + SAS to 12.8 TB on 2016+); older builds back up locally, then upload.
 - **Arc-enabled SQL Server overall migration experience:** SQL Server **2014+**.
 - **Arc → Azure SQL MI via MI Link:** SQL Server **2016+**, and this path is documented as **Windows Server only**, unlike MI Link configured outside the Arc portal.
-- **Arc → Azure SQL MI via LRS:** Microsoft documents a method-table floor of SQL Server **2012+** and Windows Server **2012+**, but this contradicts the same page's **2014+** overall Arc experience floor. Conservative engine rule: require Arc experience floor **2014+** for Arc-orchestrated LRS; standalone LRS outside Arc remains **2008–2022**. Note that the LRS-specific pages also list SQL Server 2012 among supported sources — that is consistent with the standalone **2008–2022** range and is *not* evidence of a 2012 floor for the Arc experience.
+- **Arc → Azure SQL MI via LRS:** Microsoft documents a method-table floor of SQL Server **2012+** and Windows Server **2012+**, but this contradictsthe same page's **2014+** overall Arc experience floor. Conservative engine rule: require Arc experience floor **2014+** for Arc-orchestrated LRS; standalone LRS outside Arc remains **2008–2022**. Note that the LRS-specific pages also list SQL Server 2012 among supported sources — that is consistent with the standalone **2008–2022** range and is *not* evidence of a 2012 floor for the Arc experience.
 - **Arc → SQL Server on Azure VM:** SQL Server **2014+**.
+
+**The Arc LRS route is documented here and cannot be handed off.** The prerequisite planner carries one Log Replay Service path, `P09`, with the standalone 2008-2022 floor and no Arc control-plane variant, so a recommendation naming Arc plus LRS arrives as standalone LRS and is refused on a floor that does not govern it. Until that variant exists with its own floor, extension and batch facts, do not emit `controlPlane = azure-arc` with LRS: recommend standalone LRS and name Arc as the orchestration the customer may add, or select another method.
 
 MI migration capacity gates (**`MI-LINK-CAPACITY`**; the Arc wizard row is **`ARC-WIZARD-BATCH`**):
 | Method/control plane | Capacity rule |
@@ -351,7 +355,7 @@ MI migration capacity gates (**`MI-LINK-CAPACITY`**; the Arc wizard row is **`AR
 | Offline | **modern DMS (offline)** | SQL Server 2008+; online SQL DB path not available |
 | Offline | **BACPAC / SqlPackage** | smaller/medium or schema-compatible workloads; test export/import |
 | Online subset | **Transactional replication** | target-specific publisher floor: Azure SQL Database subscriber = publisher SQL Server **2016 and later**, including SQL Server 2022 and 2025; Fabric SQL database subscriber = SQL Server **2022 RTM CU12 and greater**; SQL DB/Fabric can only be a push subscriber |
-| Online / CDC | **Striim (third-party)** | use for SQL Server → Azure SQL Database when online/near-zero downtime is required; pair with DMS/SqlPackage/SSMS schema assessment and migration |
+| Online / CDC | **Striim (third-party)** *(standalone planning only)* | use for SQL Server → Azure SQL Database when online/near-zero downtime is required; pair with DMS/SqlPackage/SSMS schema assessment and migration |
 | Bulk / integration | bcp / Smart Bulk Copy / **ADF Copy** | data-only or integration pipeline |
 
 Transactional replication to Azure SQL DB/Fabric SQL DB: snapshot + one-way transactional only; no peer-to-peer and no merge. Tables need a primary key. Unsupported/limited articles include `hierarchyid`, FILESTREAM, spatial conversions, plus documented partitioning/index limits. Distribution database and replication agents cannot live in Azure SQL Database. Fabric SQL database publisher needs SQL Server 2022 RTM CU12+, and Private Link is not supported for replication into Fabric SQL database. For Azure SQL MI subscribers, publisher floor is SQL Server 2016+ and exact combinations depend on the MI update policy/supportability matrix.
@@ -548,7 +552,7 @@ The normative wording stays in the sections above. This index is the address boo
 | `CLR-PERMISSION` | hard target gate | `feature_dependencies`, CLR permission set | SQL MI and SQL DB `unknown_requires_assessment` | A2 |
 | `DEPENDENCY-INVENTORY` | hard target gate | `feature_dependencies` | SQL MI and SQL DB `unknown_requires_assessment` | A2 |
 | `AVS-LICENSING` | hard target gate | `target_region`, licence answer | AVS `unknown_requires_assessment` with the portable VCF licence in `evidenceRequired`; never reported as AVS retiring | A1 |
-| `COPILOT-AGENT` | control-plane branch | `previewAcceptable`, existing Azure Migrate data | Not selected; the GA control planes are unaffected | D2 |
+| `COPILOT-AGENT` | control-plane branch | `preview_acceptable`, existing Azure Migrate data | Not selected; the GA control planes are unaffected | D2 |
 | `MANAGEMENT-MODEL` | hard target gate | `management_model`, `kubernetes_model` | Family split blocked; return a shortlist | A2 |
 | `ARC-IN-PLACE` | hard target gate | `intent`, `source_version` | Path not offered | A3 |
 | `ARC-WIZARD-BATCH` | hard method gate | `migration_batch_size`, `arc_extension_version` | **Not treated as recent**, `unknown_requires_assessment` | B3 |

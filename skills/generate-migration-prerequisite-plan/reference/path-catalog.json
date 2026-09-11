@@ -746,7 +746,9 @@
         "DMS",
         "Modern DMS",
         "Azure Database Migration Service",
-        "DMS offline"
+        "DMS offline",
+        "Azure DMS (offline)",
+        "Azure DMS offline"
       ],
       "supportStatus": "supported",
       "disambiguation": {
@@ -760,7 +762,6 @@
         "target_permissions",
         "network_path_status",
         "tde_status",
-        "schema_compatibility_status",
         "largest_database_size_gb",
         "downtime_tolerance",
         "validation_plan_status",
@@ -781,7 +782,9 @@
         "DMS",
         "Modern DMS",
         "Azure Database Migration Service",
-        "DMS online"
+        "DMS online",
+        "Azure DMS (online)",
+        "Azure DMS online"
       ],
       "supportStatus": "supported",
       "disambiguation": {
@@ -796,7 +799,6 @@
         "target_permissions",
         "network_path_status",
         "tde_status",
-        "schema_compatibility_status",
         "largest_database_size_gb",
         "downtime_tolerance",
         "validation_plan_status",
@@ -817,7 +819,9 @@
         "DMS",
         "Modern DMS",
         "Azure Database Migration Service",
-        "DMS offline"
+        "DMS offline",
+        "Azure DMS (offline)",
+        "Azure DMS offline"
       ],
       "supportStatus": "supported",
       "disambiguation": {
@@ -831,7 +835,6 @@
         "target_permissions",
         "network_path_status",
         "tde_status",
-        "schema_compatibility_status",
         "largest_database_size_gb",
         "downtime_tolerance",
         "validation_plan_status",
@@ -852,7 +855,9 @@
         "DMS",
         "Modern DMS",
         "Azure Database Migration Service",
-        "DMS online"
+        "DMS online",
+        "Azure DMS (online)",
+        "Azure DMS online"
       ],
       "supportStatus": "supported",
       "disambiguation": {
@@ -867,7 +872,6 @@
         "target_permissions",
         "network_path_status",
         "tde_status",
-        "schema_compatibility_status",
         "largest_database_size_gb",
         "downtime_tolerance",
         "validation_plan_status",
@@ -906,7 +910,6 @@
         "target_region",
         "network_path_status",
         "dns_status",
-        "domain_model",
         "authentication_model",
         "largest_database_size_gb",
         "validation_plan_status",
