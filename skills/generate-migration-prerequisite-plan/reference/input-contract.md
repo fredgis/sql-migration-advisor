@@ -104,7 +104,17 @@ reference or hash. A self-declared Advisor evidence flag remains a claim until t
   "mode": "advisor_handoff",
   "requestedOutput": "both",
   "language": "en",
-  "advisorOutput": {},
+  "advisorOutput": {
+    "primary_target": "Azure SQL Managed Instance",
+    "tier": "General Purpose",
+    "method": "MI Link",
+    "targetAvailabilityDuringSync": "read-only",
+    "businessCutoverDowntime": "<1min",
+    "controlPlane": "standalone",
+    "methodGateStatus": "passed",
+    "recommendationStatus": "provisional",
+    "confidence": "medium"
+  },
   "standaloneSelection": null,
   "knownFacts": {},
   "evidence": []

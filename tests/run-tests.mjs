@@ -2961,6 +2961,84 @@ try {
     ]);
 }
 
+// The JSON a model copies is the contract it actually follows. This used to be checked through a
+// hand-written list of one file and one marker, so the canonical exemplar in SKILL.md was covered
+// and everything else was not: a block could carry an empty profile, a half-filled candidate list
+// or an invented citation and no gate would look at it.
+//
+// So the blocks are discovered rather than listed, and classified by shape. The part that matters
+// is the last branch: a block matching no known shape is a failure, not a skip. A sweep that
+// silently ignores what it cannot classify is how the previous version passed while the exemplar
+// was wrong.
+{
+  const failures = [];
+  const notes = [];
+  const SHAPES = [
+    {
+      name: 'advisor recommendation',
+      matches: (doc) => doc.recommendation && doc.eligibilityTrace,
+      schema: path.join('skills', 'recommend-migration-path', 'schemas', 'output.schema.json')
+    },
+    {
+      name: 'prerequisite plan request',
+      matches: (doc) => doc.mode && doc.requestedOutput,
+      schema: path.join('skills', 'generate-migration-prerequisite-plan', 'schemas', 'input.schema.json')
+    },
+    {
+      name: 'prerequisite plan',
+      matches: (doc) => doc.overallStatus || doc.selectedMethodPath,
+      schema: path.join('skills', 'generate-migration-prerequisite-plan', 'schemas', 'output.schema.json')
+    }
+  ];
+  // Blocks that illustrate something no shipped schema describes. Each needs a reason, so the list
+  // cannot quietly absorb a block that should have been validated.
+  const ILLUSTRATIONS = [
+    { matches: (doc) => doc.id && doc.inputs && doc.expect, why: 'a golden scenario, validated by tests/golden-scenarios.schema.json' },
+    { matches: (doc) => doc.id && doc.type && doc.collectedAt, why: 'an evidence record, described in prose and carried inside a request rather than shipped alone' },
+    { matches: (doc) => doc.networkPath && doc.endpoint, why: 'a connectivity answer; that skill publishes a contract in prose and no JSON schema' }
+  ];
+
+  const docs = [];
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(path.join(root, dir), { withFileTypes: true })) {
+      const rel = path.join(dir, entry.name);
+      if (entry.isDirectory()) { if (!/node_modules|blume/.test(entry.name)) walk(rel); continue; }
+      if (entry.name.endsWith('.md')) docs.push(rel);
+    }
+  };
+  for (const dir of ['skills', 'reference', 'docs', 'examples']) if (fs.existsSync(path.join(root, dir))) walk(dir);
+
+  let validated = 0;
+  let illustrated = 0;
+  for (const file of docs) {
+    const blocks = [...readText(file).matchAll(/```json\r?\n([\s\S]*?)\r?\n```/g)].map((m) => m[1]);
+    for (const [i, block] of blocks.entries()) {
+      const at = `${file} block ${i + 1}`;
+      let parsed;
+      try { parsed = JSON.parse(block); }
+      catch (err) { failures.push(`${at}: does not parse — ${err.message}`); continue; }
+
+      const shape = SHAPES.find((candidate) => candidate.matches(parsed));
+      if (shape) {
+        validated++;
+        const { errors } = validateObjectAgainstSchema(JSON.parse(readText(shape.schema)), parsed, at);
+        for (const error of errors) failures.push(error);
+        continue;
+      }
+      const illustration = ILLUSTRATIONS.find((candidate) => candidate.matches(parsed));
+      if (illustration) { illustrated++; continue; }
+      failures.push(`${at}: matches no shipped schema and no declared illustration, so nothing checks it. Keys: ${Object.keys(parsed).slice(0, 6).join(', ')}`);
+    }
+  }
+
+  if (validated < 2) failures.push(`only ${validated} JSON block(s) were validated against a schema, which is too few for this gate to mean anything`);
+  add('every-documented-json-block-is-accounted-for', failures.length === 0,
+    failures.length ? failures : [
+      `${validated} JSON block(s) across ${docs.length} document(s) validate against the schema their shape selects.`,
+      `${illustrated} illustrate a shape no schema describes, each with a stated reason; an unclassified block fails this gate rather than being skipped.`
+    ]);
+}
+
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };
 if (jsonMode) {
   process.stdout.write(JSON.stringify({ summary, results }, null, 2) + '\n');

@@ -23,6 +23,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 
 const SRC = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..');
 const DEST = process.argv[2] || 'C:/Users/frgisber/repo-sql-migration-agent';
@@ -106,12 +107,47 @@ for (const skill of ['recommend-migration-path', 'generate-migration-prerequisit
   }
 }
 
-// The advisor SKILL.md in the fork is a transformed copy, not a mirror, so it is patched rather
-// than overwritten: only its layout links and its version stamps move.
+// The advisor SKILL.md in the fork is a transformed copy, not a mirror: it drops the live-fetch
+// apparatus, points at references/ and uses apm rather than the plugin command. So it is patched
+// rather than overwritten.
+//
+// Patching version stamps alone was not enough, and the gap was expensive. Every content fix made
+// upstream stayed upstream: corrected rule IDs, the MI Link cutover, the blockers rename, the read
+// tools. A reviewer spent a round reporting defects that had been fixed the day before in a file
+// this script never opened.
+//
+// So the parts that are contract rather than prose are carried across: the front matter capability
+// line, and every JSON block. Those are what a model copies, and they must be identical in both
+// repositories. Anything a human deliberately rewrote for the fork stays untouched.
 const advisorSkill = path.join(DEST, `${ADVISOR}/SKILL.md`);
 if (fs.existsSync(advisorSkill)) {
-  const keep = (line) => /^\|\s*v[0-9]/.test(line.trim()) || /\b(until|since|before|from)\s+v[0-9]/i.test(line);
+  const upstream = read(path.join(SRC, `${ADVISOR}/SKILL.md`));
   let text = read(advisorSkill);
+
+  const capability = upstream.match(/^allowed-tools:.*$/m);
+  if (capability) text = text.replace(/^allowed-tools:.*$/m, capability[0]);
+
+  // Field names that were renamed in the schema. These live in prose, so nothing else carries
+  // them across, and a normative list naming a field the consumer rejects drops data at the
+  // handoff rather than failing loudly.
+  text = text.replace(/`hardBlockers(\[\])?`/g, '`blockers$1`');
+
+  const upstreamBlocks = [...upstream.matchAll(/```json\r?\n([\s\S]*?)\r?\n```/g)];
+  const forkBlocks = [...text.matchAll(/```json\r?\n([\s\S]*?)\r?\n```/g)];
+  if (upstreamBlocks.length !== forkBlocks.length) {
+    console.error(`The advisor SKILL.md carries ${forkBlocks.length} JSON block(s) here and ${upstreamBlocks.length} upstream, so they cannot be matched up one for one.`);
+    process.exitCode = 1;
+  } else {
+    // Replace from the end, so each splice leaves the earlier offsets intact.
+    for (let i = forkBlocks.length - 1; i >= 0; i -= 1) {
+      let block = upstreamBlocks[i][1];
+      for (const [pattern, replacement] of rewritesFor('references/')) block = block.replace(pattern, replacement);
+      const fork = forkBlocks[i];
+      text = text.slice(0, fork.index) + '```json\n' + block + '\n```' + text.slice(fork.index + fork[0].length);
+    }
+  }
+
+  const keep = (line) => /^\|\s*v[0-9]/.test(line.trim()) || /\b(until|since|before|from)\s+v[0-9]/i.test(line);
   for (const [pattern, replacement] of rewritesFor('references/')) text = text.replace(pattern, replacement);
   text = text.split('\n')
     .map((line) => (keep(line) ? line : line.replace(/v\d+\.\d+\.\d+/g, release).replace(/v\d+\.\d+(?!\.)/g, kbLine)))
@@ -151,3 +187,10 @@ if (problems.length) {
 } else {
   console.log('Every relative link in the ported skills resolves to a file that exists.');
 }
+
+// Porting and proving the port are two different things, and doing only the first is what let
+// three rounds of fixes stay upstream. The parity check runs here so it cannot be skipped.
+const parity = spawnSync(process.execPath, [path.join(SRC, 'tools', 'check-fork-parity.mjs'), DEST], { encoding: 'utf8' });
+process.stdout.write(parity.stdout || '');
+process.stderr.write(parity.stderr || '');
+if (parity.status !== 0) process.exitCode = 1;
