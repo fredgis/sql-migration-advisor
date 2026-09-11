@@ -3287,6 +3287,44 @@ try {
     failures.length ? failures : [`${emitted.size} method name(s) emitted by the shipped exemplars, each declared as an alias by at least one catalog path.`]);
 }
 
+// The prerequisite knowledge base declares its own version, and nothing made that version move
+// when its content did. v1.5 was set on 24 August and five commits changed the document after
+// that: prerequisite rows removed, Fabric dropped from P11, the role counts corrected, the P20
+// fallback taken out. Anyone citing "prerequisite KB v1.5" was citing five different documents.
+//
+// The advisor knowledge base is protected by the coordinated version line. This one had no
+// equivalent, so the check is the same shape as the artifacts check: compare the commit that set
+// the current version against the last commit that touched the file.
+{
+  const failures = [];
+  const notes = [];
+  const git = (...args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' }).stdout.trim();
+  // Both knowledge bases that carry their own version, rather than the coordinated line the
+  // advisor KB shares with the release. The connectivity one has not drifted; it is here so it
+  // cannot start.
+  const BASES = [
+    { file: path.join('docs', 'sql-server-to-azure-migration-prerequisite.md'), pattern: /\*\*Version:\*\*\s*(v\d+\.\d+)/ },
+    { file: path.join('docs', 'sql-server-to-azure-migration-connectivity.md'), pattern: /\*\*Version\.\*\*\s*(v\d+\.\d+)/ }
+  ];
+  let checked = 0;
+  for (const base of BASES) {
+    if (!fs.existsSync(path.join(root, base.file))) continue;
+    const declared = (readText(base.file).match(base.pattern) || [])[1];
+    if (!declared) { failures.push(`${base.file} no longer declares a version, so nothing can tell which document a plan was built from`); continue; }
+    checked++;
+    const setBy = git('log', '-1', '--format=%H', `-S${declared}`, '--', base.file);
+    const lastTouched = git('log', '-1', '--format=%H', '--', base.file);
+    if (!lastTouched) notes.push(`${base.file}: no git history, so the version could not be compared against the content`);
+    else if (!setBy) notes.push(`${base.file} declares ${declared}, which is not in history yet: the bump is in this working tree and will be checked once committed.`);
+    else if (setBy !== lastTouched) {
+      const since = git('log', '--oneline', `${setBy}..HEAD`, '--', base.file).split('\n').filter(Boolean);
+      failures.push(`${base.file} declares ${declared}, set by ${setBy.slice(0, 7)}, and ${since.length} later commit(s) changed the document: ${since.map((l) => l.slice(0, 9)).join(', ')}. A knowledge base whose version does not move is one whose readers cannot tell which facts answered them`);
+    } else notes.push(`${base.file} declares ${declared}, unchanged since that version was set.`);
+  }
+  if (!checked) failures.push('no self-versioned knowledge base was found, so this gate is checking nothing');
+  add('a-knowledge-base-version-moves-with-its-content', failures.length === 0, failures.length ? failures : notes);
+}
+
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };
 if (jsonMode) {
   process.stdout.write(JSON.stringify({ summary, results }, null, 2) + '\n');
