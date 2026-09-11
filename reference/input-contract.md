@@ -180,6 +180,9 @@ Three questions ask whether something exists before asking what it is, so that *
 | `management_model` | ID | 3 model IDs | PaaS vs IaaS vs Kubernetes family | Blocks the family split; return a shortlist |
 | `feature_dependencies` | list | See §5 | Phase A eligibility for SQL MI and SQL DB | SQL MI and SQL DB held at `unknown_requires_assessment` |
 | `feature_dependencies_state` | ID | `ANSWERED` · `NONE_CONFIRMED` · `UNKNOWN` · `NOT_APPLICABLE` | Says why the list is empty, which the list itself cannot | Treated as `UNKNOWN`: an empty list without a state is not a confirmed absence |
+| `preview_acceptable` | ID | `PREVIEW_ACCEPTED` · `PREVIEW_REFUSED` · `UNKNOWN` | `MI-TIER` zone redundancy, `COPILOT-AGENT` control-plane branch | Preview options stay unavailable; the GA route is unaffected |
+| `ancillary_services` | list | SSIS · SSRS · SSAS · TDE · SQL Agent jobs · logins · others named by the user | Remediation scope and what the prerequisite plan inherits | Nothing is assumed present or absent |
+| `ancillary_services_state` | ID | `ANSWERED` · `NONE_CONFIRMED` · `UNKNOWN` · `NOT_APPLICABLE` | Says why the list is empty, which the list itself cannot | Treated as `UNKNOWN`: an empty list without a state is not a confirmed absence |
 | `size` | ID | `UNDER_150_GB` · `FROM_150_GB_TO_4_TB` · `FROM_4_TB_TO_128_TB` · `OVER_128_TB` | Hyperscale ceiling, seeding strategy, tier selection | Tier held at `unknown_requires_assessment` |
 | `downtime` | ID | `NEAR_ZERO` · `MINIMAL` · `OFFLINE` | Method ranking and the cutover class | `businessCutoverDowntime` becomes `unknown_requires_assessment`; never inferred from the chosen method |
 | `network_bandwidth` | ID | See §6 | Seeding strategy, Data Box | Seeding strategy not asserted |

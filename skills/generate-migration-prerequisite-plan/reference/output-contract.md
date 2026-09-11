@@ -21,10 +21,12 @@ Overall status is derived, in this order, and the first branch that matches wins
 - `unknown_requires_assessment` when no blocker is known missing but at least one applicable
   blocking prerequisite is `unknown`;
 - `ready_with_conditions` when all blocking prerequisites are settled but at least one of them is
-  `reported` rather than `confirmed`, **or** a required non-blocking prerequisite is missing or
-  unknown. **`reported` caps readiness here and can never reach `ready`**: the skill makes no
-  network calls, so a stated fact is not a verified one, and a plan read as a go/no-go artefact
-  must not present an assertion as clearance;
+  `reported` rather than `confirmed`, **or** a required non-blocking prerequisite is missing,
+  unknown or `reported`. **`reported` caps readiness here and can never reach `ready`**: the skill
+  makes no network calls, so a stated fact is not a verified one, and a plan read as a go/no-go
+  artefact must not present an assertion as clearance. The non-blocking case matters because most
+  evidence-only rows are non-blocking: without it, a plan whose every blocker is confirmed and
+  whose one required non-blocking row is `reported` matched no branch at all;
 - `ready` when every applicable required prerequisite is `confirmed`, meaning each one carries an
   evidence record.
 
@@ -49,7 +51,7 @@ selectedPath                     deprecated alias for selectedMethodPath, emitte
                                  written against the single-path shape
 overallStatus
 summary
-  confirmed, reported, missing, unknown, notApplicable, blockingMissing, blockingUnknown
+  confirmed, reported, missing, unknown, notApplicable, blockingMissing, blockingUnknown, blockingReported
 prerequisites[]
   id
   area

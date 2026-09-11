@@ -49,7 +49,7 @@ unrecognized answers remain `unknown`.
 | 8 | P08 | Azure SQL Managed Instance | Managed Instance Link | Microsoft-supported |
 | 9 | P09 | Azure SQL Managed Instance | Log Replay Service | Microsoft-supported |
 | 10 | P10 | Azure SQL Managed Instance | Native Backup/Restore | Microsoft-supported |
-| 11 | P11 | SQL DB / SQL VM / SQL MI / Fabric SQL DB / Arc SQL MI / SQL container | BACPAC / SqlPackage | Microsoft-supported |
+| 11 | P11 | SQL DB / SQL VM / SQL MI / Arc SQL MI / SQL container | BACPAC / SqlPackage | Microsoft-supported |
 | 12 | P12 | Azure SQL Database | Modern DMS Offline | Microsoft-supported |
 | 13 | P13 | SQL MI / SQL DB / Fabric SQL DB / SQL VM / Arc SQL MI / SQL container | Transactional Replication | Microsoft-supported with target-specific limits |
 | 14 | P14 | Azure SQL Database | Data Box Seed then Delta Synchronization | Composed pattern, not one migration service |
@@ -220,7 +220,7 @@ Use when Azure VM replicas are added to or replace replicas in one WSFC availabi
 | P10-006 | Inventory and script every instance-level object before cutover, because restoring a user database carries none of them: logins with their SIDs, credentials, SQL Server Agent jobs, operators and alerts, server-level triggers, linked servers, and server-level permissions and roles. | required | Yes | DBA | P10 | Instance-object inventory plus the deployment and validation scripts covering each listed category | [T-SQL differences between SQL Server and SQL MI](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/transact-sql-tsql-differences-sql-server) | 2026-08-13 |
 | P10-007 | Define final-write stop, backup/upload/restore timing, validation, connection switch and source retention for rollback. | required | Yes | Migration lead | P10 | Timed rehearsal and rollback runbook | [SQL MI migration overview](https://learn.microsoft.com/en-us/data-migration/sql-server/managed-instance/overview) | 2026-08-13 |
 
-## 14. P11 — SQL DB / SQL VM / SQL MI / Fabric SQL DB / Arc SQL MI / SQL container: BACPAC / SqlPackage
+## 14. P11 — SQL DB / SQL VM / SQL MI / Arc SQL MI / SQL container: BACPAC / SqlPackage
 
 > [!NOTE]
 > The Advisor summary matrix labels the Fabric cell `✅ (DACPAC)`. Microsoft documents both
@@ -586,10 +586,13 @@ overstates what the Advisor offers.** Each cell also carries an `advisorRole`. `
 single recommended method; `secondary` is a legitimate alternative that belongs in a shortlist;
 `documentary` is supported and prepared here but is never a recommendation on its own, because the
 method moves data without carrying schema, dependencies or a cutover — `bcp`, Smart Bulk Copy, Data
-Factory Copy and Azure Migrate assessment are the cases. The Advisor therefore proposes 30 of the 58
-cells, and the remaining 28 stay reachable through a standalone plan in this skill. That split is
-deliberate: counting all 58 as recommendable would promote a bulk-copy utility to a migration
-method.
+Factory Copy and Azure Migrate assessment are the cases. The Advisor therefore proposes 29 of the 58
+cells, 16 as `primary` and 13 as `secondary`. The other 29 are `documentary`, and most of them stay
+reachable through a standalone plan in this skill; seven are `out-of-scope` dispositions, which no
+plan reaches by any route. That split is deliberate: counting all 58 as recommendable would promote
+a bulk-copy utility to a migration method. The numbers above are derived from
+`advisor-coverage.json` by a gate rather than counted by hand, because they were wrong here for
+three releases.
 
 Coverage also runs the other way, and that direction has to be stated or it looks like an omission.
 Three paths carry no matrix cell at all: **P06** (Azure Migrate replication), **P14** (Data Box seed

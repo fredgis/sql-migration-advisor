@@ -155,14 +155,36 @@
       "description": "Regional and sovereignty constraints. When UNKNOWN, sovereignty-restricted targets are not ranked first."
     },
     "network_bandwidth": {
-      "$ref": "#/$defs/answer"
+      "enum": [
+        "GOOD_BANDWIDTH",
+        "LIMITED_WAN",
+        "VERY_LARGE_MULTI_TB",
+        "UNKNOWN",
+        "NONE_CONFIRMED",
+        "NOT_APPLICABLE"
+      ],
+      "description": "Constrained to the IDs reference/input-contract.md tabulates for this field, plus the absence markers. It used to be a bare non-empty string while advisor-fact-mappings.json mapped its exact values, so a plausible variant validated here and fell through to the crosswalk fallback: a port the user reported blocked stopped being a blocker."
     },
     "mi_link_ports": {
-      "$ref": "#/$defs/answer"
+      "enum": [
+        "PORTS_CONFIRMED_OPEN",
+        "PORTS_BLOCKED",
+        "UNKNOWN",
+        "NONE_CONFIRMED",
+        "NOT_APPLICABLE"
+      ],
+      "description": "Constrained to the IDs reference/input-contract.md tabulates for this field, plus the absence markers. It used to be a bare non-empty string while advisor-fact-mappings.json mapped its exact values, so a plausible variant validated here and fell through to the crosswalk fallback: a port the user reported blocked stopped being a blocker."
     },
     "blob_https_reachability": {
-      "$ref": "#/$defs/answer",
-      "description": "Gates every backup-based or BACPAC path to Azure Blob through BACKUP-BLOB-PATH. When this is unknown the method gate cannot report passed; it becomes unknown_requires_assessment."
+      "enum": [
+        "BLOB_HTTPS_CONFIRMED",
+        "BLOB_HTTPS_BLOCKED",
+        "BLOB_HTTPS_UNKNOWN",
+        "NONE_CONFIRMED",
+        "UNKNOWN",
+        "NOT_APPLICABLE"
+      ],
+      "description": "Constrained to the IDs reference/input-contract.md tabulates for this field, plus the absence markers. It used to be a bare non-empty string while advisor-fact-mappings.json mapped its exact values, so a plausible variant validated here and fell through to the crosswalk fallback: a port the user reported blocked stopped being a blocker."
     },
     "network_ports": {
       "$ref": "#/$defs/answer",
@@ -214,6 +236,34 @@
         "NOT_APPLICABLE"
       ],
       "description": "Whether the dependency question was answered, and how. feature_dependencies is a list, and a list cannot say why it is empty: NONE_CONFIRMED means the user checked and found none, which clears a PaaS blocker, while UNKNOWN means blank, declined or unrecognised, which must hold the candidate at unknown_requires_assessment. The distinction was documented in the description of the list and enforced nowhere, so an unanswered question and a confirmed absence validated identically. ANSWERED means the list carries at least one dependency."
+    },
+    "preview_acceptable": {
+      "enum": [
+        "PREVIEW_ACCEPTED",
+        "PREVIEW_REFUSED",
+        "UNKNOWN"
+      ],
+      "description": "Whether the customer accepts a service or capability still in preview. Two indexed rules read it, MI-TIER for zone redundancy and COPILOT-AGENT for the control-plane branch, and the profile could not carry it: additionalProperties is false, so a decision those rules made could not be reproduced from a schema-valid input. UNKNOWN holds the preview option rather than granting it."
+    },
+    "ancillary_services": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "SSIS, SSRS, SSAS, TDE, SQL Agent jobs, logins and the rest of what sits around the database. Question 12 collects it and the closed profile had nowhere to put it, so emitting the answer failed validation and omitting it dropped facts the remediation and the handoff both read."
+    },
+    "ancillary_services_state": {
+      "enum": [
+        "ANSWERED",
+        "NONE_CONFIRMED",
+        "UNKNOWN",
+        "NOT_APPLICABLE"
+      ],
+      "description": "Why the ancillary list is empty, which the list itself cannot say. Same distinction as feature_dependencies_state: a confirmed absence clears remediation work, an unanswered question does not."
     }
   },
   "$defs": {

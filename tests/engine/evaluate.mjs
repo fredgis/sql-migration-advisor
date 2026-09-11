@@ -878,6 +878,8 @@ const OPTION_IDS = {
   BLOB_HTTPS_CONFIRMED: 'HTTPS to Azure Blob confirmed',
   BLOB_HTTPS_BLOCKED: 'HTTPS to Azure Blob blocked',
   BLOB_HTTPS_UNKNOWN: 'HTTPS to Azure Blob not verified',
+  PREVIEW_ACCEPTED: 'preview services are acceptable',
+  PREVIEW_REFUSED: 'generally available services only',
   STANDARD_COMMERCIAL: 'standard commercial',
   EU_DATA_BOUNDARY: 'EU data boundary',
   GOVERNMENT_SOVEREIGN: 'government / sovereign cloud',
