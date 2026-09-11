@@ -18,7 +18,7 @@
     "normalizedProfile": {
       "type": "object",
       "additionalProperties": false,
-      "description": "What the skill believes it was told, after labels and prose were converted to canonical IDs. Invariant 13: it is always present, so a misreading is visible rather than buried. Its property names are the ones input.schema.json defines, and normalized-profile-matches-input-schema keeps the two in step. Fields are optional here because a profile may be partial; nothing is required beyond what the interview established. Each property mirrors the definition input.schema.json gives it, plus null for a field the interview never established. It used to type every field as {}, which accepts anything: the shipped example carried SQL_SERVER_2014 where the contract tabulates SQL2014, and an object where feature_dependencies must be an array, and validation reported nothing.",
+      "description": "What the skill believes it was told, after labels and prose were converted to canonical IDs. Invariant 13: it is always present, so a misreading is visible rather than buried. Its property names are the ones input.schema.json defines, and normalized-profile-matches-input-schema keeps the two in step. Fields are optional here because a profile may be partial; nothing is required beyond what the interview established. Each property mirrors the definition input.schema.json gives it, plus null for a field the interview never established. It used to type every field as {}, which accepts anything: the shipped example carried SQL_SERVER_2014 where the contract tabulates SQL2014, and an object where feature_dependencies must be an array, and validation reported nothing. A profile may be partial while the interview is still running, so nothing is required outright. Once a recommendation is present the six fields the input schema requires must be echoed: Phase A cannot reach a target without them, so a card showing one and an empty profile is claiming a conclusion drawn from nothing.",
       "properties": {
         "scope": {
           "enum": [
@@ -857,5 +857,29 @@
       ],
       "description": "What the skill believes it was told for this field, echoed back so a misreading is visible rather than buried."
     }
-  }
+  },
+  "allOf": [
+    {
+      "$comment": "A card that recommends carries the facts it read: normalizedProfile echoes what the input schema requires.",
+      "if": {
+        "required": [
+          "recommendation"
+        ]
+      },
+      "then": {
+        "properties": {
+          "normalizedProfile": {
+            "required": [
+              "intent",
+              "source_location",
+              "source_version",
+              "management_model",
+              "feature_dependencies",
+              "downtime"
+            ]
+          }
+        }
+      }
+    }
+  ]
 }
