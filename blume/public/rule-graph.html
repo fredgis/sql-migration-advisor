@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>sql-migration-advisor — rule graph</title>
-<meta name="description" content="Targets, methods, 28 addressable rules, 73 canonical identifiers and 110 tested scenarios, as an interactive graph.">
+<meta name="description" content="Targets, methods, the addressable rules, the canonical identifiers they consume and the tested scenarios, as an interactive graph.">
 <style>
   body {
     margin: 0;
@@ -29,18 +29,19 @@
 <body>
 <main>
 <h1>SQL Server to Azure migration rules and paths</h1>
-<p class="lede">Three views: the documented paths to each target, the 28 addressable rules with the fields each one consumes, and the coverage of the 110 scenarios replayed on every commit. Select a node to isolate its relations.</p>
+<p class="lede">Three views: the documented paths to each target, the addressable rules with the fields each one consumes, and the coverage of the scenarios replayed on every commit. Select a node to isolate it and its neighbours; the rest of the graph fades. The counts under the buttons are read from the data, not written beside it.</p>
 <div id="sql-migration-rule-graph">
   <div class="viz-controls" aria-label="Graph view">
     <button type="button" class="btn" data-view="paths" aria-pressed="true">Documented paths</button>
     <button type="button" class="btn" data-view="rules" aria-pressed="false">Rules</button>
     <button type="button" class="btn" data-view="coverage" aria-pressed="false">Tested coverage</button>
+    <button type="button" class="btn btn-reset" data-reset>Reset view</button>
   </div>
 
   <div class="smg-meta text-small text-muted" aria-live="polite"></div>
   <div class="smg-network" data-network role="img" aria-label="Graph of SQL Server to Azure migration rules and paths"></div>
   <div class="smg-legend viz-row text-small" aria-label="Legend"></div>
-  <p class="smg-detail text-small" aria-live="polite">Select a node to isolate its relations.</p>
+  <p class="smg-detail text-small" aria-live="polite">Select a node to isolate it and read the scenario counts on its edges. Drag to pan, scroll to zoom, Reset view to get back.</p>
   <p class="sr-only">The graph has three views: documented paths, rule dependencies, and test scenario coverage.</p>
 </div>
 
@@ -94,6 +95,13 @@
     background: var(--smg-fg);
     border-color: var(--smg-fg);
   }
+
+  /* The reset control acts on the view rather than selecting one, so it reads as a separate
+     affordance instead of a fourth tab. */
+  #sql-migration-rule-graph .btn-reset {
+    margin-left: auto;
+    border-style: dashed;
+  }
   #sql-migration-rule-graph .btn:focus-visible {
     outline: 2px solid var(--smg-primary);
     outline-offset: 2px;
@@ -105,8 +113,8 @@
   }
   #sql-migration-rule-graph .smg-network {
     width: 100%;
-    height: 620px;
-    min-height: 520px;
+    height: 780px;
+    min-height: 560px;
     position: relative;
     border: 1px solid var(--smg-border);
     border-radius: 0.75rem;
@@ -181,6 +189,7 @@
   const palette = {
     foreground: token("--smg-fg", "#1c2024"),
     mutedForeground: token("--smg-muted", "#6b7280"),
+    surface: token("--smg-surface", "#ffffff"),
     border: token("--smg-border", "#d7dbe0"),
     primary: token("--smg-primary", "#2f6feb"),
     primaryForeground: token("--primary-foreground", "#ffffff"),
@@ -397,7 +406,12 @@
       from,
       to,
       state,
-      label,
+      // The counts are kept on the edge and rendered only for a selected node. Drawn always, they
+      // pile up where the bundle crosses and the middle of every view becomes a smear of digits;
+      // drawn on demand, they answer the one question a reader actually asks, which is how many
+      // scenarios cover the path they just clicked.
+      countLabel: label,
+      label: "",
       width,
       arrows: { to: { enabled: true, scaleFactor: 0.45 } },
       smooth: { enabled: true, type: "cubicBezier", forceDirection: "horizontal", roundness: 0.35 }
@@ -437,10 +451,14 @@
       }
     }
 
+    // Counted from the data rather than written beside it. These lines said 28 rules, 73
+    // identifiers and 110 scenarios while the graph plotted 31, 76 and 116: the gate checked the
+    // nodes and never read the prose around them.
+    const scenarioTotal = SOURCE_TARGETS.reduce((sum, row) => sum + row[2], 0);
     return {
       nodes,
       edges,
-      meta: "8 targets · 23 method families · solid line = output observed in the 110 scenarios",
+      meta: targetIds.size + " targets · " + methodIds.size + " method families · solid line = output observed in the " + scenarioTotal + " scenarios",
       legend: [
         ["observed", "Emitted by the tested mirror"],
         ["rules_only", "Documented, not emitted in the corpus"],
@@ -487,7 +505,7 @@
     return {
       nodes,
       edges,
-      meta: "28 addressable rules \u00b7 " + indexedFields.size + " fields consumed \u00b7 amber = partially implemented",
+      meta: RULES.length + " addressable rules \u00b7 " + indexedFields.size + " fields consumed \u00b7 amber = partially implemented",
       legend: [
         ["rule_ok", "Implemented"],
         ["rule_partial", "Partial"],
@@ -519,12 +537,12 @@
     for (const [source, total] of sourceTotals) {
       const id = safeId("source", source);
       sources.set(source, id);
-      nodes.push(makeNode(id, source, "source", total + " scenario(s) du corpus.", 0));
+      nodes.push(makeNode(id, source, "source", total + " scenario(s) in the corpus.", 0));
     }
     for (const [target, total] of targetTotals) {
       const id = safeId("target", target);
       targets.set(target, id);
-      nodes.push(makeNode(id, target, "target", total + " sortie(s) primaires.", 1));
+      nodes.push(makeNode(id, target, "target", total + " scenario(s) reaching this primary output.", 1));
     }
     for (const [method, total] of methodTotals) {
       const id = safeId("method", method);
@@ -539,13 +557,14 @@
       edges.push(makeEdge(targets.get(target), methods.get(method), "observed", String(count), 1 + Math.sqrt(count) * 0.4));
     }
 
+    const scenarioTotal = SOURCE_TARGETS.reduce((sum, row) => sum + row[2], 0);
     return {
       nodes,
       edges,
-      meta: "110 golden scenarios · 9 primary outputs · 19 distinct methods · 23/23 gates green",
+      meta: scenarioTotal + " golden scenarios · " + targets.size + " primary outputs · " + methods.size + " distinct methods",
       legend: [
         ["source", "Source"],
-        ["target", "Sortie primaire"],
+        ["target", "Primary output"],
         ["method", "Method"],
         ["observed", "Scenario count"]
       ]
@@ -659,16 +678,28 @@
         },
         edges: {
           selectionWidth: 2,
-          hoverWidth: 1.5
+          hoverWidth: 1.5,
+          // The counts sat directly on the lines and piled up where the bundle crosses, so the
+          // middle of every view was a smear of digits. A surface behind each one separates it
+          // from the line and from its neighbours, and the label rides the end of the edge rather
+          // than its midpoint, where the crossings are.
+          font: {
+            size: Math.max(10, fontSize - 4),
+            color: palette.mutedForeground,
+            strokeWidth: 4,
+            strokeColor: palette.surface,
+            align: "horizontal"
+          },
+          labelHighlightBold: false
         },
         layout: {
           hierarchical: {
             enabled: true,
             direction: "LR",
             sortMethod: "directed",
-            levelSeparation: 215,
-            nodeSpacing: 32,
-            treeSpacing: 70,
+            levelSeparation: 240,
+            nodeSpacing: 30,
+            treeSpacing: 64,
             blockShifting: true,
             edgeMinimization: true,
             parentCentralization: true
@@ -683,13 +714,13 @@
           tooltipDelay: 0,
           multiselect: false,
           navigationButtons: false,
-          keyboard: false
+          keyboard: { enabled: true, bindToWindow: false }
         }
       }
     );
 
     network.once("afterDrawing", () => {
-      network.fit({ animation: false });
+      fitReadably();
     });
 
     network.on("selectNode", (params) => {
@@ -697,12 +728,54 @@
       if (!selected) return;
       detailEl.textContent = selected.fullLabel + " — " + selected.detail;
       const connected = network.getConnectedNodes(selected.id);
-      network.selectNodes([selected.id, ...connected], false);
+      // The page promised to isolate a node's relations and only highlighted them, which on a
+      // graph this dense reads as no change at all. Everything unrelated fades instead.
+      focus(new Set([selected.id, ...connected]));
     });
 
     network.on("deselectNode", () => {
-      detailEl.textContent = "Select a node to isolate its relations.";
+      detailEl.textContent = "Select a node to isolate it and read the scenario counts on its edges. Drag to pan, scroll to zoom, Reset view to get back.";
+      focus(null);
     });
+  }
+
+  // Fitting the whole graph is the wrong default here. These views are three narrow columns and up
+  // to two dozen rows, so fitting the height shrinks the labels past reading and the page becomes a
+  // picture of a graph rather than a graph. Below the floor it frames the left edge at a readable
+  // scale instead, and the reader scrolls. A third you can read beats all of it you cannot.
+  const READABLE_SCALE = 0.62;
+  function fitReadably() {
+    if (!network) return;
+    network.fit({ animation: false });
+    if (network.getScale() >= READABLE_SCALE) return;
+    const positions = network.getPositions();
+    const ys = Object.values(positions).map((p) => p.y);
+    const xs = Object.values(positions).map((p) => p.x);
+    if (!xs.length) return;
+    network.moveTo({
+      scale: READABLE_SCALE,
+      position: { x: Math.min(...xs) + graphEl.clientWidth / (2 * READABLE_SCALE) - 60, y: (Math.min(...ys) + Math.max(...ys)) / 2 },
+      animation: false
+    });
+  }
+
+  function focus(keep) {
+    if (!network) return;
+    const nodeSet = network.body.data.nodes;
+    const edgeSet = network.body.data.edges;
+    nodeSet.update(currentData.nodes.map((node) => {
+      const dim = keep && !keep.has(node.id);
+      return { id: node.id, opacity: dim ? 0.2 : 1, font: { color: dim ? palette.mutedForeground : palette.foreground } };
+    }));
+    edgeSet.update(edgeSet.get().map((edge) => {
+      const related = keep && keep.has(edge.from) && keep.has(edge.to);
+      const dim = keep && !related;
+      return {
+        id: edge.id,
+        color: { opacity: dim ? 0.12 : 1 },
+        label: related ? edge.countLabel || "" : ""
+      };
+    }));
   }
 
   buttons.forEach((button) => {
@@ -712,6 +785,19 @@
       render();
     });
   });
+
+  // Zooming and panning have no way back without this, and a graph you cannot re-frame is one you
+  // stop exploring.
+  const resetButton = root.querySelector("[data-reset]");
+  if (resetButton) {
+    resetButton.addEventListener("click", () => {
+      if (!network) return;
+      network.unselectAll();
+      focus(null);
+      detailEl.textContent = "Select a node to isolate it and read the scenario counts on its edges. Drag to pan, scroll to zoom, Reset view to get back.";
+      fitReadably();
+    });
+  }
 
   render();
 })();

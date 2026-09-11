@@ -2189,8 +2189,32 @@ try {
     }
   }
 
+  // The graph plotted 31 rules while its own prose said 28, its description said 73 identifiers
+  // and 110 scenarios against 76 and 116, and one legend label was still in French. This gate read
+  // the nodes and never the words around them, which is the same one-side check as everywhere
+  // else. Counts in the page must now be computed from its data rather than typed beside it.
+  {
+    const page = readText(graphPath);
+    const STALE = [
+      [/\b\d+ addressable rules/, 'the rule count is written as a literal instead of being read from RULES.length'],
+      [/\b\d+ (?:golden )?scenarios\b(?![^\n]*reduce)/, 'a scenario count is written as a literal instead of being summed from the data'],
+      [/\b\d+ canonical identifiers/, 'the identifier count is written as a literal'],
+      [/\b\d+ targets · \d+ method families/, 'the target and method counts are written as literals'],
+      [/\d+\/\d+ gates green/, 'a gate count is quoted in a page that cannot verify it']
+    ];
+    // The explanatory comments record what the numbers used to be, so only live strings count.
+    const live = page.split('\n').filter((line) => !line.trim().startsWith('//')).join('\n');
+    for (const [pattern, why] of STALE) {
+      const hit = live.match(pattern);
+      if (hit) failures.push(`${graphPath}: ${why} — "${hit[0]}"`);
+    }
+    if (/\b(du corpus|sortie|Sortie primaire|règle|méthode|chemin documenté)\b/.test(live)) {
+      failures.push(`${graphPath} carries a French label or tooltip in an English page`);
+    }
+  }
+
   add('rule-graph-is-current', failures.length === 0,
-    failures.length ? failures : [`${graphPath} plots the same ${indexed.length} rules as the decision-rules index, stamped ${manifest.latest}.`]);
+    failures.length ? failures : [`${graphPath} plots the same ${indexed.length} rules as the decision-rules index, stamped ${manifest.latest}, and every count in the page is computed from its own data.`]);
 }
 
 // Weekly check 2026-08-31. Section 8 marks BACPAC / SqlPackage as `✅ (DACPAC)` for Fabric SQL
