@@ -1,6 +1,6 @@
 # SQL Server to Azure migration prerequisite knowledge base
 
-> **Version:** v1.5 | **Last verified:** 2026-08-24 | **Companion skill:** `generate-migration-prerequisite-plan`
+> **Version:** v1.6 | **Last verified:** 2026-09-11 | **Companion skill:** `generate-migration-prerequisite-plan`
 > **Scope:** prerequisite planning for the 28 migration paths defined below
 
 This knowledge base begins after a migration target and method have been selected. It converts that
