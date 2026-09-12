@@ -3381,6 +3381,108 @@ try {
   add('a-knowledge-base-version-moves-with-its-content', failures.length === 0, failures.length ? failures : notes);
 }
 
+// Sixth review pass. A rule that reads a fact the profile cannot carry makes a decision nobody can
+// reproduce from a valid input, and there was no check on it. `DMS-MODE` demanded a recovery model
+// and an unbroken log chain that the closed profile had no field for, and five places wrote
+// `previewAcceptable` where the field is `preview_acceptable`. Both were readable in the rule index
+// the whole time; nothing read it.
+{
+  const failures = [];
+  const notes = [];
+  const rulesDoc = readText(path.join('reference', 'decision-rules.md'));
+  const advisorIn = JSON.parse(readText(path.join('skills', 'recommend-migration-path', 'schemas', 'input.schema.json')));
+  const known = new Set(Object.keys(advisorIn.properties || {}));
+  // Not every input a rule names is a profile field: some rows cite a derived quantity or a
+  // prose condition. Only snake_case tokens are treated as field claims, which is the shape the
+  // contract uses for every field it declares.
+  const isFieldClaim = token => /^[a-z][a-z0-9]*(_[a-z0-9]+)+$/.test(token);
+  let rowsRead = 0;
+  for (const line of rulesDoc.split(/\r?\n/)) {
+    const row = line.match(/^\|\s*`([A-Z][A-Z0-9-]+)`\s*\|[^|]*\|([^|]*)\|/);
+    if (!row) continue;
+    rowsRead++;
+    for (const token of [...row[2].matchAll(/`([^`]+)`/g)].map(m => m[1].trim())) {
+      if (!isFieldClaim(token)) continue;
+      if (!known.has(token)) failures.push(`rule ${row[1]} reads \`${token}\`, which the advisor input schema does not declare`);
+    }
+  }
+  const camel = [...rulesDoc.matchAll(/`([a-z]+[A-Z][A-Za-z]*)`/g)].map(m => m[1]);
+  for (const token of new Set(camel)) {
+    const snake = token.replace(/([A-Z])/g, letter => `_${letter.toLowerCase()}`);
+    if (known.has(snake)) failures.push(`the rules write \`${token}\` where the schema declares \`${snake}\`; a reader cannot resolve the camelCase spelling to a field`);
+  }
+  if (!rowsRead) failures.push('no indexed rule row was read, so this gate is checking nothing');
+  notes.push(`${rowsRead} indexed rule row(s) read; every field they name is declared by the advisor input schema.`);
+  add('rules-only-read-facts-the-profile-carries', failures.length === 0, failures.length ? failures : notes);
+}
+
+// The same question asked of the planner's answer types: an effect nobody can produce is a rule
+// that cannot fire. `lrs_window_days` accepted 1 to 30 and mapped `over_30` to missing, so the
+// thirty-day ceiling the Log Replay Service actually has could never be reported as exceeded.
+{
+  const failures = [];
+  const questions = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'reference', 'questions.json'))).questions;
+  let checked = 0;
+  for (const question of questions) {
+    const range = /^integer_(\d+)_to_(\d+)$/.exec(question.answerType || '');
+    if (!range) continue;
+    const [, low, high] = range.map(Number);
+    for (const key of Object.keys(question.effects || {})) {
+      checked++;
+      const bound = /^(within|under|over|above|below)_(\d+)$/.exec(key);
+      if (!bound) continue;
+      const threshold = Number(bound[2]);
+      const reachable = /^(over|above)$/.test(bound[1]) ? high > threshold : low <= threshold;
+      if (!reachable) failures.push(`${question.id} accepts ${low} to ${high} and declares the effect \`${key}\`, which no accepted answer can produce`);
+    }
+  }
+  add('every-effect-has-an-answer-that-produces-it', failures.length === 0,
+    failures.length ? failures : [`${checked} bounded effect key(s) checked against the range their question accepts.`]);
+}
+
+// A route the coverage map calls documentary is one the knowledge base documents and the advisor
+// never recommends, and `methodCandidate.role` admits only primary and secondary. Section B3 listed
+// bcp, Smart Bulk Copy and ADF Copy in the same tables as the real candidates with nothing to say
+// so, which is how a plan could offer a role its own schema rejects.
+{
+  const failures = [];
+  const rulesDoc = readText(path.join('reference', 'decision-rules.md'));
+  const coverage = JSON.parse(readText(path.join('skills', 'generate-migration-prerequisite-plan', 'reference', 'advisor-coverage.json')));
+  const HEADINGS = {
+    'SQL Server on Azure VM': 'SQL VM',
+    AVS: 'AVS',
+    'Azure SQL Managed Instance': 'SQL MI',
+    'Azure SQL Database': 'SQL DB'
+  };
+  const documentaryBy = new Map();
+  for (const cell of coverage.dispositions) {
+    if (cell.advisorRole !== 'documentary') continue;
+    if (!documentaryBy.has(cell.target)) documentaryBy.set(cell.target, []);
+    documentaryBy.get(cell.target).push(cell.method);
+  }
+  let target = null;
+  let rows = 0;
+  for (const line of rulesDoc.split(/\r?\n/)) {
+    const heading = line.match(/^#### →\s*(.+?)\s*$/);
+    if (heading) { target = HEADINGS[heading[1]] || null; continue; }
+    if (!target || !line.trim().startsWith('|')) continue;
+    const cells = line.split('|');
+    if (cells.length < 3) continue;
+    const method = cells[2];
+    if (!method || /^[-: ]+$/.test(method.trim()) || /^\s*Method\s*$/.test(method)) continue;
+    rows++;
+    const marked = /documentary|standalone planning only/i.test(line);
+    for (const name of documentaryBy.get(target) || []) {
+      const bare = name.replace(/\s*\([^)]*\)\s*$/, '').trim();
+      if (!new RegExp(`\\b${bare.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(method)) continue;
+      if (!marked) failures.push(`§B3 offers "${bare}" for ${target} alongside the real candidates, and the coverage map calls it documentary; the row must say so or the method becomes a candidate with a role the output schema rejects`);
+    }
+  }
+  if (!rows) failures.push('no B3 method row was read, so this gate is checking nothing');
+  add('b3-never-offers-a-documentary-route-as-a-candidate', failures.length === 0,
+    failures.length ? failures : [`${rows} B3 method row(s) read against ${[...documentaryBy.values()].flat().length} documentary cell(s).`]);
+}
+
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };
 if (jsonMode) {
   process.stdout.write(JSON.stringify({ summary, results }, null, 2) + '\n');
