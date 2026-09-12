@@ -26,7 +26,9 @@ about the output, and nothing was holding it to one.
 | 7 | Feature dependencies | SQL Agent jobs, cross-DB queries, linked servers |
 | 8 | Largest DB size | 1.2 TB |
 | 9 | Downtime tolerance | Minimal: a couple of hours |
-| 10 | Network and ports | ExpressRoute available; 1433/443 open; MI Link ports 5022 and 11000–11999 not approved |
+| 10 | Network bandwidth | ExpressRoute available, good bandwidth to Azure |
+| 10a | MI Link ports | 5022 and 11000–11999 not approved in the required directions |
+| 10b | Blob HTTPS reachability | HTTPS to Azure Blob confirmed from the source |
 | 11 | Compliance | Standard commercial |
 | 12 | Ancillary/security | SSIS packages, TDE-encrypted DBs, Windows logins |
 | 13 | Tier-selection inputs | Moderate latency sensitivity, no read-scale need, no strict zone-redundant SLA, steady usage, not multi-tenant |
@@ -51,8 +53,6 @@ about the output, and nothing was holding it to one.
 | Maintenance restrictions | Prefer Microsoft-managed patching | Ranks MI above SQL VM |
 | Recovery model + log chain | FULL recovery, nightly full plus log backups every 15 minutes, chain unbroken | `DMS-MODE` refuses online DMS without both; LRS needs FULL as well |
 | Preview services | Generally available only | Rules out preview-gated capabilities without ruling out any GA target |
-| Blob HTTPS reachability | Confirmed from the source to Azure Blob | `BACKUP-BLOB-PATH` cannot report `passed` on an unverified upload path |
-
 ## Phase A eligibility trace
 
 | Target | Status | Reason |
@@ -172,7 +172,7 @@ one over the recommendation.
     "authentication": "MIXED_AUTH",
     "feature_dependencies": [
       "SQL Agent jobs",
-      "cross-database queries",
+      "cross-DB queries",
       "linked servers"
     ],
     "feature_dependencies_state": "ANSWERED",
@@ -201,7 +201,7 @@ one over the recommendation.
     "log_chain_status": "CHAIN_INTACT",
     "ancillary_services": [
       "SSIS packages",
-      "TDE-encrypted databases",
+      "TDE-encrypted DBs",
       "Windows logins"
     ],
     "ancillary_services_state": "ANSWERED"
@@ -332,19 +332,18 @@ one over the recommendation.
       ]
     }
   ],
-  "blockers": [
-    "MI Link is unavailable: ports 5022 and 11000-11999 are blocked and the source is below the 2016 floor."
-  ],
+  "blockers": [],
   "unknowns": [
+    "At this size or bandwidth the 30-day LRS window is a real constraint, and the expected duration was never estimated.",
     "Measured peak IOPS and log-write latency",
-    "Region capacity for the selected tier",
-    "Blob upload path for the staged backups"
+    "Region capacity for the selected tier"
   ],
   "assumptions": [
     "No FILESTREAM, heterogeneous DTC, PolyBase to an external RDBMS or SQL CLR dependency",
     "Linked servers can be recreated on Managed Instance"
   ],
   "evidenceRequired": [
+    "Confirm the migration completes inside the 30-day Log Replay Service window; past it the restore chain must be restarted from a new full backup.",
     "SSMS 22 Migration Component assessment",
     "Dependency discovery for linked servers, jobs and SSIS",
     "Test restore with the TDE certificate installed first"
