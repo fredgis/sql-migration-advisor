@@ -301,13 +301,20 @@ try {
     }
 
     // 4. The consumer no longer accepts an untyped object, and it accepts both documented shapes.
+    // The two branches are exclusive, not merely alternative: under anyOf a mixed object satisfied
+    // the public branch while carrying mirror fields, and a value the public branch would have
+    // refused arrived through a key it never declared.
     const handoff = prereqIn.$defs?.advisorOutput;
     if (!handoff) failures.push('the prerequisite input schema no longer defines advisorOutput');
-    else if (!Array.isArray(handoff.anyOf) || handoff.anyOf.length !== 2) {
-      failures.push('advisorOutput must accept exactly the two documented shapes: public contract and regression mirror');
+    else if (!Array.isArray(handoff.oneOf) || handoff.oneOf.length !== 2) {
+      failures.push('advisorOutput must accept exactly the two documented shapes under oneOf: public contract and regression mirror, and never a blend of the two');
     }
     for (const branch of ['advisorPublicOutput', 'advisorMirrorOutput']) {
-      if (!prereqIn.$defs?.[branch]) failures.push(`advisorOutput branch ${branch} is not defined`);
+      const shape = prereqIn.$defs?.[branch];
+      if (!shape) { failures.push(`advisorOutput branch ${branch} is not defined`); continue; }
+      if (shape.additionalProperties !== false) {
+        failures.push(`${branch} accepts properties it does not declare, so a handoff can smuggle a field past the branch that was supposed to type it`);
+      }
     }
 
     // 5. And the consumer's copy of the vocabulary equals the producer's. This is the check that
