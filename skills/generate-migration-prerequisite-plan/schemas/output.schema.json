@@ -257,7 +257,8 @@
             "items": {
               "type": "string",
               "minLength": 1
-            }
+            },
+            "uniqueItems": true
           },
           "officialSources": {
             "type": "array",
@@ -545,6 +546,21 @@
               "required": [
                 "appliedOverlays"
               ]
+            },
+            {
+              "required": [
+                "sourceRegister"
+              ]
+            },
+            {
+              "required": [
+                "unknowns"
+              ]
+            },
+            {
+              "required": [
+                "assumptions"
+              ]
             }
           ]
         }
@@ -620,6 +636,110 @@
                   "controlPlane",
                   "evaluatedAt"
                 ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "overallStatus": {
+            "const": "ready"
+          }
+        },
+        "required": [
+          "overallStatus"
+        ]
+      },
+      "then": {
+        "properties": {
+          "summary": {
+            "properties": {
+              "blockingMissing": {
+                "const": 0
+              },
+              "blockingUnknown": {
+                "const": 0
+              },
+              "blockingReported": {
+                "const": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "overallStatus": {
+            "const": "ready_with_conditions"
+          }
+        },
+        "required": [
+          "overallStatus"
+        ]
+      },
+      "then": {
+        "properties": {
+          "summary": {
+            "properties": {
+              "blockingMissing": {
+                "const": 0
+              },
+              "blockingUnknown": {
+                "const": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "overallStatus": {
+            "const": "blocked"
+          }
+        },
+        "required": [
+          "overallStatus"
+        ]
+      },
+      "then": {
+        "properties": {
+          "summary": {
+            "properties": {
+              "blockingMissing": {
+                "minimum": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "overallStatus": {
+            "const": "unknown_requires_assessment"
+          }
+        },
+        "required": [
+          "overallStatus"
+        ]
+      },
+      "then": {
+        "properties": {
+          "summary": {
+            "properties": {
+              "blockingMissing": {
+                "const": 0
+              },
+              "blockingUnknown": {
+                "minimum": 1
               }
             }
           }

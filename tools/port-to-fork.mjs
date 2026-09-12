@@ -74,7 +74,12 @@ const rewritesFor = (prefix) => [
   [/(skills\/[a-z-]+\/)templates\/prerequisite-plan\.md/g, '$1references/prerequisite-plan-template.md'],
   [/(skills\/[a-z-]+\/)(?:reference|schemas)\//g, '$1references/'],
   [/\((?:\.\.\/)*(?:reference|references|schemas)\/([a-z0-9.-]+)\)/g, `(${prefix}$1)`],
-  [/`(?:\.\.\/)*(?:reference|references|schemas)\/([a-z0-9.-]+)`/g, `\`${prefix}$1\``]
+  [/`(?:\.\.\/)*(?:reference|references|schemas)\/([a-z0-9.-]+)`/g, `\`${prefix}$1\``],
+  // Repository tooling is not part of a skill bundle and does not ship here. Left as a link it
+  // would point at a tools/ folder this repository has no reason to carry, so the reference names
+  // where the file lives instead of pretending it is next door.
+  [/\[`tools\/validate-plan\.mjs`\]\((?:\.\.\/)*tools\/validate-plan\.mjs\)/g, '`validate-plan.mjs` in the upstream repository'],
+  [/`tools\/validate-plan\.mjs`(?! in the upstream)/g, '`validate-plan.mjs` in the upstream repository']
 ];
 
 const read = (p) => fs.readFileSync(p, 'utf8');
@@ -170,10 +175,10 @@ const walk = (dir) => {
     const text = read(full);
     const where = path.relative(DEST, full);
     if (/(?:\.\.\/)+docs\//.test(text)) problems.push(`${where}: an upstream docs/ path survived`);
-    for (const link of text.matchAll(/\]\(([^)#:\s]+\.(?:md|json))\)/g)) {
+    for (const link of text.matchAll(/\]\(([^)#:\s]+\.(?:md|json|mjs))\)/g)) {
       if (!resolves(full, link[1])) problems.push(`${where}: link to ${link[1]} resolves to nothing`);
     }
-    for (const span of text.matchAll(/`((?:skills|docs|reference|references|schemas|templates|examples)\/[A-Za-z0-9._/-]+\.(?:md|json))`/g)) {
+    for (const span of text.matchAll(/`((?:skills|docs|reference|references|schemas|templates|examples|tools)\/[A-Za-z0-9._/-]+\.(?:md|json|mjs))`/g)) {
       if (!resolves(full, span[1])) problems.push(`${where}: code span ${span[1]} resolves to nothing`);
     }
   }

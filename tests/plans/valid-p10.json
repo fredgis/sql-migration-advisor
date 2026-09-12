@@ -1,0 +1,601 @@
+{
+  "metadata": {
+    "schemaVersion": "1.0",
+    "prerequisiteKnowledgeBaseVersion": "v1.8",
+    "pathCatalogVersion": "1.0",
+    "evaluatedAt": "2026-09-12T09:00:00Z",
+    "mode": "standalone",
+    "language": "en"
+  },
+  "selectedPath": {
+    "id": "P10",
+    "title": "Azure SQL Managed Instance — Native Backup/Restore",
+    "target": "Azure SQL Managed Instance",
+    "targetVariant": "Azure SQL Managed Instance",
+    "method": "Native backup/restore",
+    "supportStatus": "supported"
+  },
+  "overallStatus": "ready_with_conditions",
+  "summary": {
+    "confirmed": 18,
+    "missing": 0,
+    "unknown": 0,
+    "notApplicable": 0,
+    "reported": 1,
+    "blockingMissing": 0,
+    "blockingUnknown": 0,
+    "blockingReported": 0
+  },
+  "prerequisites": [
+    {
+      "id": "COM-001",
+      "area": "Common",
+      "title": "Establish the exact source SQL Server version, build, edition, operating system and hosting location, and verify them against the selected path's support floor.",
+      "requirementType": "required",
+      "applicability": "All paths",
+      "status": "confirmed",
+      "blocking": true,
+      "owner": "SQL platform owner",
+      "basis": "knowledge base row COM-001",
+      "evidenceRequired": "Sanitized inventory export and version/build query",
+      "acceptedEvidence": [
+        "EV-001"
+      ],
+      "officialSources": [
+        "https://learn.microsoft.com/en-us/data-migration/sql-server/overview"
+      ],
+      "lastVerified": "2026-09-12"
+    },
+    {
+      "id": "COM-002",
+      "area": "Common",
+      "title": "Complete a database-feature and instance-object inventory, including blockers, logins, jobs, credentials, linked servers, server configuration, encryption and application dependencies.",
+      "requirementType": "required",
+      "applicability": "All paths",
+      "status": "confirmed",
+      "blocking": true,
+      "owner": "Database architect",
+      "basis": "knowledge base row COM-002",
+      "evidenceRequired": "Assessment export plus signed exception list",
+      "acceptedEvidence": [
+        "EV-002"
+      ],
+      "officialSources": [
+        "https://learn.microsoft.com/en-us/azure/migrate/how-to-create-azure-sql-assessment"
+      ],
+      "lastVerified": "2026-09-12"
+    },
+    {
+      "id": "COM-003",
+      "area": "Common",
+      "title": "Confirm target subscription/workspace, region, service tier, compute, storage, database-count limits, HA design and capacity headroom.",
+      "requirementType": "required",
+      "applicability": "All Azure/Fabric targets",
+      "status": "confirmed",
+      "blocking": true,
+      "owner": "Azure/Fabric platform owner",
+      "basis": "knowledge base row COM-003",
+      "evidenceRequired": "Approved sizing record and quota/capacity evidence",
+      "acceptedEvidence": [
+        "EV-003"
+      ],
+      "officialSources": [
+        "https://learn.microsoft.com/en-us/azure/azure-sql/azure-sql-iaas-vs-paas-what-is-overview"
+      ],
+      "lastVerified": "2026-09-12"
+    },
+    {
+      "id": "COM-004",
+      "area": "Common",
+      "title": "Assign least-privilege source, target, Azure, Fabric or Kubernetes roles required for assessment, configuration, copy, monitoring and cutover.",
+      "requirementType": "required",
+      "applicability": "All paths",
+      "status": "confirmed",
+      "blocking": true,
+      "owner": "Security owner",
+      "basis": "knowledge base row COM-004",
+      "evidenceRequired": "Sanitized role assignment and database permission export",
+      "acceptedEvidence": [
+        "EV-004"
+      ],
+      "officialSources": [
+        "https://learn.microsoft.com/en-us/azure/role-based-access-control/best-practices"
+      ],
+      "lastVerified": "2026-09-12"
+    },
+    {
+      "id": "COM-005",
+      "area": "Common",
+      "title": "Validate end-to-end routing, DNS, firewall/NSG rules, proxies, TLS inspection and required service endpoints from the actual migration runtime.",
+      "requirementType": "required",
+      "applicability": "All paths with a remote source or target",
+      "status": "confirmed",
+      "blocking": true,
+      "owner": "Network owner",
+      "basis": "knowledge base row COM-005",
+      "evidenceRequired": "Timestamped connectivity tests from each required hop",
+      "acceptedEvidence": [
+        "EV-005"
+      ],
+      "officialSources": [
+        "https://learn.microsoft.com/en-us/azure/well-architected/security/networking"
+      ],
+      "lastVerified": "2026-09-12"
+    },
+    {
+      "id": "COM-006",
+      "area": "Common",
+      "title": "Inventory TDE, backup encryption, Always Encrypted and key dependencies; establish certificate/key custody and restore procedures before data movement.",
+      "requirementType": "conditional",
+      "applicability": "Encryption is enabled or encrypted backups are used",
+      "status": "confirmed",
+      "blocking": true,
+      "owner": "Security and DBA owners",
+      "basis": "knowledge base row COM-006",
+      "evidenceRequired": "Certificate metadata, protected escrow reference and test-restore evidence; never include private keys",
+      "acceptedEvidence": [
+        "EV-006"
+      ],
+      "officialSources": [
+        "https://learn.microsoft.com/en-us/sql/relational-databases/security/encryption/sql-server-encryption"
+      ],
+      "lastVerified": "2026-09-12"
+    },
+    {
+      "id": "COM-007",
+      "area": "Common",
+      "title": "Capture a representative performance baseline, database size, backup throughput, network throughput and peak transaction/change rate for sizing and catch-up estimates.",
+      "requirementType": "required",
+      "applicability": "All paths",
+      "status": "confirmed",
+      "blocking": true,
+      "owner": "Performance owner",
+      "basis": "knowledge base row COM-007",
+      "evidenceRequired": "Query Store/DMV baseline and measured transfer test",
+      "acceptedEvidence": [
+        "EV-007"
+      ],
+      "officialSources": [
+        "https://learn.microsoft.com/en-us/sql/relational-databases/performance/best-practice-with-the-query-store"
+      ],
+      "lastVerified": "2026-09-12"
+    },
+    {
+      "id": "COM-008",
+      "area": "Common",
+      "title": "Agree measurable downtime, RPO, RTO, freeze window, final synchronization threshold and go/no-go authority.",
+      "requirementType": "required",
+      "applicability": "All paths",
+      "status": "confirmed",
+      "blocking": true,
+      "owner": "Business and service owners",
+      "basis": "knowledge base row COM-008",
+      "evidenceRequired": "Approved cutover acceptance criteria",
+      "acceptedEvidence": [
+        "EV-008"
+      ],
+      "officialSources": [
+        "https://learn.microsoft.com/en-us/azure/well-architected/reliability/"
+      ],
+      "lastVerified": "2026-09-12"
+    },
+    {
+      "id": "COM-009",
+      "area": "Common",
+      "title": "Inventory connection strings, drivers, certificates, DNS aliases, jobs, integration endpoints and application owners; define the traffic-switch sequence.",
+      "requirementType": "required",
+      "applicability": "All paths",
+      "status": "confirmed",
+      "blocking": true,
+      "owner": "Application owner",
+      "basis": "knowledge base row COM-009",
+      "evidenceRequired": "Sanitized dependency map and owner-approved switch plan",
+      "acceptedEvidence": [
+        "EV-009"
+      ],
+      "officialSources": [
+        "https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-connectivity-issues"
+      ],
+      "lastVerified": "2026-09-12"
+    },
+    {
+      "id": "COM-010",
+      "area": "Common",
+      "title": "Define technical and business validation: row/object counts, checksums or samples, consistency, security, jobs, performance and application acceptance.",
+      "requirementType": "required",
+      "applicability": "All paths",
+      "status": "confirmed",
+      "blocking": true,
+      "owner": "Test lead",
+      "basis": "knowledge base row COM-010",
+      "evidenceRequired": "Approved test plan, expected results and sign-off roles",
+      "acceptedEvidence": [
+        "EV-010"
+      ],
+      "officialSources": [
+        "https://learn.microsoft.com/en-us/sql/relational-databases/performance/monitor-and-tune-for-performance"
+      ],
+      "lastVerified": "2026-09-12"
+    },
+    {
+      "id": "COM-011",
+      "area": "Common",
+      "title": "Define the rollback method, last reversible point, data-divergence treatment, decision deadline, retention period and owner.",
+      "requirementType": "required",
+      "applicability": "All paths",
+      "status": "confirmed",
+      "blocking": true,
+      "owner": "Migration lead",
+      "basis": "knowledge base row COM-011",
+      "evidenceRequired": "Rehearsed rollback runbook and signed decision matrix",
+      "acceptedEvidence": [
+        "EV-011"
+      ],
+      "officialSources": [
+        "https://learn.microsoft.com/en-us/sql/relational-databases/backup-restore/back-up-and-restore-of-sql-server-databases"
+      ],
+      "lastVerified": "2026-09-12"
+    },
+    {
+      "id": "COM-012",
+      "area": "Common",
+      "title": "Assign every missing or unknown prerequisite to an owner and retain a sanitized evidence register with collection date and source.",
+      "requirementType": "required",
+      "applicability": "All paths",
+      "status": "reported",
+      "blocking": false,
+      "owner": "Migration PM",
+      "basis": "knowledge base row COM-012",
+      "evidenceRequired": "Action register and evidence index",
+      "acceptedEvidence": [],
+      "officialSources": [
+        "https://learn.microsoft.com/en-us/azure/well-architected/operational-excellence/checklist"
+      ],
+      "lastVerified": "2026-09-12"
+    },
+    {
+      "id": "P10-001",
+      "area": "Native backup/restore",
+      "title": "Confirm native restore is supported for the source version/database and accept an offline migration with no source log replay after the selected backup set.",
+      "requirementType": "required",
+      "applicability": "P10",
+      "status": "confirmed",
+      "blocking": true,
+      "owner": "Database architect",
+      "basis": "knowledge base row P10-001",
+      "evidenceRequired": "Version support check and approved outage",
+      "acceptedEvidence": [
+        "EV-012"
+      ],
+      "officialSources": [
+        "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/restore-sample-database-quickstart"
+      ],
+      "lastVerified": "2026-09-12"
+    },
+    {
+      "id": "P10-002",
+      "area": "Native backup/restore",
+      "title": "Create a valid `.bak` backup set with checksum/verification and a representative restore rehearsal.",
+      "requirementType": "required",
+      "applicability": "P10",
+      "status": "confirmed",
+      "blocking": true,
+      "owner": "DBA",
+      "basis": "knowledge base row P10-002",
+      "evidenceRequired": "Backup headers, verification and rehearsal result",
+      "acceptedEvidence": [
+        "EV-013"
+      ],
+      "officialSources": [
+        "https://learn.microsoft.com/en-us/sql/relational-databases/backup-restore/copy-only-backups-sql-server"
+      ],
+      "lastVerified": "2026-09-12"
+    },
+    {
+      "id": "P10-003",
+      "area": "Native backup/restore",
+      "title": "Confirm MI tier, storage, database-count and restore concurrency/capacity for the complete wave.",
+      "requirementType": "required",
+      "applicability": "P10",
+      "status": "confirmed",
+      "blocking": true,
+      "owner": "Azure SQL owner",
+      "basis": "knowledge base row P10-003",
+      "evidenceRequired": "Capacity and batching calculation",
+      "acceptedEvidence": [
+        "EV-014"
+      ],
+      "officialSources": [
+        "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/resource-limits"
+      ],
+      "lastVerified": "2026-09-12"
+    },
+    {
+      "id": "P10-004",
+      "area": "Native backup/restore",
+      "title": "Place backups in supported Azure Blob storage and prove the chosen SAS/credential, firewall and HTTPS access from the MI restore operation.",
+      "requirementType": "required",
+      "applicability": "P10",
+      "status": "confirmed",
+      "blocking": true,
+      "owner": "Storage and network owners",
+      "basis": "knowledge base row P10-004",
+      "evidenceRequired": "Sanitized storage configuration and test restore",
+      "acceptedEvidence": [
+        "EV-015"
+      ],
+      "officialSources": [
+        "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/restore-sample-database-quickstart"
+      ],
+      "lastVerified": "2026-09-12"
+    },
+    {
+      "id": "P10-005",
+      "area": "Native backup/restore",
+      "title": "Upload the source TDE certificate to MI before restoring a TDE-protected database.",
+      "requirementType": "conditional",
+      "applicability": "TDE enabled",
+      "status": "confirmed",
+      "blocking": true,
+      "owner": "Security owner",
+      "basis": "knowledge base row P10-005",
+      "evidenceRequired": "Certificate migration evidence and test restore",
+      "acceptedEvidence": [
+        "EV-016"
+      ],
+      "officialSources": [
+        "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/tde-certificate-migrate"
+      ],
+      "lastVerified": "2026-09-12"
+    },
+    {
+      "id": "P10-006",
+      "area": "Native backup/restore",
+      "title": "Inventory and script every instance-level object before cutover, because restoring a user database carries none of them: logins with their SIDs, credentials, SQL Server Agent jobs, operators and alerts, server-level triggers, linked servers, and server-level permissions and roles.",
+      "requirementType": "required",
+      "applicability": "P10",
+      "status": "confirmed",
+      "blocking": true,
+      "owner": "DBA",
+      "basis": "knowledge base row P10-006",
+      "evidenceRequired": "Instance-object inventory plus the deployment and validation scripts covering each listed category",
+      "acceptedEvidence": [
+        "EV-017"
+      ],
+      "officialSources": [
+        "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/transact-sql-tsql-differences-sql-server"
+      ],
+      "lastVerified": "2026-09-12"
+    },
+    {
+      "id": "P10-007",
+      "area": "Native backup/restore",
+      "title": "Define final-write stop, backup/upload/restore timing, validation, connection switch and source retention for rollback.",
+      "requirementType": "required",
+      "applicability": "P10",
+      "status": "confirmed",
+      "blocking": true,
+      "owner": "Migration lead",
+      "basis": "knowledge base row P10-007",
+      "evidenceRequired": "Timed rehearsal and rollback runbook",
+      "acceptedEvidence": [
+        "EV-018"
+      ],
+      "officialSources": [
+        "https://learn.microsoft.com/en-us/data-migration/sql-server/managed-instance/overview"
+      ],
+      "lastVerified": "2026-09-12"
+    }
+  ],
+  "blockers": [],
+  "unknowns": [],
+  "assumptions": [],
+  "questionsAsked": [],
+  "nextActions": [
+    "Verify the reported rows before the go decision."
+  ],
+  "sourceRegister": [
+    {
+      "id": "EV-001",
+      "type": "document",
+      "status": "verified",
+      "collectedAt": "2026-09-12T08:00:00Z",
+      "origin": "customer",
+      "reference": "readiness pack, section 1",
+      "supports": [
+        "COM-001"
+      ]
+    },
+    {
+      "id": "EV-002",
+      "type": "document",
+      "status": "verified",
+      "collectedAt": "2026-09-12T08:00:00Z",
+      "origin": "customer",
+      "reference": "readiness pack, section 2",
+      "supports": [
+        "COM-002"
+      ]
+    },
+    {
+      "id": "EV-003",
+      "type": "document",
+      "status": "verified",
+      "collectedAt": "2026-09-12T08:00:00Z",
+      "origin": "customer",
+      "reference": "readiness pack, section 3",
+      "supports": [
+        "COM-003"
+      ]
+    },
+    {
+      "id": "EV-004",
+      "type": "document",
+      "status": "verified",
+      "collectedAt": "2026-09-12T08:00:00Z",
+      "origin": "customer",
+      "reference": "readiness pack, section 4",
+      "supports": [
+        "COM-004"
+      ]
+    },
+    {
+      "id": "EV-005",
+      "type": "document",
+      "status": "verified",
+      "collectedAt": "2026-09-12T08:00:00Z",
+      "origin": "customer",
+      "reference": "readiness pack, section 5",
+      "supports": [
+        "COM-005"
+      ]
+    },
+    {
+      "id": "EV-006",
+      "type": "document",
+      "status": "verified",
+      "collectedAt": "2026-09-12T08:00:00Z",
+      "origin": "customer",
+      "reference": "readiness pack, section 6",
+      "supports": [
+        "COM-006"
+      ]
+    },
+    {
+      "id": "EV-007",
+      "type": "document",
+      "status": "verified",
+      "collectedAt": "2026-09-12T08:00:00Z",
+      "origin": "customer",
+      "reference": "readiness pack, section 7",
+      "supports": [
+        "COM-007"
+      ]
+    },
+    {
+      "id": "EV-008",
+      "type": "document",
+      "status": "verified",
+      "collectedAt": "2026-09-12T08:00:00Z",
+      "origin": "customer",
+      "reference": "readiness pack, section 8",
+      "supports": [
+        "COM-008"
+      ]
+    },
+    {
+      "id": "EV-009",
+      "type": "document",
+      "status": "verified",
+      "collectedAt": "2026-09-12T08:00:00Z",
+      "origin": "customer",
+      "reference": "readiness pack, section 9",
+      "supports": [
+        "COM-009"
+      ]
+    },
+    {
+      "id": "EV-010",
+      "type": "document",
+      "status": "verified",
+      "collectedAt": "2026-09-12T08:00:00Z",
+      "origin": "customer",
+      "reference": "readiness pack, section 10",
+      "supports": [
+        "COM-010"
+      ]
+    },
+    {
+      "id": "EV-011",
+      "type": "document",
+      "status": "verified",
+      "collectedAt": "2026-09-12T08:00:00Z",
+      "origin": "customer",
+      "reference": "readiness pack, section 11",
+      "supports": [
+        "COM-011"
+      ]
+    },
+    {
+      "id": "EV-012",
+      "type": "document",
+      "status": "verified",
+      "collectedAt": "2026-09-12T08:00:00Z",
+      "origin": "customer",
+      "reference": "readiness pack, section 12",
+      "supports": [
+        "P10-001"
+      ]
+    },
+    {
+      "id": "EV-013",
+      "type": "document",
+      "status": "verified",
+      "collectedAt": "2026-09-12T08:00:00Z",
+      "origin": "customer",
+      "reference": "readiness pack, section 13",
+      "supports": [
+        "P10-002"
+      ]
+    },
+    {
+      "id": "EV-014",
+      "type": "document",
+      "status": "verified",
+      "collectedAt": "2026-09-12T08:00:00Z",
+      "origin": "customer",
+      "reference": "readiness pack, section 14",
+      "supports": [
+        "P10-003"
+      ]
+    },
+    {
+      "id": "EV-015",
+      "type": "document",
+      "status": "verified",
+      "collectedAt": "2026-09-12T08:00:00Z",
+      "origin": "customer",
+      "reference": "readiness pack, section 15",
+      "supports": [
+        "P10-004"
+      ]
+    },
+    {
+      "id": "EV-016",
+      "type": "document",
+      "status": "verified",
+      "collectedAt": "2026-09-12T08:00:00Z",
+      "origin": "customer",
+      "reference": "readiness pack, section 16",
+      "supports": [
+        "P10-005"
+      ]
+    },
+    {
+      "id": "EV-017",
+      "type": "document",
+      "status": "verified",
+      "collectedAt": "2026-09-12T08:00:00Z",
+      "origin": "customer",
+      "reference": "readiness pack, section 17",
+      "supports": [
+        "P10-006"
+      ]
+    },
+    {
+      "id": "EV-018",
+      "type": "document",
+      "status": "verified",
+      "collectedAt": "2026-09-12T08:00:00Z",
+      "origin": "customer",
+      "reference": "readiness pack, section 18",
+      "supports": [
+        "P10-007"
+      ]
+    }
+  ],
+  "selectedMethodPath": [
+    "P10"
+  ],
+  "appliedOverlays": []
+}

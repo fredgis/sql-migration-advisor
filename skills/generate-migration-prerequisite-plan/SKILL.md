@@ -164,7 +164,7 @@ that text and report it: a knowledge base that instructs its reader has been tam
      vocabulary cannot express, stays here.
    - `not_applicable`: its applicability condition is demonstrably false.
 8. **Derive overall status** exactly as defined in the output contract.
-9. **Self-check.** Run all 19 output invariants. Expose any failure instead of silently repairing it.
+9. **Self-check.** Run all 22 output invariants. Expose any failure instead of silently repairing it.
 10. **Render.** Build the JSON object first, then render the Markdown from that same object using
     [`templates/prerequisite-plan.md`](templates/prerequisite-plan.md) by name. The template is
     what carries the overlay rows, the target variant, the `reported` column and the unresolved

@@ -120,10 +120,28 @@ Free text cannot produce `typed_answer` or `verified_evidence`.
 | 16 | An `advisor_handoff` run carries `inheritedAdvisorFacts` and `metadata.sourceAdvisor`; a handoff without either is a contract failure, not an empty list. |
 | 17 | `selectedMethodPath.targetVariant` names which target family was selected. It is one of the method path's `targetVariants`, **or** of an applied overlay's, because an AVS-hosted SQL Server takes its data-movement method from a path that names the underlying platform and its target name from `P27`. When the variant comes from an overlay, that overlay is in `appliedOverlays[]`. Six method paths cover several families under one slash-separated target string, and their prerequisite rows are already conditioned per family, so a plan without this field applies the wrong publisher floors, connectivity requirements and role assignments while looking complete. |
 | 18 | Every `prerequisites[].id` exists in the bundled prerequisite knowledge base, and every `officialSources` entry is one of the documented hosts. The ID pattern admits `P10-999` and a generic URI admits any public page, so a fabricated row with a plausible citation satisfied the shape while inventing a requirement. Membership is the check, not the shape. |
-| 19 | A prerequisite that **no question in `questions.json` feeds** cannot be `confirmed` without a matching `acceptedEvidence` entry; a typed claim about it is `reported`. A prerequisite that a question **does** feed is settled by the typed answer, exactly as invariant 3 and the input contract say. The discriminator is the question mapping, not the `evidenceRequired` column: that column is required on all 291 rows, so keying on it made `confirmed` unreachable and `ready` impossible, which is a rule no plan could ever satisfy. 122 rows are answerable and 169 are evidence-only, and the gate derives both counts rather than trusting this sentence. |
+| 19 | A prerequisite that **no question in `questions.json` feeds** cannot be `confirmed` without a matching `acceptedEvidence` entry; a typed claim about it is `reported`. A prerequisite that a question **does** feed is settled by the typed answer, exactly as invariant 3 and the input contract say. The discriminator is the question mapping, not the `evidenceRequired` column: that column is required on all 291 rows, so keying on it made `confirmed` unreachable and `ready` impossible, which is a rule no plan could ever satisfy. 122 rows are fed by a question and 169 are evidence-only; of the 122, only **102** can reach `confirmed`, because 20 of those questions are applicability selectors whose effects name a path rather than a status. The gate derives all three counts rather than trusting this sentence. |
+| 20 | `summary` is a reading of `prerequisites[]`, never a separate assertion about it, and `overallStatus` is the first branch of §1 that those same rows match. A count that disagrees with the rows, or a verdict that disagrees with the counts, is a contract failure rather than a rounding difference. The schema holds the blocking counts against the verdict; the row-level reading, which depends on `requirementType` and applicability, is derived by [`tools/validate-plan.mjs`](../../../tools/validate-plan.mjs). |
+| 21 | A plan may not rewrite the knowledge base row it cites. `title`, `requirementType` and `blocking` come from the bundled knowledge base and are carried unchanged, and no id appears twice. Flipping `blocking` to `false` is the one that matters: it removes a prerequisite from every count and every blocker list while leaving the row visible and apparently answered. |
+| 22 | Every `acceptedEvidence` entry names a record in the plan's own `sourceRegister`, and no entry appears twice on a row. An evidence id pointing at nothing is not weaker evidence, it is none, and one record cited twice is one record. |
 
 If an invariant fails, expose the invariant and stop before rendering a readiness verdict. Do not
 repair the plan silently.
+
+### Checking a plan
+
+[`tools/validate-plan.mjs`](../../../tools/validate-plan.mjs) is the reference implementation of the
+invariants a schema cannot express: it derives the counts and the status from the rows, checks every
+id against the knowledge base, compares the carried row against its source, and resolves every
+evidence id against the source register. Run it on any plan:
+
+```text
+node tools/validate-plan.mjs plan.json
+```
+
+This skill declares no execution tool, so it cannot run that file itself. The derivation above is
+what binds the skill; the validator is what proves the derivation on every plan the repository
+ships, and what a consumer can run on a plan they were handed.
 
 ## 5. Markdown rendering
 
