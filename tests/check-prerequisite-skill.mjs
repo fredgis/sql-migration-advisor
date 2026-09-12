@@ -329,6 +329,51 @@ for (const question of questions.questions) {
   }
 }
 
+// Sixth review pass. knownFacts carried one open union: the readiness enum, any non-empty string,
+// any number, any integer, a boolean and any object. So `tde_status: true`, `database_count: -5`
+// and `mi_link_ports_status: "BANANA"` all validated, and a value that validates is a typed fact
+// that can confirm a prerequisite. The vocabulary each question accepts was in questions.json the
+// whole time; nothing connected the two. This derives the shape again and compares, so the schema
+// cannot drift away from the questions it is supposed to be typing.
+{
+  const SCREAMING = /^[A-Z][A-Z0-9_]*$/u;
+  const expectedShape = question => {
+    if (question.allowedValues) return { enum: [...question.allowedValues] };
+    const effectKeys = Object.keys(question.effects || {});
+    // An effect key in SCREAMING_SNAKE_CASE is an answer the user gives; a lowercase one is the
+    // verdict the answer produces. Only the first kind is a vocabulary, which is why
+    // azure_migrate_discovery_mode types as its allowedValues and source_edition does not type as
+    // supported/unsupported/unknown.
+    if (effectKeys.length && effectKeys.every(key => SCREAMING.test(key))) return { enum: effectKeys };
+    if (question.answerType === 'positive_integer') return { type: 'integer', minimum: 1 };
+    if (question.answerType === 'non_negative_number') return { type: 'number', minimum: 0 };
+    return { type: 'string', minLength: 1, pattern: '\\S' };
+  };
+  const knownFacts = inputSchema.$defs?.knownFacts
+    || inputSchema.properties?.knownFacts
+    || Object.values(inputSchema.$defs || {}).map(entry => entry?.properties?.knownFacts).find(Boolean);
+  check('known-facts-is-closed', knownFacts?.additionalProperties === false,
+    'knownFacts accepts properties it does not declare, so an unrecognised field can still carry a fact');
+  const declared = knownFacts?.properties || {};
+  check('known-facts-covers-every-question', Object.keys(declared).length === questions.questions.length,
+    `knownFacts declares ${Object.keys(declared).length} field(s) for ${questions.questions.length} question(s)`);
+  for (const question of questions.questions) {
+    const expected = expectedShape(question);
+    const actual = declared[question.id];
+    check(`known-facts-typed-${question.id}`, actual && JSON.stringify(actual) === JSON.stringify(expected),
+      `knownFacts types ${question.id} as ${JSON.stringify(actual)} where questions.json says ${JSON.stringify(expected)}`);
+    if (!expected.enum) continue;
+    // Absence means the question was never asked. Without an explicit unknown value, "asked and
+    // not answered" has no representation and collapses into absence, which reads as an answer.
+    check(`known-facts-unknown-expressible-${question.id}`, expected.enum.includes('UNKNOWN'),
+      `${question.id} is enumerated and offers no UNKNOWN value, so an unanswered question cannot be told apart from one never asked`);
+  }
+  for (const field of Object.keys(declared)) {
+    check(`known-facts-field-is-a-question-${field}`, definedQuestionIds.has(field),
+      `knownFacts declares ${field}, which questions.json does not define`);
+  }
+}
+
 for (const id of expectedPathIds) {
   check(`kb-section-${id}`, new RegExp(`^## \\d+\\. ${id} —`, 'mu').test(kb), `${id} has no dedicated KB section`);
   check(`kb-prerequisites-${id}`, prerequisiteIds.some(prerequisiteId => prerequisiteId.startsWith(`${id}-`)), `${id} has no prerequisite rows`);
@@ -356,7 +401,7 @@ check(
   `input-contract.md section 5 must document a disambiguation exception naming ${[...disambiguationOnlyFields].join(', ')}`
 );
 
-const knownFactNames = inputSchema.properties.knownFacts.propertyNames.enum;
+const knownFactNames = Object.keys(inputSchema.properties.knownFacts.properties);
 check('input-schema-question-parity',
   JSON.stringify([...knownFactNames].sort()) === JSON.stringify([...questionIds].sort()),
   'input schema knownFacts must exactly match questions.json');

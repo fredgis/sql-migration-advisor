@@ -74,114 +74,499 @@
     },
     "knownFacts": {
       "type": "object",
-      "propertyNames": {
-        "enum": [
-          "source_version",
-          "source_edition",
-          "source_os",
-          "source_location",
-          "database_count",
-          "largest_database_size_gb",
-          "target_region",
-          "target_tier",
-          "source_permissions",
-          "target_permissions",
-          "downtime_tolerance",
-          "rpo",
-          "rto",
-          "peak_change_rate",
-          "performance_baseline_status",
-          "tde_status",
-          "authentication_model",
-          "feature_inventory_status",
-          "instance_object_inventory_status",
-          "network_path_status",
-          "dns_status",
-          "validation_plan_status",
-          "rollback_plan_status",
-          "application_cutover_owner",
-          "ha_migration_pattern",
-          "source_ha_topology",
-          "domain_model",
-          "ag_endpoint_status",
-          "quorum_status",
-          "recovery_model",
-          "backup_chain_status",
-          "blob_https_status",
-          "blob_access_model",
-          "tde_material_status",
-          "azure_migrate_platform",
-          "azure_migrate_appliance_status",
-          "test_migration_status",
-          "hcx_service_mesh_status",
-          "mi_link_ports_status",
-          "mi_link_capacity_status",
-          "lrs_window_days",
-          "lrs_storage_layout_status",
-          "schema_compatibility_status",
-          "bacpac_consistency_status",
-          "dms_runtime_status",
-          "replication_primary_keys_status",
-          "replication_topology",
-          "data_box_device_status",
-          "delta_sync_method",
-          "striim_runtime_status",
-          "fabric_capacity_status",
-          "fabric_workspace_role",
-          "fabric_gateway_type",
-          "fabric_dacpac_size_mb",
-          "arc_cluster_support_status",
-          "arc_connectivity_mode",
-          "arc_backup_storage_class_status",
-          "arc_external_endpoint_status",
-          "arc_restore_entrypoint",
-          "container_image_status",
-          "container_volume_status",
-          "bulk_copy_tool",
-          "bulk_target_schema_status",
-          "adf_integration_runtime_status",
-          "adf_connection_status",
-          "dms_migration_mode",
-          "dms_backup_landing_zone",
-          "recovery_model_status",
-          "avs_host_quota_status",
-          "avs_vcf_subscription_status",
-          "avs_address_plan_status",
-          "avs_interconnect_topology",
-          "avs_outbound_internet_method",
-          "azure_migrate_project_access_status",
-          "azure_migrate_discovery_mode",
-          "azure_migrate_source_platform",
-          "azure_migrate_intent"
-        ]
-      },
-      "additionalProperties": {
-        "anyOf": [
-          {
-            "enum": [
-              "CONFIRMED",
-              "MISSING",
-              "UNKNOWN",
-              "NOT_APPLICABLE"
-            ]
-          },
-          {
-            "type": "string",
-            "minLength": 1
-          },
-          {
-            "type": "number"
-          },
-          {
-            "type": "integer"
-          },
-          {
-            "type": "boolean"
-          },
-          {
-            "type": "object"
-          }
-        ]
+      "description": "Facts already established, keyed by question id. Every value is checked against the vocabulary or the type that question accepts, derived from questions.json. It used to be one open union of the readiness enum, any non-empty string, any number, any integer, a boolean and any object, so `tde_status: true`, `database_count: -5` and `mi_link_ports_status: \"BANANA\"` all validated and could then confirm a prerequisite. An unrecognised value is not a typed fact. Omitting a key means the question was never asked; the explicit UNKNOWN value means it was asked and not answered, and every enumerated field offers it so the two cases stay distinguishable.",
+      "additionalProperties": false,
+      "properties": {
+        "source_version": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "source_edition": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "source_os": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "source_location": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "database_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "largest_database_size_gb": {
+          "type": "number",
+          "minimum": 0
+        },
+        "target_region": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "target_tier": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "source_permissions": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "target_permissions": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "downtime_tolerance": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "rpo": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "rto": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "peak_change_rate": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "performance_baseline_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "tde_status": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "authentication_model": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "feature_inventory_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "instance_object_inventory_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "network_path_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "dns_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "validation_plan_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "rollback_plan_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "application_cutover_owner": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "ha_migration_pattern": {
+          "enum": [
+            "DISTRIBUTED_AG",
+            "ALWAYS_ON_AG",
+            "UNKNOWN"
+          ]
+        },
+        "source_ha_topology": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "domain_model": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "ag_endpoint_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "quorum_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "recovery_model": {
+          "enum": [
+            "FULL",
+            "BULK_LOGGED",
+            "SIMPLE",
+            "UNKNOWN"
+          ]
+        },
+        "backup_chain_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "blob_https_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "blob_access_model": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "tde_material_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "azure_migrate_platform": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "azure_migrate_appliance_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "test_migration_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "hcx_service_mesh_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "mi_link_ports_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "mi_link_capacity_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "lrs_window_days": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "lrs_storage_layout_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "schema_compatibility_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "bacpac_consistency_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "dms_runtime_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "replication_primary_keys_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "replication_topology": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "data_box_device_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "delta_sync_method": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "striim_runtime_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "fabric_capacity_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "fabric_workspace_role": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "fabric_gateway_type": {
+          "enum": [
+            "ON_PREMISES",
+            "VNET_OR_PRIVATE_LINK",
+            "UNKNOWN"
+          ]
+        },
+        "fabric_dacpac_size_mb": {
+          "type": "number",
+          "minimum": 0
+        },
+        "arc_cluster_support_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "arc_connectivity_mode": {
+          "enum": [
+            "DIRECT",
+            "INDIRECT",
+            "UNKNOWN"
+          ]
+        },
+        "arc_backup_storage_class_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "arc_external_endpoint_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "arc_restore_entrypoint": {
+          "enum": [
+            "DIRECT_POD_OR_STORAGE",
+            "EXTERNAL_SQL_ENDPOINT",
+            "UNKNOWN"
+          ]
+        },
+        "container_image_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "container_volume_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "bulk_copy_tool": {
+          "enum": [
+            "BCP",
+            "SMART_BULK_COPY",
+            "UNKNOWN"
+          ]
+        },
+        "bulk_target_schema_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "adf_integration_runtime_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "adf_connection_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "dms_migration_mode": {
+          "enum": [
+            "OFFLINE",
+            "ONLINE",
+            "UNKNOWN"
+          ]
+        },
+        "dms_backup_landing_zone": {
+          "enum": [
+            "SMB_NETWORK_SHARE",
+            "AZURE_BLOB_STORAGE",
+            "UNKNOWN"
+          ]
+        },
+        "recovery_model_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "avs_host_quota_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "avs_vcf_subscription_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "avs_address_plan_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "avs_interconnect_topology": {
+          "enum": [
+            "EXPRESSROUTE_GLOBAL_REACH",
+            "AZURE_ROUTED_SOLUTION",
+            "UNKNOWN"
+          ]
+        },
+        "avs_outbound_internet_method": {
+          "enum": [
+            "MANAGED_SNAT",
+            "PUBLIC_IP_NSX_EDGE",
+            "AZURE_FIREWALL_DEFAULT_ROUTE",
+            "NONE",
+            "UNKNOWN"
+          ]
+        },
+        "azure_migrate_project_access_status": {
+          "enum": [
+            "CONFIRMED",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "azure_migrate_discovery_mode": {
+          "enum": [
+            "APPLIANCE",
+            "COLLECTOR",
+            "IMPORT",
+            "ARC_ENABLED",
+            "UNKNOWN"
+          ]
+        },
+        "azure_migrate_source_platform": {
+          "enum": [
+            "VMWARE",
+            "HYPERV",
+            "PHYSICAL",
+            "MIXED",
+            "UNKNOWN"
+          ]
+        },
+        "azure_migrate_intent": {
+          "enum": [
+            "ASSESS",
+            "REPLICATE",
+            "UNKNOWN"
+          ]
+        }
       }
     },
     "evidence": {
