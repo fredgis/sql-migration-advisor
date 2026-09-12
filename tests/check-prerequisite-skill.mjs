@@ -329,6 +329,53 @@ for (const question of questions.questions) {
   }
 }
 
+// Sixth review pass. The plan must echo six provenance fields in advisor_handoff mode, and the
+// regression mirror declared three of them nowhere. A handoff that validated on the way in produced
+// a plan that could not validate on the way out unless someone invented the provenance. A consumer
+// requirement no accepted producer shape can satisfy is not a requirement, it is a trap, and
+// nothing was comparing the two ends.
+{
+  const handoffBranch = (outputSchema.allOf || []).find(branch =>
+    branch?.if?.properties?.metadata?.properties?.mode?.const === 'advisor_handoff');
+  check('handoff-branch-present', Boolean(handoffBranch),
+    'the output schema no longer carries an advisor_handoff branch, so this check has nothing to compare');
+  const demanded = handoffBranch?.then?.properties?.metadata?.properties?.sourceAdvisor?.required || [];
+  check('handoff-demands-provenance', demanded.length > 0,
+    'the handoff branch demands no provenance at all, so this check is checking nothing');
+
+  // A field the plan must echo has to be readable from every shape a handoff may arrive in, either
+  // at the top level of the mirror or inside the canonical shape's metadata.
+  const supplies = {
+    advisorPublicOutput: new Set(inputSchema.$defs?.advisorPublicOutput?.properties?.metadata?.required || []),
+    advisorMirrorOutput: new Set(inputSchema.$defs?.advisorMirrorOutput?.required || [])
+  };
+  for (const [shape, guaranteed] of Object.entries(supplies)) {
+    for (const field of demanded) {
+      // controlPlane rides on the recommendation in the canonical shape and at the top level in the
+      // mirror, and both require it; the sweep below reads the place each shape keeps it.
+      const alsoRequired = shape === 'advisorPublicOutput'
+        && (inputSchema.$defs.advisorPublicOutput.properties.recommendation?.required || []).includes(field);
+      check(`handoff-provenance-suppliable-${shape}-${field}`, guaranteed.has(field) || alsoRequired,
+        `the plan must echo \`${field}\` in advisor_handoff mode and ${shape} does not require it, so a valid input can produce an output that cannot validate`);
+    }
+  }
+
+  // The consumer's copy of the provenance vocabulary equals the producer's, or the check above only
+  // proves a field arrives and says nothing about whether its value can be read.
+  const advisorOut = JSON.parse(read('skills', 'recommend-migration-path', 'schemas', 'output.schema.json'));
+  const sourceAdvisor = outputSchema.properties.metadata.properties.sourceAdvisor.properties;
+  const producerMeta = advisorOut.$defs.metadata.properties;
+  for (const field of ['recommendationStatus', 'confidence']) {
+    const ref = producerMeta[field]?.$ref?.split('/').pop();
+    const producerEnum = advisorOut.$defs[ref]?.enum || [];
+    check(`handoff-provenance-typed-${field}`,
+      JSON.stringify(sourceAdvisor[field]?.enum) === JSON.stringify(producerEnum),
+      `the plan types sourceAdvisor.${field} as ${JSON.stringify(sourceAdvisor[field])} and the Advisor emits ${JSON.stringify(producerEnum)}`);
+  }
+  check('handoff-provenance-keeps-the-commit', Boolean(sourceAdvisor.sourceCommit),
+    'sourceAdvisor is closed and declares no sourceCommit, so the one identifier that pins a recommendation to an exact tree is dropped on the way through');
+}
+
 // Sixth review pass. The output schema types an object nobody had ever built, which is why four
 // separate findings all landed here: a plan could invent a prerequisite, rewrite a knowledge base
 // row, flip a blocker to non-blocking, confirm a row with an evidence id naming nothing, contradict

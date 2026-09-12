@@ -717,7 +717,8 @@
         "evaluatedAt": {
           "type": "string",
           "minLength": 1,
-          "description": "When the recommendation was produced. Facts move; a card with no date cannot be aged."
+          "description": "When the recommendation was produced. Facts move; a card with no date cannot be aged.",
+          "format": "date-time"
         },
         "recommendationStatus": {
           "$ref": "#/$defs/recommendationStatus"

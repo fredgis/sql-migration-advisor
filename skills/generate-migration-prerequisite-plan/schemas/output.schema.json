@@ -47,7 +47,7 @@
         "sourceAdvisor": {
           "type": "object",
           "additionalProperties": false,
-          "description": "Where the recommendation came from, present only in advisor_handoff mode. Typed so the provenance can be checked rather than merely carried.",
+          "description": "Where the recommendation came from, present only in advisor_handoff mode. Typed against the producer's own vocabularies rather than as free strings, because provenance that cannot be checked is provenance that is merely carried. It used to accept states and control planes the Advisor cannot emit, and to reject sourceCommit, which is the one field that lets a recommendation be reproduced against an exact tree.",
           "properties": {
             "knowledgeBaseVersion": {
               "type": "string",
@@ -58,20 +58,37 @@
               "minLength": 1
             },
             "recommendationStatus": {
-              "type": "string",
-              "minLength": 1
+              "enum": [
+                "provisional"
+              ]
             },
             "confidence": {
-              "type": "string",
-              "minLength": 1
+              "enum": [
+                "medium",
+                "low"
+              ]
             },
             "controlPlane": {
-              "type": "string",
-              "minLength": 1
+              "enum": [
+                "standalone",
+                "azure-arc",
+                "ssms-migration-component",
+                "azure-migrate",
+                "azure-dms",
+                "fabric",
+                "vmware-hcx"
+              ]
             },
             "evaluatedAt": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "format": "date-time",
+              "description": "When the recommendation was produced, in the same format the producer emits."
+            },
+            "sourceCommit": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Optional, as upstream, because it is only known when the caller can see it. Carried through when the handoff supplied it: dropping it on the way loses the only identifier that pins the recommendation to a tree."
             }
           }
         }
@@ -297,9 +314,43 @@
     },
     "inheritedAdvisorFacts": {
       "type": "array",
+      "minItems": 1,
       "items": {
-        "type": "object"
-      }
+        "type": "object",
+        "required": [
+          "field",
+          "value",
+          "source"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {
+            "type": [
+              "string",
+              "number",
+              "boolean",
+              "null"
+            ]
+          },
+          "source": {
+            "enum": [
+              "advisor",
+              "advisor_converted",
+              "advisor_not_convertible"
+            ],
+            "description": "Whether the value carried over unchanged, through a documented vocabulary translation, or could not convert and was asked again. The crosswalk in advisor-fact-mappings.json decides which."
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "description": "Facts the Advisor established, carried rather than re-asked. Typed and non-empty: an untyped list of objects could not be read, and an empty one made a handoff that inherited nothing indistinguishable from one that inherited everything."
     },
     "questionsAsked": {
       "type": "array",

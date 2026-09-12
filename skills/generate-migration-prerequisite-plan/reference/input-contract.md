@@ -40,7 +40,21 @@ validates, and it is the only shape the Advisor emits:
 A second shape is still accepted for the regression mirror, which reports flat fields:
 `primary_target`, `tier`, `method`, `targetAvailabilityDuringSync`,
 `businessCutoverDowntime`, `controlPlane`, `methodGateStatus`, `recommendationStatus`,
-`confidence` and `eligibility`.
+`confidence`, `eligibility`, `methodCandidates`, `knowledgeBaseVersion`, `decisionRulesVersion`,
+`evaluatedAt` and `sourceCommit`.
+
+**The two shapes are exclusive, not merely alternative.** Both are closed and their required keys
+are disjoint, so an object is the canonical shape or the mirror and never a blend. They used to sit
+under `anyOf` with neither one closed, so a mixed object satisfied the public branch while carrying
+mirror fields, and a value the public branch would have refused arrived through a key it never
+declared.
+
+**Both shapes carry the provenance the plan is obliged to echo.** The plan's
+`metadata.sourceAdvisor` requires the knowledge base line, the decision-rules line and the
+evaluation date. The mirror declared none of the three, so a handoff that validated on the way in
+produced a plan that could not validate on the way out unless someone invented the provenance. A
+consumer requirement that no accepted producer shape can satisfy is not a requirement, it is a
+trap, and the fix is on the producing side because those facts exist.
 
 **This list is derived from the mirror schema, not written beside it.** It used to name `unknowns`,
 `hardBlockers` and `evidenceRequired`, which the mirror declares nowhere and never emits, so a
