@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "Normative crosswalk from the Advisor's normalizedProfile to the prerequisite skill's question fields. The consumer is told not to ask again for a fact the Advisor already established, but the two skills name and type their facts differently, so without this table the rule cannot be implemented deterministically: two implementations reading the same handoff would disagree about which questions are already answered. Every entry states what converts, what does not, and what the consumer may claim as a result. Enforced by tests/check-prerequisite-skill.mjs. The field below is `mappingsVersion` and not `version`: a bare version on a bundle file reads as a claim about the coordinated schema and knowledge base lines, which the startup check compares and halts on, so a healthy crosswalk with its own release history could stop a run for disagreeing with lines it was never declaring.",
-  "mappingsVersion": "v1.1",
+  "mappingsVersion": "v1.2",
   "conversionKinds": {
     "direct": "The value carries over unchanged, or through a documented label-to-ID mapping.",
     "vocabulary": "The value carries over but the allowed values differ and must be translated.",
@@ -55,6 +55,23 @@
       "consumerField": "tde_status",
       "conversion": "direct",
       "note": "Same vocabulary. tde_material_status is a separate fact and is never inferred from it: knowing a database is encrypted says nothing about whether the certificate is exportable."
+    },
+    {
+      "advisorField": "recovery_model",
+      "consumerField": "recovery_model",
+      "conversion": "direct",
+      "note": "Same vocabulary on both sides. This entry was missing while both skills carried the field: the Advisor typed it in v3.11.0, questions.json has fed P03-001 and P09-001 with it since the catalog shipped, and the crosswalk between them named neither, so a handoff dropped the fact and the consumer asked again for something it had been told. The per-consumer effects matter here and are questions.json's business, not this table's: P03-001 accepts BULK_LOGGED for log shipping and P09-001 does not."
+    },
+    {
+      "advisorField": "log_chain_status",
+      "consumerField": "backup_chain_status",
+      "conversion": "vocabulary",
+      "note": "The Advisor records whether the chain is intact; the consumer records a readiness status. Missing for the same reason as recovery_model, and with the same effect: the second half of what an online replay needs never reached the plan. Only an explicit intact chain converts to CONFIRMED, a reported break is MISSING so the prerequisite becomes a blocker, and anything else stays UNKNOWN rather than being read as good news.",
+      "valueMap": {
+        "CHAIN_INTACT": "CONFIRMED",
+        "CHAIN_BROKEN": "MISSING"
+      },
+      "otherwise": "UNKNOWN"
     },
     {
       "advisorField": "source_permissions",

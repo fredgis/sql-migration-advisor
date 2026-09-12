@@ -22,7 +22,16 @@ const readJson = (...parts) => JSON.parse(fs.readFileSync(rel(...parts), 'utf8')
 const SKILL = ['skills', 'generate-migration-prerequisite-plan'];
 const catalog = readJson(...SKILL, 'reference', 'path-catalog.json');
 const coverage = readJson(...SKILL, 'reference', 'advisor-coverage.json');
+const questionBank = readJson(...SKILL, 'reference', 'questions.json');
 const kb = fs.readFileSync(rel('docs', 'sql-server-to-azure-migration-prerequisite.md'), 'utf8');
+
+const questionsById = new Map((questionBank.questions || []).map(entry => [entry.id, entry]));
+
+// A status is a claim about a row, and an answer is what the claim rests on. The validator read
+// whether a question fed the row and never what the question returned, so `UNKNOWN` justified
+// `confirmed`. These are the severities the effects tables produce, ordered by how much they stop:
+// a row may be as severe as its answers require, never milder.
+const STATUS_SEVERITY = { confirmed: 0, reported: 1, unknown: 2, missing: 3 };
 
 // The knowledge base is the source for every row a plan may carry, and for what that row says.
 // Reading it here rather than trusting the plan is the whole point: a plan that rewrites a row is
@@ -39,6 +48,23 @@ for (const line of kb.split(/\r?\n/)) {
 const pathIds = new Set(catalog.paths.map(entry => entry.id));
 const variantsById = new Map(catalog.paths.map(entry => [entry.id, new Set(entry.targetVariants || [entry.target])]));
 const BLOCKING_TYPES = new Set(['required', 'conditional']);
+
+// One plan has one path, under two names. `selectedPath` drove the owed rows and
+// `selectedMethodPath` was checked for shape and then ignored, so a plan that kept the second and
+// dropped the first had its path rows quietly removed from what it owed: omitting an optional alias
+// deleted seven obligations without a word. Both names resolve here, and disagreeing is an error
+// rather than a silent preference for whichever one the code happened to read.
+function selectedPathOf(plan, say) {
+  const named = plan.selectedPath;
+  const alias = plan.selectedMethodPath;
+  if (named && alias && named.id !== alias.id) {
+    say(`selectedPath names ${named.id} and selectedMethodPath names ${alias.id}; one plan has one path, and the rows it owes cannot depend on which field a reader looks at`);
+  }
+  if (named && alias && named.targetVariant && alias.targetVariant && named.targetVariant !== alias.targetVariant) {
+    say(`selectedPath names targetVariant "${named.targetVariant}" and selectedMethodPath names "${alias.targetVariant}"; the prerequisite rows are conditioned per family, so the two cannot differ`);
+  }
+  return named || alias || null;
+}
 
 function validate(plan) {
   const problems = [];
@@ -86,12 +112,60 @@ function validate(plan) {
   // never what it owed. A P10 plan reduced to one row, with the counts recalculated to match, came
   // back valid and `ready` — nineteen obligations replaced by one, and the arithmetic agreed.
   // The catalog knows which rows a path owes. It is asked now.
+  const chosen = selectedPathOf(plan, say);
   const owed = new Set([
     ...[...kbRows.keys()].filter(id => id.startsWith('COM-')),
-    ...(plan.selectedPath ? [...kbRows.keys()].filter(id => id.startsWith(`${plan.selectedPath.id}-`)) : [])
+    ...(chosen ? [...kbRows.keys()].filter(id => id.startsWith(`${chosen.id}-`)) : [])
   ]);
   for (const id of owed) {
     if (!seen.has(id)) say(`${id} applies to this path and the plan does not carry it; a plan that drops an obligation reads as one that met it`);
+  }
+
+  // An answer settles a row, or it does not. The check above asks whether a question fed the row;
+  // it never asked what the question returned, so an `UNKNOWN` answer could sit under `confirmed`.
+  // questions.json already states the status each answer produces, per consumer where the rule
+  // differs, and that table is the one the interview follows.
+  const rowsById = new Map(rows.map(row => [row.id, row]));
+  const worstByRow = new Map();
+  for (const asked of plan.questionsAsked || []) {
+    const question = questionsById.get(asked?.id);
+    if (!question) { say(`questionsAsked names \`${asked?.id}\`, which questions.json does not define`); continue; }
+    // The answer belongs to the question, not to whichever rows this path happens to carry. Scoping
+    // this check to rows in the plan let a made-up answer pass whenever its rows were out of scope.
+    const tables = [question.effects || {}, ...Object.values(question.effectsByConsumer || {})];
+    if (!tables.some(table => asked.answer in table)) {
+      say(`${asked.id} is answered \`${asked.answer}\`, which is not an answer that question defines`);
+      continue;
+    }
+    for (const rowId of question.consumedBy || []) {
+      const row = rowsById.get(rowId);
+      if (!row || row.status === 'not_applicable') continue;
+      const table = (question.effectsByConsumer || {})[rowId] || question.effects || {};
+      const effect = table[asked.answer];
+      if (!(effect in STATUS_SEVERITY)) continue;
+      worstByRow.set(rowId, Math.max(worstByRow.get(rowId) ?? 0, STATUS_SEVERITY[effect]));
+    }
+  }
+  for (const [rowId, required] of worstByRow) {
+    const row = rowsById.get(rowId);
+    const held = STATUS_SEVERITY[row.status];
+    if (held === undefined || held < required) {
+      const name = Object.keys(STATUS_SEVERITY).find(key => STATUS_SEVERITY[key] === required);
+      say(`${rowId} is ${row.status} and the answers it rests on produce ${name}; a status milder than the answer under it is a claim the interview contradicts`);
+    }
+  }
+
+  // `not_applicable` removes a row from every count and every blocker list. Invariant 6 has always
+  // said it is used only when the applicability condition is demonstrably false, and nothing asked
+  // which condition: marking all nineteen obligations not_applicable, with no reason anywhere,
+  // still derived `ready`. The basis vocabulary already has the shape for it.
+  for (const row of rows) {
+    if (row.status !== 'not_applicable') continue;
+    const basis = String(row.basis ?? '');
+    const condition = basis.startsWith('applicability_false:') ? basis.slice('applicability_false:'.length).trim() : '';
+    if (!condition) {
+      say(`${row.id} is not_applicable and its basis names no false condition; an obligation dismissed without saying what makes it inapplicable is an obligation dropped`);
+    }
   }
   const applicable = rows.filter(row => row.status !== 'not_applicable');
   const derived = {
@@ -128,12 +202,14 @@ function validate(plan) {
   }
 
   // A path and a variant the catalog does not offer cannot be the one that was selected.
-  const selected = plan.selectedPath;
+  const selected = chosen;
   if (selected) {
     if (!pathIds.has(selected.id)) say(`selectedPath ${selected.id} is not a path the catalog defines`);
     else if (!variantsById.get(selected.id).has(selected.targetVariant)) {
       say(`selectedPath ${selected.id} names targetVariant "${selected.targetVariant}", which it does not offer`);
     }
+  } else {
+    say('the plan names no path in either `selectedPath` or `selectedMethodPath`; without one, nothing can say which rows it owes');
   }
   const overlayIds = new Set(coverage.dispositions.flatMap(cell => cell.paths || []));
   for (const overlay of plan.appliedOverlays || []) {

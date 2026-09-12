@@ -532,7 +532,28 @@ for (const question of questions.questions) {
     ['a blocker missing from the blockers list', plan => { plan.prerequisites[0].status = 'missing'; plan.prerequisites[0].acceptedEvidence = []; }, 'the blockers list does not name it'],
     ['a target variant the path does not offer', plan => { plan.selectedPath.targetVariant = 'SQL Server in a container'; }, 'which it does not offer'],
     ['a refusal carrying a plan field', plan => { plan.overallStatus = 'unresolved_path'; }, 'a refusal is not a plan with fields missing'],
-    ['a dropped obligation', plan => { plan.prerequisites = plan.prerequisites.slice(0, 1); }, 'applies to this path and the plan does not carry it']
+    ['a dropped obligation', plan => { plan.prerequisites = plan.prerequisites.slice(0, 1); }, 'applies to this path and the plan does not carry it'],
+    // The audit round after the fix above. Each of these was accepted by the validator and by the
+    // schema, and each produced a verdict the plan had not earned.
+    ['an UNKNOWN answer under a confirmed row', plan => {
+      const row = plan.prerequisites.find(entry => entry.id === 'COM-005') || plan.prerequisites[0];
+      row.status = 'confirmed';
+      plan.questionsAsked = [{ id: 'network_path_status', answer: 'UNKNOWN' }];
+    }, 'a status milder than the answer under it'],
+    ['an answer the question does not define', plan => {
+      plan.questionsAsked = [{ id: 'recovery_model', answer: 'PROBABLY_FULL' }];
+    }, 'is not an answer that question defines'],
+    ['a question no bank defines', plan => {
+      plan.questionsAsked = [{ id: 'how_are_you', answer: 'FINE' }];
+    }, 'which questions.json does not define'],
+    ['an obligation dismissed without a reason', plan => {
+      plan.prerequisites[0].status = 'not_applicable';
+      delete plan.prerequisites[0].basis;
+    }, 'names no false condition'],
+    ['the path carried only by the optional alias', plan => {
+      plan.selectedMethodPath = { ...plan.selectedPath, id: 'P11' };
+    }, 'one plan has one path'],
+    ['no path at all', plan => { delete plan.selectedPath; delete plan.selectedMethodPath; }, 'nothing can say which rows it owes']
   ];
   for (const [label, mutate, expected] of mutations) {
     const plan = clone();

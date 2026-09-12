@@ -79,7 +79,13 @@ inheritedAdvisorFacts[]
 questionsAsked[]
 nextActions[]
 sourceRegister[]
+evidenceRegister[]
 ```
+
+Two registers, two jobs. `sourceRegister[]` holds the official citations the plan rests on
+(`title`, `url`, `verifiedAt`). `evidenceRegister[]` holds the evidence records a row can accept, in
+the shape the input contract carries them. An `acceptedEvidence` id names a record in
+`evidenceRegister[]`, never a citation: a citation cannot be the artefact that settles a row.
 
 Every prerequisite carries a stable ID from
 [`docs/sql-server-to-azure-migration-prerequisite.md`](../../../docs/sql-server-to-azure-migration-prerequisite.md).
@@ -123,7 +129,7 @@ Free text cannot produce `typed_answer` or `verified_evidence`.
 | 19 | A prerequisite that **no question in `questions.json` feeds** cannot be `confirmed` without a matching `acceptedEvidence` entry; a typed claim about it is `reported`. A prerequisite that a question **does** feed is settled by the typed answer, exactly as invariant 3 and the input contract say. The discriminator is the question mapping, not the `evidenceRequired` column: that column is required on all 291 rows, so keying on it made `confirmed` unreachable and `ready` impossible, which is a rule no plan could ever satisfy. 122 rows are fed by a question and 169 are evidence-only; of the 122, only **102** can reach `confirmed`, because 20 of those questions are applicability selectors whose effects name a path rather than a status. The gate derives all three counts rather than trusting this sentence. |
 | 20 | `summary` is a reading of `prerequisites[]`, never a separate assertion about it, and `overallStatus` is the first branch of §1 that those same rows match. A count that disagrees with the rows, or a verdict that disagrees with the counts, is a contract failure rather than a rounding difference. The schema holds the blocking counts against the verdict; the row-level reading, which depends on `requirementType` and applicability, is derived by [`tools/validate-plan.mjs`](../../../tools/validate-plan.mjs). |
 | 21 | A plan may not rewrite the knowledge base row it cites. `title`, `requirementType` and `blocking` come from the bundled knowledge base and are carried unchanged, and no id appears twice. Flipping `blocking` to `false` is the one that matters: it removes a prerequisite from every count and every blocker list while leaving the row visible and apparently answered. |
-| 22 | Every `acceptedEvidence` entry names a record in the plan's own `sourceRegister`, and no entry appears twice on a row. An evidence id pointing at nothing is not weaker evidence, it is none, and one record cited twice is one record. |
+| 22 | Every `acceptedEvidence` entry names a record in the plan's own `evidenceRegister`, and no entry appears twice on a row. An evidence id pointing at nothing is not weaker evidence, it is none, and one record cited twice is one record. This invariant used to name `sourceRegister`, which types citations and cannot hold an evidence record, so a plan that followed this line produced output the schema then rejected. |
 
 If an invariant fails, expose the invariant and stop before rendering a readiness verdict. Do not
 repair the plan silently.

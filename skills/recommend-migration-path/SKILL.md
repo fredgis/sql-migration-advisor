@@ -215,7 +215,7 @@ Stating a single budget made these compete: an implementation that spent its one
 
 **Fetch the live document only when the user asks for it.** Say that it is being fetched, and read only:
 
-- `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/v3.14.0/docs/sql-server-to-azure-migration.md`
+- `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/v3.14.1/docs/sql-server-to-azure-migration.md`
 
 That URL is pinned to a release tag, not to `main`. A mutable branch means the facts can change under the reader between two sessions with no version to cite. Never substitute a different URL, and never rewrite the path: the raw host serves `…/<tag>/<path>`, and inserting `blob` returns 404. If the tagged document is unreachable, fall back to the bundled copy and say the fallback is what answered.
 
@@ -359,11 +359,22 @@ Three states, not two. With only `passed` and `refused`, an unverified prerequis
 
 **🛠️ Methods considered for `<target>`** — one line per method the section 8 matrix supports for that target, taken from the matching sub-section of decision rules §B3:
 
-- **`<method>`** — `available` / `unavailable`: `<reason>` `<· prerequisite paths P0x, P0y>` `<— recommended>`
+- **`<method>`** — `available` / `unknown_requires_assessment` / `unavailable`: `<reason>` `<· prerequisite paths P0x, P0y>` `<— recommended>`
+
+Three states here too, and for the same reason as the method gate above. Output-contract invariant 15
+already pairs these three with the gate's `passed` / `unknown_requires_assessment` / `refused`, so a
+method whose prerequisites nobody has confirmed is `unknown_requires_assessment` in both places.
+Calling it `unavailable` is just as wrong as calling it `available`, because that word says the source
+was checked and failed. The reason line names the fact that would settle it. This line shipped with
+two states while the gate four lines above it argued for three.
 
 List them all, including the ones that lost, and say why each lost. The recommendation is a ranking, not a revelation: a reader who can see only the winner cannot tell whether the others were weighed or never considered. Mark the recommended one, and keep the losing lines to one sentence.
 
-The reader may take any method marked `available` instead of the recommended one, and hand it to the prerequisite-plan skill. Say so once, after the list, when more than one is available.
+The reader may take any method marked `available` instead of the recommended one, and hand it to the prerequisite-plan skill. A method sitting at `unknown_requires_assessment` is not offered that way until the fact it names is confirmed, because handing it over presents an unchecked prerequisite as a settled one. Say so once, after the list, when more than one is available.
+
+List them all, including the ones that lost, and say why each lost. The recommendation is a ranking, not a revelation: a reader who can see only the winner cannot tell whether the others were weighed or never considered. Mark the recommended one, and keep the losing lines to one sentence.
+
+The reader may take any method marked `available` instead of the recommended one, and hand it to the prerequisite-plan skill. An `unverified` method is not offered that way until the fact it names is confirmed, because handing it over presents an unchecked prerequisite as a settled one. Say so once, after the list, when more than one is available.
 
 **🚧 Blockers & required evidence**
 - **`<blocker or unknown>`** → `<remediation or assessment>`
