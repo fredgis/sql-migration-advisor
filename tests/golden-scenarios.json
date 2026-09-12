@@ -380,12 +380,12 @@
     "expect": {
       "eligibility": {
         "sql_vm": "eligible",
-        "avs": "unsupported",
+        "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible",
         "fabric_sql_db": "eligible",
-        "arc_sql_mi": "unsupported",
-        "container": "unsupported",
+        "arc_sql_mi": "excluded_by_preference",
+        "container": "excluded_by_preference",
         "arc_in_place": "eligible"
       },
       "primary_target": "SQL Server enabled by Azure Arc",
@@ -422,12 +422,12 @@
     "expect": {
       "eligibility": {
         "sql_vm": "eligible",
-        "avs": "unsupported",
+        "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible",
         "fabric_sql_db": "eligible",
-        "arc_sql_mi": "unsupported",
-        "container": "unsupported",
+        "arc_sql_mi": "excluded_by_preference",
+        "container": "excluded_by_preference",
         "arc_in_place": "eligible"
       },
       "primary_target": "SQL Server enabled by Azure Arc",
@@ -1548,13 +1548,13 @@
     "expect": {
       "eligibility": {
         "sql_vm": "eligible",
-        "avs": "unsupported",
+        "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible",
         "fabric_sql_db": "eligible",
-        "arc_sql_mi": "unsupported",
-        "container": "unsupported",
-        "arc_in_place": "unsupported"
+        "arc_sql_mi": "excluded_by_preference",
+        "container": "excluded_by_preference",
+        "arc_in_place": "excluded_by_preference"
       },
       "primary_target": "provisional shortlist only",
       "method": "Azure Migrate appliance/import/Arc discovery",
@@ -1588,13 +1588,13 @@
     "expect": {
       "eligibility": {
         "sql_vm": "eligible",
-        "avs": "unsupported",
+        "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible",
         "fabric_sql_db": "eligible",
-        "arc_sql_mi": "unsupported",
-        "container": "unsupported",
-        "arc_in_place": "unsupported"
+        "arc_sql_mi": "excluded_by_preference",
+        "container": "excluded_by_preference",
+        "arc_in_place": "excluded_by_preference"
       },
       "primary_target": "Azure SQL Database",
       "method": "modern DMS (offline)",
@@ -2048,13 +2048,13 @@
     "expect": {
       "eligibility": {
         "sql_vm": "eligible",
-        "avs": "unsupported",
+        "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible",
         "fabric_sql_db": "eligible",
-        "arc_sql_mi": "unsupported",
-        "container": "unsupported",
-        "arc_in_place": "unsupported"
+        "arc_sql_mi": "excluded_by_preference",
+        "container": "excluded_by_preference",
+        "arc_in_place": "excluded_by_preference"
       },
       "primary_target": "SQL database in Fabric",
       "method": "Fabric Migration Assistant",
@@ -2183,13 +2183,13 @@
     "expect": {
       "eligibility": {
         "sql_vm": "eligible",
-        "avs": "unsupported",
+        "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
         "fabric_sql_db": "eligible",
-        "arc_sql_mi": "unsupported",
-        "container": "unsupported",
-        "arc_in_place": "unsupported"
+        "arc_sql_mi": "excluded_by_preference",
+        "container": "excluded_by_preference",
+        "arc_in_place": "excluded_by_preference"
       },
       "primary_target": "Azure SQL Managed Instance",
       "method": "MI Link",
@@ -2238,13 +2238,13 @@
     "expect": {
       "eligibility": {
         "sql_vm": "eligible",
-        "avs": "unsupported",
+        "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible",
         "fabric_sql_db": "eligible",
-        "arc_sql_mi": "unsupported",
-        "container": "unsupported",
-        "arc_in_place": "unsupported"
+        "arc_sql_mi": "excluded_by_preference",
+        "container": "excluded_by_preference",
+        "arc_in_place": "excluded_by_preference"
       },
       "primary_target": "Azure SQL Database",
       "method": "modern DMS (offline)",
@@ -2283,13 +2283,13 @@
     "expect": {
       "eligibility": {
         "sql_vm": "eligible",
-        "avs": "unsupported",
+        "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
         "fabric_sql_db": "eligible",
-        "arc_sql_mi": "unsupported",
-        "container": "unsupported",
-        "arc_in_place": "unsupported"
+        "arc_sql_mi": "excluded_by_preference",
+        "container": "excluded_by_preference",
+        "arc_in_place": "excluded_by_preference"
       },
       "primary_target": "Azure SQL Managed Instance",
       "method": "LRS",
@@ -2333,13 +2333,13 @@
     "expect": {
       "eligibility": {
         "sql_vm": "eligible",
-        "avs": "unsupported",
+        "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
         "fabric_sql_db": "eligible",
-        "arc_sql_mi": "unsupported",
-        "container": "unsupported",
-        "arc_in_place": "unsupported"
+        "arc_sql_mi": "excluded_by_preference",
+        "container": "excluded_by_preference",
+        "arc_in_place": "excluded_by_preference"
       },
       "primary_target": "Azure SQL Managed Instance",
       "method": "MI Link",
@@ -2378,13 +2378,13 @@
     "expect": {
       "eligibility": {
         "sql_vm": "eligible",
-        "avs": "unsupported",
+        "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
         "fabric_sql_db": "eligible",
-        "arc_sql_mi": "unsupported",
-        "container": "unsupported",
-        "arc_in_place": "unsupported"
+        "arc_sql_mi": "excluded_by_preference",
+        "container": "excluded_by_preference",
+        "arc_in_place": "excluded_by_preference"
       },
       "primary_target": "Azure SQL Managed Instance",
       "method": "LRS",
@@ -2422,12 +2422,12 @@
     "expect": {
       "eligibility": {
         "sql_vm": "eligible",
-        "avs": "unsupported",
+        "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible",
         "fabric_sql_db": "eligible",
-        "arc_sql_mi": "unsupported",
-        "container": "unsupported",
+        "arc_sql_mi": "excluded_by_preference",
+        "container": "excluded_by_preference",
         "arc_in_place": "unsupported"
       },
       "primary_target": "SQL Server on Azure VM",
@@ -2464,13 +2464,13 @@
     "expect": {
       "eligibility": {
         "sql_vm": "eligible",
-        "avs": "unsupported",
+        "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
         "fabric_sql_db": "eligible",
-        "arc_sql_mi": "unsupported",
-        "container": "unsupported",
-        "arc_in_place": "unsupported"
+        "arc_sql_mi": "excluded_by_preference",
+        "container": "excluded_by_preference",
+        "arc_in_place": "excluded_by_preference"
       },
       "primary_target": "Azure SQL Managed Instance",
       "method": "LRS",
@@ -2511,13 +2511,13 @@
     "expect": {
       "eligibility": {
         "sql_vm": "eligible",
-        "avs": "unsupported",
+        "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
         "fabric_sql_db": "eligible",
-        "arc_sql_mi": "unsupported",
-        "container": "unsupported",
-        "arc_in_place": "unsupported"
+        "arc_sql_mi": "excluded_by_preference",
+        "container": "excluded_by_preference",
+        "arc_in_place": "excluded_by_preference"
       },
       "primary_target": "Azure SQL Managed Instance",
       "method": "MI Link",
@@ -2634,13 +2634,13 @@
     "expect": {
       "eligibility": {
         "sql_vm": "eligible",
-        "avs": "unsupported",
+        "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
         "fabric_sql_db": "eligible",
-        "arc_sql_mi": "unsupported",
-        "container": "unsupported",
-        "arc_in_place": "unsupported"
+        "arc_sql_mi": "excluded_by_preference",
+        "container": "excluded_by_preference",
+        "arc_in_place": "excluded_by_preference"
       },
       "primary_target": "Azure SQL Managed Instance",
       "method": "LRS",
@@ -3296,13 +3296,13 @@
     "expect": {
       "eligibility": {
         "sql_vm": "eligible",
-        "avs": "unsupported",
+        "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
         "fabric_sql_db": "eligible",
-        "arc_sql_mi": "unsupported",
-        "container": "unsupported",
-        "arc_in_place": "unsupported"
+        "arc_sql_mi": "excluded_by_preference",
+        "container": "excluded_by_preference",
+        "arc_in_place": "excluded_by_preference"
       },
       "primary_target": "Azure SQL Managed Instance",
       "method": "MI Link",
@@ -3338,13 +3338,13 @@
     "expect": {
       "eligibility": {
         "sql_vm": "eligible",
-        "avs": "unsupported",
+        "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
         "fabric_sql_db": "eligible",
-        "arc_sql_mi": "unsupported",
-        "container": "unsupported",
-        "arc_in_place": "unsupported"
+        "arc_sql_mi": "excluded_by_preference",
+        "container": "excluded_by_preference",
+        "arc_in_place": "excluded_by_preference"
       },
       "primary_target": "Azure SQL Managed Instance",
       "method": "LRS",
@@ -3382,13 +3382,13 @@
     "expect": {
       "eligibility": {
         "sql_vm": "eligible",
-        "avs": "unsupported",
+        "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
         "fabric_sql_db": "eligible",
-        "arc_sql_mi": "unsupported",
-        "container": "unsupported",
-        "arc_in_place": "unsupported"
+        "arc_sql_mi": "excluded_by_preference",
+        "container": "excluded_by_preference",
+        "arc_in_place": "excluded_by_preference"
       },
       "primary_target": "Azure SQL Managed Instance",
       "method": "LRS",

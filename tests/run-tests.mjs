@@ -2570,9 +2570,12 @@ try {
   const contract = readText(path.join('reference', 'input-contract.md'));
   const MARKERS = ['NONE_CONFIRMED', 'UNKNOWN', 'NOT_APPLICABLE'];
 
-  // Read every field the contract tabulates, not only those in section 3. The network answers are
-  // documented in section 6, so scoping this to one section left mi_link_ports and
-  // blob_https_reachability as free strings while the crosswalk mapped their exact values.
+  // Read every field the contract tabulates, in both shapes it uses. Scoping this to one section
+  // left mi_link_ports and blob_https_reachability as free strings while the crosswalk mapped their
+  // exact values; keying on the heading then left six more, because a heading naming two fields was
+  // skipped entirely and that is where the host, edition, encryption, permission and authentication
+  // vocabularies live. Some tables give one row per option under a single-field heading, others one
+  // row per field with the options inline. Both are read.
   const tabulated = new Map();
   for (const block of contract.split(/\n### /).slice(1)) {
     const heading = block.split('\n')[0];
@@ -2580,9 +2583,26 @@ try {
     const ids = [...new Set([...block.matchAll(/\|\s*[^|]+\|\s*`([A-Z][A-Z0-9_]*)`\s*\|/g)].map((m) => m[1]))];
     if (fields.length === 1 && ids.length) tabulated.set(fields[0], ids);
   }
-  if (tabulated.size < 12) failures.push(`only ${tabulated.size} field(s) could be read out of the contract, so this gate would pass by reading nothing`);
+  for (const row of contract.split(/\r?\n/)) {
+    const cells = row.split('|');
+    if (cells.length < 3) continue;
+    const field = (cells[1].trim().match(/^`([a-z][a-z0-9_]*)`$/) || [])[1];
+    if (!field) continue;
+    const ids = [...new Set([...cells.slice(2).join('|').matchAll(/→\s*`([A-Z][A-Z0-9_]*)`/g)].map((m) => m[1]))];
+    if (ids.length) tabulated.set(field, ids);
+  }
+  if (tabulated.size < 18) failures.push(`only ${tabulated.size} field(s) could be read out of the contract, so this gate would pass by reading nothing`);
 
   for (const [field, ids] of tabulated) {
+    // An `_intent` row is the interview selector that decides whether a list follows. The profile
+    // does not carry the answer, it carries what the answer established, under `_state`. Checking
+    // that pairing is better than excusing the field: a selector with nowhere to record its outcome
+    // is an answer thrown away, which is the defect `feature_dependencies_state` exists to prevent.
+    if (field.endsWith('_intent')) {
+      const state = `${field.replace(/_intent$/u, '')}_state`;
+      if (!schema.properties?.[state]) failures.push(`the contract tabulates \`${field}\` and the profile declares no \`${state}\` to record what that answer established`);
+      continue;
+    }
     const node = schema.properties?.[field];
     if (!node) { failures.push(`${field} is tabulated in the contract but absent from input.schema.json`); continue; }
     if (!node.enum) { failures.push(`${field} accepts any string although the contract tabulates ${ids.length} option ID(s) for it`); continue; }
@@ -3626,6 +3646,35 @@ try {
     }
   }
   add('the-worked-example-renders-one-object-twice', failures.length === 0, failures.length ? failures : notes);
+}
+
+// Sixth review pass, following a thread about preference exclusions into Phase A. Five families
+// start at `unsupported` and the rules promote what applies, so a family nobody evaluated reported
+// that it cannot work. `unsupported` is a verdict about the technology, and this one was an initial
+// value wearing a verdict's clothes: no rule reached it, no reason was recorded, and the trace
+// still required a reason per entry, so one had to be written at render time. Invariant 11 refuses
+// a family that disappears; a family that stays visible carrying a verdict nobody pronounced is the
+// same thing, harder to spot because it looks argued.
+{
+  const failures = [];
+  let checked = 0;
+  let replayed = 0;
+  const { evaluate: replay } = await import('../tests/engine/evaluate.mjs');
+  for (const scenario of scenarios) {
+    let actual;
+    try { actual = replay(scenario.inputs); } catch { continue; }
+    replayed++;
+    for (const [family, status] of Object.entries(actual.eligibility || {})) {
+      if (status !== 'unsupported') continue;
+      checked++;
+      if (!actual.exclusions?.[family]) {
+        failures.push(`${scenario.id}: ${family} is \`unsupported\` and no rule recorded why, so the verdict is the initial value rather than a decision`);
+      }
+    }
+  }
+  if (!replayed) failures.push('no scenario could be replayed, so this gate is checking nothing');
+  add('no-family-is-refused-without-a-reason', failures.length === 0,
+    failures.length ? failures.slice(0, 8) : [`${replayed} scenario(s) replayed; ${checked} \`unsupported\` verdict(s), each with a recorded reason.`]);
 }
 
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };if (jsonMode) {

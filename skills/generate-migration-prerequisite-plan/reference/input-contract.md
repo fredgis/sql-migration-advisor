@@ -1,7 +1,7 @@
 # Input contract — `generate-migration-prerequisite-plan`
 
 > **Schema version:** `1.0`
-> **Prerequisite knowledge-base line:** `v1.9`
+> **Prerequisite knowledge-base line:** `v1.10`
 
 This contract accepts either the structured result of `recommend-migration-path` or a standalone
 target-and-method selection. Both modes normalize into a **method path** from
