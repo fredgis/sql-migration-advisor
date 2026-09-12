@@ -9,6 +9,7 @@
  */
 
 import { createRequire } from 'node:module';
+import fs from 'node:fs';
 
 const require = createRequire(import.meta.url);
 const RULES = require('../../reference/decision-rules.data.json');
@@ -17,6 +18,57 @@ const RULES = require('../../reference/decision-rules.data.json');
 // Reading it here is what stops the method cascade from quietly narrowing the field — a method that
 // is never enumerated is never rejected either, so nothing can argue with its absence.
 const COVERAGE = require('../../skills/generate-migration-prerequisite-plan/reference/advisor-coverage.json');
+const QUESTIONS = require('../../skills/generate-migration-prerequisite-plan/reference/questions.json');
+const CROSSWALK = require('../../skills/generate-migration-prerequisite-plan/reference/advisor-fact-mappings.json');
+
+// A candidate the catalog cannot vouch for is not a candidate the card may call `available`. The
+// gates were written per method by hand, so a method with no branch passed everything, and readers
+// are told they may hand any `available` candidate to the planner: an unproven prerequisite was
+// being presented as a settled one. The catalog already states what each path needs, questions.json
+// says which field settles each row, and the crosswalk says which advisor field carries it. None of
+// that is new. Nothing read it.
+const PREREQ_BLOCKING = (() => {
+  const rows = new Map();
+  const text = fs.readFileSync(new URL('../../docs/sql-server-to-azure-migration-prerequisite.md', import.meta.url), 'utf8');
+  for (const line of text.split(/\r?\n/)) {
+    const cells = line.split('|').map(cell => cell.trim());
+    if (cells.length < 6) continue;
+    if (!/^(COM|P[0-9]{2})-[0-9]{3}$/.test(cells[1])) continue;
+    if (/^yes$/i.test(cells[4])) rows.set(cells[1], cells[2]);
+  }
+  return rows;
+})();
+// Advisor field -> the rows it can settle. Only fields the advisor actually carries, and only rows
+// the knowledge base marks blocking: a recommended prerequisite does not hold a candidate open.
+const FIELD_TO_ROWS = (() => {
+  const byConsumer = new Map((CROSSWALK.mappings || [])
+    .filter(entry => entry.conversion !== 'not-convertible')
+    .map(entry => [entry.consumerField, entry.advisorField]));
+  const map = new Map();
+  for (const question of QUESTIONS.questions || []) {
+    const field = byConsumer.get(question.id);
+    if (!field) continue;
+    for (const row of question.consumedBy || []) {
+      if (!PREREQ_BLOCKING.has(row) || row.startsWith('COM-')) continue;
+      if (!map.has(field)) map.set(field, new Set());
+      map.get(field).add(row);
+    }
+  }
+  return map;
+})();
+function unprovenGateFacts(inputs, cell) {
+  const paths = new Set(cell.paths || []);
+  if (!paths.size) return [];
+  const unproven = [];
+  for (const [field, rows] of FIELD_TO_ROWS) {
+    if (![...rows].some(row => paths.has(row.slice(0, 3)))) continue;
+    const value = inputs[field];
+    const stated = value !== undefined && value !== null && String(value).trim() !== ''
+      && !/^unknown$/i.test(String(value)) && !/not sure|unknown/i.test(textOf(value));
+    if (!stated) unproven.push(field);
+  }
+  return unproven.sort();
+}
 
 const TARGETS = ['sql_vm', 'avs', 'sql_mi', 'sql_db', 'fabric_sql_db', 'arc_sql_mi', 'container', 'arc_in_place'];
 const TARGET_LABELS = {
@@ -281,6 +333,23 @@ function applyFeatureEligibility(inputs, eligibility, out) {
     out.exclusions.sql_db = 'SQL CLR, Service Broker and cross-database queries are outside the single-database surface of Azure SQL Database; each needs refactoring before the target applies.';
   }
   if (dep(inputs, 'Not sure') || dep(inputs, 'unknown dependencies')) setUnknown(eligibility, ['sql_mi', 'sql_db'], 'Dependency inventory', out);
+
+  // SQL database in Fabric is database-scoped like Azure SQL Database and narrower still, so a
+  // dependency that refuses SQL Database cannot leave Fabric standing. Every rule above decided
+  // `sql_db` and said nothing about `fabric_sql_db`, which had already been settled by applyFabric
+  // on the workload shape alone: one trace refused Azure SQL Database for linked servers and
+  // offered Fabric beside it, on a reason that argues ranking rather than eligibility. A narrower
+  // surface cannot carry the more permissive verdict.
+  const SEVERITY = [E.ELIGIBLE, E.REMEDIATE, E.UNKNOWN, E.UNSUPPORTED];
+  const sqlDbSeverity = SEVERITY.indexOf(eligibility.sql_db);
+  const fabricSeverity = SEVERITY.indexOf(eligibility.fabric_sql_db);
+  if (sqlDbSeverity > 0 && fabricSeverity >= 0 && fabricSeverity < sqlDbSeverity) {
+    eligibility.fabric_sql_db = eligibility.sql_db;
+    out.exclusions.fabric_sql_db = out.exclusions.sql_db
+      ? `${out.exclusions.sql_db} SQL database in Fabric has the narrower surface of the two, so the same dependency applies at least as strongly.`
+      : 'A database-scoped dependency that Azure SQL Database cannot host is not hosted by SQL database in Fabric either, whose surface is narrower.';
+    if (out.rankingNotes) delete out.rankingNotes.fabric_sql_db;
+  }
 }
 // Five families start at `unsupported` and the rules promote what applies, so a family nobody
 // evaluated reported that it cannot work rather than that it was not selected. `unsupported` is a
@@ -704,14 +773,19 @@ function buildMethodCandidates(inputs, eligibility, out) {
     if (seen.has(kind)) continue;
     seen.add(kind);
     const failure = methodGateFailure(inputs, target, cell.method, out);
+    const unproven = failure ? [] : unprovenGateFacts(inputs, cell);
     out.methodCandidates.push({
       method: cell.method,
       role: cell.advisorRole,
-      status: failure ? 'unavailable' : 'available',
+      status: failure ? 'unavailable' : (unproven.length ? 'unknown_requires_assessment' : 'available'),
       selected: kind === selectedKind,
-      reason: failure || `Prerequisite paths ${(cell.paths || []).join(', ') || 'documented in the prerequisite catalog'} apply.`,
+      reason: failure
+        || (unproven.length
+          ? `Prerequisite paths ${(cell.paths || []).join(', ')} are unproven for this profile: ${unproven.join(', ')} ${unproven.length === 1 ? 'is' : 'are'} unstated, and an unverified prerequisite is not a satisfied one.`
+          : `Prerequisite paths ${(cell.paths || []).join(', ') || 'documented in the prerequisite catalog'} apply.`),
       prerequisitePaths: cell.paths || [],
     });
+    for (const field of unproven) addUnique(out.evidenceRequired, `Confirm \`${field}\` before treating ${cell.method} as available: it settles a blocking prerequisite on ${(cell.paths || []).join(', ')}.`);
   }
   // The winner is always in the list, even when it is a target-specific label the matrix words
   // differently, so the reader never sees a recommendation that is absent from its own shortlist.

@@ -68,6 +68,12 @@ const rewritesFor = (prefix) => [
   [/`(?:\.\.\/)*docs\/sql-server-to-azure-migration(?:-prerequisite)?\.md`/g, `\`${prefix}knowledge-base.md\``],
   [/\((?:\.\.\/)*templates\/prerequisite-plan\.md\)/g, `(${prefix}prerequisite-plan-template.md)`],
   [/`(?:\.\.\/)*templates\/prerequisite-plan\.md`/g, `\`${prefix}prerequisite-plan-template.md\``],
+  // A sibling skill's folder, written relative to this one. The advisor reads advisor-coverage.json
+  // out of the prerequisite skill upstream, and the port gives each skill its own copy, so the fork
+  // reaches it by name. Without this the link points at a sibling folder the fork's flat layout
+  // does not have.
+  [/\[`\.\.\/generate-migration-prerequisite-plan\/reference\/([a-z0-9.-]+)`\]\(\.\.\/generate-migration-prerequisite-plan\/reference\/[a-z0-9.-]+\)/g, `[\`${prefix}$1\`](${prefix}$1)`],
+  [/\.\.\/generate-migration-prerequisite-plan\/reference\/([a-z0-9.-]+)/g, `${prefix}$1`],
   // Repository-root paths written in code spans. These resolve upstream and nowhere here once the
   // folders move, and they are invisible to a check that reads Markdown links only: that is how
   // two of them reached a reviewer, and how two more survived the commit meant to fix them.

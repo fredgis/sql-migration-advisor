@@ -190,6 +190,7 @@ walkLinks(path.join(DEST, 'skills'));
     .replace(/(?:\.\.\/)*(?:reference|references|schemas)\/knowledge-base\.md/g, 'KB')
     .replace(/(?:\.\.\/)*templates\/prerequisite-plan\.md/g, 'TEMPLATE')
     .replace(/(?:\.\.\/)*references\/prerequisite-plan-template\.md/g, 'TEMPLATE')
+    .replace(/\.\.\/generate-migration-prerequisite-plan\/reference\//g, 'references/')
     .replace(/(?:\.\.\/)*(?:reference|references|schemas)\//g, 'references/')
     .replace(/v\d+\.\d+(?:\.\d+)?/g, 'vX')
     .replace(/\s+/g, ' ')

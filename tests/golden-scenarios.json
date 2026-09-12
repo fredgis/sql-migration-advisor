@@ -2188,7 +2188,7 @@
         "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
-        "fabric_sql_db": "eligible",
+        "fabric_sql_db": "eligible_with_remediation",
         "arc_sql_mi": "excluded_by_preference",
         "container": "excluded_by_preference",
         "arc_in_place": "excluded_by_preference"
@@ -2209,7 +2209,7 @@
       "Required ports are:[\\s\\S]*?5022[\\s\\S]*?11000–11999",
       "`confidence = medium` is the ceiling"
     ],
-    "auditRef": "validated-1"
+    "auditRef": "shilpi-2026-09-12 fabric-subset"
   },
   {
     "id": "evidence-complete-sql-db-dms-medium-ceiling",
@@ -2288,7 +2288,7 @@
         "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
-        "fabric_sql_db": "eligible",
+        "fabric_sql_db": "eligible_with_remediation",
         "arc_sql_mi": "excluded_by_preference",
         "container": "excluded_by_preference",
         "arc_in_place": "excluded_by_preference"
@@ -2308,7 +2308,7 @@
       "If \\*\\*5022\\*\\* or \\*\\*11000–11999\\*\\* cannot be opened[\\s\\S]*?MI Link `unsupported`",
       "LRS only when LRS itself qualifies"
     ],
-    "auditRef": "audit-11000-blocked"
+    "auditRef": "shilpi-2026-09-12 fabric-subset"
   },
   {
     "id": "mi-link-capacity-nextgen-200-databases-ok",
@@ -2338,7 +2338,7 @@
         "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
-        "fabric_sql_db": "eligible",
+        "fabric_sql_db": "eligible_with_remediation",
         "arc_sql_mi": "excluded_by_preference",
         "container": "excluded_by_preference",
         "arc_in_place": "excluded_by_preference"
@@ -2356,7 +2356,7 @@
       "Up to \\*\\*100 links\\*\\*[\\s\\S]*?\\*\\*500 links\\*\\*",
       "One link = one database"
     ],
-    "auditRef": "audit-mi-link-capacity-nextgen"
+    "auditRef": "shilpi-2026-09-12 fabric-subset"
   },
   {
     "id": "mi-link-capacity-gp-200-databases-exceeds",
@@ -2383,7 +2383,7 @@
         "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
-        "fabric_sql_db": "eligible",
+        "fabric_sql_db": "eligible_with_remediation",
         "arc_sql_mi": "excluded_by_preference",
         "container": "excluded_by_preference",
         "arc_in_place": "excluded_by_preference"
@@ -2404,7 +2404,7 @@
       "Up to \\*\\*100 links\\*\\*[\\s\\S]*?\\*\\*500 links\\*\\*",
       "This is not MI Link capacity"
     ],
-    "auditRef": "audit-mi-link-capacity-gp"
+    "auditRef": "shilpi-2026-09-12 fabric-subset"
   },
   {
     "id": "arc-2012-below-floor-standalone-lrs-ok",
@@ -2469,7 +2469,7 @@
         "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
-        "fabric_sql_db": "eligible",
+        "fabric_sql_db": "eligible_with_remediation",
         "arc_sql_mi": "excluded_by_preference",
         "container": "excluded_by_preference",
         "arc_in_place": "excluded_by_preference"
@@ -2488,7 +2488,7 @@
       "`hours` on Business Critical",
       "lrsBusinessCriticalCutoverCanTakeHours=true"
     ],
-    "auditRef": "audit-lrs-bc-hours"
+    "auditRef": "shilpi-2026-09-12 fabric-subset"
   },
   {
     "id": "mi-link-ranked-above-lrs-bc-when-gates-met",
@@ -2516,7 +2516,7 @@
         "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
-        "fabric_sql_db": "eligible",
+        "fabric_sql_db": "eligible_with_remediation",
         "arc_sql_mi": "excluded_by_preference",
         "container": "excluded_by_preference",
         "arc_in_place": "excluded_by_preference"
@@ -2534,7 +2534,7 @@
       "rank MI Link higher whenever all MI Link prerequisites are satisfiable",
       "MI Link prerequisites: SQL Server 2016\\+"
     ],
-    "auditRef": "audit-mi-link-ranks-higher-bc"
+    "auditRef": "shilpi-2026-09-12 fabric-subset"
   },
   {
     "id": "no-promotion-from-free-text-keywords",
@@ -2639,7 +2639,7 @@
         "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
-        "fabric_sql_db": "eligible",
+        "fabric_sql_db": "eligible_with_remediation",
         "arc_sql_mi": "excluded_by_preference",
         "container": "excluded_by_preference",
         "arc_in_place": "excluded_by_preference"
@@ -2660,7 +2660,7 @@
       "Up to \\*\\*100 links\\*\\*[\\s\\S]*?\\*\\*500 links\\*\\*",
       "One link = one database"
     ],
-    "auditRef": "audit-normalized-database-count-120"
+    "auditRef": "shilpi-2026-09-12 fabric-subset"
   },
   {
     "id": "sql2025-mi-link-blocked-must-not-fall-to-lrs",
@@ -3305,7 +3305,7 @@
         "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
-        "fabric_sql_db": "eligible",
+        "fabric_sql_db": "eligible_with_remediation",
         "arc_sql_mi": "excluded_by_preference",
         "container": "excluded_by_preference",
         "arc_in_place": "excluded_by_preference"
@@ -3321,7 +3321,7 @@
     "assertRulePresent": [
       "Linux from SQL Server 2017"
     ],
-    "auditRef": "audit-mi-link-linux-supported"
+    "auditRef": "shilpi-2026-09-12 fabric-subset"
   },
   {
     "id": "mi-link-linux-sql2016-windows-only",
@@ -3347,7 +3347,7 @@
         "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
-        "fabric_sql_db": "eligible",
+        "fabric_sql_db": "eligible_with_remediation",
         "arc_sql_mi": "excluded_by_preference",
         "container": "excluded_by_preference",
         "arc_in_place": "excluded_by_preference"
@@ -3365,7 +3365,7 @@
     "assertRulePresent": [
       "Windows Server only"
     ],
-    "auditRef": "audit-mi-link-linux-sql2016-windows-only"
+    "auditRef": "shilpi-2026-09-12 fabric-subset"
   },
   {
     "id": "mi-link-express-edition-not-eligible",
@@ -3391,7 +3391,7 @@
         "avs": "excluded_by_preference",
         "sql_mi": "eligible",
         "sql_db": "eligible_with_remediation",
-        "fabric_sql_db": "eligible",
+        "fabric_sql_db": "eligible_with_remediation",
         "arc_sql_mi": "excluded_by_preference",
         "container": "excluded_by_preference",
         "arc_in_place": "excluded_by_preference"
@@ -3409,7 +3409,7 @@
     "assertRulePresent": [
       "Enterprise / Standard / Developer edition"
     ],
-    "auditRef": "audit-mi-link-edition-gate"
+    "auditRef": "shilpi-2026-09-12 fabric-subset"
   },
   {
     "id": "aws-ec2-2016-clr-offline-blob-unknown",
