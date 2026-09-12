@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Knowledge base v3.10" src="https://img.shields.io/badge/knowledge%20base-v3.10-2b8a3e">
+  <img alt="Knowledge base v3.11" src="https://img.shields.io/badge/knowledge%20base-v3.11-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml/badge.svg"></a>
 </p>
@@ -60,14 +60,14 @@ version loaded and where it came from, so the advice is traceable.
 
 ## Why it is trustworthy
 
-- **Verified knowledge** — the v3.10 knowledge base is source-backed and corrected against Microsoft Learn.
+- **Verified knowledge** — the v3.11 knowledge base is source-backed and corrected against Microsoft Learn.
 - **Rules under regression test** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers. An executable mirror in `tests/` replays 116 scenarios through those rules on every commit. The mirror is not what runs in your session: an agent reads the rules and applies them, so this is a tested policy rather than a byte-identical guarantee.
 - **Every decision is addressable** — the card cites a rule ID for each verdict, and [`reference/decision-rules.md`](reference/decision-rules.md) ends with an index of all 31. Look one up, read what it consumes and how it treats an unknown, and argue with it.
 - **You see what lost, not just what won** — the card lists every method the knowledge base supports for the chosen target, each with a status and a reason. A method that is never enumerated is never rejected either, so its absence cannot be argued with; that is how Azure DMS stayed out of the Managed Instance guidance while the matrix declared it supported. Any candidate marked `available` can be handed to the prerequisite companion instead of the recommended one.
 - **Explicit uncertainty** — every recommendation is `provisional`, and `medium` is the confidence ceiling. Nothing higher is reachable from an interview, because the skill reads no artefact from your estate. It carries assumptions, unknowns, blockers and the evidence a tool would have to produce.
 - **It checks its own answer** — before the card is shown, the skill re-reads its draft against the 15 invariants in [`reference/output-contract.md`](reference/output-contract.md). One of them: no eligibility claim may rest on a field you never answered. A failed invariant is shown to you, never silently repaired.
 - **Freshness gates** — version bumps require substantive diffs; link checks classify bot-blocked pages; high-risk claims are tracked in [`reference/claims-registry.json`](reference/claims-registry.json).
-- **Regression protection** — [`tests/`](tests/) holds 116 golden scenarios and 67 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
+- **Regression protection** — [`tests/`](tests/) holds 116 golden scenarios and 70 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
 
 ## One version, every surface
 
@@ -77,20 +77,20 @@ The knowledge base is quoted by a skill, three manifests, a PDF, a poster, this 
 
 | Surface | Version | Up to date |
 | --- | --- | --- |
-| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v3.10` | ✅ |
-| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v3.10` | ✅ |
-| `SKILL.md` and its pinned fetch URL | `v3.10.1` | ✅ |
-| `version.json`, `plugin.json`, `marketplace.json` | `v3.10.1` | ✅ |
-| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v3.10` | ✅ |
-| Poster caption and PNG | `v3.10` | ✅ |
-| This README's badge and PDF sentence | `v3.10` | ✅ |
-| **This table** | `v3.10` | ✅ |
+| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v3.11` | ✅ |
+| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v3.11` | ✅ |
+| `SKILL.md` and its pinned fetch URL | `v3.11.0` | ✅ |
+| `version.json`, `plugin.json`, `marketplace.json` | `v3.11.0` | ✅ |
+| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v3.11` | ✅ |
+| Poster caption and PNG | `v3.11` | ✅ |
+| This README's badge and PDF sentence | `v3.11` | ✅ |
+| **This table** | `v3.11` | ✅ |
 | The six `blume/public/*.svg` mirrors | — | ✅ |
 | [`blume/docs/index.mdx`](blume/docs/index.mdx) — the docs site | — | ✅ |
-| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v3.10.1` | ✅ |
-| [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | `v3.10.1` | ✅ |
+| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v3.11.0` | ✅ |
+| [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | `v3.11.0` | ✅ |
 | `howto/*.html` | — | ✅ |
-| The developer pitch's sample failure block | `v3.10` | ✅ |
+| The developer pitch's sample failure block | `v3.11` | ✅ |
 
 <!-- surfaces:end -->
 
@@ -126,7 +126,7 @@ status line. See [§ The prerequisite companion](#the-prerequisite-companion) an
 | [`reference/claims-registry.json`](reference/claims-registry.json) | Hashes and source pointers for high-risk claims, used by weekly drift detection. 40 claims: 20 for the migration knowledge base, 10 for prerequisites, 10 for connectivity. |
 | [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) | The same knowledge base as a branded, partner-ready PDF. |
 | [`lab/`](lab/) | A self-contained, hands-on lab: take a legacy SQL Server 2016 workload to a SQL Server on Azure VM, driven by the advisor and the HVE Squad (VM-to-VM migration). |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Deep dive: what the plugin is, how a session runs end to end, what the 67 gates defend, and where it can still be wrong. |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Deep dive: what the plugin is, how a session runs end to end, what the 70 gates defend, and where it can still be wrong. |
 | [`docs/NEWDESIGNv2.md`](docs/NEWDESIGNv2.md) | Why there is a v2: how the decision policy became versioned, addressable and testable rather than prose an implementer had to interpret. |
 | [`docs/NEWDESIGNv3.md`](docs/NEWDESIGNv3.md) | **New.** Why there is a v3: a defect that took three releases to see, why a method that is never enumerated is never rejected either, and what changed when the handoff between advisor and prerequisite companion had to carry what the recommendation knew. |
 | [`docs/WEEKLYCHECK.md`](docs/WEEKLYCHECK.md) | Deep dive on the weekly check: how all three knowledge bases are verified, reviewed and stamped each Monday, what it delivers, and what it refuses to do on its own. |
@@ -457,7 +457,7 @@ Mermaid decision diagrams. The `SKILL.md` mirrors its AI Migration Agent I/O con
 
 The same knowledge base ships as a polished, branded PDF —
 [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (27 pages,
-v3.10, September 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
+v3.11, September 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
 
@@ -523,6 +523,7 @@ base and this README on the same version. Last verified: August 2026.
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| v3.11.0 | 2026-09-12 | **Batch three: rules that read facts nothing could supply, and vocabulary that pointed at the wrong thing.** `DMS-MODE` demanded a FULL recovery model and an unbroken log chain before offering online DMS, and the closed profile carried neither, so a decision that rule made could not be reproduced from a valid input. `recovery_model` and `log_chain_status` are typed fields now, carried through the contract, both schemas, the interview and the engine. Two fields rather than one, because a database can sit in FULL with its chain already cut, and because log shipping accepts BULK_LOGGED where the Log Replay Service is FULL only. That same split was wrong on the planner side: one shared effects map served both P03 and P09, so BULK_LOGGED was either valid for both or neither. `lrs_window_days` accepted 1 to 30 and declared an `over_30` effect, so the thirty-day ceiling could never be reported as exceeded. Five rules wrote `previewAcceptable` where the field is `preview_acceptable`. The input contract said every backup-based method stages through Blob and named Data Box among them, contradicting the §A0 carve-out that exempts transports never touching Blob. §B3 listed bcp, Smart Bulk Copy and ADF Copy beside the real candidates although `methodCandidate.role` admits only `primary` and `secondary`. The planner's startup note told a reader to take overlay roles from the coverage file, whose vocabulary is `primary`/`secondary`/`documentary` and not the `platform`/`transport`/`control-plane` the output schema requires. And the claim that 122 of the 291 prerequisites are answerable counted 20 applicability selectors as confirmable; **102** can actually reach `confirmed`. 67 gates to 70. |
 | v3.10.1 | 2026-09-12 | **Batch two of the review round: the labels that resolved to the wrong path, or to none.** A prerequisite plan starts by turning the name of a method into a path in the catalog, and that step was failing quietly in both directions. Four routes the summary matrix publishes answered to no catalog spelling at all: `DMS` for Azure SQL Database, `Native backup/restore` for the container target, and `Distributed / Always On AG` on both SQL VM and AVS. The engine had been papering over the gap with a hard-coded label-to-path table. Meanwhile `Native backup/restore` for Arc reached P17 and never P18, so a reader asking for the generic Arc restore was handed the direct-pod plan without ever being asked which entry point they had, and `Azure Migrate` reached both the assessment path and the VM replication path with nothing to separate them, on a target both of them claim. An assessment plan is not a replication plan. `azure_migrate_intent` now asks, the way the catalog already asks for the AG pattern, the bulk-copy tool, the DMS mode and the Arc entry point. The handoff crosswalk gained the four facts it was silent about: the region carries over, and the RPO, the RTO and the named ancillary services do not, because each of those is a requirement or a recollection rather than the verdict the consumer records. Two notes were repaired: one had a paragraph about Managed Instance ports pasted into it twice, and the Blob mapping had inherited that same paragraph, so a normative note about HTTPS reachability was arguing about blocked ports. **Two gates now hold the line both ways**: every method the matrix publishes must resolve through a path it names, and no spelling may reach two paths on the same target unless every one of them declares a disambiguation field. |
 | v3.10.0 | 2026-09-12 | **First batch of a twenty-six-finding review round: the content corrections, the ones a reader is most likely to act on.** MI Link was offered for AWS EC2 and GCP Compute on `5022 + networking`, naming one of its two port requirements and omitting the 11000-11999 range that carries the replication channel. Log shipping was marked Windows-only while the prerequisite plan's own P03-006 row prepares it on Linux. `P11-009` demanded the Managed Instance public endpoint whenever SqlPackage ran outside the VNet, although VPN, ExpressRoute, peering and private endpoints all reach port 1433 without exposing anything. `P28-007` keyed its CloudAdmin exception on AVS being the assessment **target** while its own rule text keys on the source already running there. The `P20` heading had dropped Fabric while its summary row, the catalog and its own Fabric-specific row all kept it. Two notes still argued that a data-carrying BACPAC is documented against Fabric, three releases after the rules, the catalog and the coverage map settled on the DACPAC schema publish. And the coverage manifest pointed at an upstream document path and a test file that exist nowhere the skill is installed, with its cell count stranded inside a sentence a bad splice had broken. **Two of these were mine, and both had the same shape**: a gate reading the knowledge base's summary rows and never its section headings, and a downtime vocabulary corrected in the contract and not in the card that renders it. Both gates read the second surface now: 28 path comparisons became 56. |
 | v3.9.1 | 2026-09-11 | **The prerequisite knowledge base declared v1.5 through five content changes.** That version was set on 24 August, and the document changed in five commits after it: prerequisite rows removed, Fabric dropped from P11, the role counts corrected, the `P20` fallback taken out. Anyone citing "prerequisite KB v1.5" was citing five different documents, and every plan reports that number as the provenance of the facts that answered. The advisor knowledge base is protected by the coordinated version line and this one had no equivalent, so it is v1.6 now and a gate compares the commit that set a declared version against the last commit that touched the file. The connectivity knowledge base is covered by the same gate; it had not drifted, and now it cannot start. |

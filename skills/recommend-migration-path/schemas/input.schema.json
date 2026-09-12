@@ -245,6 +245,23 @@
       ],
       "description": "Whether the customer accepts a service or capability still in preview. Two indexed rules read it, MI-TIER for zone redundancy and COPILOT-AGENT for the control-plane branch, and the profile could not carry it: additionalProperties is false, so a decision those rules made could not be reproduced from a schema-valid input. UNKNOWN holds the preview option rather than granting it."
     },
+    "recovery_model": {
+      "enum": [
+        "FULL",
+        "BULK_LOGGED",
+        "SIMPLE",
+        "UNKNOWN"
+      ],
+      "description": "The recovery model the source databases run in. DMS-MODE refuses to assume online DMS without FULL, and the log shipping route in the prerequisite catalog also accepts BULK_LOGGED, so the two readings are not interchangeable and the field carries the answer rather than a verdict. The rule text demanded this fact while the closed profile had nowhere to put it, so an online DMS decision could not be reproduced from a schema-valid input. UNKNOWN holds the online mode at unknown_requires_assessment rather than granting it."
+    },
+    "log_chain_status": {
+      "enum": [
+        "CHAIN_INTACT",
+        "CHAIN_BROKEN",
+        "UNKNOWN"
+      ],
+      "description": "Whether the log backup chain is unbroken. The second half of what online DMS requires, and independent of the recovery model: a database can sit in FULL and still have had its chain cut by a standalone copy-only or a switch through SIMPLE. Same reason as recovery_model for existing: the rule read it and the profile could not carry it."
+    },
     "ancillary_services": {
       "type": [
         "array",

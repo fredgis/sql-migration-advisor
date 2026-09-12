@@ -1,7 +1,7 @@
 # Output contract — `generate-migration-prerequisite-plan`
 
 > **Schema version:** `1.0`
-> **Prerequisite knowledge-base line:** `v1.7`
+> **Prerequisite knowledge-base line:** `v1.8`
 
 The skill produces one normalized prerequisite-plan object. Markdown is the default rendering; JSON
 is available on request. Both formats must represent exactly the same state.
@@ -22,13 +22,19 @@ Overall status is derived, in this order, and the first branch that matches wins
   blocking prerequisite is `unknown`;
 - `ready_with_conditions` when all blocking prerequisites are settled but at least one of them is
   `reported` rather than `confirmed`, **or** a required non-blocking prerequisite is missing,
-  unknown or `reported`. **`reported` caps readiness here and can never reach `ready`**: the skill
+  unknown or `reported`, **or** an applicable conditional prerequisite is missing, unknown or
+  `reported`. **`reported` caps readiness here and can never reach `ready`**: the skill
   makes no network calls, so a stated fact is not a verified one, and a plan read as a go/no-go
   artefact must not present an assertion as clearance. The non-blocking case matters because most
   evidence-only rows are non-blocking: without it, a plan whose every blocker is confirmed and
-  whose one required non-blocking row is `reported` matched no branch at all;
-- `ready` when every applicable required prerequisite is `confirmed`, meaning each one carries an
-  evidence record.
+  whose one required non-blocking row is `reported` matched no branch at all. The conditional case
+  matters for the same reason and was missing for longer: a conditional row is an obligation once
+  its condition holds, so a plan could reach `ready` with a known-unmet conditional row on it.
+  Conditional rows whose condition does not hold are `not_applicable` and are ignored here, which
+  is the whole difference between conditional and recommended;
+- `ready` when every applicable required prerequisite is `confirmed` and every applicable
+  conditional prerequisite is `confirmed` or `not_applicable`, meaning each one that still applies
+  carries an evidence record.
 
 Recommended items never block readiness.
 

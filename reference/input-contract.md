@@ -181,6 +181,8 @@ Three questions ask whether something exists before asking what it is, so that *
 | `feature_dependencies` | list | See §5 | Phase A eligibility for SQL MI and SQL DB | SQL MI and SQL DB held at `unknown_requires_assessment` |
 | `feature_dependencies_state` | ID | `ANSWERED` · `NONE_CONFIRMED` · `UNKNOWN` · `NOT_APPLICABLE` | Says why the list is empty, which the list itself cannot | Treated as `UNKNOWN`: an empty list without a state is not a confirmed absence |
 | `preview_acceptable` | ID | `PREVIEW_ACCEPTED` · `PREVIEW_REFUSED` · `UNKNOWN` | `MI-TIER` zone redundancy, `COPILOT-AGENT` control-plane branch | Preview options stay unavailable; the GA route is unaffected |
+| `recovery_model` | ID | `FULL` · `BULK_LOGGED` · `SIMPLE` · `UNKNOWN` | `DMS-MODE`: online DMS requires `FULL`. Log shipping also accepts `BULK_LOGGED`, so the field carries the answer, not a verdict | Online mode is never assumed; the gate holds at `unknown_requires_assessment` |
+| `log_chain_status` | ID | `CHAIN_INTACT` · `CHAIN_BROKEN` · `UNKNOWN` | `DMS-MODE`: the second half of the online requirement, independent of the recovery model | Online mode is never assumed; the gate holds at `unknown_requires_assessment` |
 | `ancillary_services` | list | SSIS · SSRS · SSAS · TDE · SQL Agent jobs · logins · others named by the user | Remediation scope and what the prerequisite plan inherits | Nothing is assumed present or absent |
 | `ancillary_services_state` | ID | `ANSWERED` · `NONE_CONFIRMED` · `UNKNOWN` · `NOT_APPLICABLE` | Says why the list is empty, which the list itself cannot | Treated as `UNKNOWN`: an empty list without a state is not a confirmed absence |
 | `size` | ID | `UNDER_150_GB` · `FROM_150_GB_TO_4_TB` · `FROM_4_TB_TO_128_TB` · `OVER_128_TB` | Hyperscale ceiling, seeding strategy, tier selection | Tier held at `unknown_requires_assessment` |
@@ -280,7 +282,9 @@ One question used to mix bandwidth, MI Link ports and Blob reachability. They ga
 | Blocked by proxy, firewall or policy | `BLOB_HTTPS_BLOCKED` |
 | Not verified | `BLOB_HTTPS_UNKNOWN` |
 
-Every backup-based method — native `.bak` restore, BACPAC, Data Box seeding — moves through this path. It is the field `BACKUP-BLOB-PATH` consumes, and an unverified path is what keeps that gate at `unknown_requires_assessment` rather than `passed`.
+Every backup-based method that stages through Azure Blob — native `.bak` restore over `BACKUP TO URL`, LRS and log replay, and a BACPAC **only when that workflow puts the file in Blob** — moves through this path. It is the field `BACKUP-BLOB-PATH` consumes, and an unverified path is what keeps that gate at `unknown_requires_assessment` rather than `passed`.
+
+It does **not** gate transports that never touch Blob, which §A0 states as the carve-out: Data Box, detach and attach, file-level copies into a target that has a file system, and a local BACPAC imported directly with SqlPackage. Naming Data Box here as a Blob-staged method contradicted that carve-out and would have held a seeding route at `unknown_requires_assessment` on a field it never reads.
 
 ---
 

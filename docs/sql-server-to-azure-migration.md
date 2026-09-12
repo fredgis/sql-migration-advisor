@@ -6,7 +6,7 @@
 >
 > **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of August 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
 >
-> **Version.** v3.10 — 11 September 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
+> **Version.** v3.11 — 11 September 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**
@@ -661,13 +661,14 @@ flowchart LR
 
 ## 17. Document version & changelog
 
-Current version: **v3.10** (2026-09-09).
+Current version: **v3.11** (2026-09-09).
 
 <details>
-<summary><b>Version history</b> (current: v3.10)</summary>
+<summary><b>Version history</b> (current: v3.11)</summary>
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v3.11 | 2026-09-12 | **Two facts the rules read and the profile could not carry.** `DMS-MODE` refused to assume online DMS without a FULL recovery model and an unbroken log chain, and neither was a field: the closed profile rejects anything it does not declare, so the decision that rule made could not be reproduced from a valid input. `recovery_model` and `log_chain_status` are typed now and carried end to end. They are deliberately two fields: a database can sit in FULL and still have had its chain cut, and log shipping accepts BULK_LOGGED where the Log Replay Service is FULL only, so one shared verdict could not serve both. Five rules also wrote `previewAcceptable` where the field is `preview_acceptable`, a spelling a reader cannot resolve. |
 | v3.10 | 2026-09-12 | **Two corrections in the cross-cloud matrix and the method table.** The AWS EC2 and GCP Compute rows gave MI Link as available with `5022 + networking`, naming one of the two port requirements: the 11000-11999 range carries the distributed availability group's data-replication channel, and it is the half people miss, so a reader could clear the stated gate and still fail. And log shipping was marked Windows-only, which the prerequisite plan contradicts in its own P03-006 row: a Linux source or target needs SQL Server Agent enabled and the backup directory exposed through a CIFS/Samba share. A plan citing this page would refuse a route the plan beside it prepares. |
 | v3.9 | 2026-09-11 | **Two knowledge-base corrections.** P11 no longer lists SQL database in Fabric: v3.3 removed that route from the rules and the catalog because Microsoft documents a DACPAC schema import there, and this page kept offering it in two places, so a skill loading both could build a plan the rules forbid. The role counts were also wrong, and had been for three releases: the coverage map holds 16 `primary`, 13 `secondary` and 29 `documentary` cells, not the 30 recommendable and 28 documentary stated here. Both numbers are derived by a gate now rather than counted once by hand. |
 | v3.8 | 2026-09-11 | **No knowledge-base fact changed.** The stamp moves so every surface stays pinned to one commit. The release is about the fork: for three review rounds fixes landed here and never reached the vendored copy, because the port script patched the advisor `SKILL.md` without ever reading its content. |
