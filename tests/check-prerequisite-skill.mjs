@@ -434,6 +434,30 @@ for (const question of questions.questions) {
   const crosswalk = parse(...skillDir, 'reference', 'advisor-fact-mappings.json');
   check('crosswalk-versions-itself-under-its-own-key', Boolean(crosswalk.mappingsVersion),
     'advisor-fact-mappings.json carries its own release history and must publish it as mappingsVersion, so a reader can tell a crosswalk revision from a policy line');
+
+  // The contract's fenced examples are meant to be copied. When the mirror shape gained three
+  // required provenance fields, the canonical `advisor_handoff` example kept validating against
+  // nothing at all: a user following the page was refused before their path was ever resolved. An
+  // example a schema refuses is worse than no example, because it is copied first and debugged
+  // second.
+  const shapes = { advisorPublicOutput: inputSchema.$defs.advisorPublicOutput, advisorMirrorOutput: inputSchema.$defs.advisorMirrorOutput };
+  let examples = 0;
+  for (const block of [...inputContract.matchAll(/```json\s*([\s\S]*?)```/gu)].map(m => m[1])) {
+    let object;
+    try { object = JSON.parse(block); } catch { continue; }
+    const advisor = object.advisorOutput || (object.mode === 'advisor_handoff' ? object.sourceAdvisorOutput : null);
+    if (!advisor) continue;
+    examples++;
+    const accepted = Object.entries(shapes).filter(([, shape]) => {
+      const missing = (shape.required || []).filter(field => !(field in advisor));
+      const undeclared = Object.keys(advisor).filter(field => !(field in (shape.properties || {})));
+      return !missing.length && !undeclared.length;
+    });
+    check(`contract-example-validates-${examples}`, accepted.length > 0,
+      `a fenced advisor_handoff example in the input contract matches neither accepted shape: ${Object.entries(shapes).map(([name, shape]) => `${name} wants ${JSON.stringify((shape.required || []).filter(f => !(f in advisor)))}`).join('; ')}`);
+  }
+  check('contract-carries-a-copyable-example', examples > 0,
+    'the input contract carries no fenced advisor_handoff example, so this check would pass by reading nothing');
 }
 
 // Sixth review pass. The worked example counted the seven P10 rows and none of the twelve common

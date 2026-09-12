@@ -215,7 +215,7 @@ Stating a single budget made these compete: an implementation that spent its one
 
 **Fetch the live document only when the user asks for it.** Say that it is being fetched, and read only:
 
-- `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/v3.13.0/docs/sql-server-to-azure-migration.md`
+- `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/v3.13.1/docs/sql-server-to-azure-migration.md`
 
 That URL is pinned to a release tag, not to `main`. A mutable branch means the facts can change under the reader between two sessions with no version to cite. Never substitute a different URL, and never rewrite the path: the raw host serves `…/<tag>/<path>`, and inserting `blob` returns 404. If the tagged document is unreachable, fall back to the bundled copy and say the fallback is what answered.
 
@@ -413,17 +413,22 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
     "decisionRulesVersion": "v3.13",
     "evaluatedAt": "2026-08-26T18:00:00Z",
     "recommendationStatus": "provisional",
-    "confidence": "medium"
+    "confidence": "low"
   },
   "normalizedProfile": {
+    "scope": "LARGE_ESTATE",
     "intent": "MIGRATE_NOW",
     "source_location": "ON_PREM",
     "source_version": "SQL2017_2019",
+    "source_edition": "ENTERPRISE",
+    "source_os": "WINDOWS_SERVER_2012_OR_LATER",
     "management_model": "MANAGED_PAAS",
     "downtime": "NEAR_ZERO",
+    "size": "FROM_150_GB_TO_4_TB",
+    "database_count": 40,
     "feature_dependencies": [
       "SQL Agent jobs",
-      "cross-database queries"
+      "linked servers"
     ],
     "feature_dependencies_state": "ANSWERED",
     "mi_link_ports": "PORTS_CONFIRMED_OPEN"
@@ -437,50 +442,49 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
     },
     {
       "target": "avs",
-      "status": "unsupported",
+      "status": "excluded_by_preference",
       "ruleId": "AVS-LICENSING",
-      "reason": "No VMware estate and no data-center exit driver."
+      "reason": "No VMware-continuity requirement was stated, so the platform was not selected. Technically compatible."
     },
     {
       "target": "sql_mi",
       "status": "eligible",
-      "ruleId": "MI-LINK-VERSION",
+      "ruleId": "DEPENDENCY-INVENTORY",
       "reason": "Instance-scoped dependencies are supported and the source meets the floor."
     },
     {
       "target": "sql_db",
       "status": "unsupported",
       "ruleId": "DEPENDENCY-INVENTORY",
-      "reason": "SQL Agent jobs cannot run in Azure SQL Database."
+      "reason": "Linked servers are a hard Azure SQL Database blocker unless refactored."
     },
     {
       "target": "fabric_sql_db",
-      "status": "unsupported",
+      "status": "eligible",
       "ruleId": "FABRIC-TARGET",
       "reason": "Broad OLTP schema, not a Fabric-native analytics workload."
     },
     {
       "target": "arc_sql_mi",
-      "status": "unsupported",
+      "status": "excluded_by_preference",
       "ruleId": "MANAGEMENT-MODEL",
-      "reason": "No Arc data controller in scope."
+      "reason": "A managed PaaS model was stated, so no Kubernetes-hosted engine was selected. Technically available if that changes."
     },
     {
       "target": "container",
       "status": "excluded_by_preference",
       "ruleId": "MANAGEMENT-MODEL",
-      "reason": "The customer ruled out operating Kubernetes."
+      "reason": "A managed PaaS model was stated, so a customer-operated container was not selected. Technically available if that changes."
     },
     {
       "target": "arc_in_place",
-      "status": "unsupported",
+      "status": "excluded_by_preference",
       "ruleId": "ARC-IN-PLACE",
-      "reason": "The stated intent is to migrate, not to modernise in place."
+      "reason": "The stated intent is to migrate, not to stay in place. Useful for extended-support cover while the move is prepared."
     }
   ],
   "recommendation": {
     "target": "Azure SQL Managed Instance",
-    "tier": "MI General Purpose",
     "method": "MI Link",
     "targetAvailabilityDuringSync": "read-only",
     "businessCutoverDowntime": "<1min",
@@ -493,74 +497,79 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
   },
   "methodCandidates": [
     {
-      "method": "MI Link",
+      "method": "DMS",
       "role": "primary",
       "status": "available",
-      "reason": "Source meets the version, edition, host and port gates.",
+      "selected": false,
+      "reason": "Prerequisite paths P23, P24 apply.",
       "prerequisitePaths": [
-        "P08"
-      ],
-      "selected": true
+        "P23",
+        "P24"
+      ]
     },
     {
-      "method": "Azure DMS (online)",
+      "method": "MI Link",
       "role": "primary",
-      "status": "available",
-      "reason": "Documented online path to Managed Instance; loses to MI Link on cutover length.",
+      "status": "unknown_requires_assessment",
+      "selected": true,
+      "reason": "Prerequisite paths P08 apply. Its method gate has not reported passed, so the route is viable and not yet proven.",
       "prerequisitePaths": [
-        "P24"
-      ],
-      "selected": false
+        "P08"
+      ]
     },
     {
       "method": "Log Replay Service",
       "role": "primary",
       "status": "available",
-      "reason": "Source is inside the documented 2008-2022 range, but cutover is a planned outage rather than sub-minute.",
+      "selected": false,
+      "reason": "Prerequisite paths P09 apply.",
       "prerequisitePaths": [
         "P09"
-      ],
-      "selected": false
+      ]
     },
     {
       "method": "Native backup/restore",
       "role": "primary",
       "status": "available",
-      "reason": "Supported, and rejected here only because it needs a full offline restore window.",
+      "selected": false,
+      "reason": "Prerequisite paths P10 apply.",
       "prerequisitePaths": [
         "P10"
-      ],
-      "selected": false
+      ]
     },
     {
       "method": "Transactional replication",
       "role": "secondary",
-      "status": "unknown_requires_assessment",
-      "reason": "Suitable only for a subset of tables with qualifying primary keys, which was not established.",
+      "status": "available",
+      "selected": false,
+      "reason": "Prerequisite paths P13 apply.",
       "prerequisitePaths": [
         "P13"
-      ],
-      "selected": false
+      ]
     },
     {
       "method": "BACPAC / SqlPackage",
       "role": "secondary",
-      "status": "unavailable",
-      "reason": "Carries schema and data but no instance-level objects, and this estate depends on SQL Agent jobs.",
+      "status": "available",
+      "selected": false,
+      "reason": "Prerequisite paths P11 apply.",
       "prerequisitePaths": [
         "P11"
-      ],
-      "selected": false
+      ]
     }
   ],
   "methodGateTrace": {
     "method": "MI Link",
-    "result": "passed"
+    "result": "unknown_requires_assessment"
   },
   "blockers": [],
-  "unknowns": [],
+  "unknowns": [
+    "MI Link requires sysadmin on the source to configure endpoints, and the available rights were never stated."
+  ],
   "assumptions": [],
-  "evidenceRequired": [],
+  "evidenceRequired": [
+    "Confirm the migration account holds sysadmin on the source instance before scheduling this method."
+  ],
   "nextActions": [],
   "evidenceLinks": [],
   "largestRisk": "The 11000-11999 range is assumed open on the stated evidence, not measured."
@@ -679,21 +688,22 @@ Asks the remaining triage questions one at a time (source location, migration in
 **Representative output**
 
 > **Preliminary recommendation — 40-database OLTP estate**
-> **Azure SQL Managed Instance** via **MI Link** · status **provisional** · confidence **medium**
+> **Azure SQL Managed Instance** via **MI Link** · status **provisional** · confidence **low**
 > KB **v3.13** · commit **n/a** · fetched **n/a**
 >
 > SQL Agent and linked-server dependencies point at instance-scoped PaaS rather than a database-scoped target, and the downtime tolerance is met by an online method.
 >
 > | | Recommendation |
 > | --- | --- |
-> | Target / tier | Azure SQL Managed Instance, General Purpose |
+> | Target / tier | Azure SQL Managed Instance, tier `unknown_requires_assessment` |
 > | Migration method | MI Link |
 > | Target availability during sync | read-only |
 > | Business cutover downtime | < 1 minute |
+> | Method gate | **MI Link: `unknown_requires_assessment`** — 5022 and 11000–11999 are reported open, `sysadmin` on the source is not confirmed |
 > | Assess / orchestrate | SSMS 22 Migration Component |
 > | Cost view | Cost levers only: AHB if Software Assurance applies; no estimate until sizing |
 >
-> **Blocking evidence** — MI Link needs ports 5022 and 11000–11999 open in the documented directions, and `sysadmin` on the source. Not yet confirmed.
+> **Evidence required** — `sysadmin` on the source, which MI Link needs and which nobody has confirmed. The tier needs measured IOPS and log-write latency before it can be more than `unknown_requires_assessment`; the rules never default it to General Purpose.
 > **Next action** — run a dependency discovery and confirm the port path, then re-evaluate.
 
 Examples use sanitised placeholders. Keep customer names, tenant details, server names and subscription identifiers out of the output: answer with them if the user supplies them, but write the recommendation so it can be shared without them.

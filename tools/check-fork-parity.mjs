@@ -165,6 +165,50 @@ const walkLinks = (dir) => {
 };
 walkLinks(path.join(DEST, 'skills'));
 
+// The advisor SKILL.md is derived from upstream, and the sections that genuinely differ are
+// declared in port-to-fork.mjs. Proving that here is the point: the file is read on every run of
+// the skill, and it was twice the one document nobody compared. A section that drifts is a set of
+// instructions only one of the two repositories has ever reviewed.
+{
+  const owned = new Set([...portSource.matchAll(/\['(## [^']+)',\s*'/g)].map((m) => m[1]));
+  if (!owned.size) failures.push('no fork-owned section could be read out of port-to-fork.mjs, so this check would compare nothing');
+  const sectionsOf = (text) => {
+    const map = new Map();
+    let heading = null;
+    for (const line of normalise(text).split('\n')) {
+      if (/^## /.test(line)) { heading = line.trim(); map.set(heading, []); }
+      else if (heading) map.get(heading).push(line);
+    }
+    return map;
+  };
+  const upstreamSections = sectionsOf(upstreamSkill);
+  const forkSections = sectionsOf(read(forkSkillPath));
+  // Compared after the transformations the port applies, since paths and version stamps are
+  // expected to differ and nothing else is.
+  const comparable = (lines) => lines.join('\n')
+    .replace(/(?:\.\.\/)*docs\/sql-server-to-azure-migration(?:-prerequisite)?\.md/g, 'KB')
+    .replace(/(?:\.\.\/)*(?:reference|references|schemas)\/knowledge-base\.md/g, 'KB')
+    .replace(/(?:\.\.\/)*templates\/prerequisite-plan\.md/g, 'TEMPLATE')
+    .replace(/(?:\.\.\/)*references\/prerequisite-plan-template\.md/g, 'TEMPLATE')
+    .replace(/(?:\.\.\/)*(?:reference|references|schemas)\//g, 'references/')
+    .replace(/v\d+\.\d+(?:\.\d+)?/g, 'vX')
+    .replace(/\s+/g, ' ')
+    .trim();
+  let compared = 0;
+  for (const [heading, lines] of upstreamSections) {
+    if (owned.has(heading)) continue;
+    if (!forkSections.has(heading)) { failures.push(`the fork's SKILL.md has no ${heading} section, which upstream carries and which is not declared fork-owned`); continue; }
+    compared++;
+    if (comparable(lines) !== comparable(forkSections.get(heading))) {
+      failures.push(`${heading} differs between upstream and the fork and is not declared fork-owned, so one of the two carries instructions the other has never seen`);
+    }
+  }
+  for (const heading of forkSections.keys()) {
+    if (!upstreamSections.has(heading) && !owned.has(heading)) failures.push(`the fork's SKILL.md carries ${heading}, which upstream does not and which is not declared fork-owned`);
+  }
+  notes.push(`${compared} SKILL.md section(s) derived from upstream and identical after the port's transformations; ${owned.size} declared fork-owned.`);
+}
+
 if (failures.length) {
   console.error(`Fork parity failed: ${failures.length} problem(s).`);
   for (const failure of [...new Set(failures)]) console.error(`  ${failure}`);

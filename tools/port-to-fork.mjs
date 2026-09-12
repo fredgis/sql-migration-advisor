@@ -112,45 +112,50 @@ for (const skill of ['recommend-migration-path', 'generate-migration-prerequisit
   }
 }
 
-// The advisor SKILL.md in the fork is a transformed copy, not a mirror: it drops the live-fetch
-// apparatus, points at references/ and uses apm rather than the plugin command. So it is patched
-// rather than overwritten.
+// The advisor SKILL.md in the fork is derived from upstream, not maintained beside it.
 //
-// Patching version stamps alone was not enough, and the gap was expensive. Every content fix made
-// upstream stayed upstream: corrected rule IDs, the MI Link cutover, the blockers rename, the read
-// tools. A reviewer spent a round reporting defects that had been fixed the day before in a file
-// this script never opened.
+// It used to be patched: version stamps, then the capability line and the JSON blocks as well. Both
+// times the reasoning was that a human had deliberately rewritten the fork and the script should
+// respect that. Both times the same thing happened instead. Content fixed upstream stayed upstream,
+// a reviewer spent a round reporting defects that had been fixed the day before, and the second
+// round was worse than the first because the patch covered the contract-shaped parts and left the
+// prose, which is where the instructions live. A file a model reads every run cannot be the one
+// nobody is comparing.
 //
-// So the parts that are contract rather than prose are carried across: the front matter capability
-// line, and every JSON block. Those are what a model copies, and they must be identical in both
-// repositories. Anything a human deliberately rewrote for the fork stays untouched.
+// So the whole document is taken from upstream, and the two sections that genuinely differ are
+// declared here by heading. Anything not on this list is upstream's, transformed. If the fork needs
+// to say something new, it gets a heading and a line in FORK_OWNED rather than a quiet edit.
+const FORK_OWNED = new Map([
+  ['## When to Use', 'Carries the repository convention section on what the source version and edition change, which upstream has no equivalent for.'],
+  ['## API Details', 'Upstream describes fetching the live knowledge base. Nothing is fetched here, and the update check is `apm outdated` rather than the plugin command.']
+]);
+const sectionsOf = (text) => {
+  const parts = [];
+  for (const line of text.split('\n')) {
+    if (/^## /.test(line)) parts.push({ heading: line.trim(), lines: [line] });
+    else if (parts.length) parts[parts.length - 1].lines.push(line);
+    else (parts.preamble ??= []).push(line), parts.preamble;
+  }
+  return parts;
+};
 const advisorSkill = path.join(DEST, `${ADVISOR}/SKILL.md`);
 if (fs.existsSync(advisorSkill)) {
   const upstream = read(path.join(SRC, `${ADVISOR}/SKILL.md`));
-  let text = read(advisorSkill);
+  const current = read(advisorSkill);
+  const preambleOf = (text) => text.split('\n').slice(0, text.split('\n').findIndex((l) => /^## /.test(l))).join('\n');
+  const owned = new Map(sectionsOf(current).map((s) => [s.heading, s.lines.join('\n')]));
 
-  const capability = upstream.match(/^allowed-tools:.*$/m);
-  if (capability) text = text.replace(/^allowed-tools:.*$/m, capability[0]);
-
-  // Field names that were renamed in the schema. These live in prose, so nothing else carries
-  // them across, and a normative list naming a field the consumer rejects drops data at the
-  // handoff rather than failing loudly.
-  text = text.replace(/`hardBlockers(\[\])?`/g, '`blockers$1`');
-
-  const upstreamBlocks = [...upstream.matchAll(/```json\r?\n([\s\S]*?)\r?\n```/g)];
-  const forkBlocks = [...text.matchAll(/```json\r?\n([\s\S]*?)\r?\n```/g)];
-  if (upstreamBlocks.length !== forkBlocks.length) {
-    console.error(`The advisor SKILL.md carries ${forkBlocks.length} JSON block(s) here and ${upstreamBlocks.length} upstream, so they cannot be matched up one for one.`);
-    process.exitCode = 1;
-  } else {
-    // Replace from the end, so each splice leaves the earlier offsets intact.
-    for (let i = forkBlocks.length - 1; i >= 0; i -= 1) {
-      let block = upstreamBlocks[i][1];
-      for (const [pattern, replacement] of rewritesFor('references/')) block = block.replace(pattern, replacement);
-      const fork = forkBlocks[i];
-      text = text.slice(0, fork.index) + '```json\n' + block + '\n```' + text.slice(fork.index + fork[0].length);
+  for (const heading of FORK_OWNED.keys()) {
+    if (!owned.has(heading)) {
+      console.error(`FORK_OWNED names ${heading}, which the fork's SKILL.md does not contain, so nothing would be preserved for it.`);
+      process.exitCode = 1;
     }
   }
+  const rebuilt = [preambleOf(upstream)];
+  for (const section of sectionsOf(upstream)) {
+    rebuilt.push(FORK_OWNED.has(section.heading) ? owned.get(section.heading) : section.lines.join('\n'));
+  }
+  let text = rebuilt.join('\n');
 
   const keep = (line) => /^\|\s*v[0-9]/.test(line.trim()) || /\b(until|since|before|from)\s+v[0-9]/i.test(line);
   for (const [pattern, replacement] of rewritesFor('references/')) text = text.replace(pattern, replacement);
