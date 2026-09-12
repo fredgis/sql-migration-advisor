@@ -25,7 +25,7 @@
           "const": "1.0"
         },
         "prerequisiteKnowledgeBaseVersion": {
-          "const": "v1.10"
+          "const": "v1.11"
         },
         "pathCatalogVersion": {
           "const": "1.0"
@@ -542,6 +542,71 @@
           }
         }
       }
+    },
+    "evidenceRegister": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "status",
+          "collectedAt",
+          "origin",
+          "reference",
+          "supports"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^EV-[0-9]{3,}$"
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "reported",
+              "verified"
+            ]
+          },
+          "collectedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "origin": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tool": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "toolVersion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reference": {
+            "type": "string",
+            "minLength": 1
+          },
+          "supports": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "pattern": "^(COM|P[0-9]{2})-[0-9]{3}$"
+            }
+          }
+        }
+      },
+      "description": "The evidence records this plan accepted, in the shape the input carries them. Every acceptedEvidence id on a prerequisite names a record here. It used to name nothing at all: the ids were resolved against sourceRegister, which is a list of citations and cannot hold them, so the plan's own exemplar could not validate against this schema."
     }
   },
   "allOf": [
@@ -613,6 +678,11 @@
               "required": [
                 "assumptions"
               ]
+            },
+            {
+              "required": [
+                "evidenceRegister"
+              ]
             }
           ]
         }
@@ -628,7 +698,8 @@
           "nextActions",
           "sourceRegister",
           "selectedMethodPath",
-          "appliedOverlays"
+          "appliedOverlays",
+          "evidenceRegister"
         ],
         "not": {
           "anyOf": [

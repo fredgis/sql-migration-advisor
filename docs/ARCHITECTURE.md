@@ -38,7 +38,7 @@ flowchart TD
 
     subgraph repo["The repository, which no session reads"]
       EN["tests/engine/evaluate.mjs<br/>a mirror of the rules, in JavaScript"]
-      GS["tests/golden-scenarios.json<br/>116 profiles and their expected answers"]
+      GS["tests/golden-scenarios.json<br/>117 profiles and their expected answers"]
       GA["tests/run-tests.mjs<br/>73 gates"]
       WK["tools/weekly-check/<br/>freshness and drift"]
     end
@@ -241,7 +241,7 @@ Stated plainly, because overselling is the failure mode this project keeps corre
 
 - **The mirror is not the model.** Nothing proves a session reaches the mirror's answer. Runtime evaluation across models is designed and unbuilt.
 - **The rules are prose, mirrored by hand.** A rule can be written correctly and mirrored wrongly, or written and never mirrored at all. Two such cases were found and fixed in v2.4, which is evidence the class exists, not evidence it is exhausted.
-- **116 scenarios sample an enormous input space.**
+- **117 scenarios sample an enormous input space.**
 - **A shared error scores perfectly.** The Windows Server 2012 floor was wrong for five versions and every test agreed with it, because the tests were written from the same mistaken document.
 - **The skill reads no artefact from your estate.** It opens no report, runs no tool, queries no service. `provisional` is the only status it can produce and `medium` the highest confidence, and no answer it gives replaces an assessment tool or an architect.
 

@@ -1135,7 +1135,7 @@
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -1439,7 +1439,9 @@
         "None"
       ],
       "downtime": "near-zero",
-      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "recovery_model": "FULL",
+      "log_chain_status": "CHAIN_INTACT"
     },
     "expect": {
       "primary_target": "SQL Server on Azure VM",
@@ -2675,7 +2677,9 @@
         "SQL Agent"
       ],
       "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
-      "source_permissions": "SYSADMIN_AVAILABLE"
+      "source_permissions": "SYSADMIN_AVAILABLE",
+      "recovery_model": "FULL",
+      "log_chain_status": "CHAIN_INTACT"
     },
     "expect": {
       "eligibility": {
@@ -2750,7 +2754,9 @@
       "feature_dependencies": [
         "linked servers"
       ],
-      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "recovery_model": "FULL",
+      "log_chain_status": "CHAIN_INTACT"
     },
     "expect": {
       "eligibility": {
@@ -3909,7 +3915,7 @@
       "method": "VMware HCX / vMotion",
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
-      "confidence": "medium",
+      "confidence": "low",
       "recommendationStatus": "provisional"
     },
     "assertRulePresent": [
@@ -4206,7 +4212,9 @@
       "feature_dependencies": [
         "Windows auth / DTC"
       ],
-      "size": "800 GB"
+      "size": "800 GB",
+      "recovery_model": "FULL",
+      "log_chain_status": "CHAIN_INTACT"
     },
     "auditRef": "A9-F02-1",
     "expect": {
@@ -4236,7 +4244,9 @@
       "feature_dependencies": [
         "Service Broker"
       ],
-      "size": "1 TB"
+      "size": "1 TB",
+      "recovery_model": "FULL",
+      "log_chain_status": "CHAIN_INTACT"
     },
     "auditRef": "A9-F02-2",
     "expect": {
@@ -4265,7 +4275,9 @@
       "feature_dependencies": [
         "Windows auth / DTC"
       ],
-      "size": "300 GB"
+      "size": "300 GB",
+      "recovery_model": "FULL",
+      "log_chain_status": "CHAIN_INTACT"
     },
     "auditRef": "A9-F02-3",
     "expect": {
@@ -4304,11 +4316,41 @@
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
       "recommendationStatus": "provisional",
-      "confidence": "medium"
+      "confidence": "low"
     },
     "assertRulePresent": [
       "VMware HCX",
       "Not available to this target"
     ]
+  },
+  {
+    "id": "simple-recovery-must-not-be-offered-online-dms",
+    "title": "A source in SIMPLE recovery with a broken chain is never offered online DMS",
+    "why": "DMS-MODE has required a FULL recovery model and an unbroken log chain since those became typed fields, and the engine read neither: online DMS came back available on the one state the rule exists to refuse. This scenario is the refusal, so removing the gate fails here rather than passing quietly.",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2008/2008 R2",
+      "management_model": "need OS / file-system / engine control",
+      "feature_dependencies": [
+        "None"
+      ],
+      "downtime": "near-zero",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "recovery_model": "SIMPLE",
+      "log_chain_status": "CHAIN_BROKEN"
+    },
+    "expect": {
+      "primary_target": "provisional shortlist only",
+      "method": "Assessment and dependency discovery first",
+      "targetAvailabilityDuringSync": "unknown_requires_assessment",
+      "businessCutoverDowntime": "unknown_requires_assessment",
+      "recommendationStatus": "shortlist",
+      "confidence": "medium"
+    },
+    "assertRulePresent": [
+      "DMS-MODE"
+    ],
+    "auditRef": "own-audit-2026-09-12 P1-1"
   }
 ]

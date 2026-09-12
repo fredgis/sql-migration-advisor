@@ -291,6 +291,20 @@ function applyFeatureEligibility(inputs, eligibility, out) {
 //
 // Anything the rules reached keeps what they decided. What is left is named for what it is: a
 // preference the profile states, or an absence of evidence.
+function applyAvsLicensing(inputs, eligibility, out) {
+  // AVS-LICENSING. The rule names target_region as an input and the engine never read it, so an
+  // AVS candidate was ranked without anyone asking where it would run, and the portable VCF
+  // licence never reached evidenceRequired.
+  if (eligibility.avs !== E.ELIGIBLE) return;
+  const region = String(inputs.target_region ?? '').trim();
+  // The licence and the host quota are regional, so the region is an input to this rule. An
+  // unstated one is an unknown to carry, not a reason to drop a family the profile asked for:
+  // demoting AVS here would answer a question nobody asked, which is the failure A1 warns about.
+  if (!region || /unknown|not sure/i.test(region)) {
+    addUnique(out.unknowns, 'AVS-LICENSING: host quota and licence terms are regional and no target region was stated.');
+  }
+  addUnique(out.evidenceRequired, 'Confirm the Azure VMware Solution host quota in the target region, and whether a portable VCF licence applies. Never report AVS as licensed without it.');
+}
 function nameTheFamiliesNobodyEvaluated(inputs, eligibility, out) {
   const model = String(inputs.management_model ?? '');
   const engine = String(inputs.kubernetes_model ?? '');
@@ -589,6 +603,22 @@ function methodGateFailure(inputs, target, method, out = {}) {
   const v = versionNumber(inputs.source_version);
   const kind = canonicalMethod(method);
   if (ACCEPTED_METHODS[target] && !ACCEPTED_METHODS[target].includes(kind)) return (UNSUPPORTED_METHOD_MESSAGE[target] || ((m) => `${m} is not a documented migration method for ${target}.`))(method);
+  // DMS-MODE. The rule index has named `recovery_model` and `log_chain_status` as inputs to this
+  // gate since they became typed fields, and nothing read them: online DMS came back `available`
+  // on a source in SIMPLE recovery with a broken chain, which is the one state the rule exists to
+  // refuse. Two fields wired through five surfaces and into no decision.
+  if (/\bdms\b|database migration service/i.test(String(method)) && !/offline/i.test(String(method))) {
+    const recovery = String(inputs.recovery_model ?? '');
+    const chain = String(inputs.log_chain_status ?? '');
+    const wantsOnline = !/offline/i.test(String(inputs.downtime ?? '')) || /online/i.test(String(method));
+    if (wantsOnline) {
+      if (/simple/i.test(recovery)) return 'Online DMS requires the FULL recovery model; the source is in SIMPLE, where no log chain exists to replay.';
+      if (/broken/i.test(chain)) return 'Online DMS requires an unbroken log backup chain; the chain is reported broken, so the delta cannot be replayed from the seed.';
+      if (!/full/i.test(recovery) || !/intact/i.test(chain)) {
+        return 'Online DMS is never assumed without a confirmed FULL recovery model and an unbroken log chain. Confirm both before selecting it.';
+      }
+    }
+  }
   if (target === 'Azure SQL Managed Instance') {
     if (kind === 'mi-link') {
       if (isManagedCloudSqlSource(inputs)) return 'MI Link is impossible from AWS RDS/GCP Cloud SQL because sysadmin/AG endpoints are unavailable.';
@@ -727,6 +757,18 @@ function buildMethodCandidates(inputs, eligibility, out) {
 // (standalone LRS is documented for SQL Server 2008-2022 while the Arc route lists 2025) and which
 // prerequisites travel with the recommendation. It was printed on the card and dropped from the
 // JSON, so an Arc-orchestrated restore was indistinguishable from a standalone one downstream.
+function applyCopilotAgent(inputs, out) {
+  // COPILOT-AGENT. Preview, and it reasons over an Azure Migrate assessment that already exists:
+  // it neither collects nor moves data, so it is never the migration control plane. The rule named
+  // preview_acceptable as its input and the engine never read it, which made the whole branch
+  // prose. Reading it is what lets the answer say why the option was or was not offered.
+  const accepted = /preview_accepted/i.test(String(inputs.preview_acceptable ?? ''));
+  const hasAssessment = /azure migrate/i.test(String(inputs.evidence?.assessmentArtefact ?? '')) 
+    || any(inputs.size, 'estate scale', 'business case', 'dependency map');
+  if (!hasAssessment) return;
+  if (accepted) addUnique(out.evidenceRequired, 'The Azure Copilot Migration Agent can reason over the existing Azure Migrate assessment for readiness, cost and landing-zone planning. It collects nothing and moves nothing, so it does not replace SQL assessment or method selection.');
+  else addUnique(out.assumptions ??= [], 'The Azure Copilot Migration Agent was not offered: it is in preview and this project accepts generally available services only. No GA control plane is affected.');
+}
 function chooseControlPlane(inputs, target, method) {
   const kind = canonicalMethod(method);
   if (kind === 'hcx') return 'vmware-hcx';
@@ -1126,6 +1168,7 @@ export function evaluate(rawInputs = {}) {
   applyClrPermission(inputs, out, eligibility);
   applyHyperscaleCeiling(inputs, eligibility, out);
   applyManagement(inputs, eligibility, out);
+  applyAvsLicensing(inputs, eligibility, out);
   nameTheFamiliesNobodyEvaluated(inputs, eligibility, out);
 
   const [primaryTarget, method] = chooseTarget(inputs, eligibility, out);
@@ -1171,6 +1214,7 @@ export function evaluate(rawInputs = {}) {
   if (out.method === 'MI Link' && eligibility.sql_vm !== E.UNSUPPORTED) out.alternativeTarget = 'SQL Server on Azure VM';
   if (out.primaryTarget === 'Azure SQL Database' && eligibility.sql_mi !== E.UNSUPPORTED) out.alternativeTarget = 'Azure SQL Managed Instance';
 
+  applyCopilotAgent(inputs, out);
   finalizeStatus(inputs, out, eligibility);
   // Invariant 15: the winner's candidate status and its gate trace answer the same question, so
   // they must agree. The gates run against the selected method and set methodGateStatus; the

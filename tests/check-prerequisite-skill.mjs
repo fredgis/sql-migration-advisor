@@ -507,6 +507,15 @@ for (const question of questions.questions) {
   check('exemplar-plan-is-valid', validate(good).length === 0,
     `the exemplar plan does not satisfy its own contract: ${validate(good).join('; ')}`);
 
+  // And against the schema, which nothing did. The exemplar was built to satisfy the validator and
+  // never run past the shape it claims to be: `acceptedEvidence` ids were resolved against
+  // `sourceRegister`, a list of citations that cannot hold them, so the one object the repository
+  // ships could not validate against the one schema it ships. Two checks that never met.
+  const { validateObjectAgainstSchema } = await import('./validate-scenarios.mjs');
+  const { errors } = validateObjectAgainstSchema(outputSchema, good, 'tests/plans/valid-p10.json');
+  check('exemplar-plan-matches-its-schema', errors.length === 0,
+    `the exemplar plan fails its own output schema in ${errors.length} place(s): ${errors.slice(0, 4).join('; ')}`);
+
   // Each mutation is one of the ways a plan was free to lie. The check is not that something
   // failed, but that the right thing failed: a validator that rejects everything proves nothing.
   const mutations = [
@@ -515,14 +524,15 @@ for (const question of questions.questions) {
     ['a rewritten row title', plan => { plan.prerequisites[0].title = 'Something else entirely'; }, 'in the knowledge base'],
     ['a reclassified obligation', plan => { plan.prerequisites[0].requirementType = 'recommended'; }, 'may not reclassify an obligation'],
     ['a blocker flipped to non-blocking', plan => { plan.prerequisites[0].blocking = false; }, 'flipping that bit is how a blocker stops counting'],
-    ['evidence naming no record', plan => { plan.prerequisites[0].acceptedEvidence = ['EV-999']; }, 'source register does not contain'],
+    ['evidence naming no record', plan => { plan.prerequisites[0].acceptedEvidence = ['EV-999']; }, 'evidence register does not contain'],
     ['the same evidence cited twice', plan => { const id = plan.prerequisites[0].acceptedEvidence[0]; plan.prerequisites[0].acceptedEvidence = [id, id]; }, 'lists the same evidence id twice'],
     ['a confirmation resting on nothing', plan => { plan.prerequisites[0].acceptedEvidence = []; }, 'that is a reported claim, not a confirmation'],
     ['a summary count that contradicts the rows', plan => { plan.summary.confirmed += 3; }, 'and the rows give'],
     ['ready declared over a missing blocker', plan => { plan.prerequisites[0].status = 'missing'; plan.overallStatus = 'ready'; }, 'the rows derive blocked'],
     ['a blocker missing from the blockers list', plan => { plan.prerequisites[0].status = 'missing'; plan.prerequisites[0].acceptedEvidence = []; }, 'the blockers list does not name it'],
     ['a target variant the path does not offer', plan => { plan.selectedPath.targetVariant = 'SQL Server in a container'; }, 'which it does not offer'],
-    ['a refusal carrying a plan field', plan => { plan.overallStatus = 'unresolved_path'; }, 'a refusal is not a plan with fields missing']
+    ['a refusal carrying a plan field', plan => { plan.overallStatus = 'unresolved_path'; }, 'a refusal is not a plan with fields missing'],
+    ['a dropped obligation', plan => { plan.prerequisites = plan.prerequisites.slice(0, 1); }, 'applies to this path and the plan does not carry it']
   ];
   for (const [label, mutate, expected] of mutations) {
     const plan = clone();

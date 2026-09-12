@@ -197,6 +197,12 @@
               "type": "boolean"
             }
           }
+        },
+        "recovery_model": {
+          "type": "string"
+        },
+        "log_chain_status": {
+          "type": "string"
         }
       }
     },
