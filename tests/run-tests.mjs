@@ -3677,6 +3677,38 @@ try {
     failures.length ? failures.slice(0, 8) : [`${replayed} scenario(s) replayed; ${checked} \`unsupported\` verdict(s), each with a recorded reason.`]);
 }
 
+// The fork is the copy a reviewer reads, and twice now it has been the one nobody compared. The
+// parity checker existed, but only port-to-fork.mjs ran it, so forgetting to port left no trace:
+// upstream was fixed, the fork was not, and a reviewer spent a round reporting defects against a
+// file that had been corrected days earlier. A check nothing runs is a check nobody has.
+//
+// This runs on every suite, against the fork checkout on this machine. It cannot run in CI, which
+// has no fork, so it says which path it looked for rather than passing quietly: a skip that reads
+// like a pass is the shape of every defect this repository keeps finding.
+{
+  const failures = [];
+  const notes = [];
+  const forkPath = process.env.SQL_ADVISOR_FORK || 'C:/Users/frgisber/repo-sql-migration-agent';
+  const forkSkill = path.join(forkPath, 'skills', 'recommend-migration-path', 'SKILL.md');
+  if (!fs.existsSync(forkSkill)) {
+    notes.push(`No fork checkout at ${forkPath}, so nothing was compared. Set SQL_ADVISOR_FORK to point at one; this check is the only thing that notices a fork left behind.`);
+  } else {
+    const kbLine = JSON.parse(readText('version.json')).knowledgeBase;
+    const forkText = fs.readFileSync(forkSkill, 'utf8');
+    if (!forkText.includes(kbLine)) failures.push(`the fork's advisor SKILL.md does not carry knowledge-base line ${kbLine}, so it is behind this repository; run node tools/port-to-fork.mjs`);
+    // Parity is the real staleness test: the derived sections are upstream's, so a fix made here
+    // and never ported shows up as a section that differs. That is the exact failure this gate
+    // exists for, and it was invisible because only the port itself ever ran this checker.
+    const parity = spawnSync(process.execPath, [rel(path.join('tools', 'check-fork-parity.mjs')), forkPath], { encoding: 'utf8' });
+    if (parity.status !== 0) {
+      for (const line of String(parity.stderr || parity.stdout).split(/\r?\n/).filter(Boolean).slice(0, 6)) failures.push(line.trim());
+    } else {
+      notes.push(`The fork at ${forkPath} carries knowledge-base line ${kbLine}, and its derived sections match this repository.`);
+    }
+  }
+  add('the-fork-carries-what-this-repository-ships', failures.length === 0, failures.length ? failures : notes);
+}
+
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };if (jsonMode) {
   process.stdout.write(JSON.stringify({ summary, results }, null, 2) + '\n');
 } else {

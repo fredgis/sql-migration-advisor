@@ -267,7 +267,13 @@ function applyFeatureEligibility(inputs, eligibility, out) {
     eligibility.sql_mi = E.REMEDIATE; eligibility.sql_db = E.UNSUPPORTED;
     out.exclusions.sql_db = 'Linked servers are a hard Azure SQL Database blocker unless refactored.';
   }
-  if (dep(inputs, 'SQL Agent')) { eligibility.sql_mi = E.ELIGIBLE; eligibility.sql_db = E.REMEDIATE; }
+  // A later rule may not upgrade a family an earlier one refused. SQL Agent used to set SQL
+  // Database to remediation unconditionally, which silently undid the linked-server refusal two
+  // lines above it, so a profile with both came out as though only the milder one had been stated.
+  if (dep(inputs, 'SQL Agent')) {
+    eligibility.sql_mi = E.ELIGIBLE;
+    if (eligibility.sql_db !== E.UNSUPPORTED) eligibility.sql_db = E.REMEDIATE;
+  }
   if (dep(inputs, 'SQL CLR') || dep(inputs, 'Service Broker') || dep(inputs, 'cross-DB')) {
     eligibility.sql_mi = E.REMEDIATE; eligibility.sql_db = E.UNSUPPORTED;
     // This line refused a family and said nothing about why, so the trace carried a verdict with

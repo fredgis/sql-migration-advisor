@@ -685,7 +685,6 @@
                   "decisionRulesVersion",
                   "recommendationStatus",
                   "confidence",
-                  "controlPlane",
                   "evaluatedAt"
                 ]
               }
@@ -792,6 +791,49 @@
               },
               "blockingUnknown": {
                 "minimum": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "metadata": {
+            "properties": {
+              "mode": {
+                "const": "advisor_handoff"
+              },
+              "sourceAdvisor": {
+                "properties": {
+                  "recommendationStatus": {
+                    "const": "provisional"
+                  }
+                },
+                "required": [
+                  "recommendationStatus"
+                ]
+              }
+            },
+            "required": [
+              "mode",
+              "sourceAdvisor"
+            ]
+          }
+        },
+        "required": [
+          "metadata"
+        ]
+      },
+      "then": {
+        "properties": {
+          "metadata": {
+            "properties": {
+              "sourceAdvisor": {
+                "required": [
+                  "controlPlane"
+                ]
               }
             }
           }

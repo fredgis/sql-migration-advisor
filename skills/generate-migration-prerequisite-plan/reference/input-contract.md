@@ -140,7 +140,10 @@ reference or hash. A self-declared Advisor evidence flag remains a claim until t
     "controlPlane": "standalone",
     "methodGateStatus": "passed",
     "recommendationStatus": "provisional",
-    "confidence": "medium"
+    "confidence": "medium",
+    "knowledgeBaseVersion": "v3.13",
+    "decisionRulesVersion": "v3.13",
+    "evaluatedAt": "2026-09-12T09:00:00Z"
   },
   "standaloneSelection": null,
   "knownFacts": {},
