@@ -63,7 +63,11 @@ eligibility table the engine just produced. The full set of invariants, and the 
 - The `primaryTarget` must be `eligible` or `eligible_with_remediation`. Never recommend a target that the
   same run marked `unsupported`.
 - The chosen `method` must be viable for that target *and* satisfy its own gates (source version range,
-  ports, source type, capacity). A method whose gates fail is not selectable, even as a fallback.
+  ports, source type, capacity, recovery model, log chain). A method whose gates fail is not selectable,
+  even as a fallback. **Read the gates of the method you fall back to, not only of the one you refused**:
+  the prerequisite catalog states them per path, and a fallback inherits none of the checks the refused
+  method passed. Refusing online DMS on a source in `SIMPLE` and then offering log shipping is the case
+  this sentence exists for, because `P03-001` refuses `SIMPLE` too.
 - If no target survives with a viable method, do **not** invent one: return a **provisional shortlist**
   with `recommendationStatus: provisional`, the reason each candidate was excluded, and the assessment to
   run next.

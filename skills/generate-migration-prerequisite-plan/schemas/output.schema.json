@@ -355,8 +355,31 @@
     },
     "questionsAsked": {
       "type": "array",
+      "description": "The interview questions this plan rests on. Typed, because it used to be `{type: object}`: the validator could read whether a question fed a row but never what the answer returned, so an `UNKNOWN` answer sat under a `confirmed` row without contradiction. `id` names a question in questions.json and `answer` is one of the keys in that question's effects table, which is what says the status the answer produces.",
       "items": {
-        "type": "object"
+        "type": "object",
+        "required": [
+          "id",
+          "answer"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "answer": {
+            "type": "string",
+            "minLength": 1
+          },
+          "consumedBy": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(COM|P[0-9]{2})-[0-9]{3}$"
+            }
+          }
+        }
       }
     },
     "nextActions": {
