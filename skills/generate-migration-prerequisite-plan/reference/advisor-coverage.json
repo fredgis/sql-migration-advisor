@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "Disposition of every supported cell in the Advisor method x target matrix. Section 8 of docs/sql-server-to-azure-migration.md marks each supported (method, target) cell.md marks 51 (method, target) cells as supported. Each one must appear here exactly once with a status, so that a route the Advisor can recommend can never silently lack prerequisite coverage. Enforced by tests/check-prerequisite-skill.mjs. Each cell also carries an advisorRole that separates \"supported\" from \"recommendable\": tests/run-tests.mjs requires every primary and secondary cell to appear in the matching target sub-section of reference/decision-rules.md B3.",
+  "description": "Disposition of every supported cell in the Advisor method x target matrix, which the bundled knowledge base sets out in its summary matrix section. 58 cells are listed: 51 are served by one or more prerequisite paths in this catalog and 7 are deliberately out of scope with a stated reason. Each supported cell must appear here exactly once, so a route the Advisor can recommend can never silently lack prerequisite coverage. This used to name an upstream document path and a test file, neither of which exists wherever the skill is installed, and a bad splice had left the count stranded inside a broken clause.",
   "sourceMatrix": {
-    "document": "docs/sql-server-to-azure-migration.md",
-    "section": "8. Summary matrix — method / tool × target",
-    "supportedMarker": "✅"
+    "document": "reference/knowledge-base.md",
+    "section": "Summary matrix — method / tool x target",
+    "supportedMarker": "OK"
   },
   "statuses": {
     "path": "Covered by one or more prerequisite paths in this catalog.",
@@ -593,7 +593,7 @@
     }
   ],
   "advisorRoles": {
-    "primary": "May be the single recommended method for this target. Every primary cell must appear under the matching target sub-section of decision-rules.md B3, so the model can weigh it.",
+    "primary": "May be the single recommended method for this target. Every primary cell is expected under the matching target sub-section of the bundled decision rules, so the model can weigh it.",
     "secondary": "A legitimate alternative that may appear in a shortlist but is rarely the whole answer. Must also appear under the matching B3 sub-section.",
     "documentary": "Supported and documented, but never a migration recommendation on its own. Deliberately absent from B3."
   }
