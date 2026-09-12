@@ -215,7 +215,7 @@ Stating a single budget made these compete: an implementation that spent its one
 
 **Fetch the live document only when the user asks for it.** Say that it is being fetched, and read only:
 
-- `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/v3.14.1/docs/sql-server-to-azure-migration.md`
+- `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/v3.14.2/docs/sql-server-to-azure-migration.md`
 
 That URL is pinned to a release tag, not to `main`. A mutable branch means the facts can change under the reader between two sessions with no version to cite. Never substitute a different URL, and never rewrite the path: the raw host serves `…/<tag>/<path>`, and inserting `blob` returns 404. If the tagged document is unreachable, fall back to the bundled copy and say the fallback is what answered.
 
@@ -371,10 +371,6 @@ two states while the gate four lines above it argued for three.
 List them all, including the ones that lost, and say why each lost. The recommendation is a ranking, not a revelation: a reader who can see only the winner cannot tell whether the others were weighed or never considered. Mark the recommended one, and keep the losing lines to one sentence.
 
 The reader may take any method marked `available` instead of the recommended one, and hand it to the prerequisite-plan skill. A method sitting at `unknown_requires_assessment` is not offered that way until the fact it names is confirmed, because handing it over presents an unchecked prerequisite as a settled one. Say so once, after the list, when more than one is available.
-
-List them all, including the ones that lost, and say why each lost. The recommendation is a ranking, not a revelation: a reader who can see only the winner cannot tell whether the others were weighed or never considered. Mark the recommended one, and keep the losing lines to one sentence.
-
-The reader may take any method marked `available` instead of the recommended one, and hand it to the prerequisite-plan skill. An `unverified` method is not offered that way until the fact it names is confirmed, because handing it over presents an unchecked prerequisite as a settled one. Say so once, after the list, when more than one is available.
 
 **🚧 Blockers & required evidence**
 - **`<blocker or unknown>`** → `<remediation or assessment>`
