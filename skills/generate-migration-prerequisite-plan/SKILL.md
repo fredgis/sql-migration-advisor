@@ -234,7 +234,7 @@ to establish. Each has a defined response, and none of them is a silent default.
 | Situation | Response |
 | --- | --- |
 | **A contract file is missing or unparseable** | Stop before producing a plan. Return a policy-integrity warning naming the file. Never reconstruct it from memory. |
-| **A version line disagrees** — a reference file, a schema or the KB declares a different schema/KB line | Stop. Report both versions. A plan built from mismatched policy is worse than none, because it looks authoritative. |
+| **A version line disagrees** — a reference file, a schema or the KB declares a different schema/KB line | Stop. Report both versions. A plan built from mismatched policy is worse than none, because it looks authoritative. Only a declared **schema line** or **knowledge base line** is compared. A file carrying its own release history under its own key, such as `mappingsVersion` in `advisor-fact-mappings.json`, is declaring nothing about those two lines and is not a disagreement. That distinction is the difference between an integrity check and a file that halts a run for being healthy. |
 | **Target and method resolve to no path** | Return the closest catalog labels and say what would separate them. Create no plan. |
 | **Target and method resolve to several paths** | Ask the catalog disambiguation field for that path, and only that field. Never resolve by inference. |
 | **The user declines a question, or answers ambiguously** | Record `UNKNOWN`, state which prerequisites remain unresolved, and continue. Never re-ask, never guess. |
@@ -247,28 +247,49 @@ allowed to return a plan that overstates what is known.
 
 ## Examples
 
-A handoff from `recommend-migration-path`, on a sanitized profile:
+A handoff from `recommend-migration-path`, on a sanitized profile. The plan carries **19 rows**: the
+12 common prerequisites every path applies, plus the 7 that `P10` adds. An earlier version of this
+example showed the 7 path rows alone, which understated the blocking count on a real plan by more
+than half and left out the columns the template requires.
 
 ```text
 Prerequisite knowledge base v1.8 (bundled) · schema 1.0
 Path P10 — Azure SQL Managed Instance: Native Backup/Restore
+Target family: Azure SQL Managed Instance · Platform overlays: none
 Inherited from the Advisor: target, method, offline cutover tolerance
 
-[the two questions that path leaves open are asked, one at a time]
+[the questions the common set and the path leave open are asked, one at a time]
 
-Readiness: blocked — 1 blocking prerequisite missing, 1 unknown, 5 confirmed
+Readiness: blocked
+  1 blocking prerequisite missing · 2 blocking unknown · 2 blocking reported · 12 confirmed
 
-  Backup       P10-002  Valid .bak set with verification and a restore
-                        rehearsal                                      missing    blocking
-  Storage      P10-004  SAS/credential, firewall and HTTPS access
-                        proven from the MI restore operation           unknown    blocking
-  Capacity     P10-003  MI tier, storage and restore concurrency for
-                        the whole wave                                 confirmed
+Area     Confirmed  Reported  Missing  Unknown  Not applicable
+Common           8         2        0        1               1
+P10              4         0        1        1               1
+Total           12         2        1        2               2
+
+Area    Prerequisite                              Status     Blocking  Owner
+P10     P10-002  Valid .bak set with checksum,    ❌ missing  yes       DBA
+                 verification and a rehearsal
+P10     P10-004  Blob storage reachable and       ❓ unknown  yes       Storage and
+                 proven from the MI restore                            network owners
+Common  COM-005  End-to-end routing, DNS and      ❓ unknown  yes       Network owner
+                 firewall rules validated
+Common  COM-007  Performance baseline captured    🗣 reported yes       Performance owner
+Common  COM-009  Application connection inventory 🗣 reported yes       Application owner
+Common  COM-006  Encryption and key inventory     ➖ n/a      yes       Security and DBA
+P10     P10-005  Source TDE certificate uploaded  ➖ n/a      yes       Security owner
+        [the 12 confirmed rows follow, each with its evidence record and source]
 
 Blocking actions
   1. Produce and verify the backup set (DBA) — evidence: backup headers,
      verification output and a rehearsal result.
   2. Prove the storage path from the target (storage and network owners).
+  3. Validate routing, DNS and firewall rules end to end (network owner).
+
+Reported, not confirmed
+  COM-007 and COM-009 rest on stated facts this skill cannot check. They hold the
+  plan at ready_with_conditions even once the blockers clear.
 
 Also carried: P10-006 — restoring a user database carries no logins, SIDs, Agent
 jobs or linked servers. Script them before cutover.
@@ -277,3 +298,7 @@ jobs or linked servers. Script them before cutover.
 The verdict is `blocked` rather than `ready with actions`, because an applicable required
 prerequisite is unmet. The distinction is the point of the skill: a plan that reads `ready` while a
 blocker stands is the failure this document exists to prevent.
+
+Two rows are `not applicable` because the source uses no encryption at rest, so the TDE prerequisite
+and its certificate step do not apply. They are shown rather than dropped: a reader who knows the
+common set has twelve rows needs to see what happened to each one.
