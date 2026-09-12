@@ -813,6 +813,25 @@ function finalizeStatus(inputs, out, eligibility) {
   // assurance. Those booleans are now recorded as claims to verify elsewhere.
   out.recommendationStatus = 'provisional';
   out.confidence = hasUnknown ? 'low' : 'medium';
+  // Section B1: never invent a winner. The refusal used to live in the target field as the phrase
+  // "provisional shortlist only", which validated because that field took any string, so a reader
+  // got something shaped like a target and resolvable as nothing. It is a status now, and the
+  // families still standing are named with what would separate them.
+  if (out.primaryTarget === 'provisional shortlist only') {
+    out.recommendationStatus = 'shortlist';
+    out.shortlist = TARGETS
+      .filter((family) => eligibility[family] === E.ELIGIBLE || eligibility[family] === E.UNKNOWN || eligibility[family] === E.REMEDIATE)
+      .map((family) => ({
+        target: TARGET_LABELS[family],
+        whyItStands: eligibility[family] === E.UNKNOWN
+          ? 'Still standing because nothing has ruled it out, not because anything has ruled it in.'
+          : `Phase A leaves it ${eligibility[family]}.`,
+        whatWouldSeparateIt: out.unknowns[0] || 'Assessment and dependency discovery.'
+      }));
+    // A shortlist of one is a recommendation that will not say its own name, so it is not a
+    // shortlist: the second entry is the alternative the trace already carries.
+    if (out.shortlist.length < 2) out.shortlist = null;
+  }
   if (hasValidatedEvidence(inputs)) {
     out.evidenceClaimed = true;
     addUnique(out.evidenceRequired, 'Attach the assessment artefacts to the architect sign-off: type, URI or hash, tool and version, date, target region and approver. This skill records the claim, it does not verify it.');

@@ -132,7 +132,7 @@
       "method": "Confirm a Fabric ingestion path first; Migration Assistant Preview gates apply only if that path is chosen",
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
-      "recommendationStatus": "provisional",
+      "recommendationStatus": "shortlist",
       "confidence": "low",
       "mustNotRecommend": [
         "generic SQL DB before Fabric"
@@ -204,7 +204,7 @@
       "method": "Assessment and dependency discovery first",
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
-      "recommendationStatus": "provisional",
+      "recommendationStatus": "shortlist",
       "confidence": "low",
       "mustNotRecommend": [
         "validated recommendation"
@@ -312,7 +312,7 @@
       "method": "Assessment and dependency discovery first",
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
-      "recommendationStatus": "provisional",
+      "recommendationStatus": "shortlist",
       "confidence": "low",
       "mustNotRecommend": [
         "validated recommendation"
@@ -613,7 +613,7 @@
       "method": "Assessment and dependency discovery first",
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
-      "recommendationStatus": "provisional",
+      "recommendationStatus": "shortlist",
       "confidence": "low",
       "mustNotRecommend": []
     },
@@ -647,7 +647,7 @@
       "method": "Assessment and dependency discovery first",
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
-      "recommendationStatus": "provisional",
+      "recommendationStatus": "shortlist",
       "confidence": "low",
       "mustNotRecommend": []
     },
@@ -1100,7 +1100,7 @@
       "method": "Clarify Kubernetes engine model first",
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
-      "recommendationStatus": "provisional",
+      "recommendationStatus": "shortlist",
       "confidence": "low",
       "mustNotRecommend": []
     },
@@ -1560,7 +1560,7 @@
       "method": "Azure Migrate appliance/import/Arc discovery",
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
-      "recommendationStatus": "provisional",
+      "recommendationStatus": "shortlist",
       "confidence": "medium",
       "mustNotRecommend": []
     },
@@ -2140,7 +2140,7 @@
       "method": "Confirm a Fabric ingestion path first; Migration Assistant Preview gates apply only if that path is chosen",
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
-      "recommendationStatus": "provisional",
+      "recommendationStatus": "shortlist",
       "confidence": "low",
       "mustNotRecommend": [
         "validated recommendation",
@@ -2953,7 +2953,7 @@
       "method": "Clarify Kubernetes engine model first",
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
-      "recommendationStatus": "provisional",
+      "recommendationStatus": "shortlist",
       "confidence": "low"
     },
     "assertRulePresent": [
@@ -3557,7 +3557,7 @@
       "eligibility": {
         "sql_vm": "eligible"
       },
-      "recommendationStatus": "provisional",
+      "recommendationStatus": "shortlist",
       "primary_target": "provisional shortlist only",
       "method": "Assessment and dependency discovery first",
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
@@ -3596,7 +3596,7 @@
       "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
-      "recommendationStatus": "provisional",
+      "recommendationStatus": "shortlist",
       "primary_target": "provisional shortlist only",
       "method": "Assessment and dependency discovery first",
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
@@ -3940,7 +3940,7 @@
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
       "confidence": "low",
-      "recommendationStatus": "provisional"
+      "recommendationStatus": "shortlist"
     },
     "assertRulePresent": [
       "Fabric"
@@ -4033,7 +4033,7 @@
       "method": "Assessment and dependency discovery first",
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
-      "recommendationStatus": "provisional",
+      "recommendationStatus": "shortlist",
       "confidence": "low",
       "methodGateStatus": "unknown_requires_assessment"
     },
@@ -4068,7 +4068,7 @@
       "method": "Assessment and dependency discovery first",
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
-      "recommendationStatus": "provisional",
+      "recommendationStatus": "shortlist",
       "confidence": "low",
       "methodGateStatus": "unknown_requires_assessment"
     },

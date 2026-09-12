@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Knowledge base v3.11" src="https://img.shields.io/badge/knowledge%20base-v3.11-2b8a3e">
+  <img alt="Knowledge base v3.12" src="https://img.shields.io/badge/knowledge%20base-v3.12-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml/badge.svg"></a>
 </p>
@@ -60,12 +60,12 @@ version loaded and where it came from, so the advice is traceable.
 
 ## Why it is trustworthy
 
-- **Verified knowledge** — the v3.11 knowledge base is source-backed and corrected against Microsoft Learn.
+- **Verified knowledge** — the v3.12 knowledge base is source-backed and corrected against Microsoft Learn.
 - **Rules under regression test** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers. An executable mirror in `tests/` replays 116 scenarios through those rules on every commit. The mirror is not what runs in your session: an agent reads the rules and applies them, so this is a tested policy rather than a byte-identical guarantee.
 - **Every decision is addressable** — the card cites a rule ID for each verdict, and [`reference/decision-rules.md`](reference/decision-rules.md) ends with an index of all 31. Look one up, read what it consumes and how it treats an unknown, and argue with it.
 - **You see what lost, not just what won** — the card lists every method the knowledge base supports for the chosen target, each with a status and a reason. A method that is never enumerated is never rejected either, so its absence cannot be argued with; that is how Azure DMS stayed out of the Managed Instance guidance while the matrix declared it supported. Any candidate marked `available` can be handed to the prerequisite companion instead of the recommended one.
 - **Explicit uncertainty** — every recommendation is `provisional`, and `medium` is the confidence ceiling. Nothing higher is reachable from an interview, because the skill reads no artefact from your estate. It carries assumptions, unknowns, blockers and the evidence a tool would have to produce.
-- **It checks its own answer** — before the card is shown, the skill re-reads its draft against the 15 invariants in [`reference/output-contract.md`](reference/output-contract.md). One of them: no eligibility claim may rest on a field you never answered. A failed invariant is shown to you, never silently repaired.
+- **It checks its own answer** — before the card is shown, the skill re-reads its draft against the 16 invariants in [`reference/output-contract.md`](reference/output-contract.md). One of them: no eligibility claim may rest on a field you never answered. A failed invariant is shown to you, never silently repaired.
 - **Freshness gates** — version bumps require substantive diffs; link checks classify bot-blocked pages; high-risk claims are tracked in [`reference/claims-registry.json`](reference/claims-registry.json).
 - **Regression protection** — [`tests/`](tests/) holds 116 golden scenarios and 71 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
 
@@ -77,20 +77,20 @@ The knowledge base is quoted by a skill, three manifests, a PDF, a poster, this 
 
 | Surface | Version | Up to date |
 | --- | --- | --- |
-| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v3.11` | ✅ |
-| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v3.11` | ✅ |
-| `SKILL.md` and its pinned fetch URL | `v3.11.5` | ✅ |
-| `version.json`, `plugin.json`, `marketplace.json` | `v3.11.5` | ✅ |
-| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v3.11` | ✅ |
-| Poster caption and PNG | `v3.11` | ✅ |
-| This README's badge and PDF sentence | `v3.11` | ✅ |
-| **This table** | `v3.11` | ✅ |
+| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v3.12` | ✅ |
+| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v3.12` | ✅ |
+| `SKILL.md` and its pinned fetch URL | `v3.12.0` | ✅ |
+| `version.json`, `plugin.json`, `marketplace.json` | `v3.12.0` | ✅ |
+| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v3.12` | ✅ |
+| Poster caption and PNG | `v3.12` | ✅ |
+| This README's badge and PDF sentence | `v3.12` | ✅ |
+| **This table** | `v3.12` | ✅ |
 | The six `blume/public/*.svg` mirrors | — | ✅ |
 | [`blume/docs/index.mdx`](blume/docs/index.mdx) — the docs site | — | ✅ |
-| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v3.11.5` | ✅ |
-| [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | `v3.11.5` | ✅ |
+| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v3.12.0` | ✅ |
+| [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | `v3.12.0` | ✅ |
 | `howto/*.html` | — | ✅ |
-| The developer pitch's sample failure block | `v3.11` | ✅ |
+| The developer pitch's sample failure block | `v3.12` | ✅ |
 
 <!-- surfaces:end -->
 
@@ -118,7 +118,7 @@ status line. See [§ The prerequisite companion](#the-prerequisite-companion) an
 | [`skills/recommend-migration-path/schemas/`](skills/recommend-migration-path/schemas/) | **New.** The two contracts above in machine-checkable form: the normalized profile the skill evaluates, and the recommendation object the prerequisite companion consumes. A handoff described only in prose cannot fail a test. |
 | [`reference/migration-methods.json`](reference/migration-methods.json) | **New in v3.** What each of the 26 routes *is*: a migration, an assessment, a transport, an overlay, or out of scope. A transport moves rows and carries no cutover, so it can never be recommended as a migration method. |
 | [`skills/generate-migration-prerequisite-plan/reference/advisor-fact-mappings.json`](skills/generate-migration-prerequisite-plan/reference/advisor-fact-mappings.json) | **New in v3.** The crosswalk from advisor fields to prerequisite fields, including the four facts that deliberately *cannot* convert — a size band is not a measurement, and a mentioned dependency is not an inventory. |
-| [`reference/output-contract.md`](reference/output-contract.md) | What an answer must look like, and the 15 invariants the skill checks against its own draft before showing it. |
+| [`reference/output-contract.md`](reference/output-contract.md) | What an answer must look like, and the 16 invariants the skill checks against its own draft before showing it. |
 | [`reference/decision-rules.md`](reference/decision-rules.md) | The decision policy: Phase A eligibility filter, Phase B ordered ranking and tier selection, and the index of all 31 addressable rules. |
 | [`examples/sample-recommendation.md`](examples/sample-recommendation.md) | A worked end-to-end example (SQL 2014 → Azure SQL MI via LRS). |
 | [`docs/sql-server-to-azure-migration.md`](docs/sql-server-to-azure-migration.md) | The knowledge base — every target family, method, tool, and commercial lever, with Microsoft Learn links. |
@@ -457,7 +457,7 @@ Mermaid decision diagrams. The `SKILL.md` mirrors its AI Migration Agent I/O con
 
 The same knowledge base ships as a polished, branded PDF —
 [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (27 pages,
-v3.11, September 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
+v3.12, September 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
 
@@ -523,6 +523,7 @@ base and this README on the same version. Last verified: August 2026.
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| v3.12.0 | 2026-09-12 | **The last finding of the round, and the one that needed a decision rather than a fix: a tie could only be expressed by inventing a winner.** Section B1 has said *never invent a winner* since the rules were written, and the engine already refused in fourteen scenarios. But `recommendation` was required and `recommendation.target` was `{type: string}`, so the refusal was carried as the phrase `provisional shortlist only` sitting where a target name belongs. It validated. A consumer reading that field got something shaped like a target, resolvable to no catalog path, with `method` and `controlPlane` filled in beside it although nothing had been chosen. **`recommendationStatus` gains `shortlist`**: when it is set, `recommendation` is absent and `shortlist[]` carries at least two families, each with why it stands and **what would separate it** — a refusal with no route out of it leaves a reader worse off than a guess. `recommendation.target` is now an enumeration of the eight families, which is what closes the door: while it took any string, another sentence would have found its way in. The shape mirrors `unresolved_path` on the planner side, so both ends of the handoff refuse the same way, and a shortlist arriving at the planner is answered with `unresolved_path` rather than by picking one. Three checks hold it: a shortlist must say its own name, must name at least two families, and every entry must state what would settle it. |
 | v3.11.5 | 2026-09-12 | **The worked example is produced now, not written, and making it so found two engine defects.** It echoed **8 of the 37 profile fields**, so a reader could not see what the interview establishes; it rendered **no method candidates** in the card while its own JSON carried six; every candidate had an **empty `prerequisitePaths` array**, which is the field the handoff contract reads when a customer prefers an alternative; and it named `ssms-migration-component` as the control plane for a standalone Log Replay Service run. The profile now carries every field the two interview tables supply, and the engine the golden scenarios run against derives the recommendation, the tier, the cutover class and the candidates from it. **Two defects surfaced by that**: the candidate list is built before the method gates run and never heard their answer, so the winner could read `available` in the shortlist while the trace beside it read `unknown_requires_assessment` for the same unproven field — invariant 15 says those two answer the same question. And the check enforcing that invariant still demanded `available` outright, the rule the contract had already replaced because a method that is viable, recommended and waiting on one unmeasured field had no honest shape. Both are fixed, and this example shows exactly that case: the Log Replay Service is recommended and held, because nobody has estimated how long 1.2 TB takes inside its thirty-day window. A gate now compares the two renderings field by field, scoped to the table that renders the candidates rather than to the page, since searching the whole page finds `DMS` inside `DMS-MODE` and passes on a card listing nothing. 70 gates to 71. |
 | v3.11.4 | 2026-09-12 | **Two small ones, and the second was a claim about the output that nothing checked.** The worked example planned `P10` and counted its seven path rows alone, leaving out all twelve common prerequisites: a third of the blocking surface a real plan carries, shown as the whole of it, teaching a reader to expect a shorter plan than the skill produces. It also omitted the `Reported` column the template mandates, which is the column that separates a stated fact from a verified one. The example now shows the nineteen rows a `P10` plan actually carries, with per-area counts that sum to their own totals and totals that sum to the plan. Four checks hold it there, including one that reads the path the example names and counts that path's rows in the knowledge base, so the example cannot drift as the knowledge base grows. Separately, `advisor-fact-mappings.json` declared `version`, and the skill's error table tells the agent to stop when a bundle file declares a schema or knowledge base line that disagrees. A bare `version` reads as exactly that claim, so a crosswalk carrying its own release history could halt a run for disagreeing with lines it was never declaring — and the v3.10.1 bump from `v1.0` to `v1.1` had moved it further from both. It publishes `mappingsVersion` now, the error rule says which declarations it compares, and no bundle file may carry a bare `version` that is neither coordinated line. |
 | v3.11.3 | 2026-09-12 | **Five findings on the handoff, and they are one: the two ends describe the same provenance and did not resemble each other.** The plan must echo six `sourceAdvisor` fields in `advisor_handoff` mode. The regression mirror declared three of them nowhere, so a handoff that validated on the way in produced a plan that could not validate on the way out unless someone invented the knowledge base line, the rules line and the evaluation date. A consumer requirement that no accepted producer shape can satisfy is not a requirement, it is a trap, and the fix belongs on the producing side because those facts exist. Both input shapes now carry what the Advisor's own schema already requires. On the other side, the plan retyped that provenance as free strings, so it accepted a recommendation state and a control plane the Advisor cannot emit, and it was closed without `sourceCommit`, dropping the one identifier that pins a recommendation to an exact tree. It reuses the producer vocabularies now and keeps the commit. The two input branches sat under `anyOf` with neither one closed, so a mixed object satisfied the public branch while carrying mirror fields and a value that branch would have refused arrived through a key it never declared; they are closed, exclusive and disjoint. `methodCandidates` was declared by neither shape although the contract resolves a preferred candidate's `prerequisitePaths`, and `inheritedAdvisorFacts` was an untyped array that an empty list satisfied. And the `standaloneSelection.controlPlane` description still read *absent means standalone*, the exact reading the contract says the rule was written to prevent, on a field the schema did not require either. **The gate that holds all of it**: no field the plan must echo may be absent from any shape a handoff can arrive in. |
