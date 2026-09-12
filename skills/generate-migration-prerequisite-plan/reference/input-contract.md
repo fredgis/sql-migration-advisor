@@ -124,6 +124,21 @@ reference or hash. A self-declared Advisor evidence flag remains a claim until t
 `requestedOutput` is `markdown`, `json`, or `both`. Markdown and JSON render the same normalized
 decision state; neither format may add an inference missing from the other.
 
+`knownFacts` is keyed by question id, and every value is checked against the vocabulary or the type
+that question accepts. The mapping is derived from `questions.json`, not written twice: an
+enumerated question types as its own values, a count as an integer of at least one, a size as a
+number of at least zero, and everything else as a string with something in it. Unrecognised fields
+are refused outright.
+
+It used to be one open union of the readiness enum, any non-empty string, any number, any integer,
+a boolean and any object. `tde_status: true`, `database_count: -5` and
+`mi_link_ports_status: "BANANA"` all validated, and a value that validates is a typed fact, so any
+of them could confirm a prerequisite and clear a blocker on its way to a go decision.
+
+**Omitting a key and answering `UNKNOWN` are different statements.** Absence means the question was
+never asked; `UNKNOWN` means it was asked and not answered. Every enumerated field carries an
+`UNKNOWN` value so the two stay distinguishable, and a check refuses any that does not.
+
 ## 5. Canonical facts
 
 The authoritative field-to-path mapping is in `path-catalog.json`. Ask a field only when it is
