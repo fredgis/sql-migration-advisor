@@ -40,7 +40,9 @@
       "method": "Distributed Availability Group",
       "advisorAliases": [
         "Distributed AG",
-        "Distributed AG or Always On AG"
+        "Distributed AG or Always On AG",
+        "Distributed / Always On AG",
+        "Distributed availability group (DAG)"
       ],
       "supportStatus": "supported",
       "disambiguation": {
@@ -74,7 +76,8 @@
       "method": "Always On Availability Group",
       "advisorAliases": [
         "Always On AG",
-        "Distributed AG or Always On AG"
+        "Distributed AG or Always On AG",
+        "Distributed / Always On AG"
       ],
       "supportStatus": "supported",
       "disambiguation": {
@@ -195,12 +198,18 @@
       "advisorAliases": [
         "Azure Migrate",
         "Azure Migrate replication",
-        "Azure Migrate lift and shift"
+        "Azure Migrate lift and shift",
+        "Azure Migrate (lift & shift)"
       ],
       "supportStatus": "supported",
       "standaloneOnly": true,
       "standaloneReason": "Azure Migrate replication (lift and shift) is a VM-level online replication method documented outside section 8; only Azure Migrate assessment is promoted into that summary matrix, so replication itself carries no matrix cell to reference.",
+      "disambiguation": {
+        "field": "azure_migrate_intent",
+        "equals": "REPLICATE"
+      },
       "questionFields": [
+        "azure_migrate_intent",
         "azure_migrate_platform",
         "azure_migrate_appliance_status",
         "source_os",
@@ -287,7 +296,8 @@
       "method": "Log Replay Service",
       "advisorAliases": [
         "LRS",
-        "Log Replay Service"
+        "Log Replay Service",
+        "Log Replay Service (LRS)"
       ],
       "supportStatus": "supported",
       "questionFields": [
@@ -318,7 +328,8 @@
       ],
       "method": "Native backup/restore",
       "advisorAliases": [
-        "Native backup/restore"
+        "Native backup/restore",
+        "Native backup & restore (.bak)"
       ],
       "supportStatus": "supported",
       "questionFields": [
@@ -383,7 +394,13 @@
       "method": "Modern DMS offline",
       "advisorAliases": [
         "modern DMS (offline)",
-        "Modern DMS offline"
+        "Modern DMS offline",
+        "DMS",
+        "Modern DMS",
+        "Azure Database Migration Service",
+        "DMS offline",
+        "Azure DMS (offline)",
+        "Azure DMS offline"
       ],
       "supportStatus": "supported",
       "questionFields": [
@@ -571,7 +588,8 @@
       ],
       "method": "Native Backup/Restore after Endpoint Availability",
       "advisorAliases": [
-        "Native backup/restore after endpoint is available"
+        "Native backup/restore after endpoint is available",
+        "Native backup/restore"
       ],
       "supportStatus": "supported",
       "disambiguation": {
@@ -604,7 +622,9 @@
       ],
       "method": "Backup/Restore through Mounted Volume",
       "advisorAliases": [
-        "Backup/restore via mounted volume"
+        "Backup/restore via mounted volume",
+        "Native backup/restore",
+        "Native backup/restore (.bak)"
       ],
       "supportStatus": "supported",
       "questionFields": [
@@ -939,7 +959,12 @@
         "Azure Migrate assessment"
       ],
       "supportStatus": "supported",
+      "disambiguation": {
+        "field": "azure_migrate_intent",
+        "equals": "ASSESS"
+      },
       "questionFields": [
+        "azure_migrate_intent",
         "source_location",
         "source_version",
         "source_edition",
