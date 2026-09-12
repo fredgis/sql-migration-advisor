@@ -40,8 +40,14 @@ validates, and it is the only shape the Advisor emits:
 A second shape is still accepted for the regression mirror, which reports flat fields:
 `primary_target`, `tier`, `method`, `targetAvailabilityDuringSync`,
 `businessCutoverDowntime`, `controlPlane`, `methodGateStatus`, `recommendationStatus`,
-`confidence`, `eligibility`, `methodCandidates`, `knowledgeBaseVersion`, `decisionRulesVersion`,
-`evaluatedAt` and `sourceCommit`.
+`confidence`, `eligibility`, `methodCandidates`, `shortlist`, `knowledgeBaseVersion`,
+`decisionRulesVersion`, `evaluatedAt` and `sourceCommit`.
+
+**`primary_target` and `recommendation.target` name the same eight families, and both are
+enumerated.** They were free strings, which is what let the phrase `provisional shortlist only` sit
+in a field typed for a target name. Closing that field on the producing side alone would have left
+the value refused where it is written and accepted where it is read, so the vocabulary is shared and
+a check compares the two typings rather than only the enumerations they draw on.
 
 **The two shapes are exclusive, not merely alternative.** Both are closed and their required keys
 are disjoint, so an object is the canonical shape or the mirror and never a blend. They used to sit
@@ -73,11 +79,12 @@ schema rejected. If an input carries `recommendation.primary`, treat it as a sta
 the fields underneath it, and say that the shape was out of date rather than failing silently.
 
 **A shortlist is not a handoff.** The Advisor emits `recommendationStatus: shortlist` when no rule
-separates the candidates, and that output carries no `recommendation`: no target, no method, nothing
-to resolve to a catalog path. Return `unresolved_path` naming the families the shortlist carries and
-what the Advisor said would separate them. Do not pick one, and do not ask the path questions of a
-path nobody chose. The status is readable here so the refusal can say why, rather than failing on a
-missing field and leaving the reason to be guessed.
+separates the candidates, and that output carries no chosen target: nothing to resolve to a catalog
+path. Both accepted shapes branch on the status, so an object names a target or carries a
+`shortlist[]` and never both — a handoff that declared it had refused to choose while naming the
+target it chose was expressible until now. Return `unresolved_path` naming the families the
+shortlist carries and what the Advisor said would separate them. Do not pick one, and do not ask the
+path questions of a path nobody chose.
 
 **`controlPlane` is a prerequisite selector, not a label.** `azure-arc` pulls in the Arc extension,identity and batch requirements and changes which source-version matrix governs the method —
 standalone Log Replay Service is documented for SQL Server 2008-2022 while the Arc path lists 2025.
