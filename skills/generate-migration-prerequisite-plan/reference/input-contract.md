@@ -133,9 +133,15 @@ and can still change at least one applicable prerequisite.
 **Disambiguation exception.** A field named in a path's `disambiguation` block is askable even
 before a path is selected, because it exists to choose between candidate paths. `ha_migration_pattern`
 (P01 vs P02) and `arc_restore_entrypoint` (P17 vs P18) are askable only through this exception;
-neither field is listed in `commonQuestionFields` or in any path's `questionFields`. `bulk_copy_tool`
-and `dms_migration_mode` need no exception because their disambiguation field is already inside the
-`questionFields` of the paths they distinguish.
+neither field is listed in `commonQuestionFields` or in any path's `questionFields`. `bulk_copy_tool`,
+`dms_migration_mode` and `azure_migrate_intent` need no exception because their disambiguation field
+is already inside the `questionFields` of the paths they distinguish.
+
+`azure_migrate_intent` exists because `Azure Migrate` on its own names two different pieces of work:
+the assessment that discovers an estate (P28) and the replication that moves a machine (P06). Both
+paths answer to the bare name and both can apply to a SQL Server on Azure VM, so without the field
+the catalog resolves one of them by accident. Assessment prerequisites are not replication
+prerequisites, and a reader handed the wrong set finds out at cutover.
 
 ### Common source, target and operational facts
 
@@ -171,7 +177,7 @@ and `dms_migration_mode` need no exception because their disambiguation field is
 | --- | --- |
 | AG / DAG | `ha_migration_pattern`, `source_ha_topology`, `domain_model`, `ag_endpoint_status`, `quorum_status` |
 | Backup / restore | `recovery_model`, `backup_chain_status`, `blob_https_status`, `blob_access_model`, `tde_material_status` |
-| Azure Migrate / AVS | `azure_migrate_platform`, `azure_migrate_appliance_status`, `test_migration_status`, `hcx_service_mesh_status` |
+| Azure Migrate / AVS | `azure_migrate_intent`, `azure_migrate_platform`, `azure_migrate_appliance_status`, `test_migration_status`, `hcx_service_mesh_status` |
 | MI Link / LRS | `mi_link_ports_status`, `mi_link_capacity_status`, `lrs_window_days`, `lrs_storage_layout_status` |
 | SQL DB schema/data | `schema_compatibility_status`, `bacpac_consistency_status`, `dms_runtime_status`, `bulk_target_schema_status` |
 | Replication / CDC | `replication_primary_keys_status`, `replication_topology`, `striim_runtime_status` |

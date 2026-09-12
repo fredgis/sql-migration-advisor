@@ -281,6 +281,48 @@ for (const entry of coverage.dispositions) {
   );
 }
 
+// Sixth review pass: the matrix and the engine name a method in one spelling and the catalog
+// answers to another, so the label had to be resolved by a hard-coded escape hatch in the engine
+// instead of by the catalog. Checking that every path exists says nothing about whether its name
+// can be found, which is how "DMS" for SQL Database, "Distributed / Always On AG" and the
+// container restore all became unreachable by name under a green suite.
+const aliasKey = value => String(value).toLowerCase().replace(/[^a-z0-9]/gu, '');
+const aliasesById = new Map(catalog.paths.map(entry => [entry.id, (entry.advisorAliases || []).map(aliasKey)]));
+for (const entry of coverage.dispositions) {
+  if (entry.status !== 'path' || !(entry.paths || []).length) continue;
+  check(
+    `coverage-method-resolvable-${entry.method}-${entry.target}`,
+    entry.paths.some(id => (aliasesById.get(id) || []).includes(aliasKey(entry.method))),
+    `the matrix calls this route "${entry.method}" and none of ${JSON.stringify(entry.paths)} lists that spelling in advisorAliases, so the label resolves to no path`
+  );
+}
+
+// The other half of the same question: a spelling that resolves to two paths sharing a target is
+// as unusable as one that resolves to none, because the catalog picks whichever comes first.
+// "Azure Migrate" named both the assessment and the VM replication, and an assessment plan is not
+// a replication plan. Shared spellings are legitimate, but only behind a disambiguation field.
+const pathsByAlias = new Map();
+for (const entry of catalog.paths) {
+  for (const alias of entry.advisorAliases || []) {
+    const key = aliasKey(alias);
+    if (!pathsByAlias.has(key)) pathsByAlias.set(key, new Set());
+    pathsByAlias.get(key).add(entry);
+  }
+}
+for (const [key, entrySet] of pathsByAlias) {
+  const entries = [...entrySet];
+  if (entries.length < 2) continue;
+  for (const target of new Set(entries.flatMap(entry => entry.targetVariants || [entry.target]))) {
+    const competing = entries.filter(entry => (entry.targetVariants || [entry.target]).includes(target));
+    if (competing.length < 2) continue;
+    check(
+      `alias-disambiguated-${key}-${aliasKey(target)}`,
+      competing.every(entry => entry.disambiguation?.field),
+      `${competing.map(entry => entry.id).join(' and ')} answer to the same spelling for "${target}" and ${competing.filter(entry => !entry.disambiguation?.field).map(entry => entry.id).join(', ')} declare no disambiguation field, so the catalog resolves the label by accident`
+    );
+  }
+}
+
 for (const question of questions.questions) {
   for (const consumer of question.consumedBy) {
     check(`consumer-exists-${question.id}-${consumer}`, prerequisiteIdSet.has(consumer), `${consumer} does not exist in the KB`);
