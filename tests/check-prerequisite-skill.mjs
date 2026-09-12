@@ -329,6 +329,46 @@ for (const question of questions.questions) {
   }
 }
 
+// Sixth review pass. The output schema types an object nobody had ever built, which is why four
+// separate findings all landed here: a plan could invent a prerequisite, rewrite a knowledge base
+// row, flip a blocker to non-blocking, confirm a row with an evidence id naming nothing, contradict
+// its own counts, and still declare itself ready. A schema cannot express any of that. The
+// validator can, and until now there was no plan to run it against, so nothing exercised the rules
+// the output contract had been stating all along.
+{
+  const { validate } = await import('../tools/validate-plan.mjs');
+  const good = JSON.parse(read('tests', 'plans', 'valid-p10.json'));
+  const clone = () => JSON.parse(JSON.stringify(good));
+  check('exemplar-plan-is-valid', validate(good).length === 0,
+    `the exemplar plan does not satisfy its own contract: ${validate(good).join('; ')}`);
+
+  // Each mutation is one of the ways a plan was free to lie. The check is not that something
+  // failed, but that the right thing failed: a validator that rejects everything proves nothing.
+  const mutations = [
+    ['an invented prerequisite id', plan => { plan.prerequisites[0].id = 'P99-999'; }, 'not a prerequisite the knowledge base defines'],
+    ['a duplicated prerequisite id', plan => { plan.prerequisites.push(JSON.parse(JSON.stringify(plan.prerequisites[0]))); }, 'appears more than once'],
+    ['a rewritten row title', plan => { plan.prerequisites[0].title = 'Something else entirely'; }, 'in the knowledge base'],
+    ['a reclassified obligation', plan => { plan.prerequisites[0].requirementType = 'recommended'; }, 'may not reclassify an obligation'],
+    ['a blocker flipped to non-blocking', plan => { plan.prerequisites[0].blocking = false; }, 'flipping that bit is how a blocker stops counting'],
+    ['evidence naming no record', plan => { plan.prerequisites[0].acceptedEvidence = ['EV-999']; }, 'source register does not contain'],
+    ['the same evidence cited twice', plan => { const id = plan.prerequisites[0].acceptedEvidence[0]; plan.prerequisites[0].acceptedEvidence = [id, id]; }, 'lists the same evidence id twice'],
+    ['a confirmation resting on nothing', plan => { plan.prerequisites[0].acceptedEvidence = []; }, 'that is a reported claim, not a confirmation'],
+    ['a summary count that contradicts the rows', plan => { plan.summary.confirmed += 3; }, 'and the rows give'],
+    ['ready declared over a missing blocker', plan => { plan.prerequisites[0].status = 'missing'; plan.overallStatus = 'ready'; }, 'the rows derive blocked'],
+    ['a blocker missing from the blockers list', plan => { plan.prerequisites[0].status = 'missing'; plan.prerequisites[0].acceptedEvidence = []; }, 'the blockers list does not name it'],
+    ['a target variant the path does not offer', plan => { plan.selectedPath.targetVariant = 'SQL Server in a container'; }, 'which it does not offer'],
+    ['a refusal carrying a plan field', plan => { plan.overallStatus = 'unresolved_path'; }, 'a refusal is not a plan with fields missing']
+  ];
+  for (const [label, mutate, expected] of mutations) {
+    const plan = clone();
+    mutate(plan);
+    const problems = validate(plan);
+    check(`plan-validator-rejects-${label.replace(/\s+/gu, '-')}`,
+      problems.some(problem => problem.includes(expected)),
+      `${label} was accepted, or rejected for the wrong reason: ${problems.join('; ') || 'no problem reported'}`);
+  }
+}
+
 // Sixth review pass. knownFacts carried one open union: the readiness enum, any non-empty string,
 // any number, any integer, a boolean and any object. So `tde_status: true`, `database_count: -5`
 // and `mi_link_ports_status: "BANANA"` all validated, and a value that validates is a typed fact
