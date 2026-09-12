@@ -114,52 +114,78 @@
           "description": "Constrained to the IDs reference/input-contract.md tabulates for this field, plus the absence markers. It used to be a bare non-empty string while advisor-fact-mappings.json mapped its exact values, so a plausible variant validated here and fell through to the crosswalk fallback: a port the user reported blocked stopped being a blocker."
         },
         "source_os": {
-          "type": [
-            "string",
-            "null"
+          "enum": [
+            "WINDOWS_SERVER_2012_OR_LATER",
+            "WINDOWS_SERVER_BELOW_2012",
+            "WINDOWS_CLIENT",
+            "LINUX",
+            "UNKNOWN",
+            "NONE_CONFIRMED",
+            "NOT_APPLICABLE",
+            null
           ],
-          "minLength": 1,
-          "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
+          "description": "The contract tabulates these IDs and the crosswalk maps their exact values, so a plausible normalization variant used to pass both schemas and fall into the crosswalk's `otherwise`, where a known answer became UNKNOWN. A canonical-ID field is enumerated or it is not canonical."
         },
         "source_edition": {
-          "type": [
-            "string",
-            "null"
+          "enum": [
+            "ENTERPRISE",
+            "STANDARD",
+            "DEVELOPER",
+            "EXPRESS",
+            "WEB",
+            "UNKNOWN",
+            "NONE_CONFIRMED",
+            "NOT_APPLICABLE",
+            null
           ],
-          "minLength": 1,
-          "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
+          "description": "The contract tabulates these IDs and the crosswalk maps their exact values, so a plausible normalization variant used to pass both schemas and fall into the crosswalk's `otherwise`, where a known answer became UNKNOWN. A canonical-ID field is enumerated or it is not canonical."
         },
         "clr_permission_set": {
-          "type": [
-            "string",
-            "null"
+          "enum": [
+            "CLR_SAFE",
+            "CLR_EXTERNAL_ACCESS",
+            "CLR_UNSAFE",
+            "UNKNOWN",
+            "NONE_CONFIRMED",
+            "NOT_APPLICABLE",
+            null
           ],
-          "minLength": 1,
-          "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
+          "description": "The contract tabulates these IDs and the crosswalk maps their exact values, so a plausible normalization variant used to pass both schemas and fall into the crosswalk's `otherwise`, where a known answer became UNKNOWN. A canonical-ID field is enumerated or it is not canonical."
         },
         "tde_status": {
-          "type": [
-            "string",
-            "null"
+          "enum": [
+            "TDE_ENABLED",
+            "TDE_NOT_ENABLED",
+            "UNKNOWN",
+            "NONE_CONFIRMED",
+            "NOT_APPLICABLE",
+            null
           ],
-          "minLength": 1,
-          "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
+          "description": "The contract tabulates these IDs and the crosswalk maps their exact values, so a plausible normalization variant used to pass both schemas and fall into the crosswalk's `otherwise`, where a known answer became UNKNOWN. A canonical-ID field is enumerated or it is not canonical."
         },
         "source_permissions": {
-          "type": [
-            "string",
-            "null"
+          "enum": [
+            "SYSADMIN_AVAILABLE",
+            "LIMITED_RIGHTS",
+            "UNKNOWN",
+            "NONE_CONFIRMED",
+            "NOT_APPLICABLE",
+            null
           ],
-          "minLength": 1,
-          "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
+          "description": "The contract tabulates these IDs and the crosswalk maps their exact values, so a plausible normalization variant used to pass both schemas and fall into the crosswalk's `otherwise`, where a known answer became UNKNOWN. A canonical-ID field is enumerated or it is not canonical."
         },
         "authentication": {
-          "type": [
-            "string",
-            "null"
+          "enum": [
+            "SQL_LOGINS_ONLY",
+            "WINDOWS_LOGINS",
+            "ENTRA_ID",
+            "MIXED_AUTH",
+            "UNKNOWN",
+            "NONE_CONFIRMED",
+            "NOT_APPLICABLE",
+            null
           ],
-          "minLength": 1,
-          "description": "A canonical option ID from reference/input-contract.md section 3, or one of the three absence markers. NONE_CONFIRMED means the user checked and there are none, and it clears a blocker. UNKNOWN means not checked, declined, blank or unrecognised, and it holds the candidate at unknown_requires_assessment. NOT_APPLICABLE means the question cannot apply to this profile. The distinction is the whole point: we have no linked servers clears a blocker, I have not looked at linked servers must not."
+          "description": "The contract tabulates these IDs and the crosswalk maps their exact values, so a plausible normalization variant used to pass both schemas and fall into the crosswalk's `otherwise`, where a known answer became UNKNOWN. A canonical-ID field is enumerated or it is not canonical."
         },
         "feature_dependencies": {
           "type": [
@@ -397,6 +423,16 @@
             null
           ],
           "description": "Why the ancillary list is empty, which the list itself cannot say. Same distinction as feature_dependencies_state: a confirmed absence clears remediation work, an unanswered question does not."
+        },
+        "tier_drivers_state": {
+          "enum": [
+            "ANSWERED",
+            "NONE_CONFIRMED",
+            "UNKNOWN",
+            "NOT_APPLICABLE",
+            null
+          ],
+          "description": "Says why the tier-driver list is empty, which the list itself cannot. The same distinction feature_dependencies_state and ancillary_services_state carry: a confirmed absence clears a tier question, a blank one holds it. Question 13 collects the selector and the profile had nowhere to record what it established."
         }
       }
     },

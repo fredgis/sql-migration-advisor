@@ -100,22 +100,72 @@
       "description": "Constrained to the IDs section 3 of reference/input-contract.md tabulates for this field, plus the three absence markers. It used to be a bare non-empty string, so a failed normalization such as \"SQL Server 2037\" or \"fully managed\" validated and reached the rules layer looking like a canonical profile. The enum is generated from the contract table rather than copied, and canonical-ids-match-the-contract fails the build if the two drift."
     },
     "source_os": {
-      "$ref": "#/$defs/answer"
+      "enum": [
+        "WINDOWS_SERVER_2012_OR_LATER",
+        "WINDOWS_SERVER_BELOW_2012",
+        "WINDOWS_CLIENT",
+        "LINUX",
+        "UNKNOWN",
+        "NONE_CONFIRMED",
+        "NOT_APPLICABLE"
+      ],
+      "description": "The contract tabulates these IDs and the crosswalk maps their exact values, so a plausible normalization variant used to pass both schemas and fall into the crosswalk's `otherwise`, where a known answer became UNKNOWN. A canonical-ID field is enumerated or it is not canonical."
     },
     "source_edition": {
-      "$ref": "#/$defs/answer"
+      "enum": [
+        "ENTERPRISE",
+        "STANDARD",
+        "DEVELOPER",
+        "EXPRESS",
+        "WEB",
+        "UNKNOWN",
+        "NONE_CONFIRMED",
+        "NOT_APPLICABLE"
+      ],
+      "description": "The contract tabulates these IDs and the crosswalk maps their exact values, so a plausible normalization variant used to pass both schemas and fall into the crosswalk's `otherwise`, where a known answer became UNKNOWN. A canonical-ID field is enumerated or it is not canonical."
     },
     "clr_permission_set": {
-      "$ref": "#/$defs/answer"
+      "enum": [
+        "CLR_SAFE",
+        "CLR_EXTERNAL_ACCESS",
+        "CLR_UNSAFE",
+        "UNKNOWN",
+        "NONE_CONFIRMED",
+        "NOT_APPLICABLE"
+      ],
+      "description": "The contract tabulates these IDs and the crosswalk maps their exact values, so a plausible normalization variant used to pass both schemas and fall into the crosswalk's `otherwise`, where a known answer became UNKNOWN. A canonical-ID field is enumerated or it is not canonical."
     },
     "tde_status": {
-      "$ref": "#/$defs/answer"
+      "enum": [
+        "TDE_ENABLED",
+        "TDE_NOT_ENABLED",
+        "UNKNOWN",
+        "NONE_CONFIRMED",
+        "NOT_APPLICABLE"
+      ],
+      "description": "The contract tabulates these IDs and the crosswalk maps their exact values, so a plausible normalization variant used to pass both schemas and fall into the crosswalk's `otherwise`, where a known answer became UNKNOWN. A canonical-ID field is enumerated or it is not canonical."
     },
     "source_permissions": {
-      "$ref": "#/$defs/answer"
+      "enum": [
+        "SYSADMIN_AVAILABLE",
+        "LIMITED_RIGHTS",
+        "UNKNOWN",
+        "NONE_CONFIRMED",
+        "NOT_APPLICABLE"
+      ],
+      "description": "The contract tabulates these IDs and the crosswalk maps their exact values, so a plausible normalization variant used to pass both schemas and fall into the crosswalk's `otherwise`, where a known answer became UNKNOWN. A canonical-ID field is enumerated or it is not canonical."
     },
     "authentication": {
-      "$ref": "#/$defs/answer"
+      "enum": [
+        "SQL_LOGINS_ONLY",
+        "WINDOWS_LOGINS",
+        "ENTRA_ID",
+        "MIXED_AUTH",
+        "UNKNOWN",
+        "NONE_CONFIRMED",
+        "NOT_APPLICABLE"
+      ],
+      "description": "The contract tabulates these IDs and the crosswalk maps their exact values, so a plausible normalization variant used to pass both schemas and fall into the crosswalk's `otherwise`, where a known answer became UNKNOWN. A canonical-ID field is enumerated or it is not canonical."
     },
     "feature_dependencies": {
       "type": "array",
@@ -187,8 +237,8 @@
       "description": "Constrained to the IDs reference/input-contract.md tabulates for this field, plus the absence markers. It used to be a bare non-empty string while advisor-fact-mappings.json mapped its exact values, so a plausible variant validated here and fell through to the crosswalk fallback: a port the user reported blocked stopped being a blocker."
     },
     "network_ports": {
-      "$ref": "#/$defs/answer",
-      "description": "Legacy, superseded by network_bandwidth, mi_link_ports and blob_https_reachability. The mirror reads it as their union so scenarios written before the split still run. Not to be collected by a new interview."
+      "$ref": "#/$defs/freeText",
+      "description": "Legacy composite. Superseded by network_bandwidth, mi_link_ports and blob_https_reachability; the mirror reads it as their union so scenarios written before the split still run. Free text on purpose: it never had a canonical vocabulary, and typing it as one claimed a precision it does not carry."
     },
     "rpo": {
       "$ref": "#/$defs/freeText"
@@ -281,6 +331,15 @@
         "NOT_APPLICABLE"
       ],
       "description": "Why the ancillary list is empty, which the list itself cannot say. Same distinction as feature_dependencies_state: a confirmed absence clears remediation work, an unanswered question does not."
+    },
+    "tier_drivers_state": {
+      "enum": [
+        "ANSWERED",
+        "NONE_CONFIRMED",
+        "UNKNOWN",
+        "NOT_APPLICABLE"
+      ],
+      "description": "Says why the tier-driver list is empty, which the list itself cannot. The same distinction feature_dependencies_state and ancillary_services_state carry: a confirmed absence clears a tier question, a blank one holds it. Question 13 collects the selector and the profile had nowhere to record what it established."
     }
   },
   "$defs": {

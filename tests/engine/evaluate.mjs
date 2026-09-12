@@ -268,11 +268,58 @@ function applyFeatureEligibility(inputs, eligibility, out) {
     out.exclusions.sql_db = 'Linked servers are a hard Azure SQL Database blocker unless refactored.';
   }
   if (dep(inputs, 'SQL Agent')) { eligibility.sql_mi = E.ELIGIBLE; eligibility.sql_db = E.REMEDIATE; }
-  if (dep(inputs, 'SQL CLR') || dep(inputs, 'Service Broker') || dep(inputs, 'cross-DB')) { eligibility.sql_mi = E.REMEDIATE; eligibility.sql_db = E.UNSUPPORTED; }
+  if (dep(inputs, 'SQL CLR') || dep(inputs, 'Service Broker') || dep(inputs, 'cross-DB')) {
+    eligibility.sql_mi = E.REMEDIATE; eligibility.sql_db = E.UNSUPPORTED;
+    // This line refused a family and said nothing about why, so the trace carried a verdict with
+    // no argument behind it. Naming the dependency is what lets a reader disagree with it.
+    out.exclusions.sql_db = 'SQL CLR, Service Broker and cross-database queries are outside the single-database surface of Azure SQL Database; each needs refactoring before the target applies.';
+  }
   if (dep(inputs, 'Not sure') || dep(inputs, 'unknown dependencies')) setUnknown(eligibility, ['sql_mi', 'sql_db'], 'Dependency inventory', out);
 }
-function applyManagement(inputs, eligibility, out) {
-  const model = String(inputs.management_model || '').toLowerCase();
+// Five families start at `unsupported` and the rules promote what applies, so a family nobody
+// evaluated reported that it cannot work rather than that it was not selected. `unsupported` is a
+// verdict about the technology; this one was a leftover initial value wearing a verdict's clothes,
+// with no rule id and no reason behind it. Invariant 11 refuses a family that disappears silently;
+// a family that stays visible carrying a verdict nobody pronounced is the same thing, harder to
+// spot because it looks argued.
+//
+// Anything the rules reached keeps what they decided. What is left is named for what it is: a
+// preference the profile states, or an absence of evidence.
+function nameTheFamiliesNobodyEvaluated(inputs, eligibility, out) {
+  const model = String(inputs.management_model ?? '');
+  const engine = String(inputs.kubernetes_model ?? '');
+  const paas = /managed[_ ]?paas/i.test(model);
+  const osControl = /os[_ ]?control/i.test(model);
+  const k8s = /kubernetes/i.test(model);
+  const preference = (family, reason) => {
+    if (eligibility[family] !== E.UNSUPPORTED || out.exclusions[family]) return;
+    eligibility[family] = E.PREFERENCE;
+    out.exclusions[family] = reason;
+  };
+
+  if (!k8s) {
+    // Not stating a Kubernetes operating model is not stating one, which is why this fires on an
+    // unanswered question too. The sample has said exactly this for as long as it has existed: no
+    // Kubernetes, edge or multi-cloud operating model was selected.
+    const stated = paas ? 'A managed PaaS model was stated' : (osControl ? 'A full OS control model was stated' : 'No Kubernetes, edge or multi-cloud operating model was selected');
+    preference('arc_sql_mi', `${stated}, so no Kubernetes-hosted engine was selected. Technically available if that changes.`);
+    preference('container', `${stated}, so a customer-operated container was not selected. Technically available if that changes.`);
+  }
+  if (k8s && /arc[_ ]?managed/i.test(engine)) preference('container', 'A managed engine through Arc data services was chosen over a self-run container.');
+  if (k8s && /diy|container/i.test(engine)) preference('arc_sql_mi', 'A full do-it-yourself container was chosen over a managed engine.');
+  if (!/data[- ]?cent(er|re)[_ ]?exit|vmware/i.test(String(inputs.driver ?? ''))) {
+    preference('avs', 'No VMware-continuity requirement was stated, so the platform was not selected. Technically compatible.');
+  }
+  if (!/modernize|assessment/i.test(String(inputs.intent ?? ''))) {
+    preference('arc_in_place', 'The stated intent is to migrate, not to stay in place. Useful for extended-support cover while the move is prepared.');
+  }
+  // No catch-all here on purpose. Turning what is left into `unknown_requires_assessment` reads as
+  // "this needs looking at", which the target chooser acts on, and it turned profiles with a clear
+  // answer into shortlists. A family that still reports `unsupported` after this point is caught by
+  // a check instead, so the remaining cases get named rather than swept into a status that routes.
+}
+
+function applyManagement(inputs, eligibility, out) {  const model = String(inputs.management_model || '').toLowerCase();
   const k8s = String(inputs.kubernetes_model || '').toLowerCase();
   const v = versionNumber(inputs.source_version);
   if (has(inputs.intent, 'assessment-only') || has(inputs.intent, 'modernize in place') || has(inputs.driver, 'modernize in place')) {
@@ -1073,6 +1120,7 @@ export function evaluate(rawInputs = {}) {
   applyClrPermission(inputs, out, eligibility);
   applyHyperscaleCeiling(inputs, eligibility, out);
   applyManagement(inputs, eligibility, out);
+  nameTheFamiliesNobodyEvaluated(inputs, eligibility, out);
 
   const [primaryTarget, method] = chooseTarget(inputs, eligibility, out);
   out.primaryTarget = primaryTarget;

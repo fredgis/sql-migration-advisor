@@ -25,7 +25,7 @@
           "const": "1.0"
         },
         "prerequisiteKnowledgeBaseVersion": {
-          "const": "v1.9"
+          "const": "v1.10"
         },
         "pathCatalogVersion": {
           "const": "1.0"
