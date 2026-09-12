@@ -2867,6 +2867,16 @@ try {
       label: 'business cutover downtime',
       loose: true
     },
+    // The card template repeats this vocabulary, and fixing the contract without it left the
+    // rendered card unable to express an online DMS or a BACPAC recommendation. Two places, one
+    // vocabulary: both are read.
+    {
+      values: advisorOut.$defs?.businessCutoverDowntime?.enum || [],
+      doc: path.join('skills', 'recommend-migration-path', 'SKILL.md'),
+      label: 'business cutover downtime, in the card template',
+      scope: /\|[^\n]*Business cutover downtime[^\n]*\|/,
+      loose: true
+    },
     {
       values: advisorOut.$defs?.targetAvailabilityDuringSync?.enum || [],
       doc: path.join('reference', 'output-contract.md'),
@@ -2878,7 +2888,13 @@ try {
   const letters = (text) => text.toLowerCase().replace(/[^a-z0-9]/g, '');
   for (const vocabulary of vocabularies) {
     if (!vocabulary.values.length) { failures.push(`the ${vocabulary.label} vocabulary could not be read from its schema`); continue; }
-    const text = readText(vocabulary.doc);
+    // A vocabulary published in a table cell has to be checked against that cell. Searching the
+    // whole document finds the word somewhere in the prose and passes while the cell that renders
+    // it is short two values, which is how the card template drifted from the contract.
+    const text = vocabulary.scope
+      ? (readText(vocabulary.doc).match(vocabulary.scope) || [''])[0]
+      : readText(vocabulary.doc);
+    if (vocabulary.scope && !text) { failures.push(`${vocabulary.doc}: the row publishing the ${vocabulary.label} vocabulary could not be found`); continue; }
     const reduced = letters(text);
     for (const value of vocabulary.values) {
       vocabChecked++;
@@ -3221,20 +3237,36 @@ try {
     'SQL database in Fabric': 'Fabric SQL DB', 'Azure Arc-enabled SQL Managed Instance': 'Arc SQL MI',
     'SQL Server in a container': 'SQL container', 'Azure VMware Solution': 'AVS'
   };
+  // Headings, summary rows and the catalog each spell a family their own way: "SQL Database in
+  // Fabric" against "SQL database in Fabric" against "Fabric SQL DB", and "Arc-enabled SQL
+  // Managed Instance" without the leading "Azure". Comparing the strings raw turns typography into
+  // a finding, so each family is reduced to the words that identify it.
+  const key = (text) => text.toLowerCase().replace(/^azure /, '').replace(/\bin a container\b/, 'container').replace(/[^a-z]/g, '');
+  const FAMILY = new Map();
+  for (const [long, short] of Object.entries(SHORT)) {
+    FAMILY.set(key(long), long);
+    FAMILY.set(key(short), long);
+  }
+  FAMILY.set(key('SQL Server Container'), 'SQL Server in a container');
+  FAMILY.set(key('Arc-enabled SQL Managed Instance'), 'Azure Arc-enabled SQL Managed Instance');
   let compared = 0;
   const names = (target) => [target, SHORT[target]].filter(Boolean);
   for (const entry of catalog.paths) {
+    // Two places describe a path's targets: the summary row and the section heading. Reading only
+    // the row let the P20 heading drop Fabric while the row and the catalog kept it, which is the
+    // one-side check this gate exists to prevent.
     const row = kb.split('\n').find((line) => new RegExp(`^\\|\\s*\\d+\\s*\\|\\s*${entry.id}\\s*\\|`).test(line));
-    if (!row) continue;
-    compared++;
-    // The knowledge base writes a single target in full and a list in short form, so both
-    // spellings count as naming the same family.
-    const declared = row.split('|')[3].split('/').map((part) => part.trim());
-    for (const [long, short] of Object.entries(SHORT)) {
-      const inKb = declared.some((part) => part === long || part === short);
-      const inCatalog = (entry.targetVariants || []).includes(long);
-      if (inKb !== inCatalog) {
-        failures.push(`${entry.id}: the knowledge base ${inKb ? 'lists' : 'omits'} ${short} and the catalog ${inCatalog ? 'lists' : 'omits'} it, so the two disagree about where this path can go`);
+    const heading = kb.split('\n').find((line) => new RegExp(`^## \\d+\\. ${entry.id} —`).test(line));
+    for (const [where, text] of [['summary row', row && row.split('|')[3]], ['section heading', heading && heading.replace(new RegExp(`^## \\d+\\. ${entry.id} — `), '').split(':')[0]]]) {
+      if (!text) continue;
+      compared++;
+      const declared = new Set(text.split('/').map((part) => FAMILY.get(key(part.trim()))).filter(Boolean));
+      for (const [long, short] of Object.entries(SHORT)) {
+        const inKb = declared.has(long);
+        const inCatalog = (entry.targetVariants || []).includes(long);
+        if (inKb !== inCatalog) {
+          failures.push(`${entry.id}: the ${where} ${inKb ? 'lists' : 'omits'} ${short} and the catalog ${inCatalog ? 'lists' : 'omits'} it, so the two disagree about where this path can go`);
+        }
       }
     }
   }

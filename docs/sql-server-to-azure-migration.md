@@ -6,7 +6,7 @@
 >
 > **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of August 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
 >
-> **Version.** v3.9 — 11 September 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
+> **Version.** v3.10 — 11 September 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**
@@ -189,7 +189,7 @@ Standardized columns (Microsoft Learn style): **Method · Min source · Target/m
 | [Backup to a file (.bak) + copy](https://learn.microsoft.com/en-us/data-migration/sql-server/virtual-machines/guide) | SQL 2008 SP4 | Offline | Simple, supports > 1 TB; use compression / multi-file split for WAN. |
 | [Backup to URL (Azure Blob)](https://learn.microsoft.com/en-us/sql/relational-databases/backup-restore/sql-server-backup-to-url) | SQL 2012 SP1 CU2 | Offline | SQL 2012 SP1 CU2 / 2014: page blob + storage-account credential, 1 TB max. SQL 2016+: block blob + SAS credential, 12.8 TB via striping. For > 1 TB on 2012/2014 use local backup + AzCopy. |
 | [Detach & attach (MDF/LDF via Blob)](https://learn.microsoft.com/en-us/sql/relational-databases/databases/database-detach-and-attach-sql-server) | SQL 2008 | Offline | For very large DBs where backup/restore is too slow. |
-| [Log shipping](https://learn.microsoft.com/en-us/sql/database-engine/log-shipping/about-log-shipping-sql-server) | SQL 2008 | Minimal | Windows-only (not for SQL on Linux sources). |
+| [Log shipping](https://learn.microsoft.com/en-us/sql/database-engine/log-shipping/about-log-shipping-sql-server) | SQL 2008 | Minimal | Works on Windows and on Linux; a Linux source or target needs SQL Server Agent enabled and the backup directory exposed through a CIFS/Samba share (P03-006). |
 | [Always On AG](https://learn.microsoft.com/en-us/data-migration/sql-server/virtual-machines/availability-group-migrate) | SQL 2012 | Near-zero | Fail an existing AG onto Azure VM replicas. |
 | [Convert machine to VHD / Ship hard drive / Azure Data Box](https://learn.microsoft.com/en-us/azure/databox/data-box-overview) | any | Offline | Estate exit with limited WAN; multi-TB `.bak`/`.bacpac` via Data Box. |
 
@@ -399,9 +399,9 @@ Microsoft describes LRS as an online migration with expected downtime during cut
 | Source | MI Link | LRS | DMS | Native backup/restore | Txn replication | BACPAC/bcp/ADF |
 |---|---|---|---|---|---|---|
 | On-prem SQL Server / Azure VM | ✅ 2016+ | ✅ 2008–2022 | ✅ | ✅ direct `BACKUP TO URL` (2012 SP1 CU2+) | ✅ 2016+ publisher | ✅ |
-| AWS EC2 (SQL on IaaS) | ✅ if sysadmin + AG + 5022 + networking | ✅ via Blob upload | ✅ | ✅ via Blob upload | ✅ if sysadmin | ✅ |
+| AWS EC2 (SQL on IaaS) | ✅ if sysadmin + AG + 5022 **and 11000–11999** + networking | ✅ via Blob upload | ✅ | ✅ via Blob upload | ✅ if sysadmin | ✅ |
 | **AWS RDS for SQL Server** | ❌ no sysadmin / no AG endpoints | ✅ via S3→Blob upload | ✅ offline to Azure SQL DB / MI / VM; ✅ online only to MI / VM (not Azure SQL DB) | ⚠️ indirect only (S3→Blob→restore; no direct `BACKUP TO URL` to Azure) | ❌ not practical (requires sysadmin/distributor rights the platform doesn't grant) | ✅ |
-| GCP Compute Engine (SQL on IaaS) | ✅ if sysadmin + AG + 5022 + networking | ✅ via Blob upload | ✅ | ✅ via Blob upload | ✅ if sysadmin | ✅ |
+| GCP Compute Engine (SQL on IaaS) | ✅ if sysadmin + AG + 5022 **and 11000–11999** + networking | ✅ via Blob upload | ✅ | ✅ via Blob upload | ✅ if sysadmin | ✅ |
 | **GCP Cloud SQL for SQL Server** | ❌ no sysadmin / no AG endpoints | ✅ via export→Blob upload | ✅ | ⚠️ indirect only | ❌ not practical (requires sysadmin/distributor rights the platform doesn't grant) | ✅ |
 
 > The transactional-replication ❌ for AWS RDS / GCP Cloud SQL is an inference from those platforms' privilege model (no sysadmin / distributor rights), not an explicit Microsoft unsupported-from-RDS statement.
@@ -661,13 +661,14 @@ flowchart LR
 
 ## 17. Document version & changelog
 
-Current version: **v3.9** (2026-09-09).
+Current version: **v3.10** (2026-09-09).
 
 <details>
-<summary><b>Version history</b> (current: v3.9)</summary>
+<summary><b>Version history</b> (current: v3.10)</summary>
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v3.10 | 2026-09-12 | **Two corrections in the cross-cloud matrix and the method table.** The AWS EC2 and GCP Compute rows gave MI Link as available with `5022 + networking`, naming one of the two port requirements: the 11000-11999 range carries the distributed availability group's data-replication channel, and it is the half people miss, so a reader could clear the stated gate and still fail. And log shipping was marked Windows-only, which the prerequisite plan contradicts in its own P03-006 row: a Linux source or target needs SQL Server Agent enabled and the backup directory exposed through a CIFS/Samba share. A plan citing this page would refuse a route the plan beside it prepares. |
 | v3.9 | 2026-09-11 | **Two knowledge-base corrections.** P11 no longer lists SQL database in Fabric: v3.3 removed that route from the rules and the catalog because Microsoft documents a DACPAC schema import there, and this page kept offering it in two places, so a skill loading both could build a plan the rules forbid. The role counts were also wrong, and had been for three releases: the coverage map holds 16 `primary`, 13 `secondary` and 29 `documentary` cells, not the 30 recommendable and 28 documentary stated here. Both numbers are derived by a gate now rather than counted once by hand. |
 | v3.8 | 2026-09-11 | **No knowledge-base fact changed.** The stamp moves so every surface stays pinned to one commit. The release is about the fork: for three review rounds fixes landed here and never reached the vendored copy, because the port script patched the advisor `SKILL.md` without ever reading its content. |
 | v3.7 | 2026-09-10 | **No knowledge-base fact changed, with one exception on this page: the integrity rule set no longer offers `P20` as the fallback for an unanswered tooling choice.** Three other documents already said such a choice stays unresolved, and this one still named a tool the user never picked. The rest of the release is about the surfaces that read this document rather than the document itself. |
