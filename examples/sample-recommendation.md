@@ -2,6 +2,15 @@
 
 A worked example showing the two-tier interview, preliminary recommendation card, and JSON rendering. Values are illustrative.
 
+**The JSON below is produced, not written.** The normalized profile carries every answer the two
+interview tables supply, and the engine that the golden scenarios run against derives the
+recommendation, the tier, the cutover class and the method candidates from it. The card is a
+rendering of that same object. An earlier version of this page echoed eight of the thirty-seven
+profile fields, listed no method candidates in the card while the JSON carried six, gave every
+candidate an empty `prerequisitePaths` array that the handoff contract reads, and named a control
+plane the rules do not select for a standalone Log Replay Service run. A worked example is a claim
+about the output, and nothing was holding it to one.
+
 ## Interview answers
 
 ### Tier 1 — Triage
@@ -40,6 +49,9 @@ A worked example showing the two-tier interview, preliminary recommendation card
 | DR/rollback | Keep source read-only for rollback window after cutover | Supports reversibility plan |
 | SA/AHB | Software Assurance active | AHB cost lever applies |
 | Maintenance restrictions | Prefer Microsoft-managed patching | Ranks MI above SQL VM |
+| Recovery model + log chain | FULL recovery, nightly full plus log backups every 15 minutes, chain unbroken | `DMS-MODE` refuses online DMS without both; LRS needs FULL as well |
+| Preview services | Generally available only | Rules out preview-gated capabilities without ruling out any GA target |
+| Blob HTTPS reachability | Confirmed from the source to Azure Blob | `BACKUP-BLOB-PATH` cannot report `passed` on an unverified upload path |
 
 ## Phase A eligibility trace
 
@@ -74,12 +86,35 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
 | 🔁 **Migration method** | Log Replay Service: full backup to Blob, then differential/log catch-up |
 | 👁️ **Target availability during sync** | `unavailable` — SQL MI database remains RESTORING/NORECOVERY during sync |
 | ⏱️ **Business cutover downtime** | `minutes` expected for General Purpose with a small final backup; validate with a rehearsal |
-| 🧭 **Assess / orchestrate** | SSMS 22 Migration Component + dependency discovery; Arc for ESU during project |
+| 🧭 **Assess / orchestrate** | Control plane `standalone`: the Log Replay Service is driven from PowerShell, CLI or the API, not through Arc or the SSMS migration component. Assessment tooling is a separate question, and here it is the SSMS 22 Migration Component plus dependency discovery, with Arc for ESU cover during the project |
 | 💰 **Cost view** | Cost levers only: AHB eligible, ESU via Arc while on-prem, reservations after sizing; no estimate until measured sizing/pricing |
 
 **Why General Purpose, not Business Critical** — interview inputs indicate moderate IOPS and latency sensitivity, no read-scale requirement, no strict zone-redundant SLA requirement, and steady non-tenant workload. Business Critical would win if assessment shows low-latency storage, high log throughput, readable secondary, or stricter HA/SLA needs.
 
 **🥈 Best alternative** — **SQL Server on Azure VM** with native backup/restore or log shipping; wins if dependency discovery finds file-system dependencies, unsupported linked-server providers, third-party agents, or performance requirements not suitable for SQL MI GP/BC.
+
+**⚖️ Methods weighed for this target**
+
+| Method | Role | Status | Prerequisite paths |
+| --- | --- | --- | --- |
+| **Log Replay Service** *(selected)* | primary | `unknown_requires_assessment` | `P09` |
+| Azure DMS | primary | `available` | `P23`, `P24` |
+| Native backup/restore | primary | `available` | `P10` |
+| Transactional replication | secondary | `available` | `P13` |
+| BACPAC / SqlPackage | secondary | `available` | `P11` |
+| MI Link | primary | `unavailable` | `P08` |
+
+Every method the summary matrix marks primary or secondary for Managed Instance is listed, including
+the ones that lost: a method never considered is a method never rejected, and its absence cannot be
+argued with. MI Link is the only one ruled out on a fact rather than on ranking, because the source
+is SQL Server 2014 and ports 5022 plus 11000–11999 are not approved.
+
+The winner reads `unknown_requires_assessment` rather than `available`, and so does its gate. The
+Log Replay Service has a hard thirty-day window and nobody has estimated how long 1.2 TB will take
+to seed and catch up, so the route is viable and not yet proven. A recommendation waiting on one
+unmeasured field is the ordinary case, and saying `available` there would claim a gate that has not
+reported. The prerequisite paths are what a preferred alternative resolves to if the customer picks
+one over the recommendation.
 
 **🚫 Excluded or constrained targets (Phase A eligibility)**
 - **Azure SQL Database** — unsupported: linked servers, cross-database use and SQL Agent would all require refactoring the application. `[LINKED-SERVERS]`
@@ -122,18 +157,54 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
     "confidence": "low"
   },
   "normalizedProfile": {
-    "intent": "MIGRATE_NOW",
+    "scope": "FEW_DATABASES",
     "source_location": "ON_PREM",
     "source_version": "SQL2014",
+    "intent": "MIGRATE_NOW",
+    "driver": "EOS_ESU",
     "management_model": "MANAGED_PAAS",
-    "downtime": "MINIMAL",
+    "kubernetes_model": "NOT_APPLICABLE",
+    "source_os": "WINDOWS_SERVER_2016",
+    "source_edition": "ENTERPRISE",
+    "clr_permission_set": "NONE_CONFIRMED",
+    "tde_status": "TDE_ENABLED",
+    "source_permissions": "SYSADMIN_AVAILABLE",
+    "authentication": "MIXED_AUTH",
     "feature_dependencies": [
       "SQL Agent jobs",
       "cross-database queries",
       "linked servers"
     ],
     "feature_dependencies_state": "ANSWERED",
-    "mi_link_ports": "PORTS_BLOCKED"
+    "size": "FROM_150_GB_TO_4_TB",
+    "downtime": "MINIMAL",
+    "compliance": "STANDARD_COMMERCIAL",
+    "network_bandwidth": "GOOD_BANDWIDTH",
+    "mi_link_ports": "PORTS_BLOCKED",
+    "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+    "network_ports": "1433 and 443 open; 5022 and 11000-11999 not approved",
+    "rpo": "15 minutes",
+    "rto": "4 hours",
+    "target_region": "UK South",
+    "performance": "16 cores, 128 GB RAM, moderate IOPS, no sub-millisecond latency requirement",
+    "tenant_count": "single tenant",
+    "fabric_constraints": "none stated",
+    "database_count": 3,
+    "migration_batch_size": 3,
+    "arc_extension_version": "not deployed",
+    "evidence": {
+      "dependenciesToolConfirmed": false,
+      "performanceMeasured": false
+    },
+    "preview_acceptable": "PREVIEW_REFUSED",
+    "recovery_model": "FULL",
+    "log_chain_status": "CHAIN_INTACT",
+    "ancillary_services": [
+      "SSIS packages",
+      "TDE-encrypted databases",
+      "Windows logins"
+    ],
+    "ancillary_services_state": "ANSWERED"
   },
   "eligibilityTrace": [
     {
@@ -191,7 +262,7 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
     "method": "Log Replay Service",
     "targetAvailabilityDuringSync": "unavailable",
     "businessCutoverDowntime": "minutes",
-    "controlPlane": "ssms-migration-component"
+    "controlPlane": "standalone"
   },
   "alternative": {
     "target": "SQL Server on Azure VM",
@@ -200,50 +271,67 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
   },
   "methodCandidates": [
     {
-      "method": "Log Replay Service",
+      "method": "DMS",
       "role": "primary",
-      "status": "unknown_requires_assessment",
-      "reason": "Source is SQL Server 2014, inside the documented 2008-2022 range, and the migration fits the 30-day window. Held here because the Blob upload path that stages its backups is unproven.",
-      "selected": true
+      "status": "available",
+      "selected": false,
+      "reason": "Prerequisite paths P23, P24 apply.",
+      "prerequisitePaths": [
+        "P23",
+        "P24"
+      ]
     },
     {
       "method": "MI Link",
       "role": "primary",
       "status": "unavailable",
-      "reason": "Ports 5022 and 11000-11999 are blocked, and SQL Server 2014 is below the 2016 floor."
+      "selected": false,
+      "reason": "MI Link requires SQL Server 2016+.",
+      "prerequisitePaths": [
+        "P08"
+      ]
+    },
+    {
+      "method": "Log Replay Service",
+      "role": "primary",
+      "status": "unknown_requires_assessment",
+      "selected": true,
+      "reason": "Prerequisite paths P09 apply. Its method gate has not reported passed, so the route is viable and not yet proven.",
+      "prerequisitePaths": [
+        "P09"
+      ]
     },
     {
       "method": "Native backup/restore",
       "role": "primary",
-      "status": "unknown_requires_assessment",
-      "reason": "Supported for this target, but the Blob upload path that stages the backups is unproven and source permissions were not established. The stated minimal-downtime preference also argues against a full offline restore."
-    },
-    {
-      "method": "Azure DMS online",
-      "role": "primary",
-      "status": "unknown_requires_assessment",
-      "reason": "Recovery model and log-backup chain were not established."
+      "status": "available",
+      "selected": false,
+      "reason": "Prerequisite paths P10 apply.",
+      "prerequisitePaths": [
+        "P10"
+      ]
     },
     {
       "method": "Transactional replication",
       "role": "secondary",
-      "status": "unknown_requires_assessment",
-      "reason": "Only suitable for a subset of tables with qualifying primary keys."
+      "status": "available",
+      "selected": false,
+      "reason": "Prerequisite paths P13 apply.",
+      "prerequisitePaths": [
+        "P13"
+      ]
     },
     {
       "method": "BACPAC / SqlPackage",
       "role": "secondary",
-      "status": "unavailable",
-      "reason": "Carries schema and data but no instance-level objects, and the estate depends on SQL Agent jobs and linked servers."
+      "status": "available",
+      "selected": false,
+      "reason": "Prerequisite paths P11 apply.",
+      "prerequisitePaths": [
+        "P11"
+      ]
     }
   ],
-  "methodGateTrace": {
-    "method": "Log Replay Service",
-    "result": "unknown_requires_assessment",
-    "unverified": [
-      "Blob upload path for the staged backups (BACKUP-BLOB-PATH)"
-    ]
-  },
   "blockers": [
     "MI Link is unavailable: ports 5022 and 11000-11999 are blocked and the source is below the 2016 floor."
   ],
@@ -269,6 +357,10 @@ SQL MI is the recommended assessment path because the workload needs SQL Agent, 
   "evidenceLinks": [
     "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate"
   ],
-  "largestRisk": "An assumed General Purpose tier misses the measured I/O and latency requirement; resolve it with a workload replay and Query Store analysis before provisioning."
+  "largestRisk": "An assumed General Purpose tier misses the measured I/O and latency requirement; resolve it with a workload replay and Query Store analysis before provisioning.",
+  "methodGateTrace": {
+    "method": "Log Replay Service",
+    "result": "unknown_requires_assessment"
+  }
 }
 ```

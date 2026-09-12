@@ -1099,6 +1099,20 @@ export function evaluate(rawInputs = {}) {
   if (out.primaryTarget === 'Azure SQL Database' && eligibility.sql_mi !== E.UNSUPPORTED) out.alternativeTarget = 'Azure SQL Managed Instance';
 
   finalizeStatus(inputs, out, eligibility);
+  // Invariant 15: the winner's candidate status and its gate trace answer the same question, so
+  // they must agree. The gates run against the selected method and set methodGateStatus; the
+  // candidate list was built before them and never heard the answer, so a route the gate was
+  // holding on an unproven field still read `available` in the shortlist beside it. Phase A gives
+  // every family the same treatment, and the candidate list has to get it too.
+  const winner = (out.methodCandidates || []).find((candidate) => candidate.selected);
+  const AGREES = { passed: 'available', unknown_requires_assessment: 'unknown_requires_assessment' };
+  const expected = AGREES[out.methodGateStatus];
+  if (winner && expected && winner.status !== expected) {
+    winner.status = expected;
+    if (expected === 'unknown_requires_assessment') {
+      winner.reason = `${winner.reason} Its method gate has not reported passed, so the route is viable and not yet proven.`;
+    }
+  }
   out.eligibility = eligibility;
   return out;
 }

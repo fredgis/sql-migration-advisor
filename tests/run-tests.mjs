@@ -1658,7 +1658,17 @@ try {
         if (movesTheMachine && carries) failures.push(`${scenario.id}: AVS candidate "${c.method}" moves the virtual machine, so it must not also carry the P27 platform overlay`);
       }
     }
-    else if (chosen.status !== 'available') failures.push(`${scenario.id}: recommended "${out.method}" is listed unavailable by its own gate — ${chosen.reason}`);
+    else if (chosen.status === 'unavailable') failures.push(`${scenario.id}: recommended "${out.method}" is listed unavailable by its own gate — ${chosen.reason}`);
+    // Invariant 15 was relaxed to let a winner sit at unknown_requires_assessment when its gate
+    // has not reported passed, because a method that is viable, recommended and waiting on one
+    // unproven field had no honest shape. This check kept demanding `available`, so it was still
+    // enforcing the rule the contract had replaced.
+    else {
+      const AGREES = { available: 'passed', unknown_requires_assessment: 'unknown_requires_assessment' };
+      if (out.methodGateStatus && AGREES[chosen.status] !== out.methodGateStatus) {
+        failures.push(`${scenario.id}: the recommended "${out.method}" is \`${chosen.status}\` in its own candidate list and its gate reports \`${out.methodGateStatus}\`; the two answer the same question`);
+      }
+    }
   }
 
   add('b3-offers-every-recommendable-method', failures.length === 0,
@@ -3490,8 +3500,71 @@ try {
     failures.length ? failures : [`${rows} B3 method row(s) read against ${[...documentaryBy.values()].flat().length} documentary cell(s).`]);
 }
 
-const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };
-if (jsonMode) {
+// Sixth review pass. The worked example echoed eight of the thirty-seven profile fields, rendered
+// no method candidates in the card while its own JSON carried six, gave every candidate an empty
+// prerequisitePaths array that the handoff contract reads, and named a control plane the rules do
+// not select. It was written by hand and compared with nothing. Every field the interview supplies
+// has to reach the echo, and the two renderings have to agree, or the example teaches a shape the
+// skill does not produce.
+{
+  const failures = [];
+  const notes = [];
+  const example = readText(path.join('examples', 'sample-recommendation.md'));
+  const advisorIn = JSON.parse(readText(path.join('skills', 'recommend-migration-path', 'schemas', 'input.schema.json')));
+  const block = (example.match(/```json\s*([\s\S]*?)```/u) || [])[1];
+  if (!block) failures.push('the worked example carries no JSON rendering, so there is nothing to compare the card with');
+  else {
+    let object = null;
+    try { object = JSON.parse(block); } catch (error) { failures.push(`the worked example's JSON does not parse: ${error.message}`); }
+    if (object) {
+      const echoed = Object.keys(object.normalizedProfile || {});
+      const declared = Object.keys(advisorIn.properties || {});
+      const missing = declared.filter(field => !echoed.includes(field));
+      if (missing.length) failures.push(`the profile echo omits ${missing.length} field(s) the interview collects: ${missing.join(', ')}`);
+      const undeclared = echoed.filter(field => !declared.includes(field));
+      if (undeclared.length) failures.push(`the profile echo carries ${undeclared.join(', ')}, which the input schema does not declare`);
+
+      // The card and the object are two renderings of one decision. Divergence here is the defect,
+      // not a formatting difference: a reader takes the card and a consumer takes the JSON.
+      const candidates = object.methodCandidates || [];
+      if (!candidates.length) failures.push('the example carries no method candidates, so invariant 14 cannot be illustrated');
+      // Scoped to the table that renders them. Searching the whole page finds `DMS` inside
+      // `DMS-MODE` and passes while the card lists no candidates at all, which is the state this
+      // check exists to catch.
+      const cardTable = (example.match(/\| Method \| Role \| Status \| Prerequisite paths \|[\s\S]*?(?=\n\n)/u) || [''])[0];
+      if (candidates.length && !cardTable) failures.push('the JSON weighs method candidates and the card renders no table for them');
+      for (const candidate of candidates) {
+        const label = String(candidate.method);
+        const named = new RegExp(`(^|[^A-Za-z0-9])${label.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}([^A-Za-z0-9]|$)`, 'mu').test(cardTable);
+        if (!named) failures.push(`the JSON weighs \`${label}\` and the card's candidate table never names it`);
+        for (const id of candidate.prerequisitePaths || []) {
+          if (!cardTable.includes(id)) failures.push(`candidate \`${label}\` resolves to \`${id}\` and the card's table does not carry it`);
+        }
+        if (!Array.isArray(candidate.prerequisitePaths) || !candidate.prerequisitePaths.length) {
+          if (candidate.status !== 'unavailable') failures.push(`candidate \`${label}\` carries no prerequisitePaths, and that array is what a preferred alternative resolves to`);
+        }
+      }
+      const selected = candidates.filter(candidate => candidate.selected);
+      if (selected.length !== 1) failures.push(`the example marks ${selected.length} selected candidate(s); exactly one method is recommended`);
+      else if (selected[0].method !== object.recommendation?.method && !object.recommendation?.method?.includes(selected[0].method)) {
+        failures.push(`the selected candidate is \`${selected[0].method}\` and the recommendation is \`${object.recommendation?.method}\``);
+      }
+      for (const field of ['target', 'method', 'targetAvailabilityDuringSync', 'businessCutoverDowntime']) {
+        const value = object.recommendation?.[field];
+        if (value && !example.includes(value)) failures.push(`the JSON recommends \`${field}: ${value}\` and the card does not carry that value`);
+      }
+      const controlPlane = object.recommendation?.controlPlane;
+      if (controlPlane && !example.includes(`\`${controlPlane}\``)) {
+        failures.push(`the JSON names control plane \`${controlPlane}\` and the card never states it, so a reader cannot tell which prerequisites the plan will pull`);
+      }
+      notes.push(`${echoed.length} profile field(s) echoed, all declared by the interview schema.`);
+      notes.push(`${candidates.length} method candidate(s) named in both renderings, each with its prerequisite paths.`);
+    }
+  }
+  add('the-worked-example-renders-one-object-twice', failures.length === 0, failures.length ? failures : notes);
+}
+
+const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };if (jsonMode) {
   process.stdout.write(JSON.stringify({ summary, results }, null, 2) + '\n');
 } else {
   for (const r of results) {
