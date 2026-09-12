@@ -251,7 +251,7 @@
     ["SQL Server on Azure VM", "Data Box seed → sync delta", "rules_only",0, "Multi-TB seed, then delta sync."]
   ];
 
-  const GRAPH_VERSION = "v3.13.1"; // kept in step by the rule-graph-is-current gate
+  const GRAPH_VERSION = "v3.14.0"; // kept in step by the rule-graph-is-current gate
   const RULES = [
     { id: "DMS-MODE", type: "hard method gate", fields: ["source_version", "source_permissions", "downtime", "database_count"], impacts: ["Azure DMS (online)", "modern DMS (offline)"], status: "ok", note: "Online mode is never assumed: it needs a confirmed FULL recovery model and log chain, otherwise the method is held at assessment." },
     { id: "AVS-LICENSING", type: "hard target gate", fields: ["target_region"], impacts: ["AVS"], status: "ok", note: "AVS is held at assessment with the portable VCF licence in evidenceRequired, and is never reported as the service retiring." },
@@ -338,7 +338,7 @@
     ["Azure SQL Managed Instance", "MI Link", 9],
     ["Azure SQL Managed Instance", "Azure DMS (online)", 3],
     ["Azure VMware Solution", "VMware HCX / vMotion", 3],
-    ["provisional shortlist only", "Assessment and dependency discovery first", 8],
+    ["provisional shortlist only", "Assessment and dependency discovery first", 9],
     ["provisional shortlist only", "Confirm a Fabric ingestion path first; Migration Assistant Preview gates apply only if that path is chosen", 3],
     ["provisional shortlist only", "Clarify Kubernetes engine model first", 2],
     ["provisional shortlist only", "Azure Migrate appliance/import/Arc discovery", 1],

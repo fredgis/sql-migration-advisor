@@ -5,7 +5,7 @@ Apply Steps **A → D** in order. Steps map to the two engine phases:
 - **Phase B — Ranking and plan:** Steps B → D. Rank only surviving targets, then choose method, tier, blockers, cost, and assessment.
 
 Regression contract: these rules are a **prompt policy under regression test**. Replaying the same inputs through the rules mirror in `tests/` gives the same result, and 116 golden scenarios enforce it on every commit. The mirror is not what runs in a session: an agent reads these rules and applies them. Treat the contract as a tested policy, not as a guarantee that two runs produce identical wording. Every recommendation must carry the KB version, engine version, and, when available, the source commit SHA and fetch timestamp.
-Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v3.13**, verified August 2026.
+Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v3.14**, verified August 2026.
 
 Three layers, never mixed:
 - **Target** = where the DB ends up (runtime).
@@ -38,6 +38,8 @@ Normalize questionnaire/free-form answers into these fields before filtering:
 | `network_bandwidth` | `GOOD_BANDWIDTH` · `LIMITED_WAN` · `VERY_LARGE_MULTI_TB` · unknown. Drives seeding strategy only. |
 | `mi_link_ports` | `PORTS_CONFIRMED_OPEN` · `PORTS_BLOCKED` · unknown. Only `PORTS_CONFIRMED_OPEN` lets MI Link be confirmed. |
 | `blob_https_reachability` | `BLOB_HTTPS_CONFIRMED` · `BLOB_HTTPS_BLOCKED` · `BLOB_HTTPS_UNKNOWN`. Gates the backup-based paths that stage through Azure Blob — Backup to URL, LRS, log replay, and a BACPAC **only when that workflow stages the file in Blob**. It does **not** gate transports that never touch Blob: Data Box, detach/attach, file-level copies into a target that has a file system, and a local BACPAC imported directly with SqlPackage. Unknown holds the method gate at `unknown_requires_assessment` rather than `passed`. |
+| `recovery_model` | `FULL` · `BULK_LOGGED` · `SIMPLE` · unknown. Gates **`DMS-MODE`**: online DMS needs `FULL`. Log shipping also accepts `BULK_LOGGED`, so the field carries the answer, not a verdict. |
+| `log_chain_status` | `CHAIN_INTACT` · `CHAIN_BROKEN` · unknown. The second half of what online DMS requires, and independent of the recovery model: a database can sit in `FULL` with its chain already cut. |
 | `clr_permission_set` | `CLR_SAFE` · `CLR_EXTERNAL_ACCESS` · `CLR_UNSAFE` · unknown. Gates `CLR-PERMISSION`. **SAFE is not a clearance**: under `clr strict security` the engine treats SAFE and EXTERNAL_ACCESS as UNSAFE unless signed or hash-trusted. |
 | `tde_status` | `TDE_ENABLED` · `TDE_NOT_ENABLED` · unknown. A backup-based method needs the server certificate in the target before restore. |
 | `source_permissions` | `SYSADMIN_AVAILABLE` · `LIMITED_RIGHTS` · unknown. Gates **`SOURCE-PERMISSIONS`**. The SSMS 22 Migration Component requires `sysadmin` on the source. |

@@ -1,7 +1,7 @@
 {
   "metadata": {
     "schemaVersion": "1.0",
-    "prerequisiteKnowledgeBaseVersion": "v1.8",
+    "prerequisiteKnowledgeBaseVersion": "v1.11",
     "pathCatalogVersion": "1.0",
     "evaluatedAt": "2026-09-12T09:00:00Z",
     "mode": "standalone",
@@ -396,6 +396,107 @@
   ],
   "sourceRegister": [
     {
+      "title": "Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/data-migration/sql-server/overview",
+      "verifiedAt": "2026-09-12"
+    },
+    {
+      "title": "Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/azure/migrate/how-to-create-azure-sql-assessment",
+      "verifiedAt": "2026-09-12"
+    },
+    {
+      "title": "Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/azure/azure-sql/azure-sql-iaas-vs-paas-what-is-overview",
+      "verifiedAt": "2026-09-12"
+    },
+    {
+      "title": "Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/azure/role-based-access-control/best-practices",
+      "verifiedAt": "2026-09-12"
+    },
+    {
+      "title": "Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/azure/well-architected/security/networking",
+      "verifiedAt": "2026-09-12"
+    },
+    {
+      "title": "Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/sql/relational-databases/security/encryption/sql-server-encryption",
+      "verifiedAt": "2026-09-12"
+    },
+    {
+      "title": "Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/sql/relational-databases/performance/best-practice-with-the-query-store",
+      "verifiedAt": "2026-09-12"
+    },
+    {
+      "title": "Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/azure/well-architected/reliability/",
+      "verifiedAt": "2026-09-12"
+    },
+    {
+      "title": "Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/azure/azure-sql/database/troubleshoot-common-connectivity-issues",
+      "verifiedAt": "2026-09-12"
+    },
+    {
+      "title": "Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/sql/relational-databases/performance/monitor-and-tune-for-performance",
+      "verifiedAt": "2026-09-12"
+    },
+    {
+      "title": "Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/sql/relational-databases/backup-restore/back-up-and-restore-of-sql-server-databases",
+      "verifiedAt": "2026-09-12"
+    },
+    {
+      "title": "Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/azure/well-architected/operational-excellence/checklist",
+      "verifiedAt": "2026-09-12"
+    },
+    {
+      "title": "Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/restore-sample-database-quickstart",
+      "verifiedAt": "2026-09-12"
+    },
+    {
+      "title": "Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/sql/relational-databases/backup-restore/copy-only-backups-sql-server",
+      "verifiedAt": "2026-09-12"
+    },
+    {
+      "title": "Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/resource-limits",
+      "verifiedAt": "2026-09-12"
+    },
+    {
+      "title": "Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/tde-certificate-migrate",
+      "verifiedAt": "2026-09-12"
+    },
+    {
+      "title": "Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/transact-sql-tsql-differences-sql-server",
+      "verifiedAt": "2026-09-12"
+    },
+    {
+      "title": "Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/data-migration/sql-server/managed-instance/overview",
+      "verifiedAt": "2026-09-12"
+    }
+  ],
+  "selectedMethodPath": {
+    "id": "P10",
+    "title": "Azure SQL Managed Instance — Native Backup/Restore",
+    "target": "Azure SQL Managed Instance",
+    "targetVariant": "Azure SQL Managed Instance",
+    "method": "Native backup/restore",
+    "supportStatus": "supported"
+  },
+  "appliedOverlays": [],
+  "evidenceRegister": [
+    {
       "id": "EV-001",
       "type": "document",
       "status": "verified",
@@ -593,9 +694,5 @@
         "P10-007"
       ]
     }
-  ],
-  "selectedMethodPath": [
-    "P10"
-  ],
-  "appliedOverlays": []
+  ]
 }

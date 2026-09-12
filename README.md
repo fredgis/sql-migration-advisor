@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Knowledge base v3.13" src="https://img.shields.io/badge/knowledge%20base-v3.13-2b8a3e">
+  <img alt="Knowledge base v3.14" src="https://img.shields.io/badge/knowledge%20base-v3.14-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml/badge.svg"></a>
 </p>
@@ -60,14 +60,14 @@ version loaded and where it came from, so the advice is traceable.
 
 ## Why it is trustworthy
 
-- **Verified knowledge** — the v3.13 knowledge base is source-backed and corrected against Microsoft Learn.
-- **Rules under regression test** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers. An executable mirror in `tests/` replays 116 scenarios through those rules on every commit. The mirror is not what runs in your session: an agent reads the rules and applies them, so this is a tested policy rather than a byte-identical guarantee.
+- **Verified knowledge** — the v3.14 knowledge base is source-backed and corrected against Microsoft Learn.
+- **Rules under regression test** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers. An executable mirror in `tests/` replays 117 scenarios through those rules on every commit. The mirror is not what runs in your session: an agent reads the rules and applies them, so this is a tested policy rather than a byte-identical guarantee.
 - **Every decision is addressable** — the card cites a rule ID for each verdict, and [`reference/decision-rules.md`](reference/decision-rules.md) ends with an index of all 31. Look one up, read what it consumes and how it treats an unknown, and argue with it.
 - **You see what lost, not just what won** — the card lists every method the knowledge base supports for the chosen target, each with a status and a reason. A method that is never enumerated is never rejected either, so its absence cannot be argued with; that is how Azure DMS stayed out of the Managed Instance guidance while the matrix declared it supported. Any candidate marked `available` can be handed to the prerequisite companion instead of the recommended one.
 - **Explicit uncertainty** — every recommendation is `provisional`, and `medium` is the confidence ceiling. Nothing higher is reachable from an interview, because the skill reads no artefact from your estate. It carries assumptions, unknowns, blockers and the evidence a tool would have to produce.
 - **It checks its own answer** — before the card is shown, the skill re-reads its draft against the 16 invariants in [`reference/output-contract.md`](reference/output-contract.md). One of them: no eligibility claim may rest on a field you never answered. A failed invariant is shown to you, never silently repaired.
 - **Freshness gates** — version bumps require substantive diffs; link checks classify bot-blocked pages; high-risk claims are tracked in [`reference/claims-registry.json`](reference/claims-registry.json).
-- **Regression protection** — [`tests/`](tests/) holds 116 golden scenarios and 73 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
+- **Regression protection** — [`tests/`](tests/) holds 117 golden scenarios and 73 gates wired into CI, plus a branch-coverage floor on the decision engine so a gate cannot exist over code no scenario reaches.
 
 ## One version, every surface
 
@@ -77,20 +77,20 @@ The knowledge base is quoted by a skill, three manifests, a PDF, a poster, this 
 
 | Surface | Version | Up to date |
 | --- | --- | --- |
-| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v3.13` | ✅ |
-| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v3.13` | ✅ |
-| `SKILL.md` and its pinned fetch URL | `v3.13.1` | ✅ |
-| `version.json`, `plugin.json`, `marketplace.json` | `v3.13.1` | ✅ |
-| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v3.13` | ✅ |
-| Poster caption and PNG | `v3.13` | ✅ |
-| This README's badge and PDF sentence | `v3.13` | ✅ |
-| **This table** | `v3.13` | ✅ |
+| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v3.14` | ✅ |
+| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v3.14` | ✅ |
+| `SKILL.md` and its pinned fetch URL | `v3.14.0` | ✅ |
+| `version.json`, `plugin.json`, `marketplace.json` | `v3.14.0` | ✅ |
+| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v3.14` | ✅ |
+| Poster caption and PNG | `v3.14` | ✅ |
+| This README's badge and PDF sentence | `v3.14` | ✅ |
+| **This table** | `v3.14` | ✅ |
 | The six `blume/public/*.svg` mirrors | — | ✅ |
 | [`blume/docs/index.mdx`](blume/docs/index.mdx) — the docs site | — | ✅ |
-| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v3.13.1` | ✅ |
-| [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | `v3.13.1` | ✅ |
+| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v3.14.0` | ✅ |
+| [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | `v3.14.0` | ✅ |
 | `howto/*.html` | — | ✅ |
-| The developer pitch's sample failure block | `v3.13` | ✅ |
+| The developer pitch's sample failure block | `v3.14` | ✅ |
 
 <!-- surfaces:end -->
 
@@ -397,7 +397,7 @@ Three views over the same policy, in one page:
 | --- | --- |
 | **Documented paths** | Every target and the methods that reach it, with how many scenarios exercise each |
 | **Rules** | The 31 addressable rules, the fields each one consumes, and what it decides |
-| **Tested coverage** | What the 116 golden scenarios actually reach |
+| **Tested coverage** | What the 117 golden scenarios actually reach |
 
 Select a node to isolate its relations. Enumerating the profiles literally is not an option — more
 than 13.9 billion combinations before the conditional fields, and free-text fields make the space
@@ -457,7 +457,7 @@ Mermaid decision diagrams. The `SKILL.md` mirrors its AI Migration Agent I/O con
 
 The same knowledge base ships as a polished, branded PDF —
 [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (27 pages,
-v3.13, September 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
+v3.14, September 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
 
@@ -523,6 +523,7 @@ base and this README on the same version. Last verified: August 2026.
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| v3.14.0 | 2026-09-12 | **Three defects found by attacking behaviour instead of surfaces, and every surface was green.** `DMS-MODE` has named `recovery_model` and `log_chain_status` as its inputs since those became typed fields in v3.11.0, and the engine read neither: online DMS came back `available` on a source in SIMPLE recovery with a broken log chain, which is the one state the rule exists to refuse. The same was true of `AVS-LICENSING` and `COPILOT-AGENT`, which name `target_region` and `preview_acceptable` and read nothing. **The check I wrote for exactly this compared the rule index against the schema, not against the engine** — declaring a field and reading it are different things, and it only checked the first. It compares both now, and a scenario carries the refusal so removing the gate fails on a documented case rather than quietly. The plan validator checked the rows a plan carried and never the rows it owed: a `P10` plan cut from nineteen prerequisites to one, with the counts recalculated to agree, came back valid and `ready`. The catalog knows what a path owes and is asked now. And the exemplar plan could not validate against its own output schema in 181 places, because `acceptedEvidence` ids were resolved against `sourceRegister`, which types citations and cannot hold them. There is one evidence model now, `evidenceRegister`, and the exemplar is checked against the schema **and** the invariants in the same run: two checks that had never met. |
 | v3.13.1 | 2026-09-12 | **Five findings, and four of them were one file nobody was comparing.** The fork's advisor `SKILL.md` was maintained by hand beside this repository's, not derived from it. That arrangement had already cost a review round, and the fix then was partial: the port carried the capability line and the JSON blocks, and left the prose, which is where the instructions are. So the fork still told the agent that its policy was already in context and that the skill read no file at run time, months after this repository said the opposite and granted read tools. **The whole document is derived now**, with two sections declared fork-owned by heading; anything else that differs is a failure. And the parity checker, which existed, was only ever run by the port itself, so forgetting to port left no trace at all: it runs on every suite now, and fixing something here without porting it fails the build naming the section. The other three: the copyable `advisor_handoff` example in the prerequisite contract had stopped validating against either accepted shape when the mirror gained three required provenance fields, so a user following the canonical page was refused before their path was resolved; a shortlist handoff was required to echo a `controlPlane` that a shortlist cannot carry, leaving the planner to emit invalid JSON or fabricate `standalone`, which is the defaulting defect v3.11.3 removed; and the always-loaded worked exemplar labelled revisitable preferences as technical refusals, used a method gate to decide target eligibility, and claimed `medium` confidence and a General Purpose tier over unconfirmed prerequisites. It is derived from the rules now and reads `low` with the method gate rendered. Writing that found a rule ordering defect: SQL Agent silently upgraded Azure SQL Database out of the refusal linked servers had just given it. 72 gates to 73. |
 | v3.13.0 | 2026-09-12 | **Two batches: the canonical fields that were never enumerated, and a verdict nobody had pronounced.** Seven profile fields still accepted any string although the contract tabulates their IDs and the crosswalk maps their exact values, so a plausible normalization variant passed both schemas and fell into the crosswalk's `otherwise`, where a known answer became `UNKNOWN`. Six are enumerated now; `network_ports` is typed as the legacy free text it always was rather than as a canonical answer it never had. **The check that should have caught them read the section headings**, so a heading naming two fields was skipped entirely, and that is exactly where the host, edition, encryption, permission and authentication vocabularies live. It reads the rows now, in both shapes the contract uses, and it found two more things on its first run: a paraphrased `source_os` I had written by hand in the worked example, and a selector the contract tabulates with nowhere in the profile to record what it established, which is now `tier_drivers_state`. **And Phase A: five families start at `unsupported`** and the rules promote what applies, so a family no rule reached kept an initial value that reads as a technical refusal, carrying no rule id and no reason while the trace schema requires both. Families the profile's own preferences explain are `excluded_by_preference` with that reason stated, 65 assertions across 17 scenarios move with them, and a gate refuses any `unsupported` without a recorded reason. Writing it found a rule that had been refusing Azure SQL Database for SQL CLR, Service Broker and cross-database queries without ever saying so. 71 gates to 72. |
 | v3.12.2 | 2026-09-12 | **Three review threads that had never been answered, and the reason the last one existed was mine.** Regenerating the worked example in v3.11.5 rebuilt its profile, its candidates and its gate trace, and left `unknowns`, `evidenceRequired` and `blockers` as they were written by hand. So the object contradicted itself: it warned about an unverified Blob upload path the profile had just confirmed, and the hard-gate unknown the rules actually derive, the thirty-day Log Replay Service window, was in neither list although invariant 5 requires both. `blockers` carried a method gate result, so a refused method spoke for target eligibility it was never asked about. All three are derived now. The interview row that merged bandwidth, MI Link ports and Blob reachability is split into the three questions the contract separated them into, for the reason it separated them: one answer covering three gates is how a gate reports `passed` on a fact nobody gave. **And the check that let all of this through compared the card with the JSON and never the JSON with the rules** — the seventh time this round that a check was narrower than its name, and the second on something written the day before. It derives every list the rules produce and compares. Writing the check found one more: the profile said `cross-database queries` where the interview says `cross-DB queries`, a paraphrase I introduced, and the rules match the token — Managed Instance had silently lost its remediation status and Azure SQL Database had stopped being blocked. Free-text profile values are quoted from the interview now, and a check says so; it found a second paraphrase, `TDE-encrypted databases` for `TDE-encrypted DBs`, on its first run. |

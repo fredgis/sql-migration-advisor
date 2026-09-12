@@ -3466,6 +3466,23 @@ try {
     const snake = token.replace(/([A-Z])/g, letter => `_${letter.toLowerCase()}`);
     if (known.has(snake)) failures.push(`the rules write \`${token}\` where the schema declares \`${snake}\`; a reader cannot resolve the camelCase spelling to a field`);
   }
+  // Declaring a field and reading it are different things, and this gate only checked the first.
+  // `DMS-MODE` has named recovery_model and log_chain_status as its inputs since they became typed
+  // fields; the engine mentioned neither, so online DMS came back available on a source in SIMPLE
+  // recovery with a broken chain. A rule index that describes something nothing executes is prose.
+  const engineText = readText(path.join('tests', 'engine', 'evaluate.mjs'));
+  const declaredFields = new Set();
+  for (const line of rulesDoc.split(/\r?\n/)) {
+    const row = line.match(/^\|\s*`([A-Z][A-Z0-9-]+)`\s*\|[^|]*\|([^|]*)\|/);
+    if (!row) continue;
+    for (const token of [...row[2].matchAll(/`([^`]+)`/g)].map(m => m[1].trim())) {
+      if (isFieldClaim(token) && known.has(token)) declaredFields.add(token);
+    }
+  }
+  for (const field of declaredFields) {
+    if (!engineText.includes(field)) failures.push(`the rule index names \`${field}\` as an input and the engine never reads it, so the rule it belongs to decides nothing`);
+  }
+  notes.push(`${declaredFields.size} field(s) named by an indexed rule are read by the engine that replays those rules.`);
   if (!rowsRead) failures.push('no indexed rule row was read, so this gate is checking nothing');
   notes.push(`${rowsRead} indexed rule row(s) read; every field they name is declared by the advisor input schema.`);
   add('rules-only-read-facts-the-profile-carries', failures.length === 0, failures.length ? failures : notes);

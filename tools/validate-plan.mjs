@@ -67,12 +67,12 @@ function validate(plan) {
   }
 
   // An evidence id has to name a record the plan carries, or the row is confirmed by nothing.
-  const evidenceIds = new Set((plan.sourceRegister || []).map(record => record.id).filter(Boolean));
+  const evidenceIds = new Set((plan.evidenceRegister || []).map(record => record.id).filter(Boolean));
   for (const row of rows) {
     const accepted = row.acceptedEvidence || [];
     if (new Set(accepted).size !== accepted.length) say(`${row.id} lists the same evidence id twice; one record cited twice is one record`);
     for (const id of accepted) {
-      if (!evidenceIds.has(id)) say(`${row.id} accepts evidence \`${id}\`, which the plan's own source register does not contain`);
+      if (!evidenceIds.has(id)) say(`${row.id} accepts evidence \`${id}\`, which the plan's own evidence register does not contain`);
     }
     // Invariant 19: a row no question feeds cannot be confirmed on a bare assertion.
     const fedByQuestion = (plan.questionsAsked || []).some(question => (question.consumedBy || question.prerequisites || []).includes(row.id));
@@ -82,6 +82,17 @@ function validate(plan) {
   }
 
   // The counts are a reading of the rows, not a separate assertion about them.
+  // But a reading of the wrong rows is still wrong: the validator checked what the plan carried and
+  // never what it owed. A P10 plan reduced to one row, with the counts recalculated to match, came
+  // back valid and `ready` — nineteen obligations replaced by one, and the arithmetic agreed.
+  // The catalog knows which rows a path owes. It is asked now.
+  const owed = new Set([
+    ...[...kbRows.keys()].filter(id => id.startsWith('COM-')),
+    ...(plan.selectedPath ? [...kbRows.keys()].filter(id => id.startsWith(`${plan.selectedPath.id}-`)) : [])
+  ]);
+  for (const id of owed) {
+    if (!seen.has(id)) say(`${id} applies to this path and the plan does not carry it; a plan that drops an obligation reads as one that met it`);
+  }
   const applicable = rows.filter(row => row.status !== 'not_applicable');
   const derived = {
     confirmed: rows.filter(row => row.status === 'confirmed').length,

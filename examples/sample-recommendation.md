@@ -74,7 +74,7 @@ SQL MI ranks first because it preserves instance-level compatibility with much l
 
 > **Preliminary recommendation — `Finance DB group (3 DBs)`**
 > **Azure SQL Managed Instance — General Purpose** via **Log Replay Service** · status **provisional** · confidence **low**
-> KB **v3.13** (bundled, same commit as the skill) · rules **v3.13**
+> KB **v3.14** (bundled, same commit as the skill) · rules **v3.14**
 
 SQL MI is the recommended assessment path because the workload needs SQL Agent, cross-database queries, and linked servers, while the team wants managed PaaS; SQL Server 2014 and blocked MI Link ports 5022/11000–11999 make MI Link unavailable, so LRS is the practical online method with planned cutover downtime.
 
@@ -149,8 +149,8 @@ one over the recommendation.
 ```json
 {
   "metadata": {
-    "knowledgeBaseVersion": "v3.13",
-    "decisionRulesVersion": "v3.13",
+    "knowledgeBaseVersion": "v3.14",
+    "decisionRulesVersion": "v3.14",
     "sourceCommit": "bundled",
     "evaluatedAt": "2026-09-09T18:20:00Z",
     "recommendationStatus": "provisional",

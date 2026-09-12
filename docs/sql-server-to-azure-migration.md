@@ -6,7 +6,7 @@
 >
 > **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of August 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
 >
-> **Version.** v3.13 — 11 September 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
+> **Version.** v3.14 — 11 September 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**
@@ -661,13 +661,14 @@ flowchart LR
 
 ## 17. Document version & changelog
 
-Current version: **v3.13** (2026-09-09).
+Current version: **v3.14** (2026-09-09).
 
 <details>
-<summary><b>Version history</b> (current: v3.13)</summary>
+<summary><b>Version history</b> (current: v3.14)</summary>
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v3.14 | 2026-09-12 | **`DMS-MODE` decides something now.** The rule has named `recovery_model` and `log_chain_status` as its inputs since those became typed fields, and the engine read neither, so online DMS came back available on a source in SIMPLE recovery with a broken log chain: the one state the rule exists to refuse. `AVS-LICENSING` and `COPILOT-AGENT` were in the same position, naming `target_region` and `preview_acceptable` and reading nothing. All three read their inputs, and a check compares the rule index against the engine rather than against the schema. |
 | v3.13 | 2026-09-12 | **A family nobody evaluated no longer reports that it cannot work.** Five of the eight start at `unsupported` and the rules promote what applies, so a family no rule reached kept an initial value that reads as a technical refusal, with no rule id and no reason behind it. Invariant 11 refuses a family that disappears; one that stays visible carrying a verdict nobody pronounced is the same thing, harder to see because it looks argued. Families the profile's own preferences explain are `excluded_by_preference` with that reason, and no family may report `unsupported` without a recorded one. |
 | v3.12 | 2026-09-12 | **The refusal to recommend is a state now, not a sentence in the target field.** Section B1 has always said never invent a winner when no rule separates the candidates, and the only way to say so was `target: "provisional shortlist only"`, which validated because that field accepted any string. A reader got something shaped like a target and resolvable as nothing. `recommendationStatus` gains `shortlist`, `recommendation.target` becomes an enumeration of the eight families, and a shortlist names at least two of them with what would separate each. |
 | v3.11 | 2026-09-12 | **Two facts the rules read and the profile could not carry.** `DMS-MODE` refused to assume online DMS without a FULL recovery model and an unbroken log chain, and neither was a field: the closed profile rejects anything it does not declare, so the decision that rule made could not be reproduced from a valid input. `recovery_model` and `log_chain_status` are typed now and carried end to end. They are deliberately two fields: a database can sit in FULL and still have had its chain cut, and log shipping accepts BULK_LOGGED where the Log Replay Service is FULL only, so one shared verdict could not serve both. Five rules also wrote `previewAcceptable` where the field is `preview_acceptable`, a spelling a reader cannot resolve. |
