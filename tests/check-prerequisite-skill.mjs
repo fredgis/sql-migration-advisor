@@ -376,6 +376,67 @@ for (const question of questions.questions) {
     'sourceAdvisor is closed and declares no sourceCommit, so the one identifier that pins a recommendation to an exact tree is dropped on the way through');
 }
 
+// Sixth review pass. The error table tells the agent to stop when a bundle file declares a schema
+// or knowledge base line that disagrees. A bare `version` key reads as exactly that claim, so a
+// crosswalk carrying its own release history could halt a run for disagreeing with lines it was
+// never declaring. A file versions itself under its own key, or it declares the coordinated line.
+{
+  const bundleFiles = [
+    ['reference', 'path-catalog.json'],
+    ['reference', 'questions.json'],
+    ['reference', 'advisor-coverage.json'],
+    ['reference', 'advisor-fact-mappings.json'],
+    ['schemas', 'input.schema.json'],
+    ['schemas', 'output.schema.json']
+  ];
+  const schemaLine = outputSchema.properties.metadata.properties.schemaVersion.const;
+  const kbLine = outputSchema.properties.metadata.properties.prerequisiteKnowledgeBaseVersion.const;
+  for (const parts of bundleFiles) {
+    const file = parts.join('/');
+    const declared = parse(...skillDir, ...parts).version;
+    check(`bundle-version-key-is-unambiguous-${file}`,
+      declared === undefined || declared === schemaLine || declared === kbLine,
+      `${file} declares \`version: ${declared}\`, which is neither the schema line ${schemaLine} nor the knowledge base line ${kbLine}; the startup rule reads a bare version as a claim about those two and stops, so this file halts a run for being healthy. Version it under its own key.`);
+  }
+  const crosswalk = parse(...skillDir, 'reference', 'advisor-fact-mappings.json');
+  check('crosswalk-versions-itself-under-its-own-key', Boolean(crosswalk.mappingsVersion),
+    'advisor-fact-mappings.json carries its own release history and must publish it as mappingsVersion, so a reader can tell a crosswalk revision from a policy line');
+}
+
+// Sixth review pass. The worked example counted the seven P10 rows and none of the twelve common
+// ones, so it showed a third of the blocking surface a real plan carries and taught a reader to
+// expect a shorter plan than the skill produces. An example is a claim about the output, and it was
+// the only claim nothing checked.
+{
+  const example = (skill.match(/```text\n([\s\S]*?)```/u) || [])[1] || '';
+  check('example-block-present', example.length > 0, 'SKILL.md no longer carries a worked example, so this check has nothing to read');
+  const pathId = (example.match(/Path (P[0-9]{2})/u) || [])[1];
+  check('example-names-its-path', Boolean(pathId), 'the worked example does not name the path it plans');
+  if (pathId) {
+    const commonRows = prerequisiteRows.filter(row => row.id.startsWith('COM-')).length;
+    const pathRows = prerequisiteRows.filter(row => row.id.startsWith(`${pathId}-`)).length;
+    const expected = commonRows + pathRows;
+    const claimed = Number((example.match(/carries \*{0,2}(\d+) rows/u) || skill.match(/plan carries \*{0,2}(\d+) rows\*{0,2}/u) || [])[1]);
+    check('example-counts-the-whole-plan', claimed === expected,
+      `the example is written for ${pathId} and claims ${claimed} rows where the knowledge base gives ${commonRows} common plus ${pathRows} path rows, which is ${expected}`);
+    // The totals line is the sentence a reader trusts; it has to add up to the same plan.
+    const total = (example.match(/^Total\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/mu) || []).slice(1).map(Number);
+    check('example-totals-add-up', total.length === 5 && total.reduce((sum, n) => sum + n, 0) === expected,
+      `the example's totals row sums to ${total.reduce((sum, n) => sum + n, 0)} and the plan has ${expected} rows`);
+    // Per-area rows have to sum to the totals, or the table contradicts its own last line.
+    const areas = [...example.matchAll(/^(Common|P[0-9]{2})\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*$/gmu)]
+      .map(row => row.slice(2).map(Number));
+    check('example-areas-sum-to-the-total', areas.length >= 2
+      && total.every((value, column) => areas.reduce((sum, row) => sum + row[column], 0) === value),
+      'the example\'s per-area counts do not sum to its own totals row');
+    // And the columns the template mandates have to be the ones the example shows.
+    for (const column of ['Confirmed', 'Reported', 'Missing', 'Unknown', 'Not applicable']) {
+      check(`example-shows-column-${column.replace(/\s+/gu, '-')}`, example.includes(column),
+        `the template's summary mandates a ${column} column and the example omits it, so the example teaches a shape the renderer does not produce`);
+    }
+  }
+}
+
 // Sixth review pass. The output schema types an object nobody had ever built, which is why four
 // separate findings all landed here: a plan could invent a prerequisite, rewrite a knowledge base
 // row, flip a blocker to non-blocking, confirm a row with an evidence id naming nothing, contradict
