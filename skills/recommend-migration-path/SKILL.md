@@ -215,7 +215,7 @@ Stating a single budget made these compete: an implementation that spent its one
 
 **Fetch the live document only when the user asks for it.** Say that it is being fetched, and read only:
 
-- `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/v3.14.2/docs/sql-server-to-azure-migration.md`
+- `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/v3.14.3/docs/sql-server-to-azure-migration.md`
 
 That URL is pinned to a release tag, not to `main`. A mutable branch means the facts can change under the reader between two sessions with no version to cite. Never substitute a different URL, and never rewrite the path: the raw host serves `…/<tag>/<path>`, and inserting `blob` returns 404. If the tagged document is unreachable, fall back to the bundled copy and say the fallback is what answered.
 
@@ -265,7 +265,7 @@ Apply `../../reference/decision-rules.md` by name:
 
 Follow every phase in order. Do not jump from interview answers to a recommendation.
 
-1. **Load the policy.** Read [`../../reference/input-contract.md`](../../reference/input-contract.md), [`../../reference/decision-rules.md`](../../reference/decision-rules.md), [`../../reference/output-contract.md`](../../reference/output-contract.md) and the bundled knowledge base **before asking anything**. Only `SKILL.md` arrives with the skill; everything under `reference/` and `schemas/` has to be opened, which is why this skill declares read tools. Fetch the live knowledge base only if the user asked for it. Record `knowledgeBaseVersion`, `knowledgeBaseSource` (`bundled` or `live`), `decisionRulesVersion`, optional `commit` and `evaluatedAt`. **Announce the versions and the source in one line before the first question**, so the user knows which facts are about to be applied. If a file cannot be read, name that file and stop before selecting a target. If the versions disagree, say which two disagree and stop. Never carry on from memory: a rule recalled rather than read is a rule nobody can audit.
+1. **Load the policy.** Read all seven, **before asking anything**: [`../../reference/input-contract.md`](../../reference/input-contract.md), [`../../reference/decision-rules.md`](../../reference/decision-rules.md), [`../../reference/output-contract.md`](../../reference/output-contract.md), the bundled knowledge base [`../../docs/sql-server-to-azure-migration.md`](../../docs/sql-server-to-azure-migration.md), [`schemas/input.schema.json`](schemas/input.schema.json), [`schemas/output.schema.json`](schemas/output.schema.json) and [`../generate-migration-prerequisite-plan/reference/advisor-coverage.json`](../generate-migration-prerequisite-plan/reference/advisor-coverage.json), which is where a method's `role` and its prerequisite paths come from and without which the candidate list cannot be built. Only `SKILL.md` arrives with the skill; every other file has to be opened, which is why this skill declares read tools. Fetch the live knowledge base only if the user asked for it. Record `knowledgeBaseVersion`, `knowledgeBaseSource` (`bundled` or `live`), `decisionRulesVersion`, optional `commit` and `evaluatedAt`. **Announce the versions and the source in one line before the first question**, so the user knows which facts are about to be applied. If a file cannot be read, name that file and stop before selecting a target. If the versions disagree, say which two disagree and stop. Never carry on from memory: a rule recalled rather than read is a rule nobody can audit, and nothing later in this file licenses an exception.
 2. **Frame honestly**: “I'll ask a short triage set, then produce a provisional disposition and the assessment evidence needed to validate it.”
 3. **Normalise the profile.** Take what the user already supplied, convert labels and prose into the IDs of the input contract, preserve the `UNKNOWN` / `NONE_CONFIRMED` / `NOT_APPLICABLE` distinction, and render the normalised profile so a misreading is visible.
 4. **Tier 1 triage**: ask only the missing questions that can change a surviving candidate.
@@ -467,9 +467,9 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
     },
     {
       "target": "fabric_sql_db",
-      "status": "eligible",
-      "ruleId": "FABRIC-TARGET",
-      "reason": "Broad OLTP schema, not a Fabric-native analytics workload."
+      "status": "unsupported",
+      "ruleId": "DEPENDENCY-INVENTORY",
+      "reason": "Linked servers are a hard Azure SQL Database blocker unless refactored. SQL database in Fabric has the narrower surface of the two, so the same dependency applies at least as strongly."
     },
     {
       "target": "arc_sql_mi",
@@ -506,9 +506,9 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
     {
       "method": "DMS",
       "role": "primary",
-      "status": "available",
+      "status": "unavailable",
       "selected": false,
-      "reason": "Prerequisite paths P23, P24 apply.",
+      "reason": "Online DMS is never assumed without a confirmed FULL recovery model and an unbroken log chain. Confirm both before selecting it.",
       "prerequisitePaths": [
         "P23",
         "P24"
@@ -527,9 +527,9 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
     {
       "method": "Log Replay Service",
       "role": "primary",
-      "status": "available",
+      "status": "unknown_requires_assessment",
       "selected": false,
-      "reason": "Prerequisite paths P09 apply.",
+      "reason": "Prerequisite paths P09 are unproven for this profile: log_chain_status, recovery_model are unstated, and an unverified prerequisite is not a satisfied one.",
       "prerequisitePaths": [
         "P09"
       ]
@@ -537,9 +537,9 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
     {
       "method": "Native backup/restore",
       "role": "primary",
-      "status": "available",
+      "status": "unknown_requires_assessment",
       "selected": false,
-      "reason": "Prerequisite paths P10 apply.",
+      "reason": "Prerequisite paths P10 are unproven for this profile: blob_https_reachability, log_chain_status are unstated, and an unverified prerequisite is not a satisfied one.",
       "prerequisitePaths": [
         "P10"
       ]
@@ -557,9 +557,9 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
     {
       "method": "BACPAC / SqlPackage",
       "role": "secondary",
-      "status": "available",
+      "status": "unknown_requires_assessment",
       "selected": false,
-      "reason": "Prerequisite paths P11 apply.",
+      "reason": "Prerequisite paths P11 are unproven for this profile: blob_https_reachability is unstated, and an unverified prerequisite is not a satisfied one.",
       "prerequisitePaths": [
         "P11"
       ]
@@ -575,7 +575,12 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
   ],
   "assumptions": [],
   "evidenceRequired": [
-    "Confirm the migration account holds sysadmin on the source instance before scheduling this method."
+    "Confirm the migration account holds sysadmin on the source instance before scheduling this method.",
+    "Confirm `log_chain_status` before treating Log Replay Service as available: it settles a blocking prerequisite on P09.",
+    "Confirm `recovery_model` before treating Log Replay Service as available: it settles a blocking prerequisite on P09.",
+    "Confirm `blob_https_reachability` before treating Native backup/restore as available: it settles a blocking prerequisite on P10.",
+    "Confirm `log_chain_status` before treating Native backup/restore as available: it settles a blocking prerequisite on P10.",
+    "Confirm `blob_https_reachability` before treating BACPAC / SqlPackage as available: it settles a blocking prerequisite on P11."
   ],
   "nextActions": [],
   "evidenceLinks": [],
@@ -676,7 +681,7 @@ When the user says the assessment is done, acknowledge it, name the artefacts th
 | No target survives Phase A with a viable method | Return a **provisional shortlist** with the exclusion reason per candidate and the assessment to run next. Never invent a fallback |
 | The interview produces conflicting answers | Show the conflict and the trade-off rather than picking a side silently |
 | A tier-driving input is unknown | Emit `unknown_requires_assessment` for the tier and name the baseline to capture. Do not default to General Purpose |
-| The live knowledge base cannot be fetched | Fall back to the bundled decision rules and say so, including that the offline copy may lag. The bundled copy is always in context, so this applies only to the optional live fetch |
+| The live knowledge base cannot be fetched | Fall back to the files already read in step 1 and say so, including that the offline copy may lag. This applies only to the optional live fetch. It does **not** license working from memory: step 1 opened those files, and if it could not, it stopped there |
 | The user asks for a cost figure | Emit cost levers, never an estimate, until sizing and pricing data exist |
 | Authentication or permission failure | Not applicable: this skill authenticates to nothing |
 | Paginated or partial service results | Not applicable: this skill calls no service |

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "Normative crosswalk from the Advisor's normalizedProfile to the prerequisite skill's question fields. The consumer is told not to ask again for a fact the Advisor already established, but the two skills name and type their facts differently, so without this table the rule cannot be implemented deterministically: two implementations reading the same handoff would disagree about which questions are already answered. Every entry states what converts, what does not, and what the consumer may claim as a result. Enforced by tests/check-prerequisite-skill.mjs. The field below is `mappingsVersion` and not `version`: a bare version on a bundle file reads as a claim about the coordinated schema and knowledge base lines, which the startup check compares and halts on, so a healthy crosswalk with its own release history could stop a run for disagreeing with lines it was never declaring.",
-  "mappingsVersion": "v1.2",
+  "mappingsVersion": "v1.3",
   "conversionKinds": {
     "direct": "The value carries over unchanged, or through a documented label-to-ID mapping.",
     "vocabulary": "The value carries over but the allowed values differ and must be translated.",
@@ -66,9 +66,8 @@
       "advisorField": "log_chain_status",
       "consumerField": "backup_chain_status",
       "conversion": "vocabulary",
-      "note": "The Advisor records whether the chain is intact; the consumer records a readiness status. Missing for the same reason as recovery_model, and with the same effect: the second half of what an online replay needs never reached the plan. Only an explicit intact chain converts to CONFIRMED, a reported break is MISSING so the prerequisite becomes a blocker, and anything else stays UNKNOWN rather than being read as good news.",
+      "note": "Asymmetric on purpose, because the two directions are not equally conclusive. A reported break is proof of a problem and converts to MISSING, which makes the prerequisite a blocker. A reported intact chain is not proof of restore readiness and converts to nothing: `backup_chain_status` feeds eight blocking rows whose evidence columns ask for `RESTORE VERIFYONLY`, a gap check and a restore rehearsal, and the consumer is told not to re-ask an inherited fact, so mapping intact to CONFIRMED cleared all eight on one sentence from the user and moved a never-tested restore route off `blocked`. This entry shipped that way for one release. An intact chain is an input to proof, not the proof.",
       "valueMap": {
-        "CHAIN_INTACT": "CONFIRMED",
         "CHAIN_BROKEN": "MISSING"
       },
       "otherwise": "UNKNOWN"
