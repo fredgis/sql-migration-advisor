@@ -696,8 +696,7 @@
     "advisorPublicOutput": {
       "type": "object",
       "required": [
-        "metadata",
-        "recommendation"
+        "metadata"
       ],
       "description": "The public contract shape of reference/output-contract.md section 2, as rendered for a reader and produced on request as JSON.",
       "properties": {
@@ -765,12 +764,13 @@
           "required": [
             "target",
             "method",
+            "targetAvailabilityDuringSync",
+            "businessCutoverDowntime",
             "controlPlane"
           ],
           "properties": {
             "target": {
-              "type": "string",
-              "minLength": 1
+              "$ref": "#/$defs/advisorTargetLabel"
             },
             "tier": {
               "type": "string",
@@ -851,14 +851,81 @@
             "$ref": "#/$defs/advisorMethodCandidate"
           },
           "description": "The methods the Advisor weighed, mirrored from the producer. When the user prefers a candidate marked available over the recommended one, its prerequisitePaths are what the plan resolves, so a handoff without this list cannot honour that choice. Both accepted shapes carry it because both stand in for the same run."
+        },
+        "shortlist": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/advisorShortlistEntry"
+          },
+          "description": "The families the Advisor refused to choose between, carried so the plan can say which they were and what would settle it. Present only when recommendationStatus is shortlist."
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "metadata": {
+                "properties": {
+                  "recommendationStatus": {
+                    "const": "provisional"
+                  }
+                },
+                "required": [
+                  "recommendationStatus"
+                ]
+              }
+            },
+            "required": [
+              "metadata"
+            ]
+          },
+          "then": {
+            "required": [
+              "recommendation"
+            ],
+            "not": {
+              "required": [
+                "shortlist"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "metadata": {
+                "properties": {
+                  "recommendationStatus": {
+                    "const": "shortlist"
+                  }
+                },
+                "required": [
+                  "recommendationStatus"
+                ]
+              }
+            },
+            "required": [
+              "metadata"
+            ]
+          },
+          "then": {
+            "required": [
+              "shortlist"
+            ],
+            "not": {
+              "required": [
+                "recommendation"
+              ]
+            }
+          }
+        }
+      ]
     },
     "advisorMirrorOutput": {
       "type": "object",
       "required": [
-        "primary_target",
         "method",
         "recommendationStatus",
         "confidence",
@@ -879,8 +946,7 @@
           }
         },
         "primary_target": {
-          "type": "string",
-          "minLength": 1
+          "$ref": "#/$defs/advisorTargetLabel"
         },
         "method": {
           "type": "string",
@@ -949,9 +1015,63 @@
           "type": "string",
           "minLength": 1,
           "description": "Optional, as upstream. Recorded when the caller can see it, so a plan can be reproduced against an exact tree."
+        },
+        "shortlist": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/advisorShortlistEntry"
+          },
+          "description": "The families the Advisor refused to choose between, carried so the plan can say which they were and what would settle it. Present only when recommendationStatus is shortlist."
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "recommendationStatus": {
+                "const": "provisional"
+              }
+            },
+            "required": [
+              "recommendationStatus"
+            ]
+          },
+          "then": {
+            "required": [
+              "primary_target"
+            ],
+            "not": {
+              "required": [
+                "shortlist"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "recommendationStatus": {
+                "const": "shortlist"
+              }
+            },
+            "required": [
+              "recommendationStatus"
+            ]
+          },
+          "then": {
+            "required": [
+              "shortlist"
+            ],
+            "not": {
+              "required": [
+                "primary_target"
+              ]
+            }
+          }
+        }
+      ]
     },
     "advisorRecommendationStatus": {
       "enum": [
@@ -1068,6 +1188,43 @@
         "selected": {
           "type": "boolean",
           "description": "True for the recommended method. Invariant 15 requires exactly one selected candidate, and requires it to be available."
+        }
+      }
+    },
+    "advisorTargetLabel": {
+      "enum": [
+        "SQL Server on Azure VM",
+        "Azure VMware Solution",
+        "Azure SQL Managed Instance",
+        "Azure SQL Database",
+        "SQL database in Fabric",
+        "Arc-enabled SQL Managed Instance",
+        "SQL Server in a container",
+        "SQL Server enabled by Azure Arc"
+      ],
+      "description": "The eight target families, in the long form the handoff carries. Mirrored from the producer: the Advisor closed this field and a consumer still taking any string would have accepted exactly what the producer had just stopped emitting."
+    },
+    "advisorShortlistEntry": {
+      "type": "object",
+      "required": [
+        "target",
+        "whyItStands",
+        "whatWouldSeparateIt"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "$ref": "#/$defs/advisorTargetLabel"
+        },
+        "whyItStands": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Why this family is still standing after Phase A."
+        },
+        "whatWouldSeparateIt": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The fact that would settle it against the others. A shortlist with no route out of it is a refusal without a next step, which is the failure this field exists to prevent."
         }
       }
     }

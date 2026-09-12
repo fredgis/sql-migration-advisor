@@ -374,6 +374,39 @@ for (const question of questions.questions) {
   }
   check('handoff-provenance-keeps-the-commit', Boolean(sourceAdvisor.sourceCommit),
     'sourceAdvisor is closed and declares no sourceCommit, so the one identifier that pins a recommendation to an exact tree is dropped on the way through');
+
+  // The vocabulary check above compares the shared $defs and says nothing about the fields that
+  // use them. So the Advisor could close `recommendation.target` to the eight families while the
+  // consumer still took any string, and the phrase the producer had just stopped emitting would
+  // have been accepted by the end that reads it. A check whose scope is narrower than its name is
+  // the defect this whole review kept finding; this is the same question asked of the fields.
+  const resolve = (schema, node) => (node?.$ref ? schema.$defs[node.$ref.split('/').pop()] : node);
+  const shapeOf = (schema, node) => {
+    const resolved = resolve(schema, node) || {};
+    return JSON.stringify({ enum: resolved.enum, type: resolved.type, minimum: resolved.minimum, items: resolved.items });
+  };
+  const producerRec = advisorOut.$defs.recommendation;
+  const consumerRec = inputSchema.$defs.advisorPublicOutput.properties.recommendation;
+  check('handoff-recommendation-requires-the-same-fields',
+    JSON.stringify([...(producerRec.required || [])].sort()) === JSON.stringify([...(consumerRec.required || [])].sort()),
+    `the Advisor requires ${JSON.stringify(producerRec.required)} on a recommendation and the consumer requires ${JSON.stringify(consumerRec.required)}; the looser end accepts a recommendation the other never emits`);
+  for (const field of Object.keys(producerRec.properties || {})) {
+    const consumerField = consumerRec.properties?.[field];
+    check(`handoff-recommendation-field-typed-alike-${field}`,
+      consumerField && shapeOf(advisorOut, producerRec.properties[field]) === shapeOf(inputSchema, consumerField),
+      `\`recommendation.${field}\` is ${shapeOf(advisorOut, producerRec.properties[field])} for the Advisor and ${consumerField ? shapeOf(inputSchema, consumerField) : 'absent'} for the consumer`);
+  }
+  // The mirror names the same family in a flat field, and it has to be the same vocabulary.
+  check('handoff-mirror-target-typed-alike',
+    shapeOf(inputSchema, inputSchema.$defs.advisorMirrorOutput.properties.primary_target) === shapeOf(advisorOut, producerRec.properties.target),
+    'the regression mirror types primary_target differently from the Advisor\'s recommendation.target, so a value refused at one end arrives at the other');
+  // Both shapes answer a shortlist the same way the producer states it, or a handoff could declare
+  // it had refused to choose while naming the target it chose.
+  for (const shape of ['advisorPublicOutput', 'advisorMirrorOutput']) {
+    check(`handoff-${shape}-separates-a-shortlist-from-a-recommendation`,
+      (inputSchema.$defs[shape].allOf || []).length === 2,
+      `${shape} does not branch on recommendationStatus, so it can carry a shortlist and a chosen target at once`);
+  }
 }
 
 // Sixth review pass. The error table tells the agent to stop when a bundle file declares a schema
