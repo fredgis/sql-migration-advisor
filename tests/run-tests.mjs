@@ -3577,6 +3577,52 @@ try {
       }
       notes.push(`${echoed.length} profile field(s) echoed, all declared by the interview schema.`);
       notes.push(`${candidates.length} method candidate(s) named in both renderings, each with its prerequisite paths.`);
+
+      // Seventh time this round: a check narrower than its name. The parity check above compares
+      // the card with the JSON and never the JSON with the engine, so regenerating half the object
+      // left an `unknowns` line about a Blob path the profile had just confirmed, and a method gate
+      // result sitting in `blockers` where target eligibility belongs. A field the rules derive is
+      // derived; the page may add editorial items beside them, never instead of them.
+      const { evaluate } = await import('../tests/engine/evaluate.mjs');
+      const derived = evaluate(object.normalizedProfile);
+      const DERIVED_LISTS = [['unknowns', 'unknowns'], ['evidenceRequired', 'evidenceRequired'], ['blockers', 'hardBlockers']];
+      for (const [published, engineField] of DERIVED_LISTS) {
+        for (const item of derived[engineField] || []) {
+          if (!(object[published] || []).includes(item)) failures.push(`the rules derive \`${published}\`: "${String(item).slice(0, 70)}…" and the example does not carry it`);
+        }
+      }
+      // blockers is the one that must not gain items: a hard blocker nobody derived is a claim, and
+      // a method gate result put there speaks for target eligibility it was never asked about.
+      for (const item of object.blockers || []) {
+        if (!(derived.hardBlockers || []).includes(item)) failures.push(`the example lists the blocker "${String(item).slice(0, 70)}…" and the rules derive no such blocker`);
+      }
+      for (const field of ['recommendationStatus', 'confidence']) {
+        if (object.metadata?.[field] !== derived[field]) failures.push(`metadata.${field} is \`${object.metadata?.[field]}\` and the rules derive \`${derived[field]}\``);
+      }
+      if (object.methodGateTrace?.result !== derived.methodGateStatus) {
+        failures.push(`the example reports method gate \`${object.methodGateTrace?.result}\` and the rules derive \`${derived.methodGateStatus}\``);
+      }
+      notes.push(`${DERIVED_LISTS.length} derived list(s) carry every item the rules produce, and blockers carries nothing they do not.`);
+
+      // And the profile has to be the interview's answers, not a paraphrase of them. The check
+      // above proves the object agrees with itself, which it would do just as happily around a
+      // wrong profile: rewriting "cross-DB queries" as "cross-database queries" in this very file
+      // moved Managed Instance off remediation and unblocked Azure SQL Database, because the rules
+      // match the token the interview used. Every list value the interview collects is quoted from
+      // the interview.
+      const interview = (example.match(/## Interview answers[\s\S]*?(?=\n## )/u) || [''])[0];
+      let quoted = 0;
+      for (const field of ['feature_dependencies', 'ancillary_services']) {
+        for (const value of object.normalizedProfile?.[field] || []) {
+          quoted++;
+          if (!interview.includes(value)) failures.push(`the profile lists \`${field}: ${value}\`, which the interview tables never say; a paraphrase here moves the verdicts the rules derive from it`);
+        }
+      }
+      notes.push(`${quoted} free-text profile value(s) quoted from the interview rather than paraphrased.`);
+      // The eligibility statuses are not compared here on purpose, and the reason is a defect rather
+      // than a decision: five families are initialised to `unsupported`, so a family nobody evaluated
+      // reports that it cannot work rather than that it was not selected. Comparing them would lock
+      // that in. It is reported on the pull request and belongs to Phase A, not to this page.
     }
   }
   add('the-worked-example-renders-one-object-twice', failures.length === 0, failures.length ? failures : notes);
