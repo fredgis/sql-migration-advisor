@@ -1,7 +1,7 @@
 # Input contract — `generate-migration-prerequisite-plan`
 
 > **Schema version:** `1.0`
-> **Prerequisite knowledge-base line:** `v1.8`
+> **Prerequisite knowledge-base line:** `v1.9`
 
 This contract accepts either the structured result of `recommend-migration-path` or a standalone
 target-and-method selection. Both modes normalize into a **method path** from
@@ -72,8 +72,14 @@ required `recommendation.target`, so a producer following this page emitted an o
 schema rejected. If an input carries `recommendation.primary`, treat it as a stale producer, read
 the fields underneath it, and say that the shape was out of date rather than failing silently.
 
-**`controlPlane` is a prerequisite selector, not a label.** `azure-arc` pulls in the Arc extension,
-identity and batch requirements and changes which source-version matrix governs the method —
+**A shortlist is not a handoff.** The Advisor emits `recommendationStatus: shortlist` when no rule
+separates the candidates, and that output carries no `recommendation`: no target, no method, nothing
+to resolve to a catalog path. Return `unresolved_path` naming the families the shortlist carries and
+what the Advisor said would separate them. Do not pick one, and do not ask the path questions of a
+path nobody chose. The status is readable here so the refusal can say why, rather than failing on a
+missing field and leaving the reason to be guessed.
+
+**`controlPlane` is a prerequisite selector, not a label.** `azure-arc` pulls in the Arc extension,identity and batch requirements and changes which source-version matrix governs the method —
 standalone Log Replay Service is documented for SQL Server 2008-2022 while the Arc path lists 2025.
 It is required by both accepted shapes, so a handoff cannot arrive without one. This page used to
 say that an absent value should be read as `standalone`, which is the defect it was written to

@@ -900,7 +900,11 @@
           "$ref": "#/$defs/advisorMethodGateStatus"
         },
         "recommendationStatus": {
-          "$ref": "#/$defs/advisorRecommendationStatus"
+          "$ref": "#/$defs/advisorRecommendationStatus",
+          "enum": [
+            "provisional",
+            "shortlist"
+          ]
         },
         "confidence": {
           "$ref": "#/$defs/advisorConfidence"
@@ -951,7 +955,8 @@
     },
     "advisorRecommendationStatus": {
       "enum": [
-        "provisional"
+        "provisional",
+        "shortlist"
       ]
     },
     "advisorConfidence": {

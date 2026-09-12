@@ -5,7 +5,7 @@ Apply Steps **A → D** in order. Steps map to the two engine phases:
 - **Phase B — Ranking and plan:** Steps B → D. Rank only surviving targets, then choose method, tier, blockers, cost, and assessment.
 
 Regression contract: these rules are a **prompt policy under regression test**. Replaying the same inputs through the rules mirror in `tests/` gives the same result, and 116 golden scenarios enforce it on every commit. The mirror is not what runs in a session: an agent reads these rules and applies them. Treat the contract as a tested policy, not as a guarantee that two runs produce identical wording. Every recommendation must carry the KB version, engine version, and, when available, the source commit SHA and fetch timestamp.
-Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v3.11**, verified August 2026.
+Source of truth: `docs/sql-server-to-azure-migration.md` (sql-migration-advisor), **v3.12**, verified August 2026.
 
 Three layers, never mixed:
 - **Target** = where the DB ends up (runtime).
@@ -204,7 +204,7 @@ Score/rank only candidates whose Phase A state is `eligible` or `eligible_with_r
 
 **`RANK-ORDER`** is the rule ID for this ordered table.
 
-**Never invent a winner at step 10.** A shortlist that names what would break the tie is more useful than a confident answer chosen arbitrarily.
+**Never invent a winner at step 10.** A shortlist that names what would break the tie is more useful than a confident answer chosen arbitrarily. The output says so with `recommendationStatus = shortlist`, no `recommendation`, and a `shortlist[]` carrying each surviving family and the fact that would settle it. Writing the refusal into the target field instead is how it used to be done, and a phrase in a field typed for a target name is not a refusal a consumer can act on.
 
 For every ordering decision, record which step and which input changed the order. That record is what the output trace renders.
 

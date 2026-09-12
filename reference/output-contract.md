@@ -8,7 +8,7 @@ The single source of truth for what a recommendation contains, how it is rendere
 
 | Field | Allowed values |
 |---|---|
-| `recommendationStatus` | `provisional` — **the only value this skill produces** |
+| `recommendationStatus` | `provisional` when the skill names one target and one method · `shortlist` when no rule separates the candidates and it refuses to invent one. Neither certifies anything: the skill reads no assessment artefact |
 | `confidence` | `low` · `medium` |
 | Eligibility, per target | `eligible` · `eligible_with_remediation` · `unsupported` · `excluded_by_preference` · `unknown_requires_assessment` |
 
@@ -92,7 +92,8 @@ Run every invariant below **before** showing the card. This is the only mechanis
 | 6 | An `unsupported` target never appears as primary or alternative |
 | 7 | Refusing a preview **method** never removes a generally available **target** when another viable method exists |
 | 8 | No cost figure appears without measured sizing and stated pricing assumptions |
-| 9 | `recommendationStatus` is `provisional` and `confidence` is at most `medium` |
+| 9 | `recommendationStatus` is `provisional` or `shortlist`, and `confidence` is at most `medium` |
+| 16 | **A shortlist is a state, not a sentence in the target field.** When no rule separates the candidates, `recommendationStatus` is `shortlist`, `recommendation` is absent, and `shortlist[]` names at least two families with why each stands and **what would separate it**. It used to be expressed by putting the phrase `provisional shortlist only` where a target name belongs, which validated because that field accepted any string, so a consumer read something shaped like a target and resolvable as nothing. `recommendation.target` is an enumeration of the eight families now, and a shortlist of one is a recommendation that will not say its own name |
 | 10 | **A method gate may not report `passed` while any field it consumes is unknown.** A real session declared native backup/restore `passed` with the Blob upload path unverified. Report `unknown_requires_assessment` and name the evidence instead |
 | 11 | Every one of the eight target families appears in the Phase A trace: SQL VM, AVS, SQL MI, SQL DB, Fabric SQL DB, Arc-enabled SQL MI, container, Arc in-place. A family that silently disappears cannot be argued with |
 | 12 | `unsupported` marks a technical incompatibility only. A target the user ruled out by preference is `excluded_by_preference`, because a preference can be revisited and an incompatibility cannot |

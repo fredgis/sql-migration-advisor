@@ -37,7 +37,7 @@ flowchart TD
     J --> K[Phase B: ten ordered ranking steps]
     K --> L[Draft recommendation, each verdict citing a rule ID]
 
-    L --> M{Self-check:<br/>15 invariants}
+    L --> M{Self-check:<br/>16 invariants}
     M -- An invariant fails --> N[Expose the inconsistency,<br/>never repair it silently]
     M -- All pass --> O[Render the card]
     N --> O
@@ -121,7 +121,7 @@ coexisted with an interview whose answers were quietly discarded. The input cont
 one: `NONE_CONFIRMED` when the user checked and there are none, `UNKNOWN` when nobody checked, and`NOT_APPLICABLE`. Conflating the first two is what once told a user their dependencies were unknown
 immediately after they answered that there were none.
 
-The output contract owns the status vocabulary, the card structure, and the 15 invariants of the
+The output contract owns the status vocabulary, the card structure, and the 16 invariants of the
 self-check below.
 
 ---
@@ -306,7 +306,7 @@ it rather than take it on trust.
 
 ### The self-check
 
-Before the card is shown, the skill re-reads its own draft against the 15 invariants in the output
+Before the card is shown, the skill re-reads its own draft against the 16 invariants in the output
 contract. Two examples: no eligibility claim may rest on a field the user never answered, and the
 stated method must actually be available for the recommended target.
 
@@ -1225,7 +1225,7 @@ prerequisite skill's contracts do the same.
 | `connectivity-kb-matches-matrix` (CI gate) | Prose and matrix disagreeing on version or on three load-bearing values; the draft status disappearing; claims losing their baseline hash |
 | 10 claims in the weekly check | The Microsoft pages behind the volatile facts changing under us |
 | Input contract | Free text promoted to a decision input; invalid combinations accepted silently |
-| Output contract, 15 invariants | A credential emitted, a value not traceable to the matrix, a check reported as run when it was proposed |
+| Output contract, 16 invariants | A credential emitted, a value not traceable to the matrix, a check reported as run when it was proposed |
 
 The gate earned its place on its first run by catching the matrix left at v0.5 while the prose moved
 to v0.6.

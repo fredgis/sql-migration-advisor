@@ -137,7 +137,15 @@ function methodContradiction(scenario, actual, data) {
   const inputs = scenario.inputs || {};
   const target = actual.primaryTarget;
   if (target === 'provisional shortlist only') {
-    return actual.recommendationStatus === 'provisional' ? null : 'provisional shortlist must carry recommendationStatus=provisional';
+    // Section B1 refuses to invent a winner, and that refusal is now a status of its own rather
+    // than a sentence in the target field. A shortlist that still calls itself `provisional` is
+    // claiming a recommendation it did not make.
+    if (actual.recommendationStatus !== 'shortlist') return 'a shortlist must carry recommendationStatus=shortlist';
+    if (!Array.isArray(actual.shortlist) || actual.shortlist.length < 2) return 'a shortlist must name at least two families; one family is a recommendation that will not say its own name';
+    for (const entry of actual.shortlist) {
+      if (!entry.whatWouldSeparateIt) return `shortlist entry "${entry.target}" says nothing about what would separate it, which leaves the reader with a refusal and no next step`;
+    }
+    return null;
   }
   const key = TARGET_TO_KEY.get(target);
   if (!key) return `primaryTarget ${JSON.stringify(target)} is not a target in the eligibility map`;
@@ -868,7 +876,17 @@ try {
   }
 
   // 5. The output contract forbids what the skill can no longer claim, and requires the self-check.
-  if (!/`provisional`\s*—\s*\*\*the only value/.test(outputContract)) failures.push('output-contract.md does not state that provisional is the only status');
+  // It used to require the sentence "provisional is the only value", which stopped being true when
+  // the refusal to invent a winner became a status of its own. What has to hold is the claim
+  // underneath it: no status this skill produces certifies anything, because it reads no artefact.
+  if (!/`validated`|certif/i.test(outputContract)) failures.push('output-contract.md no longer says why neither status is an assurance');
+  {
+    const statuses = (JSON.parse(readText(path.join('skills', 'recommend-migration-path', 'schemas', 'output.schema.json'))).$defs?.recommendationStatus?.enum) || [];
+    for (const status of statuses) {
+      if (!outputContract.includes(`\`${status}\``)) failures.push(`the schema emits \`${status}\` and output-contract.md never names it`);
+    }
+    if (statuses.includes('validated')) failures.push('the schema emits `validated`, which this skill cannot certify');
+  }
   if (!/Self-check, before rendering/.test(outputContract)) failures.push('output-contract.md does not define the pre-render self-check');
   if (!/do not repair the output silently/i.test(outputContract)) failures.push('output-contract.md does not forbid silently repairing a failed invariant');
   if (!/Self-check/i.test(skill)) failures.push('SKILL.md Operations does not include the self-check step');
