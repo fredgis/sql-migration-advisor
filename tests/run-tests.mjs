@@ -3726,6 +3726,34 @@ try {
   add('the-fork-carries-what-this-repository-ships', failures.length === 0, failures.length ? failures : notes);
 }
 
+// A rendering template teaches the agent the words it may use, so a word the schema does not
+// define is an instruction to emit something invalid. The method-candidate block shipped `unverified`
+// beside `unknown_requires_assessment` for one release, in a paragraph that had been duplicated by a
+// bad edit: the corrected copy and the stale copy sat four lines apart, both in the always-loaded
+// file. Nothing compared the card's vocabulary to the contract's, and nothing noticed the repeat.
+{
+  const failures = [];
+  const schema = JSON.parse(readText(path.join('skills', 'recommend-migration-path', 'schemas', 'output.schema.json')));
+  const defs = schema.$defs || {};
+  const allowed = new Set([
+    ...(defs.methodCandidate?.properties?.status?.enum || []),
+    ...(defs.methodGateStatus?.enum || [])
+  ]);
+  const skill = readText(path.join('skills', 'recommend-migration-path', 'SKILL.md'));
+  const block = skill.slice(skill.indexOf('**🔁 Method gate**'), skill.indexOf('**🚧 Blockers'));
+  if (!allowed.size || block.length < 200) {
+    failures.push('the method-candidate block or the status enums could not be located, so this gate proved nothing');
+  }
+  for (const [, token] of block.matchAll(/`([a-z][a-z_]*)\b[^`]*`/gu)) {
+    if (!allowed.has(token)) failures.push(`the method rendering block offers \`${token}\`, which neither status enum defines; an agent told to write it produces output the schema rejects`);
+  }
+  const paragraphs = block.split(/\n\s*\n/u).map(entry => entry.trim()).filter(entry => entry.length > 80);
+  const repeated = paragraphs.filter((entry, index) => paragraphs.indexOf(entry) !== index);
+  for (const entry of new Set(repeated)) failures.push(`the method rendering block carries the same paragraph twice: "${entry.slice(0, 70)}..."`);
+  add('the-card-offers-only-states-the-schema-defines', failures.length === 0,
+    failures.length ? failures : [`${allowed.size} declared status token(s), and the method rendering block uses no other word and repeats no paragraph.`]);
+}
+
 const summary = { total: results.length, passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length };if (jsonMode) {
   process.stdout.write(JSON.stringify({ summary, results }, null, 2) + '\n');
 } else {
