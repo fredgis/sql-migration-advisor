@@ -811,19 +811,29 @@ function buildMethodCandidates(inputs, eligibility, out) {
             : `Prerequisite paths ${(cell.paths || []).join(', ') || 'documented in the prerequisite catalog'} apply.`)),
       prerequisitePaths: cell.paths || [],
     });
-    // Invariant 5: a hard-gate unknown belongs in both arrays. Pushing the evidence line alone left
-    // the exemplar failing its own pre-render self-check.
+    // Invariant 5: a hard-gate unknown is a fact this interview could have collected and did not,
+    // so it belongs in both arrays. Pushing the evidence line alone left the exemplar failing its
+    // own pre-render self-check.
     for (const field of fields) {
       addUnique(out.evidenceRequired, `Confirm \`${field}\` before treating ${cell.method} as available: it settles a blocking prerequisite on ${(cell.paths || []).join(', ')}.`);
       addUnique(out.unknowns, `\`${field}\` is unstated and settles a blocking prerequisite on ${(cell.paths || []).join(', ')}, which holds ${cell.method} at unknown_requires_assessment.`);
     }
+    // Invariant 5b: the other reason a candidate is held. No question in this interview reaches
+    // these rows, so no answer the user could give would settle them, and they are not a hard-gate
+    // unknown. They are work for the prerequisite-plan skill, and they say so in the two arrays
+    // that carry work. Recording them as unknowns instead made `medium` unreachable for every
+    // profile, including one that states every field.
     for (const id of unreachable) {
-      // This is a property of where the two skills divide, not of the profile: no answer this
-      // interview collects can settle those rows, whatever the user says. It names an action and
-      // stays out of `unknowns`, which carries the facts this interview could have established and
-      // did not. Putting it there instead pushed every recommendation to `low` confidence on a
-      // structural fact rather than a missing answer.
       addUnique(out.evidenceRequired, `Run the prerequisite plan for ${id} before treating ${cell.method} as available: none of its blocking prerequisites can be settled from this interview.`);
+      out.nextActions = out.nextActions || [];
+      addUnique(out.nextActions, `Hand ${cell.method} to the prerequisite-plan skill to settle ${id}, whose blocking prerequisites this interview cannot reach.`);
+    }
+    // A gate that could not check its own inputs names fields the profile does not carry, so it is
+    // the first kind. It held the candidate and recorded nothing anywhere, which is the state
+    // invariant 5b exists to forbid.
+    if (isUnprovenGate(gate)) {
+      addUnique(out.evidenceRequired, gateText(gate));
+      addUnique(out.unknowns, `${gateText(gate)} This holds ${cell.method} at unknown_requires_assessment.`);
     }
   }
   // The winner is always in the list, even when it is a target-specific label the matrix words
@@ -1225,7 +1235,7 @@ function applySourcePermissions(inputs, out) {
     addUnique(out.unknowns, `${method} requires sysadmin on the source to configure endpoints, and the available rights were never stated.`);
     out.methodGateStatus = out.methodGateStatus === 'refused' ? 'refused' : 'unknown_requires_assessment';
   }
-  addUnique(out.evidenceRequired, 'Confirm the migration account holds sysadmin on the source instance before scheduling this method.');
+  addUnique(out.evidenceRequired, `Confirm the migration account holds sysadmin on the source instance before scheduling ${method}.`);
 }
 function applyLrsWindow(inputs, out) {
   // LRS-WINDOW. The Log Replay Service has a hard 30-day maximum, after which the restore chain
@@ -1349,9 +1359,20 @@ export function evaluate(rawInputs = {}) {
     winner.status = expected;
     if (expected === 'unknown_requires_assessment') {
       winner.reason = `${winner.reason} Its method gate has not reported passed, so the route is viable and not yet proven.`;
+      addUnique(out.evidenceRequired, `Settle the method gate for ${winner.method}: it has not reported passed, which holds the recommendation provisional.`);
     }
   }
   out.eligibility = eligibility;
+  // Invariant 5b, last word. Whatever held a candidate, the reader has to be able to find out
+  // what. Rules that run after the candidate list is built record their reason under the winning
+  // method's name or under none, so a held candidate could carry its reason in its own text and
+  // nowhere a reader looks. This runs once, at the end, where every rule has had its say.
+  for (const candidate of out.methodCandidates || []) {
+    if (candidate.status !== 'unknown_requires_assessment') continue;
+    const named = [...(out.evidenceRequired || []), ...(out.unknowns || []), ...(out.nextActions || [])]
+      .some(line => line.includes(candidate.method));
+    if (!named) addUnique(out.evidenceRequired, `Settle what holds ${candidate.method}: ${candidate.reason}`);
+  }
   return out;
 }
 

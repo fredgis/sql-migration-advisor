@@ -215,7 +215,7 @@ Stating a single budget made these compete: an implementation that spent its one
 
 **Fetch the live document only when the user asks for it.** Say that it is being fetched, and read only:
 
-- `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/v3.14.4/docs/sql-server-to-azure-migration.md`
+- `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/v3.14.5/docs/sql-server-to-azure-migration.md`
 
 That URL is pinned to a release tag, not to `main`. A mutable branch means the facts can change under the reader between two sessions with no version to cite. Never substitute a different URL, and never rewrite the path: the raw host serves `…/<tag>/<path>`, and inserting `blob` returns 404. If the tagged document is unreachable, fall back to the bundled copy and say the fallback is what answered.
 
@@ -576,7 +576,8 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
     "`recovery_model` is unstated and settles a blocking prerequisite on P09, which holds Log Replay Service at unknown_requires_assessment.",
     "`blob_https_reachability` is unstated and settles a blocking prerequisite on P10, which holds Native backup/restore at unknown_requires_assessment.",
     "`log_chain_status` is unstated and settles a blocking prerequisite on P10, which holds Native backup/restore at unknown_requires_assessment.",
-    "`blob_https_reachability` is unstated and settles a blocking prerequisite on P11, which holds BACPAC / SqlPackage at unknown_requires_assessment."
+    "`blob_https_reachability` is unstated and settles a blocking prerequisite on P11, which holds BACPAC / SqlPackage at unknown_requires_assessment.",
+    "Online DMS is not assumed without a confirmed FULL recovery model and an unbroken log chain. The offline variant does not consume either fact and stays viable. This holds DMS at unknown_requires_assessment."
   ],
   "assumptions": [],
   "evidenceRequired": [
@@ -588,9 +589,16 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
     "Confirm `blob_https_reachability` before treating BACPAC / SqlPackage as available: it settles a blocking prerequisite on P11.",
     "Run the prerequisite plan for P23 before treating DMS as available: none of its blocking prerequisites can be settled from this interview.",
     "Run the prerequisite plan for P24 before treating DMS as available: none of its blocking prerequisites can be settled from this interview.",
-    "Run the prerequisite plan for P13 before treating Transactional replication as available: none of its blocking prerequisites can be settled from this interview."
+    "Run the prerequisite plan for P13 before treating Transactional replication as available: none of its blocking prerequisites can be settled from this interview.",
+    "Online DMS is not assumed without a confirmed FULL recovery model and an unbroken log chain. The offline variant does not consume either fact and stays viable.",
+    "Confirm the migration account holds sysadmin on the source instance before scheduling MI Link.",
+    "Settle the method gate for MI Link: it has not reported passed, which holds the recommendation provisional."
   ],
-  "nextActions": [],
+  "nextActions": [
+    "Hand DMS to the prerequisite-plan skill to settle P23, whose blocking prerequisites this interview cannot reach.",
+    "Hand DMS to the prerequisite-plan skill to settle P24, whose blocking prerequisites this interview cannot reach.",
+    "Hand Transactional replication to the prerequisite-plan skill to settle P13, whose blocking prerequisites this interview cannot reach."
+  ],
   "evidenceLinks": [],
   "largestRisk": "The 11000-11999 range is assumed open on the stated evidence, not measured."
 }

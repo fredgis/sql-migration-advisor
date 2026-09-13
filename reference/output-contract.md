@@ -88,7 +88,8 @@ Run every invariant below **before** showing the card. This is the only mechanis
 | 2 | The alternative target is also `eligible` or `eligible_with_remediation` |
 | 3 | The selected method is not `unavailable`: nothing it consumes rules it out. Its gate may be `passed`, or `unknown_requires_assessment` when a field it depends on is unproven, and a recommendation resting on an unproven gate is provisional and says which evidence would settle it |
 | 4 | The selected tier violates no capacity or feature limit |
-| 5 | Every hard-gate unknown appears in both `unknowns` and `evidenceRequired` |
+| 5 | Every hard-gate unknown appears in both `unknowns` and `evidenceRequired`. A **hard-gate unknown** is a fact this interview could have collected and did not, so it names a question that was never answered. A prerequisite the interview cannot reach at all is not one: see invariant 5b |
+| 5b | A candidate reads `unknown_requires_assessment` for one of two reasons, and they are recorded differently. **A field the profile does not carry** is a hard-gate unknown: it belongs in `unknowns` and `evidenceRequired`, and it lowers confidence, because the interview could have settled it and did not. **A prerequisite path no question in this interview reaches** is not: it belongs in `evidenceRequired` and `nextActions` as work for the prerequisite-plan skill, and it does not lower confidence, because no answer the user could give would change it. Recording the second kind as an unknown makes `medium` unreachable for every profile, including one that states every field, which turns a documented ceiling into a fiction. Recording it nowhere hides why the candidate is being held |
 | 6 | An `unsupported` target never appears as primary or alternative |
 | 7 | Refusing a preview **method** never removes a generally available **target** when another viable method exists |
 | 8 | No cost figure appears without measured sizing and stated pricing assumptions |

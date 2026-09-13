@@ -3726,6 +3726,32 @@ try {
   add('the-fork-carries-what-this-repository-ships', failures.length === 0, failures.length ? failures : notes);
 }
 
+// Every candidate held at `unknown_requires_assessment` has to say why, in the array the contract
+// gives that reason. Invariant 5b splits them: a field the profile does not carry is a hard-gate
+// unknown and goes in both `unknowns` and `evidenceRequired`; a prerequisite path no question
+// reaches is work for the other skill and goes in `evidenceRequired` and `nextActions`. A held
+// candidate recorded in neither is the defect this gate exists for, and it shipped: the reason was
+// in the candidate's own text and nowhere a reader looks for it.
+{
+  const failures = [];
+  const notes = [];
+  let held = 0;
+  for (const scenario of scenarios) {
+    const out = evaluate(scenario.inputs || {});
+    for (const candidate of out.methodCandidates || []) {
+      if (candidate.status !== 'unknown_requires_assessment') continue;
+      held++;
+      const method = candidate.method;
+      const named = [...(out.unknowns || []), ...(out.evidenceRequired || []), ...(out.nextActions || [])]
+        .some(line => line.includes(method));
+      if (!named) failures.push(`${scenario.id}: ${method} is held at unknown_requires_assessment and no line in unknowns, evidenceRequired or nextActions names it, so the reader is told it is unproven and never what is unproven`);
+    }
+  }
+  if (held < 10) failures.push(`only ${held} held candidate(s) across every scenario, which is too few for this gate to mean anything`);
+  else notes.push(`${held} candidate(s) held at unknown_requires_assessment across ${scenarios.length} scenarios, each with its reason in one of the three arrays the contract names.`);
+  add('a-held-candidate-says-what-is-holding-it', failures.length === 0, failures.length ? failures.slice(0, 6) : notes);
+}
+
 // A rendering template teaches the agent the words it may use, so a word the schema does not
 // define is an instruction to emit something invalid. The method-candidate block shipped `unverified`
 // beside `unknown_requires_assessment` for one release, in a paragraph that had been duplicated by a
