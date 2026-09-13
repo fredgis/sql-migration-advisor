@@ -215,7 +215,7 @@ Stating a single budget made these compete: an implementation that spent its one
 
 **Fetch the live document only when the user asks for it.** Say that it is being fetched, and read only:
 
-- `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/v3.14.3/docs/sql-server-to-azure-migration.md`
+- `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/v3.14.4/docs/sql-server-to-azure-migration.md`
 
 That URL is pinned to a release tag, not to `main`. A mutable branch means the facts can change under the reader between two sessions with no version to cite. Never substitute a different URL, and never rewrite the path: the raw host serves `…/<tag>/<path>`, and inserting `blob` returns 404. If the tagged document is unreachable, fall back to the bundled copy and say the fallback is what answered.
 
@@ -506,9 +506,9 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
     {
       "method": "DMS",
       "role": "primary",
-      "status": "unavailable",
+      "status": "unknown_requires_assessment",
       "selected": false,
-      "reason": "Online DMS is never assumed without a confirmed FULL recovery model and an unbroken log chain. Confirm both before selecting it.",
+      "reason": "Online DMS is not assumed without a confirmed FULL recovery model and an unbroken log chain. The offline variant does not consume either fact and stays viable.",
       "prerequisitePaths": [
         "P23",
         "P24"
@@ -529,7 +529,7 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
       "role": "primary",
       "status": "unknown_requires_assessment",
       "selected": false,
-      "reason": "Prerequisite paths P09 are unproven for this profile: log_chain_status, recovery_model are unstated, and an unverified prerequisite is not a satisfied one.",
+      "reason": "Prerequisite paths P09 are unproven for this profile: log_chain_status, recovery_model are unstated. An unverified prerequisite is not a satisfied one.",
       "prerequisitePaths": [
         "P09"
       ]
@@ -539,7 +539,7 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
       "role": "primary",
       "status": "unknown_requires_assessment",
       "selected": false,
-      "reason": "Prerequisite paths P10 are unproven for this profile: blob_https_reachability, log_chain_status are unstated, and an unverified prerequisite is not a satisfied one.",
+      "reason": "Prerequisite paths P10 are unproven for this profile: blob_https_reachability, log_chain_status are unstated. An unverified prerequisite is not a satisfied one.",
       "prerequisitePaths": [
         "P10"
       ]
@@ -547,9 +547,9 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
     {
       "method": "Transactional replication",
       "role": "secondary",
-      "status": "available",
+      "status": "unknown_requires_assessment",
       "selected": false,
-      "reason": "Prerequisite paths P13 apply.",
+      "reason": "Prerequisite paths P13 are unproven for this profile: no answer this interview collects reaches the blocking prerequisites of P13. An unverified prerequisite is not a satisfied one.",
       "prerequisitePaths": [
         "P13"
       ]
@@ -559,7 +559,7 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
       "role": "secondary",
       "status": "unknown_requires_assessment",
       "selected": false,
-      "reason": "Prerequisite paths P11 are unproven for this profile: blob_https_reachability is unstated, and an unverified prerequisite is not a satisfied one.",
+      "reason": "Prerequisite paths P11 are unproven for this profile: blob_https_reachability is unstated. An unverified prerequisite is not a satisfied one.",
       "prerequisitePaths": [
         "P11"
       ]
@@ -571,7 +571,12 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
   },
   "blockers": [],
   "unknowns": [
-    "MI Link requires sysadmin on the source to configure endpoints, and the available rights were never stated."
+    "MI Link requires sysadmin on the source to configure endpoints, and the available rights were never stated.",
+    "`log_chain_status` is unstated and settles a blocking prerequisite on P09, which holds Log Replay Service at unknown_requires_assessment.",
+    "`recovery_model` is unstated and settles a blocking prerequisite on P09, which holds Log Replay Service at unknown_requires_assessment.",
+    "`blob_https_reachability` is unstated and settles a blocking prerequisite on P10, which holds Native backup/restore at unknown_requires_assessment.",
+    "`log_chain_status` is unstated and settles a blocking prerequisite on P10, which holds Native backup/restore at unknown_requires_assessment.",
+    "`blob_https_reachability` is unstated and settles a blocking prerequisite on P11, which holds BACPAC / SqlPackage at unknown_requires_assessment."
   ],
   "assumptions": [],
   "evidenceRequired": [
@@ -580,7 +585,10 @@ Emit this object on request or alongside the card. Unknown values are `null` or 
     "Confirm `recovery_model` before treating Log Replay Service as available: it settles a blocking prerequisite on P09.",
     "Confirm `blob_https_reachability` before treating Native backup/restore as available: it settles a blocking prerequisite on P10.",
     "Confirm `log_chain_status` before treating Native backup/restore as available: it settles a blocking prerequisite on P10.",
-    "Confirm `blob_https_reachability` before treating BACPAC / SqlPackage as available: it settles a blocking prerequisite on P11."
+    "Confirm `blob_https_reachability` before treating BACPAC / SqlPackage as available: it settles a blocking prerequisite on P11.",
+    "Run the prerequisite plan for P23 before treating DMS as available: none of its blocking prerequisites can be settled from this interview.",
+    "Run the prerequisite plan for P24 before treating DMS as available: none of its blocking prerequisites can be settled from this interview.",
+    "Run the prerequisite plan for P13 before treating Transactional replication as available: none of its blocking prerequisites can be settled from this interview."
   ],
   "nextActions": [],
   "evidenceLinks": [],

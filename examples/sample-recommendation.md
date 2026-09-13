@@ -274,9 +274,9 @@ one over the recommendation.
     {
       "method": "DMS",
       "role": "primary",
-      "status": "available",
+      "status": "unknown_requires_assessment",
       "selected": false,
-      "reason": "Prerequisite paths P23, P24 apply.",
+      "reason": "Prerequisite paths P23, P24 are unproven for this profile: no answer this interview collects reaches the blocking prerequisites of P23, P24. An unverified prerequisite is not a satisfied one.",
       "prerequisitePaths": [
         "P23",
         "P24"
@@ -315,9 +315,9 @@ one over the recommendation.
     {
       "method": "Transactional replication",
       "role": "secondary",
-      "status": "available",
+      "status": "unknown_requires_assessment",
       "selected": false,
-      "reason": "Prerequisite paths P13 apply.",
+      "reason": "Prerequisite paths P13 are unproven for this profile: no answer this interview collects reaches the blocking prerequisites of P13. An unverified prerequisite is not a satisfied one.",
       "prerequisitePaths": [
         "P13"
       ]
@@ -347,7 +347,10 @@ one over the recommendation.
     "Confirm the migration completes inside the 30-day Log Replay Service window; past it the restore chain must be restarted from a new full backup.",
     "SSMS 22 Migration Component assessment",
     "Dependency discovery for linked servers, jobs and SSIS",
-    "Test restore with the TDE certificate installed first"
+    "Test restore with the TDE certificate installed first",
+    "Run the prerequisite plan for P23 before treating DMS as available: none of its blocking prerequisites can be settled from this interview.",
+    "Run the prerequisite plan for P24 before treating DMS as available: none of its blocking prerequisites can be settled from this interview.",
+    "Run the prerequisite plan for P13 before treating Transactional replication as available: none of its blocking prerequisites can be settled from this interview."
   ],
   "nextActions": [
     "Run the assessment",
