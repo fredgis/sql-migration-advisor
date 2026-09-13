@@ -221,7 +221,7 @@
   const PATHS = [
     ["Arc-enabled SQL Managed Instance", "Native backup/restore via endpoint Arc", "observed",1, "SQL MI endpoint available once the data controller is deployed."],
     ["Azure SQL Database", "modern DMS (offline)", "observed",20, "SQL Server 2008+; offline path."],
-    ["Azure SQL Database", "Transactional replication", "observed",5, "Publisher SQL Server 2016+; push subscriber."],
+    ["Azure SQL Database", "Transactional replication", "observed",6, "Publisher SQL Server 2016+; push subscriber."],
     ["Azure SQL Database", "BACPAC / SqlPackage", "rules_only",0, "Small and mid-size compatible workloads; export and import to be tested."],
     ["Azure SQL Database", "bcp / Smart Bulk Copy / BACPAC / ADF", "rules_only",0, "Bulk or integration; data only."],
     ["Azure SQL Database", "Data Box seed → sync delta", "rules_only",0, "Multi-TB seed or limited WAN, then delta."],
@@ -251,7 +251,7 @@
     ["SQL Server on Azure VM", "Data Box seed → sync delta", "rules_only",0, "Multi-TB seed, then delta sync."]
   ];
 
-  const GRAPH_VERSION = "v3.14.6"; // kept in step by the rule-graph-is-current gate
+  const GRAPH_VERSION = "v3.14.7"; // kept in step by the rule-graph-is-current gate
   const RULES = [
     { id: "DMS-MODE", type: "hard method gate", fields: ["source_version", "source_permissions", "downtime", "database_count"], impacts: ["Azure DMS (online)", "modern DMS (offline)"], status: "ok", note: "Online mode is never assumed: it needs a confirmed FULL recovery model and log chain, otherwise the method is held at assessment." },
     { id: "AVS-LICENSING", type: "hard target gate", fields: ["target_region"], impacts: ["AVS"], status: "ok", note: "AVS is held at assessment with the portable VCF licence in evidenceRequired, and is never reported as the service retiring." },
@@ -331,7 +331,7 @@
     ["Arc-enabled SQL Managed Instance", "Native backup/restore", 2],
     ["Arc-enabled SQL Managed Instance", "Native backup/restore after endpoint is available", 1],
     ["Azure SQL Database", "modern DMS (offline)", 20],
-    ["Azure SQL Database", "Transactional replication", 5],
+    ["Azure SQL Database", "Transactional replication", 6],
     ["Azure SQL Database", "BACPAC/SqlPackage", 4],
     ["Azure SQL Managed Instance", "LRS", 16],
     ["Azure SQL Managed Instance", "Native backup/restore", 12],

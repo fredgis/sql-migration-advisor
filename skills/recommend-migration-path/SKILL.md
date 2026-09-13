@@ -215,7 +215,7 @@ Stating a single budget made these compete: an implementation that spent its one
 
 **Fetch the live document only when the user asks for it.** Say that it is being fetched, and read only:
 
-- `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/v3.14.6/docs/sql-server-to-azure-migration.md`
+- `https://raw.githubusercontent.com/fredgis/sql-migration-advisor/v3.14.7/docs/sql-server-to-azure-migration.md`
 
 That URL is pinned to a release tag, not to `main`. A mutable branch means the facts can change under the reader between two sessions with no version to cite. Never substitute a different URL, and never rewrite the path: the raw host serves `…/<tag>/<path>`, and inserting `blob` returns 404. If the tagged document is unreachable, fall back to the bundled copy and say the fallback is what answered.
 
@@ -680,8 +680,8 @@ Every recommendation carries:
 
 Confidence rules:
 
-- **Medium**: triage answers are complete and internally consistent, but no assessment artefact has been read. This is the ceiling.
-- **Low**: one or more decision-driving unknowns remain, answers conflict, or a candidate depends on unverified remediation. A **decision-driving unknown** is a field this interview could have collected and did not. A candidate held because no question here reaches its path's blocking prerequisites is not one: that is work for the prerequisite-plan skill, and it does not move the confidence, because no answer the user could give would change it. Output-contract invariant 5b and decision rules §C4 define both kinds.
+- **Medium**: triage answers are complete and internally consistent, but no assessment artefact has been read. This is the ceiling. It also covers the case where the recommended method is waiting on a prerequisite path this interview cannot reach: say which path, and name the prerequisite plan as the next step.
+- **Low**: one or more decision-driving unknowns remain, answers conflict, or a candidate depends on unverified remediation. A **decision-driving unknown** is a field this interview could have collected and did not. A candidate held because no question here reaches its path's blocking prerequisites is not one, whether or not it is the recommended method: that is work for the prerequisite-plan skill, and it does not move the confidence, because no answer the user could give would change it. Output-contract invariant 5b and decision rules §C4 define both kinds.
 
 `provisional` is the **only** `recommendationStatus` this skill can produce, and `medium` is the highest confidence it can reach. The skill runs a conversation: it reads no assessment report, opens no file and calls no tool that could confirm a dependency inventory, a measured baseline or a regional feature list. Four self-declared booleans previously promoted a recommendation to `validated` and `high`, which turned an unverified statement into an assurance and moved the responsibility onto a flag nobody had checked.
 

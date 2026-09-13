@@ -3494,12 +3494,12 @@
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
       "confidence": "low",
-      "methodGateStatus": "passed"
+      "methodGateStatus": "unknown_requires_assessment"
     },
     "assertRulePresent": [
       "BACKUP-BLOB-PATH"
     ],
-    "auditRef": "shilpi-2026-09-13 unproven-candidates"
+    "auditRef": "shilpi-2026-09-13 selected path-level hold"
   },
   {
     "id": "clr-external-access-escalates",
@@ -4015,12 +4015,12 @@
       "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
       "confidence": "low",
-      "methodGateStatus": "passed"
+      "methodGateStatus": "unknown_requires_assessment"
     },
     "assertRulePresent": [
       "HYPERSCALE-CEILING"
     ],
-    "auditRef": "shilpi-2026-09-13 unproven-candidates"
+    "auditRef": "shilpi-2026-09-13 selected path-level hold"
   },
   {
     "id": "blocked-blob-path-removes-the-method",
@@ -4191,7 +4191,7 @@
       "method": "Native backup/restore",
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
-      "methodGateStatus": "passed",
+      "methodGateStatus": "unknown_requires_assessment",
       "recommendationStatus": "provisional",
       "confidence": "low",
       "mustNotRecommend": [
@@ -4202,7 +4202,7 @@
       "FILESTREAM-PAAS",
       "has no FILESTREAM/FileTable"
     ],
-    "auditRef": "shilpi-2026-09-13 unproven-candidates"
+    "auditRef": "shilpi-2026-09-13 selected path-level hold"
   },
   {
     "id": "dms-online-to-sql-vm-linux-source",
@@ -4358,5 +4358,44 @@
       "DMS-MODE"
     ],
     "auditRef": "own-audit-2026-09-12 P1-1"
+  },
+  {
+    "id": "answered-profile-keeps-medium-when-only-its-path-is-unread",
+    "why": "A profile that answers every question, whose selected method is held only because no question in this interview reaches its path prerequisites. C4 keeps it at medium and states the path; reading it as a failed gate would put every profile at low and make the ceiling unreachable.",
+    "auditRef": "shilpi-2026-09-13 selected path-level hold",
+    "inputs": {
+      "intent": "migrate now",
+      "source_location": "on-prem / Azure VM",
+      "source_version": "2022",
+      "source_edition": "Enterprise",
+      "source_os": "Windows Server 2022",
+      "management_model": "fully managed PaaS",
+      "feature_dependencies": [
+        "None",
+        "Dependencies inventory artifact attached"
+      ],
+      "downtime": "minimal",
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "source_permissions": "SYSADMIN_AVAILABLE",
+      "recovery_model": "FULL",
+      "log_chain_status": "CHAIN_INTACT",
+      "database_count": 8,
+      "target_region": "West Europe",
+      "performance": "Perfmon/DMV baseline artifact attached; general purpose; sizing data artifact attached",
+      "compliance": "target-region feature availability artifact attached; architecture approval artifact attached"
+    },
+    "expect": {
+      "primary_target": "Azure SQL Database",
+      "method": "Transactional replication",
+      "confidence": "medium",
+      "methodGateStatus": "unknown_requires_assessment",
+      "recommendationStatus": "provisional",
+      "targetAvailabilityDuringSync": "read-write",
+      "businessCutoverDowntime": "near-zero"
+    },
+    "title": "An answered profile keeps medium when only its path is unread",
+    "assertRulePresent": [
+      "Transactional replication to Azure SQL DB/Fabric SQL DB"
+    ]
   }
 ]
