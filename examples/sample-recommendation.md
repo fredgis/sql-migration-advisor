@@ -350,12 +350,16 @@ one over the recommendation.
     "Test restore with the TDE certificate installed first",
     "Run the prerequisite plan for P23 before treating DMS as available: none of its blocking prerequisites can be settled from this interview.",
     "Run the prerequisite plan for P24 before treating DMS as available: none of its blocking prerequisites can be settled from this interview.",
-    "Run the prerequisite plan for P13 before treating Transactional replication as available: none of its blocking prerequisites can be settled from this interview."
+    "Run the prerequisite plan for P13 before treating Transactional replication as available: none of its blocking prerequisites can be settled from this interview.",
+    "Settle the method gate for Log Replay Service: it has not reported passed, which holds the recommendation provisional."
   ],
   "nextActions": [
     "Run the assessment",
     "Confirm the Blob upload path",
-    "Rehearse the cutover against the stated RPO and RTO"
+    "Rehearse the cutover against the stated RPO and RTO",
+    "Hand DMS to the prerequisite-plan skill to settle P23, whose blocking prerequisites this interview cannot reach.",
+    "Hand DMS to the prerequisite-plan skill to settle P24, whose blocking prerequisites this interview cannot reach.",
+    "Hand Transactional replication to the prerequisite-plan skill to settle P13, whose blocking prerequisites this interview cannot reach."
   ],
   "evidenceLinks": [
     "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate"
