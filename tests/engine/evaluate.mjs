@@ -1355,7 +1355,14 @@ export function evaluate(rawInputs = {}) {
   const winner = (out.methodCandidates || []).find((candidate) => candidate.selected);
   const AGREES = { passed: 'available', unknown_requires_assessment: 'unknown_requires_assessment' };
   const expected = AGREES[out.methodGateStatus];
-  if (winner && expected && winner.status !== expected) {
+  // The gate and the candidate answer the same question, and agreement can be reached from either
+  // side. A gate that passed says nothing about the prerequisite rows behind the method, so
+  // promoting a candidate the catalog is holding would announce as checked a route whose blocking
+  // prerequisites nobody has read. When the two disagree that way, the gate follows the candidate.
+  if (winner && expected === 'available' && winner.status === 'unknown_requires_assessment') {
+    out.methodGateStatus = 'unknown_requires_assessment';
+    addUnique(out.evidenceRequired, `The method gate for ${winner.method} passed on the facts this interview collects, and its prerequisite paths are still unread. Settle them before treating the route as proven.`);
+  } else if (winner && expected && winner.status !== expected) {
     winner.status = expected;
     if (expected === 'unknown_requires_assessment') {
       winner.reason = `${winner.reason} Its method gate has not reported passed, so the route is viable and not yet proven.`;
