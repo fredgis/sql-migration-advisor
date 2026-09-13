@@ -3726,6 +3726,32 @@ try {
   add('the-fork-carries-what-this-repository-ships', failures.length === 0, failures.length ? failures : notes);
 }
 
+// The two documents that state the confidence rule have to state the same one. The two-kind
+// distinction was written in the output contract, where the rule is defined, and not in the
+// decision rules, where the confidence is derived, so one document permitted `medium` while the
+// other mandated `low` for the same profile and a model reading both could answer either way.
+// This checks that every document stating the rule also states the exception.
+{
+  const failures = [];
+  const RULE = /confidence\s*=?\s*`?low`?[^.]*unknown_requires_assessment|(?:^|\n)-\s+\*\*Low\*\*:/iu;
+  const EXCEPTION = /no question (?:in this interview )?reaches|does not (?:move|lower) the confidence|confidence` is \*\*unaffected\*\*/iu;
+  const sources = [
+    path.join('reference', 'decision-rules.md'),
+    path.join('skills', 'recommend-migration-path', 'SKILL.md'),
+    path.join('reference', 'output-contract.md')
+  ];
+  let stating = 0;
+  for (const file of sources) {
+    const text = readText(file);
+    if (!RULE.test(text)) continue;
+    stating++;
+    if (!EXCEPTION.test(text)) failures.push(`${file} states when confidence drops and never states the kind of held candidate that does not drop it, so it contradicts the documents that do`);
+  }
+  if (stating < 2) failures.push(`only ${stating} document(s) were found stating the confidence rule, so this gate would pass by matching nothing`);
+  add('one-confidence-rule-across-the-documents-that-state-it', failures.length === 0,
+    failures.length ? failures : [`${stating} document(s) state when confidence drops, and each states the held candidate that does not drop it.`]);
+}
+
 // Every candidate held at `unknown_requires_assessment` has to say why, in the array the contract
 // gives that reason. Invariant 5b splits them: a field the profile does not carry is a hard-gate
 // unknown and goes in both `unknowns` and `evidenceRequired`; a prerequisite path no question
