@@ -27,6 +27,13 @@ const CROSSWALK = require('../../skills/generate-migration-prerequisite-plan/ref
 // being presented as a settled one. The catalog already states what each path needs, questions.json
 // says which field settles each row, and the crosswalk says which advisor field carries it. None of
 // that is new. Nothing read it.
+// A gate can refuse a method, or report that it could not check one. The two used to come back as
+// one string and every caller read it as a refusal, so a method nobody had examined was written up
+// as examined and failed. This prefix marks the second kind; `unprovenGate()` strips it.
+const UNPROVEN = 'UNPROVEN::';
+const isUnprovenGate = (reason) => typeof reason === 'string' && reason.startsWith(UNPROVEN);
+const gateText = (reason) => (isUnprovenGate(reason) ? reason.slice(UNPROVEN.length) : reason);
+
 const PREREQ_BLOCKING = (() => {
   const rows = new Map();
   const text = fs.readFileSync(new URL('../../docs/sql-server-to-azure-migration-prerequisite.md', import.meta.url), 'utf8');
@@ -38,36 +45,43 @@ const PREREQ_BLOCKING = (() => {
   }
   return rows;
 })();
-// Advisor field -> the rows it can settle. Only fields the advisor actually carries, and only rows
-// the knowledge base marks blocking: a recommended prerequisite does not hold a candidate open.
+// Advisor field -> the rows it can settle. Only rows the knowledge base marks blocking: a
+// recommended prerequisite does not hold a candidate open.
 const FIELD_TO_ROWS = (() => {
   const byConsumer = new Map((CROSSWALK.mappings || [])
     .filter(entry => entry.conversion !== 'not-convertible')
     .map(entry => [entry.consumerField, entry.advisorField]));
   const map = new Map();
+  const provable = new Set();
   for (const question of QUESTIONS.questions || []) {
     const field = byConsumer.get(question.id);
-    if (!field) continue;
     for (const row of question.consumedBy || []) {
       if (!PREREQ_BLOCKING.has(row) || row.startsWith('COM-')) continue;
+      if (!field) continue;
+      provable.add(row.slice(0, 3));
       if (!map.has(field)) map.set(field, new Set());
       map.get(field).add(row);
     }
   }
-  return map;
+  return { map, provable };
 })();
 function unprovenGateFacts(inputs, cell) {
   const paths = new Set(cell.paths || []);
-  if (!paths.size) return [];
-  const unproven = [];
-  for (const [field, rows] of FIELD_TO_ROWS) {
+  if (!paths.size) return { fields: [], unreachable: [] };
+  // A path none of whose blocking prerequisites the advisor can reach has been checked against
+  // nothing, so it cannot be reported as available. Keying only on the fields the crosswalk bridges
+  // meant such a path had no field to test and came back available with nothing established, which
+  // is how transactional replication was offered with none of P13 in evidence.
+  const unreachable = [...paths].filter(id => !FIELD_TO_ROWS.provable.has(id));
+  const fields = [];
+  for (const [field, rows] of FIELD_TO_ROWS.map) {
     if (![...rows].some(row => paths.has(row.slice(0, 3)))) continue;
     const value = inputs[field];
     const stated = value !== undefined && value !== null && String(value).trim() !== ''
       && !/^unknown$/i.test(String(value)) && !/not sure|unknown/i.test(textOf(value));
-    if (!stated) unproven.push(field);
+    if (!stated) fields.push(field);
   }
-  return unproven.sort();
+  return { fields: fields.sort(), unreachable: unreachable.sort() };
 }
 
 const TARGETS = ['sql_vm', 'avs', 'sql_mi', 'sql_db', 'fabric_sql_db', 'arc_sql_mi', 'container', 'arc_in_place'];
@@ -683,8 +697,11 @@ function methodGateFailure(inputs, target, method, out = {}) {
     if (wantsOnline) {
       if (/simple/i.test(recovery)) return 'Online DMS requires the FULL recovery model; the source is in SIMPLE, where no log chain exists to replay.';
       if (/broken/i.test(chain)) return 'Online DMS requires an unbroken log backup chain; the chain is reported broken, so the delta cannot be replayed from the seed.';
+      // Nothing was checked here, so the answer is not a refusal. `unavailable` asserts the source
+      // was examined and failed, and it also takes the offline P23 variant down with it, which does
+      // not consume either field. The caller reads this marker and keeps the candidate open.
       if (!/full/i.test(recovery) || !/intact/i.test(chain)) {
-        return 'Online DMS is never assumed without a confirmed FULL recovery model and an unbroken log chain. Confirm both before selecting it.';
+        return `${UNPROVEN}Online DMS is not assumed without a confirmed FULL recovery model and an unbroken log chain. The offline variant does not consume either fact and stays viable.`;
       }
     }
   }
@@ -772,20 +789,42 @@ function buildMethodCandidates(inputs, eligibility, out) {
     const kind = canonicalMethod(cell.method);
     if (seen.has(kind)) continue;
     seen.add(kind);
-    const failure = methodGateFailure(inputs, target, cell.method, out);
-    const unproven = failure ? [] : unprovenGateFacts(inputs, cell);
+    const gate = methodGateFailure(inputs, target, cell.method, out);
+    const refused = gate && !isUnprovenGate(gate);
+    const { fields, unreachable } = refused ? { fields: [], unreachable: [] } : unprovenGateFacts(inputs, cell);
+    const unchecked = isUnprovenGate(gate) || fields.length > 0 || unreachable.length > 0;
+    const why = [
+      ...(fields.length ? [`${fields.join(', ')} ${fields.length === 1 ? 'is' : 'are'} unstated`] : []),
+      ...(unreachable.length ? [`no answer this interview collects reaches the blocking prerequisites of ${unreachable.join(', ')}`] : [])
+    ];
     out.methodCandidates.push({
       method: cell.method,
       role: cell.advisorRole,
-      status: failure ? 'unavailable' : (unproven.length ? 'unknown_requires_assessment' : 'available'),
+      status: refused ? 'unavailable' : (unchecked ? 'unknown_requires_assessment' : 'available'),
       selected: kind === selectedKind,
-      reason: failure
-        || (unproven.length
-          ? `Prerequisite paths ${(cell.paths || []).join(', ')} are unproven for this profile: ${unproven.join(', ')} ${unproven.length === 1 ? 'is' : 'are'} unstated, and an unverified prerequisite is not a satisfied one.`
-          : `Prerequisite paths ${(cell.paths || []).join(', ') || 'documented in the prerequisite catalog'} apply.`),
+      reason: refused
+        ? gate
+        : (isUnprovenGate(gate)
+          ? gateText(gate)
+          : (why.length
+            ? `Prerequisite paths ${(cell.paths || []).join(', ')} are unproven for this profile: ${why.join('; and ')}. An unverified prerequisite is not a satisfied one.`
+            : `Prerequisite paths ${(cell.paths || []).join(', ') || 'documented in the prerequisite catalog'} apply.`)),
       prerequisitePaths: cell.paths || [],
     });
-    for (const field of unproven) addUnique(out.evidenceRequired, `Confirm \`${field}\` before treating ${cell.method} as available: it settles a blocking prerequisite on ${(cell.paths || []).join(', ')}.`);
+    // Invariant 5: a hard-gate unknown belongs in both arrays. Pushing the evidence line alone left
+    // the exemplar failing its own pre-render self-check.
+    for (const field of fields) {
+      addUnique(out.evidenceRequired, `Confirm \`${field}\` before treating ${cell.method} as available: it settles a blocking prerequisite on ${(cell.paths || []).join(', ')}.`);
+      addUnique(out.unknowns, `\`${field}\` is unstated and settles a blocking prerequisite on ${(cell.paths || []).join(', ')}, which holds ${cell.method} at unknown_requires_assessment.`);
+    }
+    for (const id of unreachable) {
+      // This is a property of where the two skills divide, not of the profile: no answer this
+      // interview collects can settle those rows, whatever the user says. It names an action and
+      // stays out of `unknowns`, which carries the facts this interview could have established and
+      // did not. Putting it there instead pushed every recommendation to `low` confidence on a
+      // structural fact rather than a missing answer.
+      addUnique(out.evidenceRequired, `Run the prerequisite plan for ${id} before treating ${cell.method} as available: none of its blocking prerequisites can be settled from this interview.`);
+    }
   }
   // The winner is always in the list, even when it is a target-specific label the matrix words
   // differently, so the reader never sees a recommendation that is absent from its own shortlist.
@@ -881,7 +920,10 @@ function chooseConsistentFallback(inputs, eligibility, out) {
   for (const [key, label, method] of candidates) {
     if (![E.ELIGIBLE, E.REMEDIATE].includes(eligibility[key])) continue;
     const reason = methodGateFailure(inputs, label, method, out);
+    // An unproven gate does not disqualify a fallback: nothing was checked, so there is nothing to
+    // fail on. It stays selectable and the unverified fact is named as evidence.
     if (!reason) return [label, method];
+    if (isUnprovenGate(reason)) { addUnique(out.evidenceRequired, gateText(reason)); return [label, method]; }
     addMethodExclusion(label, reason, out);
   }
   addUnique(out.evidenceRequired, 'Run Azure Migrate / Arc assessment and dependency discovery to validate any provisional candidate.');
@@ -890,7 +932,12 @@ function chooseConsistentFallback(inputs, eligibility, out) {
 function enforceOutputConsistency(inputs, eligibility, out) {
   if (out.primaryTarget === 'provisional shortlist only') return;
   const key = viableTargetKeyForLabel(out.primaryTarget, eligibility);
-  const methodFailure = methodGateFailure(inputs, out.primaryTarget, out.method, out);
+  const gate = methodGateFailure(inputs, out.primaryTarget, out.method, out);
+  // Only a refusal forces a fallback. An unproven gate leaves the recommendation standing and
+  // provisional, which is what the contract calls unknown_requires_assessment: switching the target
+  // family over a fact nobody collected is the defect this branch used to have.
+  if (isUnprovenGate(gate)) addUnique(out.evidenceRequired, gateText(gate));
+  const methodFailure = isUnprovenGate(gate) ? null : gate;
   if (key && !methodFailure) return;
   if (!key) addMethodExclusion(out.primaryTarget, `Target eligibility is ${eligibility[LABEL_TO_TARGET[out.primaryTarget]] || 'not in eligibility map'}.`, out);
   if (methodFailure) addMethodExclusion(out.primaryTarget, methodFailure, out);

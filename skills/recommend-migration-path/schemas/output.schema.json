@@ -580,7 +580,7 @@
       "items": {
         "$ref": "#/$defs/methodCandidate"
       },
-      "description": "Invariant 14: every method the section 8 matrix marks primary or secondary for the chosen target appears here, including the ones that lost. A method that is never a candidate is never rejected either, so its absence cannot be argued with. Invariant 15 additionally requires the recommended method to appear here and be available."
+      "description": "Invariant 14: every method the section 8 matrix marks primary or secondary for the chosen target appears here, including the ones that lost. A method that is never a candidate is never rejected either, so its absence cannot be argued with. Invariant 15 additionally requires the recommended method to appear here with a status that agrees with its gate: `available` with `passed`, or `unknown_requires_assessment` with `unknown_requires_assessment`. Never `unavailable`. This description used to demand `available` outright, which contradicted the output contract and made the ordinary provisional case unrepresentable."
     },
     "methodGateTrace": {
       "$ref": "#/$defs/methodGateTrace"
@@ -910,7 +910,7 @@
         },
         "selected": {
           "type": "boolean",
-          "description": "True for the recommended method. Invariant 15 requires exactly one selected candidate, and requires it to be available."
+          "description": "True for the recommended method. Invariant 15 requires exactly one selected candidate, and requires its status to agree with its gate: `available` with `passed`, or `unknown_requires_assessment` with `unknown_requires_assessment`. Never `unavailable`. Demanding `available` here contradicted the output contract, which permits a winner waiting on one unproven fact."
         }
       }
     },

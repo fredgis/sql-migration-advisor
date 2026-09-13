@@ -24,7 +24,7 @@
       "targetAvailabilityDuringSync": "unavailable",
       "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": [
         "Azure SQL Database for DTC-dependent workload"
       ]
@@ -33,7 +33,7 @@
       "Homogeneous SQL↔SQL T-SQL DTC[\\s\\S]*?`eligible`[\\s\\S]*?`unsupported`",
       "MI managed DTC supports SQL-to-SQL distributed transactions"
     ],
-    "auditRef": "P0-1"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "sql2022-publisher-to-azure-sql-db-replication",
@@ -95,7 +95,7 @@
       "targetAvailabilityDuringSync": "unavailable",
       "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": [
         "MI Link"
       ]
@@ -104,7 +104,7 @@
       "Standalone LRS[\\s\\S]*?SQL Server \\*\\*2008–2022\\*\\*",
       "SQL Server \\*\\*2012 SP1 CU2\\+\\*\\* can `BACKUP TO URL` directly to Blob"
     ],
-    "auditRef": "P0-3"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "fabric-driver-small-simple-schema",
@@ -169,7 +169,7 @@
       "targetAvailabilityDuringSync": "unavailable",
       "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": [
         "MI Link"
       ]
@@ -178,7 +178,7 @@
       "AWS RDS for SQL Server[\\s\\S]*?❌ no sysadmin / no AG endpoints[\\s\\S]*?✅ via S3→Blob upload",
       "MI Link is impossible from AWS RDS for SQL Server"
     ],
-    "auditRef": "P0-5"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "unknown-feature-dependencies-provisional",
@@ -472,7 +472,7 @@
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": [
         "Azure SQL MI",
         "Azure SQL Database"
@@ -482,7 +482,7 @@
       "FILESTREAM / FileTable[\\s\\S]*?`unsupported`[\\s\\S]*?`unsupported`",
       "Hard MI/SQL DB incompatibility"
     ],
-    "auditRef": "P1-1"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "polybase-cloud-files-mi-eligible",
@@ -508,14 +508,14 @@
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
       "PolyBase over Blob / ADLS Gen2 cloud files[\\s\\S]*?`eligible`",
       "SQL MI supports cloud-file virtualization"
     ],
-    "auditRef": "P1-2"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "polybase-oracle-mi-ineligible",
@@ -543,7 +543,7 @@
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": [
         "Azure SQL MI"
       ]
@@ -552,7 +552,7 @@
       "PolyBase connector to Oracle, Teradata, MongoDB",
       "MI does not support PolyBase external RDBMS connectors"
     ],
-    "auditRef": "P1-3"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "heterogeneous-dtc-mi-ineligible",
@@ -580,14 +580,14 @@
       "targetAvailabilityDuringSync": "unavailable",
       "businessCutoverDowntime": "minimal",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
       "Heterogeneous DTC to third-party RDBMS[\\s\\S]*?`unsupported`",
       "Use SQL VM or refactor the transaction boundary"
     ],
-    "auditRef": "P1-4"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "polybase-subtype-unknown-assessment",
@@ -682,14 +682,14 @@
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
       "Linked servers[\\s\\S]*?`eligible_with_remediation`[\\s\\S]*?`unsupported`",
       "Hard SQL DB blocker"
     ],
-    "auditRef": "P1-7"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "sql-agent-prefers-mi",
@@ -716,14 +716,14 @@
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
       "SQL Agent jobs[\\s\\S]*?`eligible`[\\s\\S]*?`eligible_with_remediation`",
       "SQL Agent jobs usually native"
     ],
-    "auditRef": "P1-8"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "sql-db-over-4tb-hyperscale",
@@ -857,14 +857,14 @@
       "businessCutoverDowntime": "hours",
       "lrsBusinessCriticalCutoverCanTakeHours": true,
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
       "Low-latency storage required[\\s\\S]*?\\*\\*MI Business Critical\\*\\*",
       "high IOPS/log throughput"
     ],
-    "auditRef": "P1-12"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "mi-general-purpose-tier",
@@ -892,14 +892,14 @@
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
       "Moderate latency/IO[\\s\\S]*?\\*\\*MI General Purpose\\*\\*",
       "cost-sensitive"
     ],
-    "auditRef": "P1-13"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "mi-tier-unknown-assessment",
@@ -996,14 +996,14 @@
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
       "intent = modernize in place / not ready",
       "driver = modernize in place / not ready"
     ],
-    "auditRef": "P1-16"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "kubernetes-managed-engine-arc-mi",
@@ -1031,14 +1031,14 @@
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
       "kubernetes_model = managed engine via Arc data controller[\\s\\S]*?Arc-enabled SQL MI",
       "Managed engine on Kubernetes"
     ],
-    "auditRef": "P1-17"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "kubernetes-diy-container",
@@ -1066,14 +1066,14 @@
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
       "kubernetes_model = full DIY container[\\s\\S]*?SQL Server in a container",
       "Customer owns HA/patch/backup"
     ],
-    "auditRef": "P1-18"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "kubernetes-unknown-assessment",
@@ -1171,14 +1171,14 @@
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
       "Apply sovereignty and regional-availability constraints",
       "Kubernetes / edge / sovereign-multicloud"
     ],
-    "auditRef": "P1-21"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "port-5022-blocked-no-mi-link-lrs-in",
@@ -1205,7 +1205,7 @@
       "targetAvailabilityDuringSync": "unavailable",
       "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": [
         "MI Link"
       ]
@@ -1214,7 +1214,7 @@
       "MI Link ports[\\s\\S]*?5022[\\s\\S]*?11000–11999",
       "Log Replay Service \\(LRS\\)[\\s\\S]*?SQL Server 2008–2022"
     ],
-    "auditRef": "P1-22"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "tde-certificate-before-restore",
@@ -1242,14 +1242,14 @@
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
       "TDE encrypted DB[\\s\\S]*?Install the server-level TDE certificate",
       "restore fails unless the certificate is present first"
     ],
-    "auditRef": "P1-23"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "ssis-ssrs-ssas-remediations",
@@ -1275,7 +1275,7 @@
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
@@ -1283,7 +1283,7 @@
       "SSRS[\\s\\S]*?Power BI paginated reports",
       "SSAS[\\s\\S]*?Power BI Premium/Fabric semantic models"
     ],
-    "auditRef": "P1-24"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "gcp-cloud-sql-no-mi-link",
@@ -1309,7 +1309,7 @@
       "targetAvailabilityDuringSync": "unavailable",
       "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": [
         "MI Link"
       ]
@@ -1318,7 +1318,7 @@
       "GCP Cloud SQL for SQL Server[\\s\\S]*?❌ no sysadmin / no AG endpoints",
       "MI Link is impossible from AWS RDS for SQL Server and GCP Cloud SQL for SQL Server"
     ],
-    "auditRef": "P1-25"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "aws-ec2-mi-link-possible-with-gates",
@@ -1485,7 +1485,7 @@
       "targetAvailabilityDuringSync": "unavailable",
       "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": [
         "MI Link"
       ]
@@ -1493,7 +1493,7 @@
     "assertRulePresent": [
       "Windows Server 2012"
     ],
-    "auditRef": "P0-5"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "sql2014-no-mi-link-lrs-restore",
@@ -1520,7 +1520,7 @@
       "targetAvailabilityDuringSync": "unavailable",
       "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": [
         "MI Link"
       ]
@@ -1529,7 +1529,7 @@
       "MI Link[\\s\\S]*?SQL Server 2016\\+",
       "Standalone LRS[\\s\\S]*?SQL Server \\*\\*2008–2022\\*\\*"
     ],
-    "auditRef": "P1-29"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "estate-ten-plus-azure-migrate-first",
@@ -1681,14 +1681,14 @@
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
       "Need OS/file-system/exact engine control/third-party agents[\\s\\S]*?`unsupported`[\\s\\S]*?`unsupported`",
       "Target SQL VM, AVS, or full DIY container"
     ],
-    "auditRef": "P1-33"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "sql-db-business-critical-tier",
@@ -1825,14 +1825,14 @@
       "targetAvailabilityDuringSync": "read-only",
       "businessCutoverDowntime": "near-zero",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
       "Near-zero[\\s\\S]*?\\*\\*Distributed AG\\*\\* or \\*\\*Always On AG\\*\\*",
       "Distributed AG: source \\*\\*2016\\+\\*\\*[\\s\\S]*?Always On AG: source \\*\\*2012\\+\\*\\*"
     ],
-    "auditRef": "P1-37"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "fabric-private-link-unsupported",
@@ -2180,7 +2180,11 @@
       "source_os": "Windows Server 2019",
       "source_edition": "Enterprise",
       "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
-      "source_permissions": "SYSADMIN_AVAILABLE"
+      "source_permissions": "SYSADMIN_AVAILABLE",
+      "recovery_model": "FULL",
+      "log_chain_status": "CHAIN_INTACT",
+      "database_count": 12,
+      "mi_link_ports": "PORTS_CONFIRMED_OPEN"
     },
     "expect": {
       "eligibility": {
@@ -2209,7 +2213,7 @@
       "Required ports are:[\\s\\S]*?5022[\\s\\S]*?11000–11999",
       "`confidence = medium` is the ceiling"
     ],
-    "auditRef": "shilpi-2026-09-12 fabric-subset"
+    "auditRef": "shilpi-2026-09-13 evidence-complete carries the method prerequisites it claims"
   },
   {
     "id": "evidence-complete-sql-db-dms-medium-ceiling",
@@ -2235,7 +2239,9 @@
         "regionAvailabilityConfirmed": true,
         "architectSignedOff": true
       },
-      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
+      "blob_https_reachability": "BLOB_HTTPS_CONFIRMED",
+      "recovery_model": "FULL",
+      "log_chain_status": "CHAIN_INTACT"
     },
     "expect": {
       "eligibility": {
@@ -2263,7 +2269,7 @@
       "Offline[\\s\\S]*?\\*\\*modern DMS \\(offline\\)\\*\\*",
       "`confidence = medium` is the ceiling"
     ],
-    "auditRef": "validated-2"
+    "auditRef": "shilpi-2026-09-13 evidence-complete carries the method prerequisites it claims"
   },
   {
     "id": "mi-link-11000-blocked-falls-to-lrs",
@@ -2299,7 +2305,7 @@
       "targetAvailabilityDuringSync": "unavailable",
       "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": [
         "MI Link"
       ]
@@ -2308,7 +2314,7 @@
       "If \\*\\*5022\\*\\* or \\*\\*11000–11999\\*\\* cannot be opened[\\s\\S]*?MI Link `unsupported`",
       "LRS only when LRS itself qualifies"
     ],
-    "auditRef": "shilpi-2026-09-12 fabric-subset"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "mi-link-capacity-nextgen-200-databases-ok",
@@ -2349,14 +2355,14 @@
       "targetAvailabilityDuringSync": "read-only",
       "businessCutoverDowntime": "<1min",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
       "Up to \\*\\*100 links\\*\\*[\\s\\S]*?\\*\\*500 links\\*\\*",
       "One link = one database"
     ],
-    "auditRef": "shilpi-2026-09-12 fabric-subset"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "mi-link-capacity-gp-200-databases-exceeds",
@@ -2395,7 +2401,7 @@
       "businessCutoverDowntime": "minutes",
       "exclusions.mi_link": "MI Link capacity 100 links exceeded by 200 databases.",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": [
         "MI Link"
       ]
@@ -2404,7 +2410,7 @@
       "Up to \\*\\*100 links\\*\\*[\\s\\S]*?\\*\\*500 links\\*\\*",
       "This is not MI Link capacity"
     ],
-    "auditRef": "shilpi-2026-09-12 fabric-subset"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "arc-2012-below-floor-standalone-lrs-ok",
@@ -2437,14 +2443,14 @@
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
       "Arc-enabled SQL Server overall migration experience:[\\s\\S]*?SQL Server \\*\\*2014\\+\\*\\*",
       "Standalone LRS[\\s\\S]*?SQL Server \\*\\*2008–2022\\*\\*"
     ],
-    "auditRef": "audit-arc-floor"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "lrs-business-critical-hours-warning",
@@ -2481,14 +2487,14 @@
       "businessCutoverDowntime": "hours",
       "lrsBusinessCriticalCutoverCanTakeHours": true,
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
       "`hours` on Business Critical",
       "lrsBusinessCriticalCutoverCanTakeHours=true"
     ],
-    "auditRef": "shilpi-2026-09-12 fabric-subset"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "mi-link-ranked-above-lrs-bc-when-gates-met",
@@ -2527,14 +2533,14 @@
       "targetAvailabilityDuringSync": "read-only",
       "businessCutoverDowntime": "<1min",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
       "rank MI Link higher whenever all MI Link prerequisites are satisfiable",
       "MI Link prerequisites: SQL Server 2016\\+"
     ],
-    "auditRef": "shilpi-2026-09-12 fabric-subset"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "no-promotion-from-free-text-keywords",
@@ -2562,14 +2568,14 @@
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
       "There is no other value",
       "`confidence = medium` is the ceiling"
     ],
-    "auditRef": "audit-typed-evidence-free-text-negative"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "no-promotion-from-self-declared-booleans",
@@ -2651,7 +2657,7 @@
       "businessCutoverDowntime": "minutes",
       "exclusions.mi_link": "MI Link capacity 100 links exceeded by 120 databases.",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": [
         "MI Link"
       ]
@@ -2660,7 +2666,7 @@
       "Up to \\*\\*100 links\\*\\*[\\s\\S]*?\\*\\*500 links\\*\\*",
       "One link = one database"
     ],
-    "auditRef": "shilpi-2026-09-12 fabric-subset"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "sql2025-mi-link-blocked-must-not-fall-to-lrs",
@@ -2690,7 +2696,7 @@
       "targetAvailabilityDuringSync": "unavailable",
       "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": [
         "LRS",
         "MI Link"
@@ -2699,7 +2705,7 @@
     "assertRulePresent": [
       "never fall through to LRS unconditionally"
     ],
-    "auditRef": "P1-1"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "unknown-mi-tier-120-databases-capacity-assessment",
@@ -2768,7 +2774,7 @@
       "targetAvailabilityDuringSync": "unavailable",
       "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": [
         "LRS",
         "MI Link"
@@ -2778,7 +2784,7 @@
       "Output consistency rule",
       "Linked servers[\\s\\S]*?`unsupported` unless refactored"
     ],
-    "auditRef": "final-audit-no-contradictory-fallback"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "missing-arc-extension-version-batch-size-requires-verification",
@@ -2846,7 +2852,7 @@
       "targetAvailabilityDuringSync": "read-only",
       "businessCutoverDowntime": "<1min",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": [
         "validated recommendation"
       ],
@@ -2858,7 +2864,7 @@
       "up to \\*\\*10 databases\\*\\* per batch with Azure Extension for SQL Server \\*\\*1.1.3348.364\\+\\*\\*",
       "earlier extension versions select one database at a time"
     ],
-    "auditRef": "P1-32"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "arc-extension-below-floor-keeps-the-single-database-batch-limit",
@@ -2886,7 +2892,7 @@
       "targetAvailabilityDuringSync": "read-only",
       "businessCutoverDowntime": "<1min",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": [
         "validated recommendation"
       ],
@@ -2899,7 +2905,7 @@
       "up to \\*\\*10 databases\\*\\* per batch with Azure Extension for SQL Server \\*\\*1.1.3348.364\\+\\*\\*",
       "earlier extension versions select one database at a time"
     ],
-    "auditRef": "P1-32"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "distribution-sql-vm-os-control-native-restore",
@@ -2927,13 +2933,13 @@
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
-      "confidence": "medium"
+      "confidence": "low"
     },
     "assertRulePresent": [
       "Need OS/file-system/exact engine control/third-party agents[\\s\\S]*?`unsupported`[\\s\\S]*?`unsupported`[\\s\\S]*?`eligible`",
       "Target SQL VM, AVS, or full DIY container"
     ],
-    "auditRef": "distribution-1"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "distribution-kubernetes-engine-model-unknown",
@@ -2993,13 +2999,13 @@
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
       "recommendationStatus": "provisional",
-      "confidence": "medium"
+      "confidence": "low"
     },
     "assertRulePresent": [
       "Arc-enabled SQL Server overall migration experience:[\\s\\S]*?SQL Server \\*\\*2014\\+\\*\\*",
       "Not a runtime migration target"
     ],
-    "auditRef": "distribution-3"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "distribution-sql-db-small-offline-bacpac",
@@ -3204,13 +3210,13 @@
       "targetAvailabilityDuringSync": "read-only",
       "businessCutoverDowntime": "near-zero",
       "recommendationStatus": "provisional",
-      "confidence": "medium"
+      "confidence": "low"
     },
     "assertRulePresent": [
       "Need OS/file-system/exact engine control/third-party agents",
       "SQL VM, AVS, or full DIY container"
     ],
-    "auditRef": "distribution-9"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "distribution-sql-vm-minimal-extra",
@@ -3238,13 +3244,13 @@
       "targetAvailabilityDuringSync": "unavailable",
       "businessCutoverDowntime": "minimal",
       "recommendationStatus": "provisional",
-      "confidence": "medium"
+      "confidence": "low"
     },
     "assertRulePresent": [
       "Need OS/file-system/exact engine control/third-party agents",
       "SQL VM, AVS, or full DIY container"
     ],
-    "auditRef": "distribution-10"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "distribution-sql-vm-offline-extra",
@@ -3272,13 +3278,13 @@
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
-      "confidence": "medium"
+      "confidence": "low"
     },
     "assertRulePresent": [
       "Need OS/file-system/exact engine control/third-party agents",
       "SQL VM, AVS, or full DIY container"
     ],
-    "auditRef": "distribution-11"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "mi-link-linux-sql2019-eligible",
@@ -3315,13 +3321,13 @@
       "targetAvailabilityDuringSync": "read-only",
       "businessCutoverDowntime": "<1min",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": []
     },
     "assertRulePresent": [
       "Linux from SQL Server 2017"
     ],
-    "auditRef": "shilpi-2026-09-12 fabric-subset"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "mi-link-linux-sql2016-windows-only",
@@ -3357,7 +3363,7 @@
       "targetAvailabilityDuringSync": "unavailable",
       "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": [
         "MI Link"
       ]
@@ -3365,7 +3371,7 @@
     "assertRulePresent": [
       "Windows Server only"
     ],
-    "auditRef": "shilpi-2026-09-12 fabric-subset"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "mi-link-express-edition-not-eligible",
@@ -3401,7 +3407,7 @@
       "targetAvailabilityDuringSync": "unavailable",
       "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": [
         "MI Link"
       ]
@@ -3409,7 +3415,7 @@
     "assertRulePresent": [
       "Enterprise / Standard / Developer edition"
     ],
-    "auditRef": "shilpi-2026-09-12 fabric-subset"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "aws-ec2-2016-clr-offline-blob-unknown",
@@ -3487,13 +3493,13 @@
       "method": "Native backup/restore",
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
-      "confidence": "medium",
+      "confidence": "low",
       "methodGateStatus": "passed"
     },
     "assertRulePresent": [
       "BACKUP-BLOB-PATH"
     ],
-    "auditRef": "audit2-v2.1-real-session"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "clr-external-access-escalates",
@@ -3528,12 +3534,12 @@
       "method": "Native backup/restore",
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
-      "confidence": "medium"
+      "confidence": "low"
     },
     "assertRulePresent": [
       "CLR-PERMISSION"
     ],
-    "auditRef": "audit2-v2.1-real-session"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "clr-unsafe-holds-mi",
@@ -3647,12 +3653,12 @@
       "method": "Native backup/restore",
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
-      "confidence": "medium"
+      "confidence": "low"
     },
     "assertRulePresent": [
       "MANAGEMENT-MODEL"
     ],
-    "auditRef": "audit2-v2.1-real-session"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "offline-to-near-zero-reopens-online-methods",
@@ -3687,12 +3693,12 @@
       "method": "MI Link",
       "targetAvailabilityDuringSync": "read-only",
       "businessCutoverDowntime": "<1min",
-      "confidence": "medium"
+      "confidence": "low"
     },
     "assertRulePresent": [
       "MI-LINK-HOST"
     ],
-    "auditRef": "audit2-v2.1-real-session"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "tde-enabled-adds-certificate-not-new-target",
@@ -3724,12 +3730,12 @@
       "method": "Native backup/restore",
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
-      "confidence": "medium"
+      "confidence": "low"
     },
     "assertRulePresent": [
       "TDE cert installed first when encrypted"
     ],
-    "auditRef": "audit2-v2.1-real-session"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "over-128-tb-forces-sharding-or-vm",
@@ -3761,12 +3767,12 @@
       "method": "Native backup/restore",
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
-      "confidence": "medium"
+      "confidence": "low"
     },
     "assertRulePresent": [
       "HYPERSCALE-CEILING"
     ],
-    "auditRef": "audit2-v2.1-real-session"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "label-and-id-reach-the-same-decision",
@@ -3976,13 +3982,13 @@
       "method": "Native backup/restore",
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
-      "confidence": "medium",
+      "confidence": "low",
       "recommendationStatus": "provisional"
     },
     "assertRulePresent": [
       "Arc"
     ],
-    "auditRef": "audit2-v2.1-coverage"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "over-128-tb-is-refused-by-paas",
@@ -4008,13 +4014,13 @@
       "targetAvailabilityDuringSync": "not-present",
       "businessCutoverDowntime": "full-restore-time",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "methodGateStatus": "passed"
     },
     "assertRulePresent": [
       "HYPERSCALE-CEILING"
     ],
-    "auditRef": "graph-audit-v2.3"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "blocked-blob-path-removes-the-method",
@@ -4187,7 +4193,7 @@
       "businessCutoverDowntime": "full-restore-time",
       "methodGateStatus": "passed",
       "recommendationStatus": "provisional",
-      "confidence": "medium",
+      "confidence": "low",
       "mustNotRecommend": [
         "SQL Server in a container for a FILESTREAM workload"
       ]
@@ -4196,7 +4202,7 @@
       "FILESTREAM-PAAS",
       "has no FILESTREAM/FileTable"
     ],
-    "auditRef": "weekly-2026-08-17-finding-5"
+    "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "dms-online-to-sql-vm-linux-source",
@@ -4216,14 +4222,14 @@
       "recovery_model": "FULL",
       "log_chain_status": "CHAIN_INTACT"
     },
-    "auditRef": "A9-F02-1",
+    "auditRef": "shilpi-2026-09-13 unproven-candidates",
     "expect": {
       "primary_target": "SQL Server on Azure VM",
       "method": "Azure DMS (online)",
       "targetAvailabilityDuringSync": "unavailable",
       "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
-      "confidence": "medium"
+      "confidence": "low"
     },
     "assertRulePresent": [
       "Azure DMS",
@@ -4248,14 +4254,14 @@
       "recovery_model": "FULL",
       "log_chain_status": "CHAIN_INTACT"
     },
-    "auditRef": "A9-F02-2",
+    "auditRef": "shilpi-2026-09-13 unproven-candidates",
     "expect": {
       "primary_target": "Azure SQL Managed Instance",
       "method": "Azure DMS (online)",
       "targetAvailabilityDuringSync": "unavailable",
       "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
-      "confidence": "medium"
+      "confidence": "low"
     },
     "assertRulePresent": [
       "Azure DMS",
@@ -4279,14 +4285,14 @@
       "recovery_model": "FULL",
       "log_chain_status": "CHAIN_INTACT"
     },
-    "auditRef": "A9-F02-3",
+    "auditRef": "shilpi-2026-09-13 unproven-candidates",
     "expect": {
       "primary_target": "SQL Server on Azure VM",
       "method": "Azure DMS (online)",
       "targetAvailabilityDuringSync": "unavailable",
       "businessCutoverDowntime": "minutes",
       "recommendationStatus": "provisional",
-      "confidence": "medium"
+      "confidence": "low"
     },
     "assertRulePresent": [
       "Azure DMS",
