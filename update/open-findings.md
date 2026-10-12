@@ -1,8 +1,9 @@
 # Open knowledge base findings
 
-Weekly checks of 14 September and 5 October 2026. Rows 1 to 14 were re-verified against Microsoft
-documentation on 15 September. Rows 15 to 21 come from the 5 October run; rows 15 and 19 have been
-checked so far. Rows 22 and 23 were added by hand: the run listed the news but proposed no edit.
+Weekly checks of 14 September, 5 October and 12 October 2026. Rows 1 to 14 were re-verified against
+Microsoft documentation on 15 September. Rows 15 to 21 come from the 5 October run; rows 15 and 19
+have been checked so far. Rows 22 and 23 were added by hand: the run listed the news but proposed no
+edit. Rows 24 and 25 come from the 12 October run. Row 17 and row 19 were proposed again on 12 October.
 Nothing applied yet. Tick a row when it lands and say in which release.
 
 | # | Where | What we say | What the page says now | Fix | Lines |
@@ -30,9 +31,11 @@ Nothing applied yet. Tick a row when it lands and say in which release.
 | 21 | `connectivity.md` 493-499; `connectivity-matrix.json` | Encryption and certificate-validation defaults | The watched section changed; the run proposed no edit | Read the section, then edit or re-baseline | 0-2 |
 | 22 | `migration.md` 444, 457, sovereignty and edge | Nothing on Azure Local | SQL Server on Azure Local is GA, connected and disconnected (28 Sept), on Windows or Linux VMs. Licences: SA, subscription or pay-as-you-go through Arc when connected, Azure Hybrid Benefit when disconnected | Name it in the sovereignty and edge branch, or decline in writing | 0-3 |
 | 23 | `migration.md` 15, 151 | SSMS 22 assesses and migrates | The SSMS migration assessment adds configuration readiness, a target recommendation, sizing and a pricing estimate. The blog gives no version and no preview status | Confirm on Learn, then record it. The skill can then name SSMS as evidence for tier and cost | ~3 |
+| 24 | `migration.md` §13, §16; `decision-rules.md` §A2, §C2 | Nothing on Always Encrypted with Intel SGX enclaves | Azure SQL Database retires SGX enclaves on 31 October 2027. Always Encrypted secure enclaves stay; VBS enclaves replace SGX | Add a field insight and a remediation rule: detect SGX dependence, plan the move to VBS, mark SQL Database `eligible_with_remediation`, never reject it for this alone | ~3 |
+| 25 | `connectivity.md` private endpoint rows; `connectivity-matrix.json` | Private endpoint redirect: 1433-65535, FQDN only, default is proxy (claim `conn-sqldb-private-endpoint-redirect`) | The watched section drifted on 12 Oct; the run proposed no edit | Read the section, then edit or re-baseline. Same treatment as row 21 | 0-3 |
 
-**About 75 lines, 8 files**, plus about five golden scenarios (one per rule changed) and a
-re-baseline of the drifted claims, which the script does. Seven rows state something false today:
+**About 80 lines, 8 files**, plus about six golden scenarios (one per rule changed) and a
+re-baseline of the 13 drifted claims, which the script does. Seven rows state something false today:
 1, 2, 3, 4, 16, 19 and 20. Do rows 1 and 16 together, and rows 6 and 15 together: they touch the
 same lines.
 
@@ -52,7 +55,7 @@ same lines.
 
 ## Release
 
-Rows 1, 3, 4, 5, 6, 8, 15, 16, 17, 18 and 19 touch `reference/decision-rules.md`, which forces
+Rows 1, 3, 4, 5, 6, 8, 15, 16, 17, 18, 19 and 24 touch `reference/decision-rules.md`, which forces
 the full coordinated release across every surface the README lists. Ship them in one release,
 then align microsoft/microsoft-sql by pull request, issue first.
 
@@ -65,8 +68,11 @@ then align microsoft/microsoft-sql by pull request, issue first.
 - The claims registry watches the Prerequisites section of the Arc migration page, not its
   Migration targets section. Row 15 came in through Azure Updates, not through the drift check.
 - Rows 2, 3, 7 and 8 are absent from the 5 Oct report and still open. A finding the run stops
-  proposing is not a fixed finding.
-- The 5 Oct report says the link checker "exited non-zero (`0`)", which contradicts itself.
+  proposing is not a fixed finding. The same happened on 12 Oct to rows 15, 16, 18 and 20: their
+  announcements are older than the 7-day news window, so the run no longer sees them. Only rows 17
+  and 19 were proposed again. A finding that leaves the window stays open until it lands.
+- The 5 Oct and 12 Oct reports say the link checker "exited non-zero (`0`)", which contradicts
+  itself. On 12 Oct one link of 559 failed and the classifier could not attribute it.
 
 ## Sources
 
@@ -93,6 +99,8 @@ then align microsoft/microsoft-sql by pull request, issue first.
 | 21 | https://learn.microsoft.com/en-us/sql/connect/ado-net/encryption-and-certificate-validation |
 | 22 | https://azure.microsoft.com/updates?id=571841, https://azure.microsoft.com/updates?id=571836 |
 | 23 | https://learn.microsoft.com/en-us/ssms/migrate/migrate-sql-server-azure-sql |
+| 24 | https://azure.microsoft.com/updates?id=569236 |
+| 25 | https://learn.microsoft.com/en-us/azure/azure-sql/database/private-endpoint-overview |
 
 ## Out of scope
 
