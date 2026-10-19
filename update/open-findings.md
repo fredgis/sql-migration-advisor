@@ -1,9 +1,10 @@
 # Open knowledge base findings
 
-Weekly checks of 14 September, 5 October and 12 October 2026. Rows 1 to 14 were re-verified against
+Weekly checks of 14 September, 5, 12 and 19 October 2026. Rows 1 to 14 were re-verified against
 Microsoft documentation on 15 September. Rows 15 to 21 come from the 5 October run; rows 15 and 19
 have been checked so far. Rows 22 and 23 were added by hand: the run listed the news but proposed no
-edit. Rows 24 and 25 come from the 12 October run. Row 17 and row 19 were proposed again on 12 October.
+edit. Rows 24 and 25 come from the 12 October run. Rows 26 and 27 come from the 19 October news.
+On 19 October the run proposed only rows 19 and 20 again, with a sharper correction for row 20.
 Nothing applied yet. Tick a row when it lands and say in which release.
 
 | # | Where | What we say | What the page says now | Fix | Lines |
@@ -27,14 +28,16 @@ Nothing applied yet. Tick a row when it lands and say in which release.
 | 17 | `migration.md` 200; `decision-rules.md` 50, 357, 557; `prerequisite.md` P08-006; `path-catalog.json`; `SKILL.md` | One link per database, always | A preview mode replicates several databases of an existing availability group over one link | Keep one per database for the single-database mode, add the preview mode gated on preview acceptance and an existing AG | ~9 |
 | 18 | `migration.md` §4, §14, §16; `decision-rules.md` §D2 | Nothing on SQL Migration Agent Skills | GA on 29 Sept 2026: assessment, target selection, migration, validation. The wider Microsoft SQL Agent Skills are in public preview | Add them as an agent layer, not a data-movement method. Read the third trap first | ~5 |
 | 19 | `decision-rules.md` 304, 323 | Log shipping needs a Windows source | Log shipping is documented on Linux, and `migration.md` 192 already says so | Remove the Windows-only gates, keep the version and log-chain checks | 2 |
-| 20 | `connectivity.md` 333; `connectivity-matrix.json` | `ActiveDirectoryMSI` from JDBC 8.3.1 | From JDBC 7.2 | Set 7.2, leave `ActiveDirectoryManagedIdentity` at 12.2 | ~3 |
+| 20 | `connectivity.md` 333, §7.8 JDBC claim; `connectivity-matrix.json` `jdbc-auth-keywords`, `jdbc-msi-client-id` | `ActiveDirectoryMSI` from JDBC 8.3.1, and a user-assigned identity always uses `msiClientId` | `ActiveDirectoryMSI` is supported from 7.2. 8.3.1 is only the boundary for `msiClientId` with a user-assigned identity. `ActiveDirectoryManagedIdentity` (12.2+) takes the client ID in the `user` property | Set 7.2, keep 8.3.1 as the `msiClientId` boundary only, give the 12.2+ mode its own `user` guidance, delete the recorded minimum-version dispute | ~5 |
 | 21 | `connectivity.md` 493-499; `connectivity-matrix.json` | Encryption and certificate-validation defaults | The watched section changed; the run proposed no edit | Read the section, then edit or re-baseline | 0-2 |
 | 22 | `migration.md` 444, 457, sovereignty and edge | Nothing on Azure Local | SQL Server on Azure Local is GA, connected and disconnected (28 Sept), on Windows or Linux VMs. Licences: SA, subscription or pay-as-you-go through Arc when connected, Azure Hybrid Benefit when disconnected | Name it in the sovereignty and edge branch, or decline in writing | 0-3 |
 | 23 | `migration.md` 15, 151 | SSMS 22 assesses and migrates | The SSMS migration assessment adds configuration readiness, a target recommendation, sizing and a pricing estimate. The blog gives no version and no preview status | Confirm on Learn, then record it. The skill can then name SSMS as evidence for tier and cost | ~3 |
 | 24 | `migration.md` §13, §16; `decision-rules.md` §A2, §C2 | Nothing on Always Encrypted with Intel SGX enclaves | Azure SQL Database retires SGX enclaves on 31 October 2027. Always Encrypted secure enclaves stay; VBS enclaves replace SGX | Add a field insight and a remediation rule: detect SGX dependence, plan the move to VBS, mark SQL Database `eligible_with_remediation`, never reject it for this alone | ~3 |
-| 25 | `connectivity.md` private endpoint rows; `connectivity-matrix.json` | Private endpoint redirect: 1433-65535, FQDN only, default is proxy (claim `conn-sqldb-private-endpoint-redirect`) | The watched section drifted on 12 Oct; the run proposed no edit | Read the section, then edit or re-baseline. Same treatment as row 21 | 0-3 |
+| 25 | `connectivity.md` private endpoint rows; `connectivity-matrix.json` | Private endpoint redirect: 1433-65535, FQDN only, default is proxy (claim `conn-sqldb-private-endpoint-redirect`) | The watched section drifted on 12 Oct; the run proposed no edit, and still proposed none on 19 Oct | Read the section, then edit or re-baseline. Same treatment as row 21 | 0-3 |
+| 26 | `prerequisite.md` MI network and capacity rows | Regional vCore and subnet limits for Managed Instance as they stood | Azure SQL Blog of 12 Oct, "Simplified Regional Limits for Azure SQL Managed Instance": simpler subnet management and per-hardware-generation vCore limits. Details not read yet | Read the post and the Learn limits page, then edit the rows that quote regional or subnet limits, or write that none does | 0-4 |
+| 27 | `connectivity.md` Private Link and service endpoint sections | Nothing on the Standard service endpoint | GA on 15 Oct (Azure Updates 571025): a Private Link family capability for reaching PaaS from IaaS at scale. Whether it covers Azure SQL is not read yet | Read the announcement. If it covers Azure SQL, add it to the connection options; otherwise decline in writing | 0-3 |
 
-**About 80 lines, 8 files**, plus about six golden scenarios (one per rule changed) and a
+**About 85 lines, 8 files**, plus about six golden scenarios (one per rule changed) and a
 re-baseline of the 13 drifted claims, which the script does. Seven rows state something false today:
 1, 2, 3, 4, 16, 19 and 20. Do rows 1 and 16 together, and rows 6 and 15 together: they touch the
 same lines.
@@ -68,11 +71,19 @@ then align microsoft/microsoft-sql by pull request, issue first.
 - The claims registry watches the Prerequisites section of the Arc migration page, not its
   Migration targets section. Row 15 came in through Azure Updates, not through the drift check.
 - Rows 2, 3, 7 and 8 are absent from the 5 Oct report and still open. A finding the run stops
-  proposing is not a fixed finding. The same happened on 12 Oct to rows 15, 16, 18 and 20: their
-  announcements are older than the 7-day news window, so the run no longer sees them. Only rows 17
-  and 19 were proposed again. A finding that leaves the window stays open until it lands.
-- The 5 Oct and 12 Oct reports say the link checker "exited non-zero (`0`)", which contradicts
-  itself. On 12 Oct one link of 559 failed and the classifier could not attribute it.
+  proposing is not a fixed finding. The same happened on 12 Oct to rows 15, 16, 18 and 20, and on
+  19 Oct to rows 17 and 24: their announcements are older than the 7-day news window, so the run no
+  longer sees them. Only rows 19 and 20 are still proposed. A finding that leaves the window stays
+  open until it lands.
+- The 13 drifted claims have been identical in the 12 and 19 Oct reports, and 12 of them were already
+  drifted on 14 Sept. The drift report does not age: nobody re-baselines a claim until its rule is
+  edited, so it keeps raising the same list. This is the 14 Sept finding set, restated.
+- The 5, 12 and 19 Oct reports say the link checker "exited non-zero (`0`)", which contradicts
+  itself. On 19 Oct one link of 559 failed and the classifier could not attribute it. Three weeks
+  running means it is a defect of the classifier, not a transient failure.
+- The prerequisite contract test "could not confirm every source and anchor it cites" in all three
+  reports, while the source verifier finds 218 of 218 resolving. The two checks disagree; neither
+  names the source in question.
 
 ## Sources
 
@@ -101,6 +112,8 @@ then align microsoft/microsoft-sql by pull request, issue first.
 | 23 | https://learn.microsoft.com/en-us/ssms/migrate/migrate-sql-server-azure-sql |
 | 24 | https://azure.microsoft.com/updates?id=569236 |
 | 25 | https://learn.microsoft.com/en-us/azure/azure-sql/database/private-endpoint-overview |
+| 26 | https://techcommunity.microsoft.com/t5/azure-sql-blog/introducing-simplified-regional-limits-for-azure-sql-managed/ba-p/4542886 |
+| 27 | https://azure.microsoft.com/updates?id=571025 |
 
 ## Out of scope
 
