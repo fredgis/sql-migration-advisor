@@ -9,7 +9,7 @@
     "preview": "node patchwork.mjs"
   },
   "dependencies": {
-    "@mermaid-js/mermaid-cli": "^11.4.2",
+    "@mermaid-js/mermaid-cli": "^12.0.0",
     "puppeteer-core": "^25.4.0",
     "sharp": "^0.35.3"
   }
