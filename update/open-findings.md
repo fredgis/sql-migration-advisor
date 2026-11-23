@@ -3,7 +3,7 @@
 Source: the weekly knowledge-base checks of 14 September to 23 November 2026 (issue #75). The 40
 findings open on 10 November were audited that day against the live Microsoft sources and the text now
 in HEAD (last knowledge-base commit: 13 September). Scope: the recommendation and prerequisite skills,
-the two published by Microsoft. The file has three parts: **To do** (21 findings, including three guidance additions, plus one decision, 28b),
+the two published by Microsoft. The file has three parts: **To do** (22 findings, including three guidance additions, plus one decision, 28b),
 **Implementation audit** (added 16 November: the knowledge-base lines to change for each one, a revised
 criticality and a size for the scope then known) and **Not doing** (19 others, with the reason). The 10 November audit is
 recorded in the comment of 10 November on issue #75
@@ -62,6 +62,7 @@ knowledge-base lines: the two knowledge bases and the files the skills read.
 
 | # | Where | What we say | What the source says now | Fix | Criticality |
 |---|---|---|---|---|---|
+| 49 | Every file of both skills that declares or compares a version, and Microsoft's `scripts/validate-distribution.mjs` 365-484 and 592-593. Lines as of 23 November, the same in the official files: see the row 49 detail | Both skills carry version lines (the advisor knowledge-base line v3.15 in 13 places, the prerequisite knowledge-base line v1.11 and schema line 1.0 in 7 files), announce them, record them in their JSON, and stop when two of them disagree. The advisor knowledge base keeps a version changelog (§15). Microsoft's validator fails the package when the lines disagree or when the prerequisite declaration is missing | Owner decision of 23 November: Microsoft releases the published package (its plugin manifests say 1.0.0) and this repository releases by GitHub tag, so a version inside the files only forces a coordinated bump of up to 11 files for each correction, and a partial update stops both skills | Remove every version line: the announcements, the card and JSON version fields, the version properties of the four schemas and their mirrors in the contracts, the catalog, `questions.json` and the fact mappings, §15 of the advisor knowledge base with its Contents entry, and the alignment rules (recommend `SKILL.md` 26-31; prerequisite `SKILL.md` 128-134 and 247). Keep "if a required file is unreadable, name it and stop", `knowledgeBaseSource`, `sourceCommit`, `evaluatedAt`, the freshness dates and the update guidance. Reword the historical "until vX" notes as plain history. In the issue, ask Microsoft to remove `validateCoordinatedKnowledgeBase` and `validatePrerequisitePolicy`, or to accept their removal in the pull request. Do it first, in the same pull request: no other row then needs a version bump | Medium |
 | 42 | `migration.md` 133; `decision-rules.md` 230, 235–239, 577; the preview question in the recommendation skill | Next-gen GP zone redundancy requires preview acceptance | [GA announcement](https://azure.microsoft.com/updates?id=578033) | Remove that condition for zone redundancy only. Check the target region's support for zone-redundant Next-gen GP; if unknown, ask. Do not remove preview checks for unrelated capabilities. | High |
 | 43 | `migration.md` 133; `decision-rules.md` §B2, 230–232 | Old log-rate ceiling; a qualitative high-throughput answer favours Business Critical | [MI sizing update](https://techcommunity.microsoft.com/blog/AzureSQLBlog/azure-sql-managed-instance-gets-a-boost-new-capabilities-in-next-gen-general-pur/4573761) | Compare measured log demand to the selected configuration: up to 6 MiB/s per vCore, capped at 220 MiB/s per instance, not 220 for every SKU. Check storage/vCore and latency, HA and read-scale needs before recommending BC. | Medium |
 | 44 | `migration.md` 278, 435 and §13; `decision-rules.md` 95, 171, 217, 455; P11-001 when assessing three-part names | Cross-database references disqualify SQL Database outright | [Hyperscale limited preview](https://techcommunity.microsoft.com/blog/AzureSQLBlog/azure-sql-hyperscale-cross-database-querying-now-in-limited-preview/4573935) | Evaluate native three-part reads only with approved preview access, online databases in the **same Hyperscale elastic pool on the same logical server**, and suitable permissions. Writes limited to one database; no savepoints or nested transactions. Keep linked servers and DTC separate. Otherwise retain refactor/MI/VM alternatives. | Medium |
@@ -70,7 +71,7 @@ knowledge-base lines: the two knowledge bases and the files the skills read.
 | 47 | `prerequisite.md` P11-003/P11-006, 236, 239 | Import rehearsal gives little help isolating a slow BACPAC import | [Microsoft support guidance](https://techcommunity.microsoft.com/blog/AzureDBSupport/why-your-bacpac-import-is-slow-finding-the-real-bottleneck/4574107) | Extend the existing rehearsal, not the list of blocking prerequisites: inspect SqlPackage logs, client CPU/RAM/disk, network and target utilisation. Compare from a same-region VM before increasing target compute. | Low |
 | 48 | `migration.md` 367; `decision-rules.md` 529 | Retirement is correct but the replacement list does not distinguish sync semantics | [SQL Data Sync replacement guide](https://techcommunity.microsoft.com/blog/AzureDBSupport/sql-data-sync-is-retiring-how-to-choose-the-right-replacement/4574101) | Keep 30 September 2027. Ask direction, writable destinations, conflict handling and tolerated lag before recommending a replacement. ADF copy, one-way replication and Fabric mirroring do not replace writable bidirectional sync as-is. | Low |
 | 1 | `migration.md` 107, 135, 230, 234, 238, 377, 378, 474, 622; `decision-rules.md` 49, 94, 96, 165, 238-239, 378, 380; both `SKILL.md` (recommend 645, prerequisite 181); `prerequisite.md` 57, 327-328, 334; `migration-methods.json` 24; `claims-registry.json` 101; `path-catalog.json` 533 | The Fabric Migration Assistant is Preview, with "no Private Link", and a preview-acceptance gate applies to it | GA since August 2026. DACPAC up to 20 MB, on-premises data gateway only; the limitations page excludes VNet gateways, not Private Link by name | Remove the assistant's Preview label and gate. Keep its documented constraints separate from target eligibility. At rules 94 and 238-239 remove the assistant as a preview example; zone redundancy is no longer a preview example either (42). Do with 16. | High |
-| 28 | `migration.md` 538-540, 544; `decision-rules.md` §A1 `AVS-LICENSING` 109-111, 124; `prerequisite.md` P27-003 (531); `path-catalog.json` 922-924 | Pay-as-you-go retires 15 Oct 2026, new sales end 31 Oct 2026, reserved instances end 30 Aug 2027; "a recommendation made today on a pay-as-you-go assumption fails in under two months" | Azure Updates 569535 and the Learn portable VCF licensing reference: from 1 Nov 2025 new deployments must use portable VCF; license-included pay-as-you-go must transition by **31 Oct 2026**; reserved instances end 30 Aug 2027, and a reservation expiring earlier ends its benefit at expiry. The 15 Oct date appears only as 15 Oct 2025 (vDefend cores). The run proposed HEAD's own dates | Dates and wording only: re-date the table from the sources, rewrite the "under two months" wording in the past tense, keep "AVS is not retiring". P27-003 (`prerequisite.md` 531) repeats both wrong dates in its applicability cell and changes with them. Leave the changelog rows (v2.10 in `migration.md` and `README.md`) as they are. The eligibility rule is a separate decision, row 28b | High |
+| 28 | `migration.md` 538-540, 544; `decision-rules.md` §A1 `AVS-LICENSING` 109-111, 124; `prerequisite.md` P27-003 (531); `path-catalog.json` 922-924 | Pay-as-you-go retires 15 Oct 2026, new sales end 31 Oct 2026, reserved instances end 30 Aug 2027; "a recommendation made today on a pay-as-you-go assumption fails in under two months" | Azure Updates 569535 and the Learn portable VCF licensing reference: from 1 Nov 2025 new deployments must use portable VCF; license-included pay-as-you-go must transition by **31 Oct 2026**; reserved instances end 30 Aug 2027, and a reservation expiring earlier ends its benefit at expiry. The 15 Oct date appears only as 15 Oct 2025 (vDefend cores). The run proposed HEAD's own dates | Dates and wording only: re-date the table from the sources, rewrite the "under two months" wording in the past tense, keep "AVS is not retiring". P27-003 (`prerequisite.md` 531) repeats both wrong dates in its applicability cell and changes with them. Leave the changelog row v2.10 in `README.md` as it is (row 49 removes the knowledge base's own changelog). The eligibility rule is a separate decision, row 28b | High |
 | 16 | `migration.md` 343 (§8 cell) and a new §5.4 row; `decision-rules.md` 381-382; `prerequisite.md` 223-230 (the P11 heading and its note that P11 does not cover Fabric), 237 (P11-004), 582-583 (coverage counts), 616-617; `advisor-coverage.json` 3 and 325-332; `path-catalog.json` 356-363 (P11 target variants) | Fabric takes a DACPAC only, and the rules forbid offering a BACPAC import ("do not substitute a BACPAC import") | Fabric "SqlPackage for SQL database in Fabric": a .bacpac can be imported into an empty SQL database with `sqlpackage /action:import`. The Fabric migration overview lists "SqlPackage and Copy job" | Lift the prohibition, but do not turn a refused assistant into a BACPAC recommendation automatically: the import needs an empty target database, a source that fits the Fabric T-SQL surface (the page says it may need altering) and a volume to qualify. Keep DACPAC as the assistant's schema path. Give BACPAC to Fabric a prerequisite path (P11 has no Fabric variant today) and separate the SqlPackage constraints from the assistant's (P16). P11-004 (Blob access) must apply only when the BACPAC is staged in Blob, so that a local SqlPackage import does not leave a required prerequisite unresolved. Do with row 1 | Medium |
 | 19 | `decision-rules.md` 304, 323; `migration-methods.json` 20; `migration.md` 192 | Log shipping needs a Windows source ("Windows-only"). `migration.md` 192 already says Windows and Linux, so HEAD contradicts itself | Learn "Get started with log shipping on Linux": SQL Server Agent on both servers plus a CIFS/Samba share, Linux to Linux. Windows to Linux is not documented | Replace the Windows-only gate with an OS-pair condition instead of removing it: Windows to Windows as today; Linux to Linux documented (and P03-006 already assumes it); Windows to Linux and Linux to Windows neither documented nor excluded, so ask or leave to confirm; destination OS unknown, ask and do not promote log shipping. No contract collects the target OS (P03 asks `source_os` only), so either add a target-OS fact (contract, both schemas, `advisor-fact-mappings.json`, question) or keep the cross-OS case as "to confirm". The line audit recommends the second: 4 lines changed and 2 added in 3 files, against about 39 new lines in 9 more files for a new fact. `migration.md` 192 and P03-006 (`prerequisite.md` 121) say "source or target" without the pairing: reword 192 to "Windows to Windows and Linux to Linux; a mixed pair is not documented" and leave P03-006, which only asks for the Samba share when either end is Linux. Keep the version and log-chain checks | Medium |
 | 17 | `migration.md` 200, 369; `decision-rules.md` 186, 360, 557; `prerequisite.md` 173–181, especially P08-006/007/009; recommendation and prerequisite contracts, questions and fact mapping | One link per database; the 16 November plan used preview floors | [GA announcement](https://aka.ms/milink-multidb-ga-blogpost) and [Learn support table](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-extend-availability-group): SQL Server **2022 CU28+ or 2025 CU11+**, Enterprise/Developer, Windows or Linux, **SSMS 22.12.1+** for the wizard. An existing AG is optional. Only automatic multi-node wizard configuration remains preview. | Offer multi-database mode without preview consent. For SQL Server → MI the update policy must match the source version or be newer; creating the link from MI or reversing roles needs the matching version policy (including SQL Server 2022). Rehearse cutover and application switch for every link; require online failback evidence only when supported, otherwise a separate rollback plan. Carry the selected mode into P08; preserve single-database criteria. Pair with row 35: count databases against remaining target capacity, not links. | High |
@@ -85,7 +86,7 @@ knowledge-base lines: the two knowledge bases and the files the skills read.
 | 6 | `reference/claims-registry.json` 223-233, claim `arc-sql-migration-minimum-source-versions` (225 and 226 by hand; 227 and 228 by the script) | The claim watches the "Prerequisites" section of the Arc migration overview | That section no longer exists on the overview. The floors now sit on the Arc to Managed Instance page (MI Link: SQL Server 2016 on Windows Server 2016; LRS: SQL Server 2012 on Windows Server 2012) and the overview gives 2014 for the whole experience. HEAD already splits these floors (`decision-rules.md` 349-353, `migration.md` 371) | Re-point `source_url` and `source_section` to the Arc to MI page, check the section exists, then re-baseline. No knowledge-base text to change. Without it the weekly check hashes the whole page | Low |
 | 39 | `prerequisite.md` 155 (P06-005; the only occurrence of the anchor) | The source link is `tutorial-migrate-vmware#run-a-test-migration` | The anchor is gone. The test-migration steps now sit under `#track-and-migrate-replicating-servers` | Re-point the link and update the checked date | Low |
 
-**16 November sizing only, not a total for the expanded 23 November scope:** about 96 existing lines in 18 files and about 82 new lines (about 123 if row 28b is
+**Row 49 (23 November)** changes about 190 existing lines in 17 files, most of them deleted (§15 alone is 61), plus Microsoft's validator; it adds none. **16 November sizing only, not a total for the expanded 23 November scope:** about 96 existing lines in 18 files and about 82 new lines (about 123 if row 28b is
 adopted), all in the knowledge bases and the files the skills read. The sizes by finding are in the
 implementation audit below; the new-line figures are estimates. The drifted claims are re-baselined by the
 script after the source and section are checked. Current High priorities: 1, 17, 28 and 42. Rows 31 to 34 are incomplete as written. Do rows 1 and 16
@@ -134,7 +135,7 @@ By knowledge base:
 | Claims watch list: `claims-registry.json` | 1 | 3 | 0 |
 | **Total** | **18** | **96** | **about 82** |
 
-The advisor knowledge-base release (now v3.15 to v3.16, about 20 stamped files) is not counted: see Release.
+No version bump is counted: row 49 removes the version lines (see Release).
 
 ### What the line audit changed in the rows above
 
@@ -190,6 +191,39 @@ adds a target-OS fact: both input contracts (about 4 lines), both input schemas 
 (about 8), `questions.json` (about 2), the P03 question fields in `path-catalog.json` (1), both `SKILL.md`
 (about 8): about 39 new lines in 9 more files. Take the minimal option.
 
+#### Row 49, no version in the skills (about 190 existing lines, 17 files, plus Microsoft's validator)
+
+Lines as of 23 November. The official files have the same numbers, so they need no conversion.
+
+| File | Lines | Change | Existing |
+|---|---|---|---|
+| recommend `SKILL.md` | 10 | "knowledge base v3.15" leaves the statement of the bundled policy | 1 |
+| | 26-31 | Startup: drop the version check and the stop on disagreement; keep "if a required file is unreadable, name it and stop"; record `knowledgeBaseSource`, optional `commit` and `evaluatedAt` only | 6 |
+| | 252, 255, 257, 259-261, 264, 267, 271, 275-276 | The announcement names the bundled files without a version; drop "state the same knowledge-base version in the card", "which version answered" and the coordinated line; keep the update guidance (264-269) without a version | 11 |
+| | 442-443, 643, 750 | The JSON example, the metadata list and the card example lose their version fields | 4 |
+| | 131 | "Until v2.4" becomes plain history | 1 |
+| `migration.md` | 19, 27 | The §15 Contents entry and the version line | 2 |
+| | 595-655 | §15 "Document version & changelog" removed | 61 |
+| `decision-rules.md` | 18, 45 | "v3.15" leaves the source-of-truth line; "until v2.4" becomes plain history | 2 |
+| `examples/sample-recommendation.md` | 85, 160-161 | The card header and the JSON lose their versions | 3 |
+| `reference/output-contract.md` | 53, 62-63, 127 | "since v3.1"; the two version fields; the card header template | 4 |
+| `reference/input-contract.md` | 18, 68, 123 | The "Version: coordinated" line; two historical notes | 3 |
+| recommend `schemas/output.schema.json` | 621-625, 742-743, 750-755 | `version`, `knowledgeBaseVersion`, `decisionRulesVersion`: properties and required entries | 13 |
+| prerequisite `SKILL.md` | 128-134, 247, 266 | The alignment rule, its error-handling row, the version in the announcement | 9 |
+| `prerequisite.md` | 41 | "Version: v1.11" leaves the header; "Last verified" stays | 1 |
+| prerequisite `reference/input-contract.md` | 15-16, 44, 55-56, 71, 142, 156-157 | Schema and knowledge-base lines; the Advisor version fields it requires; the example | 9 |
+| prerequisite `reference/output-contract.md` | 14-15, 56-58 | Schema and knowledge-base lines; three fields | 5 |
+| `templates/prerequisite-plan.md` | 3 | "Prerequisite KB `<version>`" leaves the plan header | 1 |
+| `path-catalog.json`; `questions.json` | 2-3; 2 | `schemaVersion`, `knowledgeBaseVersion` | 3 |
+| `advisor-fact-mappings.json` | 4, 33, 63 | `mappingsVersion`; two notes become plain history | 3 |
+| prerequisite `schemas/input.schema.json` | 7, 13-15, 706-707, 713-720, 933-934, 998-1007 | `schemaVersion`, and the Advisor's two version fields in both shapes | 26 |
+| prerequisite `schemas/output.schema.json` | 15-17, 24-32, 52-59, 778-779 | `schemaVersion`, `prerequisiteKnowledgeBaseVersion`, `pathCatalogVersion` and the Advisor's two version fields | 22 |
+| Microsoft `scripts/validate-distribution.mjs`, not in this repository | 365-484, 592-593 | Remove `validateCoordinatedKnowledgeBase` and `validatePrerequisitePolicy` and their two calls, or `validate.yml` fails the package | (122) |
+
+On this side, not counted: the tests, the weekly check's version stamping and gates, the README surfaces
+table, the PDF cover, the poster and the rule graph stop quoting a knowledge-base line; `version.json` and
+the plugin manifests carry the GitHub release tag only.
+
 #### Row 28, AVS dates (12 existing lines, about 1 new, 4 files)
 
 | File | Lines at HEAD | Change | Existing |
@@ -199,7 +233,7 @@ adds a target-OS fact: both input contracts (about 4 lines), both input schemas 
 | `docs/sql-server-to-azure-migration-prerequisite.md` | 531 | P27-003 applicability cell | 1 |
 | `skills/generate-migration-prerequisite-plan/reference/path-catalog.json` | 922-924 | The three date fields; nothing reads them, so the field names can follow the new meaning | 3 |
 
-Do not touch: `README.md` 561 and `migration.md` 688 (changelog rows v2.10), `path-catalog.json` 921 and 925
+Do not touch: `README.md` 561 (changelog row v2.10; row 49 removes `migration.md` §15), `path-catalog.json` 921 and 925
 (still right: the earlier of the reservation's expiry and 30 August 2027; ten months).
 
 #### MI Link: rows 17 and 35
@@ -264,18 +298,18 @@ the contracts) and `controlPlanes` for DMS in `migration-methods.json` 15 (1 lin
 
 ### Order of work (16 November baseline)
 
-For the consolidated scope, prioritise 1/16, 17/35, 28 and 42/43; then 44, 15, 19, 31–33 and 45. Include 46–48 in the relevant assessment, BACPAC and sync guidance. Bundle remaining low-priority edits by KB. Keep 28b out of implementation until decided.
+For the consolidated scope, start with 49 (it removes every version bump), then prioritise 1/16, 17/35, 28 and 42/43; then 44, 15, 19, 31–33 and 45. Include 46–48 in the relevant assessment, BACPAC and sync guidance. Bundle remaining low-priority edits by KB. Keep 28b out of implementation until decided.
 
-1. Text only: rows 31 to 34, 39, 5 and 6 (11 lines; the script re-baselines row 6).
-2. Row 28 (12 lines).
-3. Fabric, rows 1 and 16 (47 lines): the rule text first, then the prerequisite KB (P11 and P16), then the
+1. Row 49: remove the version lines and the alignment rules first, so that no other row needs a bump.
+2. Text only: rows 31 to 34, 39, 5 and 6 (11 lines; the script re-baselines row 6).
+3. Row 28 (12 lines).
+4. Fabric, rows 1 and 16 (47 lines): the rule text first, then the prerequisite KB (P11 and P16), then the
    catalog and the coverage map.
-4. Row 19, minimal option (4 lines).
-5. Rows 17 and 35 together (9 existing lines, about 62 new), then row 15 (6 existing, about 10 new; decide
+5. Row 19, minimal option (4 lines).
+6. Rows 17 and 35 together (9 existing lines, about 62 new), then row 15 (6 existing, about 10 new; decide
    first how the hand-off is handled).
-6. Row 28b only after the decision.
-7. One release for everything (see Release). The prerequisite document moves to v1.12 with rows 1, 16, 17,
-   28, 31 to 34 and 39.
+7. Row 28b only after the decision.
+8. One delivery for everything (see Release).
 
 ## Conditions for the two skills
 
@@ -306,8 +340,8 @@ purpose must be justified by the source, not rewritten to make the tests pass.
 
 - **11000-11999 next to 5022.** The MI Link distributed availability group endpoint, paired with 5022 in
   `migration.md` and `decision-rules.md`, is documented on a page nobody has re-read. Leave it alone.
-- **Changelog rows record what was true at the time.** Do not rewrite them, in any knowledge
-  base.
+- **Changelog rows record what was true at the time.** Do not rewrite the ones in `README.md`; row 49
+  removes the knowledge base's own.
 - **`SKILL.md` repeats rows 1, 5, 15, 17 and 35** in its factual-gates table (recommend `SKILL.md` 639, 640,
   641 and 645). Fix both copies, or remove that table first, which also cuts the skill's token count.
 - **Row 28: check a date against its source, not against this knowledge base.** The run proposed
@@ -322,23 +356,18 @@ purpose must be justified by the source, not rewritten to make the tests pass.
   OS-pair condition in the rule.
 - **Row 35: the instance-wide database limit still applies in multiple-database mode.** Do not
   relax `database_count`.
-- **The prerequisite document needs a bump too.** `docs/sql-server-to-azure-migration-prerequisite.md`
-  declares v1.11 on line 3, and an edit needs its version bump in the same commit. Rows 1, 16, 17, 28, 31 to
-  34 and 39 all edit it. The stamp is quoted in 6 more lines (prerequisite `SKILL.md` 126 and 256, both
-  contracts line 4, `path-catalog.json` 3, `schemas/output.schema.json` 28).
+- **Row 49 removes the only run-time check against a partial installation.** Both skills stop today when
+  two declared versions disagree; without versions, a mixed installation is no longer caught at run time.
+  It is caught where the package is built instead: Microsoft signs the scripts and validates the package,
+  and this repository's tests compare every file. Microsoft's validator must lose its two version checks in
+  the same pull request, or `validate.yml` fails the package.
 
 ## Release
 
-Rows 1, 5, 15, 16, 17, 19, 28 and 35 touch `reference/decision-rules.md`, which forces the full
-coordinated release across every surface the README lists. Ship all the rows above in one release, then
-align microsoft/microsoft-sql by pull request, issue first. Two version lines move:
-
-- **Advisor KB, v3.15 to v3.16** (v3.15.0 shipped on 23 November with the official publication's content): about 20 stamped files, rewritten by
-  `node tools/artifacts/check-artifacts.mjs --fix-prose`, plus the PDF, its preview image, the poster PNG
-  and the six SVG mirrors, which are regenerated. The size reference is commit `47eb448`, where about 20 of
-  its 29 files carry the stamp; a patch release touches 6 files (`f9e57c8`).
-- **Prerequisite KB, v1.11 to v1.12:** 7 lines in 6 files (`prerequisite.md` 3, prerequisite `SKILL.md` 126
-  and 256, both contracts line 4, `path-catalog.json` 3, `schemas/output.schema.json` 28).
+One delivery: one issue on microsoft/microsoft-sql, then one pull request carrying every row above, and
+one GitHub release here. No version line moves: row 49 removes them, so nothing has to be aligned.
+Microsoft releases the published package; this repository tracks its own releases by GitHub tag only.
+After the merge, `node tools/check-official-parity.mjs` must find the twenty files identical again.
 
 ## Not doing
 
