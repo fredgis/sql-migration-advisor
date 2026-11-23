@@ -340,7 +340,7 @@
     {
       "name": "SQL Data Sync",
       "date": "retires 30 Sep 2027",
-      "useInstead": "ADF / transactional replication / AG"
+      "useInstead": "Ask the direction, whether the destination is written to, conflict handling and tolerated lag first. One-way: ADF or Azure Functions, transactional replication, active geo-replication or read replicas (whole database, read-only), Fabric mirroring for analytics. Writable bidirectional sync has no managed replacement: redesign to a single writer, or build it with ADF / Functions and your own conflict logic"
     }
   ],
   "fabricMigration": {

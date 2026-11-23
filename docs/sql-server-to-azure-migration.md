@@ -170,7 +170,7 @@ flowchart TD
 | [Database Experimentation Assistant (DEA)](https://learn.microsoft.com/en-us/previous-versions/sql/dea/database-experimentation-assistant-overview) | Capture + replay a production workload on the target to validate performance *before* cutover | Retired 15 December 2024 | Replaced by a documented validation stack: capture with Extended Events (SQL Trace/Profiler deprecated), replay with RML Utilities / OStress, then analyse with Query Store and DMVs. The *concept* (catch plan/compat regressions before cutover) remains valuable; the MS tool itself is retired. |
 
 > [!NOTE]
-> **Retired — do not use in new runbooks:** DMA (16 Jul 2025) and Azure Data Studio itself (28 Feb 2026). The Azure SQL Migration extension has no separately announced retirement date, but migration work should continue via SSMS 22 / Azure Arc / modern DMS / `Az.DataMigration` CLI. SQL Data Sync retires 30 Sep 2027 — don't build new sync/migration on it (use ADF, transactional replication or AG).
+> **Retired — do not use in new runbooks:** DMA (16 Jul 2025) and Azure Data Studio itself (28 Feb 2026). The Azure SQL Migration extension has no separately announced retirement date, but migration work should continue via SSMS 22 / Azure Arc / modern DMS / `Az.DataMigration` CLI. SQL Data Sync retires 30 Sep 2027 — don't build new sync/migration on it, and choose its replacement from the sync requirements (§9).
 
 ### 4.1 Microsoft tooling by source → target (assess · data · schema)
 
@@ -384,7 +384,7 @@ Microsoft describes LRS as an online migration with expected downtime during cut
 | DMS *classic* — SQL Server scenarios | Absorbed into the current DMS portal experience → modern DMS (portal / PowerShell / CLI) |
 | Database Experimentation Assistant (DEA) | Retired 15 December 2024 → capture with Extended Events, replay with RML Utilities / OStress, analyse with Query Store + DMVs |
 | Distributed Replay | Deprecated as of SQL Server 2022 and not available in SQL Server 2022 or later → use RML Utilities / OStress |
-| SQL Data Sync | Retires 30 Sep 2027 → use ADF / transactional replication / AG |
+| SQL Data Sync | Retires 30 Sep 2027. None of the alternatives is a drop-in replacement. Ask the direction, whether the destination is written to, conflict handling and tolerated lag first. One-way: ADF or Azure Functions, transactional replication, active geo-replication or read replicas (whole database, read-only), Fabric mirroring for analytics. Writable bidirectional sync has no managed replacement: redesign to a single writer, or build it with ADF / Functions and your own conflict logic. |
 | DMS → Azure SQL DB | Offline only (online available for MI / SQL VM) |
 | MI Link source | SQL Server 2016 and later (incl. 2022, 2025), Ent/Std/Dev editions, on a host OS supported by that SQL Server version: Windows Server throughout, and **Linux from SQL Server 2017** onwards (SQL Server 2016 is Windows Server only). Windows hosts must be **Windows Server 2012 or later**: Microsoft states this in the link Limitations, because Windows 10 and 11 clients cannot enable the Always On availability group feature the link depends on. Requires sysadmin, distributed AG capability, AG endpoints, MI Link network ports (5022 plus MI-side HADR 11000–11999) and connectivity to the MI VNet. Multiple-database mode needs SQL Server 2022 CU28+ or 2025 CU11+, Enterprise or Developer (Standard is not supported: basic availability groups carry one database), on Windows or Linux, with the same build and the mode enabled on every replica |
 | Standalone LRS source | SQL Server 2008–2022; SQL Server 2012 SP1 CU2+ can `BACKUP TO URL` directly (page blob to 1 TB on 2012/2014, block blob + SAS to 12.8 TB on 2016+), older builds need local backup + upload |
@@ -584,6 +584,7 @@ Microsoft describes LRS as an online migration with expected downtime during cut
 - Azure Site Recovery — <https://learn.microsoft.com/en-us/azure/site-recovery/site-recovery-overview>
 - Azure-SSIS Integration Runtime — <https://learn.microsoft.com/en-us/azure/data-factory/create-azure-ssis-integration-runtime>
 - SQL Data Sync (retiring 30 Sep 2027) — <https://learn.microsoft.com/en-us/azure/azure-sql/database/sql-data-sync-data-sql-server-sql-database?view=azuresql>
+- Choosing a SQL Data Sync replacement — <https://techcommunity.microsoft.com/blog/AzureDBSupport/sql-data-sync-is-retiring-how-to-choose-the-right-replacement/4574101>
 
 **Licensing / programs / lifecycle**
 - Azure Hybrid Benefit (Azure SQL) — <https://learn.microsoft.com/en-us/azure/azure-sql/azure-hybrid-benefit>

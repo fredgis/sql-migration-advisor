@@ -554,7 +554,7 @@ Rules:
 | Data Migration Assistant (DMA) | 16 Jul 2025 | SSMS 22 / Arc / Azure Migrate |
 | Azure Data Studio + SQL Migration extension | ADS retired 28 Feb 2026; migration extension has no separate announced retirement | VS Code + MSSQL; SSMS 22 / DMS |
 | Azure DMS *classic* — SQL scenarios | absorbed into current DMS portal experience | **modern** DMS (portal / PowerShell / CLI) |
-| SQL Data Sync | retires 30 Sep 2027 | ADF / transactional replication / AG |
+| SQL Data Sync | retires 30 Sep 2027 | Ask the direction, whether the destination is written to, conflict handling and tolerated lag first. One-way: ADF or Azure Functions, transactional replication, active geo-replication or read replicas (whole database, read-only), Fabric mirroring for analytics. Writable bidirectional sync has no managed replacement: redesign to a single writer, or build it with ADF / Functions and your own conflict logic |
 
 ---
 
