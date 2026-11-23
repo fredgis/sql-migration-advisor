@@ -613,10 +613,10 @@ The CI workflow runs this check in **strict mode** on every push and every pull 
 
 ```text
 decision-rules.data.json:
-Next-gen General Purpose capacity = 500 links
+Next-gen General Purpose capacity = 500 databases
 
 decision-rules.md:
-Next-gen General Purpose capacity = 100 links
+Next-gen General Purpose capacity = 100 databases
 ```
 
 Result:

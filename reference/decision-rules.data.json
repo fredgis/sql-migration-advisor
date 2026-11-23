@@ -255,7 +255,7 @@
         "no high log throughput"
       ],
       "nextGenGeneralPurposeSignals": [
-        "101-500 databases or MI Links",
+        "101-500 databases",
         "up to 128 vCores",
         "up to 32 TB",
         "configurable IOPS"

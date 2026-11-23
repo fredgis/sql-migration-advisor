@@ -326,7 +326,7 @@
             "integer",
             "null"
           ],
-          "description": "Read against MI Link capacity: 100 links on General Purpose and Business Critical, 500 on Next-gen General Purpose."
+          "description": "Read against MI Link capacity: 100 databases on General Purpose and Business Critical, 500 on Next-gen General Purpose, in either link mode."
         },
         "migration_batch_size": {
           "type": [

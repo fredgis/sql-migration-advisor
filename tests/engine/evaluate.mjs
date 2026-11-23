@@ -585,7 +585,7 @@ function chooseMiMethod(inputs, out) {
     addUnique(out.unknowns, 'MI Link capacity depends on selected MI service tier');
     addUnique(out.evidenceRequired, 'select or assess the MI service tier');
   } else if (dbCount && cap && dbCount > cap) {
-    out.exclusions.mi_link = `MI Link capacity ${cap} links exceeded by ${dbCount} databases.`;
+    out.exclusions.mi_link = `MI Link capacity of ${cap} databases exceeded by ${dbCount} databases.`;
   }
   applyArcWizardBatchLimit(inputs, out);
   if (has(inputs.downtime, 'near-zero') || has(inputs.downtime, 'minimal')) {

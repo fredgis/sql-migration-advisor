@@ -226,7 +226,7 @@ prerequisites, and a reader handed the wrong set finds out at cutover.
 | AG / DAG | `ha_migration_pattern`, `source_ha_topology`, `domain_model`, `ag_endpoint_status`, `quorum_status` |
 | Backup / restore | `recovery_model`, `backup_chain_status`, `blob_https_status`, `blob_access_model`, `tde_material_status` |
 | Azure Migrate / AVS | `azure_migrate_intent`, `azure_migrate_platform`, `azure_migrate_appliance_status`, `test_migration_status`, `hcx_service_mesh_status` |
-| MI Link / LRS | `mi_link_ports_status`, `mi_link_capacity_status`, `lrs_window_days`, `lrs_storage_layout_status` |
+| MI Link / LRS | `mi_link_ports_status`, `mi_link_capacity_status`, `mi_link_mode`, `lrs_window_days`, `lrs_storage_layout_status` |
 | SQL DB schema/data | `schema_compatibility_status`, `bacpac_consistency_status`, `dms_runtime_status`, `bulk_target_schema_status` |
 | Replication / CDC | `replication_primary_keys_status`, `replication_topology`, `striim_runtime_status` |
 | Data Box | `data_box_device_status`, `delta_sync_method` |

@@ -274,6 +274,7 @@
         "target_region",
         "mi_link_ports_status",
         "mi_link_capacity_status",
+        "mi_link_mode",
         "network_path_status",
         "dns_status",
         "tde_status",

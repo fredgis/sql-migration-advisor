@@ -2320,7 +2320,7 @@
   {
     "id": "mi-link-capacity-nextgen-200-databases-ok",
     "title": "MI Link 200-database estate fits Next-gen GP capacity",
-    "why": "Regression for MI Link capacity: Next-gen GP supports up to 500 links. MI Link host prerequisites stated explicitly in v1.18: the method is now fail-closed, so a scenario that omits the OS and edition no longer receives it.",
+    "why": "Regression for MI Link capacity: Next-gen GP supports up to 500 databases. MI Link host prerequisites stated explicitly in v1.18: the method is now fail-closed, so a scenario that omits the OS and edition no longer receives it.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -2360,15 +2360,15 @@
       "mustNotRecommend": []
     },
     "assertRulePresent": [
-      "Up to \\*\\*100 links\\*\\*[\\s\\S]*?\\*\\*500 links\\*\\*",
-      "One link = one database"
+      "Up to \\*\\*100 databases\\*\\*[\\s\\S]*?\\*\\*500 databases\\*\\*",
+      "every replicated database counts"
     ],
     "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
     "id": "mi-link-capacity-gp-200-databases-exceeds",
     "title": "MI Link 200-database estate exceeds GP/BC capacity",
-    "why": "Regression for MI Link capacity: GP/BC support up to 100 links.",
+    "why": "Regression for MI Link capacity: GP/BC support up to 100 databases.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -2400,7 +2400,7 @@
       "tier": "MI General Purpose",
       "targetAvailabilityDuringSync": "unavailable",
       "businessCutoverDowntime": "minutes",
-      "exclusions.mi_link": "MI Link capacity 100 links exceeded by 200 databases.",
+      "exclusions.mi_link": "MI Link capacity of 100 databases exceeded by 200 databases.",
       "recommendationStatus": "provisional",
       "confidence": "low",
       "mustNotRecommend": [
@@ -2408,7 +2408,7 @@
       ]
     },
     "assertRulePresent": [
-      "Up to \\*\\*100 links\\*\\*[\\s\\S]*?\\*\\*500 links\\*\\*",
+      "Up to \\*\\*100 databases\\*\\*[\\s\\S]*?\\*\\*500 databases\\*\\*",
       "This is not MI Link capacity"
     ],
     "auditRef": "shilpi-2026-09-13 unproven-candidates"
@@ -2656,7 +2656,7 @@
       "tier": "MI General Purpose",
       "targetAvailabilityDuringSync": "unavailable",
       "businessCutoverDowntime": "minutes",
-      "exclusions.mi_link": "MI Link capacity 100 links exceeded by 120 databases.",
+      "exclusions.mi_link": "MI Link capacity of 100 databases exceeded by 120 databases.",
       "recommendationStatus": "provisional",
       "confidence": "low",
       "mustNotRecommend": [
@@ -2664,8 +2664,8 @@
       ]
     },
     "assertRulePresent": [
-      "Up to \\*\\*100 links\\*\\*[\\s\\S]*?\\*\\*500 links\\*\\*",
-      "One link = one database"
+      "Up to \\*\\*100 databases\\*\\*[\\s\\S]*?\\*\\*500 databases\\*\\*",
+      "every replicated database counts"
     ],
     "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
@@ -2741,8 +2741,8 @@
       "mustNotRecommend": []
     },
     "assertRulePresent": [
-      "Up to \\*\\*100 links\\*\\* on MI General Purpose",
-      "up to \\*\\*500 links\\*\\* on Next-gen General Purpose",
+      "Up to \\*\\*100 databases\\*\\* on MI General Purpose",
+      "up to \\*\\*500 databases\\*\\* on Next-gen General Purpose",
       "Tier-driving inputs unknown[\\s\\S]*?`unknown_requires_assessment`"
     ],
     "auditRef": "P1-4a"

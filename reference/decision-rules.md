@@ -238,7 +238,7 @@ If a tier-driving input is missing, emit `unknown_requires_assessment` for tier 
 | Inputs | Tier result |
 | --- | --- |
 | Low-latency storage required, high IOPS/log throughput, heavy tempdb, in-memory OLTP, read-scale secondary, highest HA/resilience, or SLA/latency target cannot tolerate remote storage | **MI Business Critical** |
-| 101–500 databases or MI Links on a single instance, up to 128 vCores, up to 32 TB, or configurable IOPS/memory required — and Business Critical-only features and its latency floor are not required | **MI Next-gen General Purpose** *(GA — but its **zone-redundancy option is public preview**, so count it only when `preview_acceptable = PREVIEW_ACCEPTED`)* |
+| 101–500 databases on a single instance, up to 128 vCores, up to 32 TB, or configurable IOPS/memory required — and Business Critical-only features and its latency floor are not required | **MI Next-gen General Purpose** *(GA — but its **zone-redundancy option is public preview**, so count it only when `preview_acceptable = PREVIEW_ACCEPTED`)* |
 | Moderate latency/IO, general enterprise workload, cost-sensitive, no read-scale secondary, no high log throughput requirement | **MI General Purpose** |
 | More than 500 databases or links on one instance | Next-gen General Purpose is still capped at 500 — plan **multiple instances** |
 | `performance.latency`, `performance.iops`, `performance.log_throughput`, and `resilience.read_scale/SLA` unknown | `unknown_requires_assessment` — require Perfmon/DMV baseline, wait stats, log generation rate, HA/read-scale requirement |
@@ -356,6 +356,8 @@ only one database is moving.
 | Online subset | **Transactional replication** | **`REPL-PUBLISHER`.** Use when tables/articles fit and publisher rights exist |
 | Data-only / bulk | bcp / Smart Bulk Copy / ADF *(documentary — never a candidate)*, or **BACPAC / SqlPackage** | data movement only; validate schema/features separately |
 
+**MI Link multiple-database mode (GA).** One link replicates the databases of an availability group, or standalone databases that SSMS places in a new single-node group. It needs SQL Server **2022 CU28+** or **2025 CU11+**, **Enterprise or Developer**, on Windows or Linux, every replica on that build with the mode enabled, and SSMS **22.12.1+** for the wizard. Offer it without preview consent when several databases move together and the source meets those floors; otherwise use single-database mode, whose gates above are unchanged. One-way replication and cutover need a managed-instance update policy that matches or is newer than the source version; failback with role reversal needs the policy that matches it. Only the SSMS wizard's automatic certificate setup across a multi-node group is a preview feature. The mode changes the number of links, not the capacity (`MI-LINK-CAPACITY`).
+
 LRS and Arc version paths:
 - **Standalone LRS** (PowerShell/CLI/API): SQL Server **2008–2022**. SQL Server **2012 SP1 CU2+** can `BACKUP TO URL` directly to Blob (page blob to 1 TB on 2012/2014, block blob + SAS to 12.8 TB on 2016+); older builds back up locally, then upload.
 - **Arc-enabled SQL Server overall migration experience:** SQL Server **2014+**.
@@ -368,7 +370,7 @@ LRS and Arc version paths:
 MI migration capacity gates (**`MI-LINK-CAPACITY`**; the Arc wizard row is **`ARC-WIZARD-BATCH`**):
 | Method/control plane | Capacity rule |
 | --- | --- |
-| **MI Link** | Up to **100 links** on MI General Purpose and Business Critical; up to **500 links** on Next-gen General Purpose. One link = one database. |
+| **MI Link** | Up to **100 databases** on MI General Purpose and Business Critical; up to **500 databases** on Next-gen General Purpose, in either link mode: every replicated database counts, whether each has its own link or several share one. On an instance that already hosts databases, compare `database_count` with the capacity left. |
 | **Azure Arc portal migration wizard** | Batch-selection UI limit: up to **10 databases** per batch with Azure Extension for SQL Server **1.1.3348.364+**; earlier extension versions select one database at a time. This is not MI Link capacity. |
 | **LRS** | Supports up to the MI service-tier database limit (100 GP / 500 Next-gen GP), with **100 simultaneous restores per instance** and **150 per subscription**. |
 

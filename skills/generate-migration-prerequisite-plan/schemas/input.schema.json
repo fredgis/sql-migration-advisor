@@ -311,6 +311,13 @@
             "UNKNOWN"
           ]
         },
+        "mi_link_mode": {
+          "enum": [
+            "SINGLE_DATABASE",
+            "MULTI_DATABASE",
+            "UNKNOWN"
+          ]
+        },
         "lrs_window_days": {
           "type": "integer",
           "minimum": 1

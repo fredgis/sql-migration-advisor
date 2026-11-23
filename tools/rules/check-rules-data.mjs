@@ -70,9 +70,9 @@ assertRegex('miLink.ports.sqlServerEndpoint', new RegExp(`Required ports are:[\\
 assertRegex('miLink.ports.managedInstanceHadrRange', new RegExp(`Required ports are:[\\s\\S]*?\\*\\*${ports.managedInstanceHadrRange.start}[–-]${ports.managedInstanceHadrRange.end}\\*\\*`, 'u'), `expected MI Link HADR range ${ports.managedInstanceHadrRange.start}-${ports.managedInstanceHadrRange.end}`);
 
 const cap = data.miLink.capacityLinks;
-assertRegex('miLink.capacityLinks.generalPurpose', new RegExp(`Up to \\*\\*${cap.generalPurpose} links\\*\\* on MI General Purpose`, 'u'), `expected MI Link GP capacity ${cap.generalPurpose}`);
-assertRegex('miLink.capacityLinks.businessCritical', new RegExp(`Up to \\*\\*${cap.businessCritical} links\\*\\* on MI General Purpose and Business Critical`, 'u'), `expected MI Link BC capacity ${cap.businessCritical}`);
-assertRegex('miLink.capacityLinks.nextGenGeneralPurpose', new RegExp(`up to \\*\\*${cap.nextGenGeneralPurpose} links\\*\\* on Next-gen General Purpose`, 'u'), `expected MI Link Next-gen GP capacity ${cap.nextGenGeneralPurpose}`);
+assertRegex('miLink.capacityLinks.generalPurpose', new RegExp(`Up to \\*\\*${cap.generalPurpose} databases\\*\\* on MI General Purpose`, 'u'), `expected MI Link GP capacity ${cap.generalPurpose}`);
+assertRegex('miLink.capacityLinks.businessCritical', new RegExp(`Up to \\*\\*${cap.businessCritical} databases\\*\\* on MI General Purpose and Business Critical`, 'u'), `expected MI Link BC capacity ${cap.businessCritical}`);
+assertRegex('miLink.capacityLinks.nextGenGeneralPurpose', new RegExp(`up to \\*\\*${cap.nextGenGeneralPurpose} databases\\*\\* on Next-gen General Purpose`, 'u'), `expected MI Link Next-gen GP capacity ${cap.nextGenGeneralPurpose}`);
 
 const wizard = data.arcPortalWizard;
 assertRegex('arcPortalWizard.batchLimitAtOrAboveExtension', new RegExp(`up to \\*\\*${wizard.batchLimitAtOrAboveExtension} databases\\*\\* per batch with Azure Extension for SQL Server \\*\\*${flex(wizard.extensionMinVersionForBatchLimit)}\\+\\*\\*`, 'u'), `expected Arc wizard ${wizard.batchLimitAtOrAboveExtension}-database batch at extension ${wizard.extensionMinVersionForBatchLimit}+`);
