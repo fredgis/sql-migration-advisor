@@ -17,7 +17,7 @@
     { "id": "lrs", "name": "Log Replay Service", "kind": "migration", "inMatrix": true, "controlPlanes": ["standalone", "azure-arc"], "why": "Managed log restore into Managed Instance. The supported source range differs by control plane, which is why the control plane is part of the recommendation." },
     { "id": "native-restore", "name": "Native backup/restore", "kind": "migration", "inMatrix": true, "why": "The simplest complete method wherever the target can restore a backup." },
     { "id": "ag", "name": "Distributed / Always On AG", "kind": "migration", "inMatrix": true, "why": "Availability-group seeding for a near-zero cutover to a SQL Server target." },
-    { "id": "log-shipping", "name": "Log shipping", "kind": "migration", "inMatrix": true, "why": "Ships and restores log backups for a minimal-downtime cutover. Windows-only." },
+    { "id": "log-shipping", "name": "Log shipping", "kind": "migration", "inMatrix": true, "why": "Ships and restores log backups for a minimal-downtime cutover. Windows to Windows or Linux to Linux." },
     { "id": "hcx", "name": "HCX / vMotion", "kind": "migration", "inMatrix": true, "why": "Moves the virtual machine rather than the database, which is why it needs no platform overlay on AVS." },
     { "id": "transactional-replication", "name": "Transactional replication", "kind": "migration", "inMatrix": true, "why": "Online movement of a subset of articles. Legitimate but rarely the whole answer." },
     { "id": "bacpac", "name": "BACPAC / SqlPackage", "kind": "migration", "inMatrix": true, "why": "Export and import for smaller or schema-compatible workloads." },

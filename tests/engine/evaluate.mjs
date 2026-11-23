@@ -514,8 +514,9 @@ function chooseVmMethod(inputs) {
   // Selecting a method the source cannot run, then rejecting it at the gate, produces a
   // provisional shortlist where a working answer existed. The floor belongs here too.
   if (has(inputs.downtime, 'near-zero') && (!v || v >= agFloor) && !linuxSource) return 'Distributed AG or Always On AG';
-  // Log shipping is Windows-only, and availability groups need the version floor. When the source
-  // meets neither, DMS is the documented online path to a SQL VM rather than a longer outage.
+  // Log shipping is documented Windows to Windows and Linux to Linux, and nothing collects the target
+  // OS, so a Linux source leaves it to confirm. Availability groups need the version floor. When the
+  // source meets neither, DMS is the documented online path to a SQL VM rather than a longer outage.
   if (has(inputs.downtime, 'minimal') || has(inputs.downtime, 'near-zero')) {
     if (linuxSource || (v && v < agFloor)) return 'Azure DMS (online)';
     return 'Log shipping';
