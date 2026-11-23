@@ -1,5 +1,23 @@
 # Migrating SQL Server to Azure — exhaustive inventory of targets, methods and tools
 
+## Contents
+
+- [1. Why migrate in 2026 (the short "why now")](#1-why-migrate-in-2026-the-short-why-now)
+- [2. Taxonomy - separate targets, control planes, and methods](#2-taxonomy--separate-targets-control-planes-and-methods)
+- [3. The Azure targets (8 families)](#3-the-azure-targets-8-families)
+- [4. Control planes & assessment experiences](#4-control-planes--assessment-experiences)
+- [5. Migration methods per target](#5-migration-methods-per-target)
+- [6. Ancillary components (the cutover blockers)](#6-ancillary-components-the-cutover-blockers)
+- [7. Downtime strategy (cutover window) - the #1 architect criterion](#7-downtime-strategy-cutover-window--the-1-architect-criterion)
+- [8. Summary matrix - method / tool × target](#8-summary-matrix--method--tool--target)
+- [9. Source-version & retirement reference](#9-source-version--retirement-reference)
+- [10. Cross-cloud sources & reverse migration](#10-cross-cloud-sources--reverse-migration)
+- [11. Third-party alternatives (when they beat the native stack)](#11-third-party-alternatives-when-they-beat-the-native-stack)
+- [12. Decision criteria & "when to recommend what"](#12-decision-criteria--when-to-recommend-what)
+- [13. Field insights - recurring pitfalls](#13-field-insights--recurring-pitfalls)
+- [14. Sources (Microsoft Learn)](#14-sources-microsoft-learn)
+- [15. Document version & changelog](#15-document-version--changelog)
+
 > **Goal.** Exhaustively list every way and every tool to migrate a SQL Server database to an Azure service (all PaaS, including containers) or a VM (Azure VM / Azure VMware Solution).
 >
 > **Audience.** Architects and database administrators planning SQL Server migrations to Azure.

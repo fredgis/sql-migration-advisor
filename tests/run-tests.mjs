@@ -986,12 +986,14 @@ try {
     } else if (manifest.knowledgeBase && !manifest.latest.startsWith(`${manifest.knowledgeBase}.`)) {
       failures.push(`version.json latest ${manifest.latest} does not belong to knowledge-base line ${manifest.knowledgeBase}`);
     }
-    // The skill must actually read it, and from main: pinning it to a tag freezes the answer.
-    if (!skill.includes('main/version.json')) {
-      failures.push('SKILL.md does not read version.json from main, so the update check cannot see a newer release');
+    // The skill reads nothing over the network, as the published skill states: the knowledge base
+    // ships beside it and freshness comes from plugin updates. It must still say where to look for
+    // a newer version, or an old install answers from old facts without ever saying so.
+    if (/https?:\/\/raw\.githubusercontent\.com\//u.test(skill)) {
+      failures.push('SKILL.md reads from the raw host, while the published skill reads nothing over the network');
     }
-    if (!/Update with: copilot plugin update/u.test(skill)) {
-      failures.push('SKILL.md states no update command for the user to run');
+    if (!/Check for updates to/u.test(skill)) {
+      failures.push('SKILL.md does not tell the user how to check for a newer version');
     }
     // The weekly check bumps the knowledge base. If it does not also stamp the manifest and the
     // skill's coordinated line, the next automated bump leaves every installed copy believing it
@@ -1020,24 +1022,10 @@ try {
         if (v !== expected) failures.push(`${file} declares version ${v}; version.json advertises ${manifest.latest}`);
       }
     }
-    // The on-demand fetch URL is pinned to a release tag. It sat on v2.1.0 while the skill shipped
-    // v2.4, so a user who asked for the live document was served the knowledge base from three
-    // releases back -- including a SQL Server 2014 ESU date that v2.4 corrected. Nothing watched it,
-    // so the drift survived every release in between. The bundled copy is checked above; this
-    // checks that the one document the skill may fetch is the one it claims to ship.
-    const pinned = [...skill.matchAll(/raw\.githubusercontent\.com\/fredgis\/sql-migration-advisor\/(v[\d]+\.[\d]+\.[\d]+)\//gu)];
-    if (pinned.length === 0) {
-      failures.push('SKILL.md pins no release tag for the knowledge-base fetch; a mutable branch means the facts can change under the reader with no version to cite');
-    }
-    for (const [, tag] of pinned) {
-      if (tag !== manifest.latest) {
-        failures.push(`SKILL.md fetches the knowledge base from tag ${tag}; version.json advertises ${manifest.latest}, so the fetched document is not the one the skill ships`);
-      }
-    }
   }
 
   add('version-manifest-current', failures.length === 0,
-    failures.length ? failures : [`version.json advertises ${manifest.latest} on knowledge-base line ${manifest.knowledgeBase}, matching SKILL.md, and the skill reads it from main.`]);
+    failures.length ? failures : [`version.json advertises ${manifest.latest} on knowledge-base line ${manifest.knowledgeBase}, matching SKILL.md; the skill fetches nothing and tells the user where to check for updates.`]);
 }
 
 {
@@ -1500,6 +1488,15 @@ try {
   if (normalizeSubstantive(beforeMeta) === normalizeSubstantive(afterContent)) {
     failures.push('a changed fact does not read as a substantive content change, so a real correction could ship with no version bump');
   }
+  // The published documents open with a Contents list. Adding it changes no fact; a fact after it
+  // still counts.
+  const withContents = beforeMeta.replace('MI Link', '## Contents\n\n- [1. Ports](#1-ports)\n\nMI Link');
+  if (normalizeSubstantive(beforeMeta) !== normalizeSubstantive(withContents)) {
+    failures.push('adding a Contents list reads as a substantive content change, so navigation would license a version bump');
+  }
+  if (normalizeSubstantive(withContents) === normalizeSubstantive(withContents.replace('port 5022', 'port 5023'))) {
+    failures.push('a fact written after a Contents list does not read as a substantive content change');
+  }
 
   // 5. The decision stage and the apply stage must judge "this changed" with the same code. They
   //    once used different baselines, and a branch carrying real corrections was declared
@@ -1516,9 +1513,9 @@ try {
       : [`${TARGETS.length} knowledge bases each carry a readable version, own a disjoint set of the ${claims.length} registered claims (${notes.join('; ')}), are sent for review in a prompt scoped to themselves, and are judged changed by one shared implementation.`]);
 }
 
-// The live-fetch pin names a release tag, so it goes stale silently: the skill keeps announcing the
-// new version while serving the document from the old one. Nothing rewrites it at bump time, and
-// nothing can — the tag does not exist until the release is cut — so it is asserted here instead.
+// A policy document that names a raw-host address must name a release tag, because a tag pin goes
+// stale silently: the skill keeps announcing the new version while serving the document from the
+// old one. The published skills fetch nothing today, so this guards the day one of them does.
 {
   const failures = [];
   const notes = [];
@@ -1555,7 +1552,7 @@ try {
   }
 
   add('policy-document-urls-are-current', failures.length === 0,
-    failures.length ? failures : notes.length ? notes : ['no policy document cites a URL']);
+    failures.length ? failures : notes.length ? notes : ['no policy document reads from the raw host, so there is no pin to keep current']);
 }
 
 
@@ -3429,8 +3426,14 @@ try {
     if (!lastTouched) notes.push(`${base.file}: no git history, so the version could not be compared against the content`);
     else if (!setBy) notes.push(`${base.file} declares ${declared}, which is not in history yet: the bump is in this working tree and will be checked once committed.`);
     else if (setBy !== lastTouched) {
-      const since = git('log', '--oneline', `${setBy}..HEAD`, '--', base.file).split('\n').filter(Boolean);
-      failures.push(`${base.file} declares ${declared}, set by ${setBy.slice(0, 7)}, and ${since.length} later commit(s) changed the document: ${since.map((l) => l.slice(0, 9)).join(', ')}. A knowledge base whose version does not move is one whose readers cannot tell which facts answered them`);
+      // Only a change to the facts has to move the version, judged by the same definition the weekly
+      // check uses. Adding the published Contents list, or a freshness stamp, changes none.
+      const at = (rev) => spawnSync('git', ['show', `${rev}:${base.file.split(path.sep).join('/')}`], { cwd: root, encoding: 'utf8', maxBuffer: 1 << 26 }).stdout;
+      const since = git('log', '--format=%H', `${setBy}..HEAD`, '--', base.file).split('\n').filter(Boolean);
+      const changed = since.filter((sha) => normalizeSubstantive(at(`${sha}^`)) !== normalizeSubstantive(at(sha)));
+      if (changed.length) {
+        failures.push(`${base.file} declares ${declared}, set by ${setBy.slice(0, 7)}, and ${changed.length} later commit(s) changed the document: ${changed.map((sha) => sha.slice(0, 7)).join(', ')}. A knowledge base whose version does not move is one whose readers cannot tell which facts answered them`);
+      } else notes.push(`${base.file} declares ${declared}, set by ${setBy.slice(0, 7)}; the ${since.length} later commit(s) changed navigation or metadata only.`);
     } else notes.push(`${base.file} declares ${declared}, unchanged since that version was set.`);
   }
   if (!checked) failures.push('no self-versioned knowledge base was found, so this gate is checking nothing');

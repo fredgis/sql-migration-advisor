@@ -1,5 +1,16 @@
 # Input contract
 
+## Contents
+
+- [1. Contract principles](#1-contract-principles)
+- [2. Answer semantics](#2-answer-semantics)
+- [3. Option IDs](#3-option-ids)
+- [4. Canonical fields](#4-canonical-fields)
+- [5. Feature dependencies](#5-feature-dependencies)
+- [6. Network - three separate questions](#6-network--three-separate-questions)
+- [7. Compact profile mode](#7-compact-profile-mode)
+- [8. Validation rules](#8-validation-rules)
+
 The single source of truth for what the interview collects, what each field means, and what happens when it is not known.
 
 `SKILL.md` shows human labels and records **IDs**. The decision rules match on IDs. A label can be translated or reworded without touching a rule; an ID cannot drift.

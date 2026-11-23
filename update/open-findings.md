@@ -16,29 +16,40 @@ the ones used since the findings were first recorded, so there are gaps. Nothing
 
 The run reported 15 source-section hash changes (including standalone LRS source versions): review the actual passages before updating hashes, not 15 automatic rule changes. Four dead anchors map to 39 and 45. The separate link scan reported 558 successes out of 559 with no attributable failed URL; no additional dead link is established.
 
-**v3.15.0 (23 November): this repository now carries the official Microsoft publication.** The line
-numbers below were read at v3.14. Convert them before editing:
+**23 November: this repository now carries the official Microsoft publication, byte for byte** for
+both skills and every file they read (`node tools/check-official-parity.mjs`). The line numbers below
+were read at v3.14. Convert them with this table; the result is also the line in Microsoft's published
+file, since only paths differ:
 
-| File | v3.14 lines | v3.15 lines |
+| File | v3.14 lines | Now, and in the official file |
 |---|---|---|
-| `docs/sql-server-to-azure-migration.md` | 1-25 | unchanged |
-| | 27-484 | minus 1 (the §1 partner bullet is gone) |
+| `docs/sql-server-to-azure-migration.md` | 1-25 | plus 18 (the Contents list) |
+| | 26 | removed (the §1 partner bullet) |
+| | 27-484 | plus 17 |
 | | 485-567 | removed: the former §14 and §15, including the AVS licensing callout (old 530-548) |
-| | 568-650 | minus 84: Sources is now §14 at line 484, and old 622 is now 538 |
-| `reference/decision-rules.md` | 1-514 | unchanged |
-| | 516 onward | minus 1 (D3 lost its programs line) |
+| | 568 onward | minus 66: Sources is now §14 at line 502, and old 622 is now 556 |
+| `reference/decision-rules.md` | 1-514 | plus 10 (the Contents list) |
+| | 515 | removed (D3 lost its programs line) |
+| | 516 onward | plus 9 |
 | `skills/recommend-migration-path/SKILL.md` | 9-12 | plus 24 (startup section) |
-| | 14-267 | plus 26 |
-| | 269-661 | plus 28 |
-| | 662 onward | plus 35 |
+| | 14-29 | plus 26 |
+| | 30-204 | plus 34 (Microsoft's "What the source version and edition change" joined When to Use) |
+| | 205-263 | API Details, now Microsoft's text at 239-284: nothing is fetched any more, re-read before editing |
+| | 264-267 | plus 21 |
+| | 269-661 | plus 23 |
+| | 662 onward | plus 30 |
 | `skills/generate-migration-prerequisite-plan/SKILL.md` | 9-213 | plus 3 |
 | | 214 onward | plus 10 |
+| `docs/sql-server-to-azure-migration-prerequisite.md` | 3 onward | plus 38 (the Contents list) |
+| `reference/input-contract.md` | 3 onward | plus 11 (the Contents list) |
+| `skills/generate-migration-prerequisite-plan/reference/input-contract.md` | 3 onward | plus 12 (the Contents list) |
+| `path-catalog.json`, `questions.json` and every other JSON file | all | unchanged |
 
 Two findings change in substance:
 - **Row 28** loses its knowledge-base part: Microsoft removed the callout. The wrong dates remain in
   `decision-rules.md` 109-111 and 124, P27-003 and `path-catalog.json` 922-924. The AVS target row now
   says only "Confirm current portable VCF licensing requirements before recommending it."
-- **Row 1**: the Sources entry for the assistant is now line 538.
+- **Row 1**: the Sources entry for the assistant is now line 556.
 
 ## To do
 

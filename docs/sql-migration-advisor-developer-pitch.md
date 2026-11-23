@@ -25,11 +25,7 @@ flowchart TD
     A[User asks to migrate SQL Server] --> B[Skill activates]
 
     B --> C[Load bundled policy:<br/>input-contract · decision-rules · output-contract · knowledge base]
-    C --> D{version.json on main:<br/>newer release published?}
-    D -- Yes --> E[Tell the user to update the plugin]
-    D -- No, or unreachable --> F[Continue silently]
-    E --> G[Announce versions and source]
-    F --> G
+    C --> G[Announce the knowledge-base version]
 
     G --> H[Tier 1 triage]
     H --> I[Tier 2, only what can still change the answer]
@@ -62,8 +58,8 @@ The runtime process:
 
 1. The user asks a SQL Server migration question.
 2. Copilot activates the skill.
-3. It loads the bundled policy: both contracts, the decision rules and the knowledge base, all shipped at the same commit so facts and rules cannot drift apart. The live knowledge base is fetched only when the user asks for it.
-4. It checks `version.json` on `main` once, and mentions an available update only if there is one. This never blocks and never changes the advice.
+3. It loads the bundled policy: both contracts, the decision rules and the knowledge base, all shipped at the same commit so facts and rules cannot drift apart. Nothing is read over the network.
+4. It announces the knowledge-base version before the first question, and at the end says where to check for a newer one. This never changes the advice.
 5. It announces which versions loaded and from where, before asking anything.
 6. Tier 1 triage collects what every path needs; Tier 2 asks only what can still change a surviving candidate.
 7. Phase A removes technically impossible targets, and records all eight families so none disappears silently.
@@ -338,9 +334,7 @@ It includes:
 - required evidence;
 - cost levers;
 - Microsoft programme fit;
-- knowledge-base version;
-- commit SHA;
-- fetch timestamp.
+- knowledge-base version.
 
 Example:
 
@@ -516,8 +510,8 @@ Three of the four gates are automated, but the fourth is not: a change can pass 
 still be rejected because the evidence behind it does not hold up.
 
 Merging is not delivery. The bundled copy is what a session reads, so a fact only reaches users when a
-release is cut and they update the plugin. That is why `version.json` exists and why the skill checks
-it: without that line, an install from three months ago would keep answering from three-month-old
+release is cut and they update the plugin. That is why every answer names the knowledge base it used
+and where to check for a newer one: without that line, an install from three months ago would keep answering from three-month-old
 facts and never say so.
 
 ### 9.1 Document consistency checks
@@ -1105,7 +1099,7 @@ sql-migration-advisor/
 
 ### Traceable
 
-Each result can include the knowledge-base version, commit and fetch time.
+Each result includes the knowledge-base version.
 
 ### Repeatable
 

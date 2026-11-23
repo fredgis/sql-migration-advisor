@@ -1,5 +1,16 @@
 # Output contract — `generate-migration-prerequisite-plan`
 
+## Contents
+
+- [1. Status vocabulary](#1-status-vocabulary)
+- [2. JSON object](#2-json-object)
+- [3. Basis rules](#3-basis-rules)
+- [4. Self-check before rendering](#4-self-check-before-rendering)
+- [5. Markdown rendering](#5-markdown-rendering)
+- [6. JSON/Markdown parity](#6-jsonmarkdown-parity)
+- [7. Data minimization](#7-data-minimization)
+
+
 > **Schema version:** `1.0`
 > **Prerequisite knowledge-base line:** `v1.11`
 

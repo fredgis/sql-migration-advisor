@@ -42,12 +42,21 @@ export function fileAt(ref, rel) {
  * Strip everything the automation itself writes: versions, freshness stamps and changelog rows.
  * Without this a housekeeping run would look like a content change and license the next version bump,
  * so the version number would climb on its own with nothing behind it.
+ *
+ * The Contents list goes too. It is navigation over the headings below it, which the published
+ * documents carry, and adding or regenerating it changes no fact.
  */
 export function normalize(text) {
   const out = [];
   let inChangelog = false;
+  let inContents = false;
   for (const raw of String(text ?? '').replace(/\r\n/g, '\n').split('\n')) {
     const line = raw.trim();
+    if (/^#{2,3}\s+Contents$/i.test(line)) { inContents = true; continue; }
+    if (inContents) {
+      if (line === '' || /^(?:[-*]|\d+\.)\s+\[[^\]]*\]\(#[^)]*\)$/.test(line)) continue;
+      inContents = false;
+    }
     if (/^#{1,6}\s+.*(?:change\s*log|changelog|version history)/i.test(line)) { inChangelog = true; continue; }
     if (inChangelog) {
       // Skip the changelog table itself and nothing more. Ending the skip at the next heading looked

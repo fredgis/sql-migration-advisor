@@ -1,5 +1,17 @@
 # Input contract — `generate-migration-prerequisite-plan`
 
+## Contents
+
+- [1. Modes](#1-modes)
+- [2. Accepted Advisor shapes](#2-accepted-advisor-shapes)
+- [3. Absence and evidence semantics](#3-absence-and-evidence-semantics)
+- [4. Top-level request](#4-top-level-request)
+- [5. Canonical facts](#5-canonical-facts)
+- [6. Evidence records](#6-evidence-records)
+- [7. Asking rules](#7-asking-rules)
+- [8. Out of scope](#8-out-of-scope)
+
+
 > **Schema version:** `1.0`
 > **Prerequisite knowledge-base line:** `v1.11`
 

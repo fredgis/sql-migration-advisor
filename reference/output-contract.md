@@ -1,5 +1,14 @@
 # Output contract
 
+## Contents
+
+- [1. Status vocabulary](#1-status-vocabulary)
+- [2. Structure](#2-structure)
+- [3. Self-check, before rendering](#3-self-check-before-rendering)
+- [4. Markdown rendering](#4-markdown-rendering)
+- [5. Estate output](#5-estate-output)
+- [6. What the output must never do](#6-what-the-output-must-never-do)
+
 The single source of truth for what a recommendation contains, how it is rendered, and what the skill must verify about its own answer before showing it.
 
 ---

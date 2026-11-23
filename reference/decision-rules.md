@@ -1,5 +1,15 @@
 # Decision rules — SQL Server → Azure
 
+## Contents
+
+- [Step A - Phase A eligibility filter, then target shortlist](#step-a--phase-a-eligibility-filter-then-target-shortlist)
+- [Step B - Phase B ranking, tier, and migration method](#step-b--phase-b-ranking-tier-and-migration-method)
+- [Step C - Blockers, validation, uncertainty, and output status](#step-c--blockers-validation-uncertainty-and-output-status)
+- [Step D - Cost levers, program fit, assessment tool](#step-d--cost-levers-program-fit-assessment-tool)
+- [Retired - never recommend (use the replacement)](#retired--never-recommend-use-the-replacement)
+- [Reverse path / exit notes](#reverse-path--exit-notes)
+- [Rule index](#rule-index)
+
 Apply Steps **A → D** in order. Steps map to the two engine phases:
 - **Phase A — Eligibility filter:** Step A only. Classify every target as `eligible`, `eligible_with_remediation`, `unsupported`, or `unknown_requires_assessment`.
 - **Phase B — Ranking and plan:** Steps B → D. Rank only surviving targets, then choose method, tier, blockers, cost, and assessment.

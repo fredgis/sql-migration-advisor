@@ -120,6 +120,15 @@ async function renderBody() {
   let md = raw.replace(/^# [^\r\n]*\r?\n/, '');   // drop H1 (YAML title takes over)
   let lines = md.split('\n');
 
+  // The published document opens with a Contents list. The PDF builds its own from the headings, and
+  // a second one would print as a numbered first section.
+  const toc = lines.findIndex((l) => /^##\s+Contents\s*$/.test(l.trim()));
+  if (toc >= 0) {
+    let end = toc + 1;
+    while (end < lines.length && (/^\s*$/.test(lines[end]) || /^\s*(?:[-*]|\d+\.)\s+\[[^\]]*\]\(#[^)]*\)\s*$/.test(lines[end]))) end++;
+    lines.splice(toc, end - toc);
+  }
+
   // pass 1: strip <details>/<summary>, un-number headings, normalise callouts & glyphs
   let inf = false;
   for (let i = 0; i < lines.length; i++) {

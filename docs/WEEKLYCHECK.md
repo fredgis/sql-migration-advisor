@@ -120,16 +120,15 @@ Three checks matter more than the plain reachability:
 - **In-document references are proven.** `[§14 Sources](#14-sources-microsoft-learn)` breaks whenever
   a heading is retitled, and nothing external is involved, so no network check would ever see it.
   Heading slugs are computed and matched.
-- **Addresses written bare are proven.** A policy document tells the model to fetch one literal URL,
-  written in backticks rather than as a link. Scanning only `[text](url)` would leave the live-fetch
-  pin — the most fragile address in the repository, and the one every session may load — unchecked.
+- **Addresses written bare are proven.** A policy document may name a URL in backticks rather than
+  as a link. Scanning only `[text](url)` would leave those unchecked.
 
 Persistent 403 and 429 are reported as **unverified**, never as broken: a bot filter is not evidence
 that a page is gone, and reporting it as one teaches the reader to ignore the report.
 
-That pin names a release tag, so the weekly run cannot repair it: the tag it should move to does not
-exist until the release is cut. The offline gate `policy-document-urls-are-current` therefore holds
-it to `version.json`, and rejects a mutable ref or a `/blob/` path on the raw host.
+The published skills read nothing over the network. Should a policy document ever name a raw-host
+address, the offline gate `policy-document-urls-are-current` holds it to the release tag in
+`version.json`, and rejects a mutable ref or a `/blob/` path.
 
 Failures here do not abort the run. They are recorded and passed to the decision stage, which is what
 turns them into an issue somebody reads.

@@ -50,12 +50,11 @@ It never recommends retired tooling (DMA, the Azure Data Studio extension, DMS *
 ![sql-migration-advisor recommendation card](docs/preview/sql-migration-advisor-skill.png)
 
 Every recommendation is grounded in the knowledge base
-[`docs/sql-server-to-azure-migration.md`](docs/sql-server-to-azure-migration.md). The bundled copy
-is the default — it ships at the same commit as the rules, so a recommendation can be reproduced by
-fetching that commit — and the pinned live document is read on explicit request. The result is a
-preliminary disposition, not a final migration verdict: tool-based assessment and architect
-validation are mandatory before execution. Every answer opens by stating which knowledge-base
-version loaded and where it came from, so the advice is traceable.
+[`docs/sql-server-to-azure-migration.md`](docs/sql-server-to-azure-migration.md). It ships at the
+same commit as the rules, so a recommendation can be reproduced by fetching that commit, and the
+skill reads nothing over the network. The result is a preliminary disposition, not a final migration
+verdict: tool-based assessment and architect validation are mandatory before execution. Every answer
+opens by stating which knowledge-base version loaded, so the advice is traceable.
 
 ## Why it is trustworthy
 
@@ -70,7 +69,7 @@ version loaded and where it came from, so the advice is traceable.
 
 ## One version, every surface
 
-The knowledge base is quoted by a skill, three manifests, a PDF, a poster, this README, a docs site, a published rule graph and a fork in the Microsoft organisation. `check-artifacts` compares every version below against the knowledge base and the release manifest, fails when one drifts, and rewrites them under `--fix-prose`.
+The knowledge base is quoted by a skill, three manifests, a PDF, a poster, this README, a docs site, a published rule graph, the official Microsoft package and a fork in the Microsoft organisation. `check-artifacts` compares every version below against the knowledge base and the release manifest, fails when one drifts, and rewrites them under `--fix-prose`.
 
 <!-- surfaces:start -->
 
@@ -78,7 +77,7 @@ The knowledge base is quoted by a skill, three manifests, a PDF, a poster, this 
 | --- | --- | --- |
 | [Knowledge base](docs/sql-server-to-azure-migration.md) | `v3.15` | ✅ |
 | [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v3.15` | ✅ |
-| `SKILL.md` and its pinned fetch URL | `v3.15.0` | ✅ |
+| `SKILL.md` and its coordinated knowledge-base line | `v3.15` | ✅ |
 | `version.json`, `plugin.json`, `marketplace.json` | `v3.15.0` | ✅ |
 | [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v3.15` | ✅ |
 | Poster caption and PNG | `v3.15` | ✅ |
@@ -86,6 +85,7 @@ The knowledge base is quoted by a skill, three manifests, a PDF, a poster, this 
 | **This table** | `v3.15` | ✅ |
 | The six `blume/public/*.svg` mirrors | — | ✅ |
 | [`blume/docs/index.mdx`](blume/docs/index.mdx) — the docs site | — | ✅ |
+| [Official package](https://github.com/microsoft/microsoft-sql/tree/main/plugins/microsoft-sql-migration): both skills, byte for byte | `v3.15` | ✅ |
 | [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v3.15.0` | ✅ |
 | [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | `v3.15.0` | ✅ |
 | `howto/*.html` | — | ✅ |
@@ -93,7 +93,11 @@ The knowledge base is quoted by a skill, three manifests, a PDF, a poster, this 
 
 <!-- surfaces:end -->
 
-Check it yourself: `node tools/artifacts/check-artifacts.mjs`.
+Check it yourself: `node tools/artifacts/check-artifacts.mjs`. The skills Microsoft publishes, `recommend-migration-path` and
+`generate-migration-prerequisite-plan`, are this repository's text with only the paths translated by
+[`tools/fork-layout.mjs`](tools/fork-layout.mjs): `node tools/check-official-parity.mjs` compares all
+twenty files with `microsoft/microsoft-sql`, byte for byte, and `node tools/check-fork-parity.mjs` does
+the same for the fork.
 
 ---
 
@@ -298,9 +302,9 @@ copilot plugin update sql-migration-advisor
 
 Then **restart Copilot CLI** — skills load at startup, so an update isn't picked up until you do.
 
-> **Worth doing.** The bundled knowledge base is what answers by default, so an old install answers
-> from old facts. The skill checks once at launch whether a newer release exists and tells you, but
-> it cannot update itself.
+> **Worth doing.** The knowledge base ships with the skill, so an old install answers from old facts.
+> The skill says which version answered and, at the end of an assessment, where to check for a newer
+> one, but it reads nothing over the network and cannot update itself.
 
 ---
 

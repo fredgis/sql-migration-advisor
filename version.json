@@ -4,5 +4,5 @@
   "released": "2026-11-23",
   "install": "copilot plugin marketplace add fredgis/sql-migration-advisor && copilot plugin install sql-migration-advisor@fredgis",
   "update": "copilot plugin update sql-migration-advisor",
-  "note": "Served from main so a running skill can compare its bundled version against the latest release. Kept in step with the coordinated version line by the version-manifest-current gate."
+  "note": "The release manifest every versioned surface is checked against. Kept in step with the coordinated version line by the version-manifest-current gate."
 }

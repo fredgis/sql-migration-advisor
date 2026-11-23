@@ -45,9 +45,8 @@ Step by step:
    front matter (keywords like *migrate SQL Server*, *SQL to Azure*) and activates the skill.
 2. **Load the source of truth.** It reads the bundled input contract, decision rules, output contract and
    knowledge base. The bundle is the default because the skill now lives below `skills/` and refers back to
-   `../../reference/...`; installing only one `SKILL.md` would leave the vocabulary and rules behind. If the
-   user explicitly asks for the tagged live knowledge base and it cannot be read, the skill says it is using
-   the bundled copy.
+   `../../reference/...`; installing only one `SKILL.md` would leave the vocabulary and rules behind. Nothing
+   is read over the network: facts are refreshed by releasing a new version.
 3. **Interview first, recommend second.** It asks Tier 1 triage questions and Tier 2 confirmation
    questions **one at a time** (migration intent, source type, version, downtime tolerance, PolyBase/DTC
    subtype, size, sovereignty, tier-selection inputs, …). It records the stable IDs from

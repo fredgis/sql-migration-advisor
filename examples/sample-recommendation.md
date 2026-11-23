@@ -1,5 +1,13 @@
 # Example run — SQL Migration Advisor
 
+## Contents
+
+- [Interview answers](#interview-answers)
+- [Phase A eligibility trace](#phase-a-eligibility-trace)
+- [Phase B ranking summary](#phase-b-ranking-summary)
+- [Output card](#output-card)
+- [JSON rendering](#json-rendering)
+
 A worked example showing the two-tier interview, preliminary recommendation card, and JSON rendering. Values are illustrative.
 
 **The JSON below is produced, not written.** The normalized profile carries every answer the two

@@ -1,5 +1,43 @@
 # SQL Server to Azure migration prerequisite knowledge base
 
+## Contents
+
+- [1. How to apply this knowledge base](#1-how-to-apply-this-knowledge-base)
+- [2. Path catalog](#2-path-catalog)
+- [3. Common prerequisites](#3-common-prerequisites)
+- [4. P01 - SQL Server on Azure VM: Distributed Availability Group](#4-p01--sql-server-on-azure-vm-distributed-availability-group)
+- [5. P02 - SQL Server on Azure VM: Always On Availability Group](#5-p02--sql-server-on-azure-vm-always-on-availability-group)
+- [6. P03 - SQL Server on Azure VM: Log Shipping](#6-p03--sql-server-on-azure-vm-log-shipping)
+- [7. P04 - SQL Server on Azure VM: Native Backup/Restore](#7-p04--sql-server-on-azure-vm-native-backuprestore)
+- [8. P05 - SQL Server on Azure VM: Standalone Assessment then Native Backup/Restore](#8-p05--sql-server-on-azure-vm-standalone-assessment-then-native-backuprestore)
+- [9. P06 - SQL Server on Azure VM: Azure Migrate Replication](#9-p06--sql-server-on-azure-vm-azure-migrate-replication)
+- [10. P07 - Azure VMware Solution: VMware HCX / vMotion](#10-p07--azure-vmware-solution-vmware-hcx--vmotion)
+- [11. P08 - Azure SQL Managed Instance: Managed Instance Link](#11-p08--azure-sql-managed-instance-managed-instance-link)
+- [12. P09 - Azure SQL Managed Instance: Log Replay Service](#12-p09--azure-sql-managed-instance-log-replay-service)
+- [13. P10 - Azure SQL Managed Instance: Native Backup/Restore](#13-p10--azure-sql-managed-instance-native-backuprestore)
+- [14. P11 - SQL DB / SQL VM / SQL MI / Arc SQL MI / SQL container: BACPAC / SqlPackage](#14-p11--sql-db--sql-vm--sql-mi--arc-sql-mi--sql-container-bacpac--sqlpackage)
+- [15. P12 - Azure SQL Database: Modern DMS Offline](#15-p12--azure-sql-database-modern-dms-offline)
+- [16. P13 - SQL MI / SQL DB / Fabric SQL DB / SQL VM / Arc SQL MI / SQL container: Transactional Replication](#16-p13--sql-mi--sql-db--fabric-sql-db--sql-vm--arc-sql-mi--sql-container-transactional-replication)
+- [17. P14 - Azure SQL Database: Data Box Seed then Delta Synchronization](#17-p14--azure-sql-database-data-box-seed-then-delta-synchronization)
+- [18. P15 - Azure SQL Database: Striim Online CDC](#18-p15--azure-sql-database-striim-online-cdc)
+- [19. P16 - SQL Database in Fabric: Fabric Migration Assistant](#19-p16--sql-database-in-fabric-fabric-migration-assistant)
+- [20. P17 - Arc-enabled SQL Managed Instance: Native Backup/Restore Direct](#20-p17--arc-enabled-sql-managed-instance-native-backuprestore-direct)
+- [21. P18 - Arc-enabled SQL Managed Instance: Native Backup/Restore after Endpoint Availability](#21-p18--arc-enabled-sql-managed-instance-native-backuprestore-after-endpoint-availability)
+- [22. P19 - SQL Server Container: Backup/Restore through Mounted Volume](#22-p19--sql-server-container-backuprestore-through-mounted-volume)
+- [23. P20 - SQL MI / SQL DB / Fabric SQL DB / SQL VM / Arc SQL MI / SQL container: bcp](#23-p20--sql-mi--sql-db--fabric-sql-db--sql-vm--arc-sql-mi--sql-container-bcp)
+- [24. P21 - SQL MI / SQL DB / Fabric SQL DB / SQL VM / Arc SQL MI / SQL container: Data Factory Copy](#24-p21--sql-mi--sql-db--fabric-sql-db--sql-vm--arc-sql-mi--sql-container-data-factory-copy)
+- [25. P22 - SQL MI / SQL DB / SQL VM: Smart Bulk Copy](#25-p22--sql-mi--sql-db--sql-vm-smart-bulk-copy)
+- [26. P23 - Azure SQL Managed Instance: Modern DMS Offline](#26-p23--azure-sql-managed-instance-modern-dms-offline)
+- [27. P24 - Azure SQL Managed Instance: Modern DMS Online](#27-p24--azure-sql-managed-instance-modern-dms-online)
+- [28. P25 - SQL Server on Azure VM: Modern DMS Offline](#28-p25--sql-server-on-azure-vm-modern-dms-offline)
+- [29. P26 - SQL Server on Azure VM: Modern DMS Online](#29-p26--sql-server-on-azure-vm-modern-dms-online)
+- [30. P27 - Azure VMware Solution: hosted SQL Server platform prerequisites](#30-p27--azure-vmware-solution-hosted-sql-server-platform-prerequisites)
+- [31. P28 - SQL VM / AVS / SQL MI / SQL DB: Azure Migrate assessment](#31-p28--sql-vm--avs--sql-mi--sql-db-azure-migrate-assessment)
+- [32. Coverage against the Advisor method and target matrix](#32-coverage-against-the-advisor-method-and-target-matrix)
+- [33. Knowledge-base integrity rules](#33-knowledge-base-integrity-rules)
+- [34. Maintenance policy](#34-maintenance-policy)
+
+
 > **Version:** v1.11 | **Last verified:** 2026-09-12 | **Companion skill:** `generate-migration-prerequisite-plan`
 > **Scope:** prerequisite planning for the 28 migration paths defined below
 

@@ -80,7 +80,7 @@ Green is loaded in a user's session. Blue never is.
 | `tests/engine/evaluate.mjs` | ~1 080 lines of JavaScript that mirror the rules. **Never executed in production.** |
 | `tests/run-tests.mjs` | 76 gates. |
 | `tools/weekly-check/` | Four jobs that check the knowledge base has not gone stale or drifted from its sources. |
-| `version.json` | Served from `main` so an installed skill can tell it is out of date. |
+| `version.json` | The release manifest every versioned surface is checked against. |
 | `.claude-plugin/` | The plugin manifest, and the marketplace manifest that lets this repository publish itself. |
 
 ---
@@ -108,14 +108,11 @@ sequenceDiagram
     participant C as Copilot CLI
     participant S as Skill prompt
     participant P as Policy documents
-    participant N as raw.githubusercontent
 
     U->>C: "migrate SQL Server to Azure"
     C->>S: trigger matches the description
     S->>P: read both contracts, the rules, the bundled KB
-    S->>N: GET main/version.json
-    N-->>S: latest release
-    S->>U: versions, source, and an update notice only if newer
+    S->>U: the knowledge-base version that loaded
     loop Tier 1 triage
       S->>U: a question that can change a surviving candidate
       U-->>S: an option ID
@@ -136,11 +133,11 @@ sequenceDiagram
 
 ### Loading
 
-The bundled copies are the default. Facts and rules ship at one commit, so a recommendation can be reproduced later by fetching that commit. The pinned live knowledge base is read only when the user asks for it, from a release tag rather than `main`, because a mutable branch means the facts can change under the reader with no version to cite.
+Facts and rules ship at one commit, so a recommendation can be reproduced later by fetching that commit. Nothing is read over the network: facts are refreshed by releasing a new version, as in the official package.
 
-The skill states what it loaded before asking anything. A reader who cannot tell whether the advice rests on shipped or freshly fetched facts cannot judge how much to trust it.
+The skill states what it loaded before asking anything. A reader who cannot tell which facts answered cannot judge how much to trust the advice.
 
-`version.json` is the one document deliberately read from `main`. Its whole job is to report the latest release, so pinning it to a tag would freeze the answer at the version already installed. The check is best-effort: silent when versions match, silent when the network fails, and it never changes the advice.
+At the end of an assessment the skill says which knowledge base answered and where to check for a newer version. It never checks by itself and never changes the advice.
 
 ### Interviewing
 

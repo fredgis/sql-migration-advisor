@@ -1,14 +1,14 @@
 // Prove the fork carries everything, rather than assuming it does.
 //
-// The fork is not a mirror. Its layout differs, one file is a deliberately transformed copy, and
-// the rest is vendored. That mix is exactly where things go missing: for three review rounds the
-// fixes landed upstream and a reviewer kept finding them unfixed in the fork, because the port
-// script patched a file it never read the content of.
+// The fork is a mirror in a different layout. Its paths differ and nothing else may: for three review
+// rounds the fixes landed upstream and a reviewer kept finding them unfixed in the fork, because the
+// port script patched a file it never read the content of, and later because two sections of the
+// advisor SKILL.md were kept from the fork and drifted from the text Microsoft publishes.
 //
 // So this checks what a partial copy actually breaks, in the fork's own terms:
 //
 //   presence   every file the port declares exists there
-//   content    every vendored file is byte-identical to its source
+//   content    every file is this repository's text with the port's path rewrites, byte for byte
 //   contract   the JSON a model copies, and the tool capability, match upstream
 //   integrity  every rule ID cited resolves in the fork's own rule index
 //   layout     nothing points at a path the fork does not have
@@ -20,6 +20,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { COPIES, portText } from './fork-layout.mjs';
 
 const SRC = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..');
 const DEST = process.argv[2] || 'C:/Users/frgisber/repo-sql-migration-agent';
@@ -36,35 +37,24 @@ if (!fs.existsSync(DEST)) {
   process.exit(2);
 }
 
-// The port script owns the mapping, so read it from there instead of keeping a second copy that
-// can disagree with the first.
-const portSource = read(path.join(SRC, 'tools', 'port-to-fork.mjs'));
-const copiesBlock = portSource.slice(portSource.indexOf('const COPIES = ['), portSource.indexOf('];', portSource.indexOf('const COPIES = [')));
-const expand = (value) => value
-  .replace(/\$\{PREREQ\}/g, 'skills/generate-migration-prerequisite-plan')
-  .replace(/\$\{ADVISOR\}/g, 'skills/recommend-migration-path');
-const mapping = [...copiesBlock.matchAll(/\[\s*[`'"]([^`'"]+)[`'"]\s*,\s*[`'"]([^`'"]+)[`'"]\s*\]/g)]
-  .map(([, from, to]) => [expand(from), expand(to)]);
+// fork-layout.mjs owns the mapping, and the port writes exactly what it says, so the fork is compared
+// with that and not with a second copy of the rules that could disagree with the first.
+const mapping = COPIES;
 
-if (mapping.length < 15) {
-  failures.push(`only ${mapping.length} ported file(s) could be read out of the port script, so this check would pass by checking almost nothing`);
-}
-
-// 1 and 2. Presence, then content for everything vendored rather than transformed.
-const TRANSFORMED = ['skills/recommend-migration-path/SKILL.md'];
+// 1 and 2. Presence, then content. Every file, prose included: the fork differs from this repository
+// by its paths and by nothing else.
 let identical = 0;
 for (const [from, to] of mapping) {
   const source = path.join(SRC, from);
   const target = path.join(DEST, to);
   if (!fs.existsSync(target)) { failures.push(`missing from the fork: ${to}`); continue; }
-  if (TRANSFORMED.includes(to)) continue;
-  if (to.endsWith('.md')) continue; // links are rewritten for the fork's layout; checked below
-  if (normalise(read(source)) !== normalise(read(target))) {
-    failures.push(`${to} differs from its source ${from}, and nothing about the fork's layout should change a JSON file`);
+  if (normalise(portText(to, read(source))) !== normalise(read(target))) {
+    failures.push(`${to} is not ${from} with the port's path rewrites; run node tools/port-to-fork.mjs`);
   } else identical += 1;
 }
 
-// 3. The contract a model copies. Prose may be rewritten for the fork; these may not.
+// 3. The contract a model copies. The content check above already covers it; this one says which
+// part a model would copy wrong when it fails.
 const upstreamSkill = read(path.join(SRC, 'skills/recommend-migration-path/SKILL.md'));
 const forkSkillPath = path.join(DEST, 'skills/recommend-migration-path/SKILL.md');
 if (!fs.existsSync(forkSkillPath)) failures.push('the fork has no advisor SKILL.md');
@@ -166,51 +156,6 @@ const walkLinks = (dir) => {
 };
 walkLinks(path.join(DEST, 'skills'));
 
-// The advisor SKILL.md is derived from upstream, and the sections that genuinely differ are
-// declared in port-to-fork.mjs. Proving that here is the point: the file is read on every run of
-// the skill, and it was twice the one document nobody compared. A section that drifts is a set of
-// instructions only one of the two repositories has ever reviewed.
-{
-  const owned = new Set([...portSource.matchAll(/\['(## [^']+)',\s*'/g)].map((m) => m[1]));
-  if (!owned.size) failures.push('no fork-owned section could be read out of port-to-fork.mjs, so this check would compare nothing');
-  const sectionsOf = (text) => {
-    const map = new Map();
-    let heading = null;
-    for (const line of normalise(text).split('\n')) {
-      if (/^## /.test(line)) { heading = line.trim(); map.set(heading, []); }
-      else if (heading) map.get(heading).push(line);
-    }
-    return map;
-  };
-  const upstreamSections = sectionsOf(upstreamSkill);
-  const forkSections = sectionsOf(read(forkSkillPath));
-  // Compared after the transformations the port applies, since paths and version stamps are
-  // expected to differ and nothing else is.
-  const comparable = (lines) => lines.join('\n')
-    .replace(/(?:\.\.\/)*docs\/sql-server-to-azure-migration(?:-prerequisite)?\.md/g, 'KB')
-    .replace(/(?:\.\.\/)*(?:reference|references|schemas)\/knowledge-base\.md/g, 'KB')
-    .replace(/(?:\.\.\/)*templates\/prerequisite-plan\.md/g, 'TEMPLATE')
-    .replace(/(?:\.\.\/)*references\/prerequisite-plan-template\.md/g, 'TEMPLATE')
-    .replace(/\.\.\/generate-migration-prerequisite-plan\/reference\//g, 'references/')
-    .replace(/(?:\.\.\/)*(?:reference|references|schemas)\//g, 'references/')
-    .replace(/v\d+\.\d+(?:\.\d+)?/g, 'vX')
-    .replace(/\s+/g, ' ')
-    .trim();
-  let compared = 0;
-  for (const [heading, lines] of upstreamSections) {
-    if (owned.has(heading)) continue;
-    if (!forkSections.has(heading)) { failures.push(`the fork's SKILL.md has no ${heading} section, which upstream carries and which is not declared fork-owned`); continue; }
-    compared++;
-    if (comparable(lines) !== comparable(forkSections.get(heading))) {
-      failures.push(`${heading} differs between upstream and the fork and is not declared fork-owned, so one of the two carries instructions the other has never seen`);
-    }
-  }
-  for (const heading of forkSections.keys()) {
-    if (!upstreamSections.has(heading) && !owned.has(heading)) failures.push(`the fork's SKILL.md carries ${heading}, which upstream does not and which is not declared fork-owned`);
-  }
-  notes.push(`${compared} SKILL.md section(s) derived from upstream and identical after the port's transformations; ${owned.size} declared fork-owned.`);
-}
-
 // 6. The skill contracts belong to the fork, and its pull-request validation replays them. A contract
 // naming a knowledge-base line its skill no longer ships fails there, after the release, so it is
 // read here.
@@ -237,7 +182,7 @@ if (failures.length) {
 }
 
 console.log('Fork parity passed.');
-console.log(`  ${mapping.length} ported file(s) present, ${identical} byte-identical to their source.`);
+console.log(`  ${mapping.length} ported file(s) present, ${identical} identical to this repository's text with the port's path rewrites.`);
 console.log('  The advisor declares the same tools and teaches the same JSON object as upstream.');
 for (const note of notes) console.log(`  ${note}`);
 console.log(`  ${links} reference(s) resolve in the fork's own layout.`);

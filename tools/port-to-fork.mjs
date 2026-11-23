@@ -13,80 +13,20 @@
 //      root, where there is no such file. Checking that no upstream path survives is not the same
 //      as checking that the new path resolves, so the second check is here now.
 //
-//   2. A version stamp rewritten inside a sentence that names a version on purpose. A blanket
-//      rewrite turns "Until v2.4 the question offered" into "Until v3.6" and inverts it. Prose
-//      recalling when a rule changed is excluded. Anything that reports the loaded version to the
-//      user belongs in a placeholder rather than in an exclusion list, because an exclusion freezes
-//      whatever value happened to be there.
+//   2. A fork that says something this repository does not. The advisor SKILL.md used to be
+//      patched, then rebuilt with two sections kept from the fork, and both times the fork drifted
+//      from the text Microsoft publishes. The port now changes paths and nothing else, so the
+//      fork carries this repository's text, which is the official text.
 //
 // Run it after every release:  node tools/port-to-fork.mjs [path-to-fork]
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { ADVISOR, COPIES, PREREQ, portText } from './fork-layout.mjs';
 
 const SRC = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..');
 const DEST = process.argv[2] || 'C:/Users/frgisber/repo-sql-migration-agent';
-
-const PREREQ = 'skills/generate-migration-prerequisite-plan';
-const ADVISOR = 'skills/recommend-migration-path';
-
-const COPIES = [
-  [`${PREREQ}/SKILL.md`, `${PREREQ}/SKILL.md`],
-  [`${PREREQ}/reference/input-contract.md`, `${PREREQ}/references/input-contract.md`],
-  [`${PREREQ}/reference/output-contract.md`, `${PREREQ}/references/output-contract.md`],
-  [`${PREREQ}/reference/path-catalog.json`, `${PREREQ}/references/path-catalog.json`],
-  [`${PREREQ}/reference/questions.json`, `${PREREQ}/references/questions.json`],
-  [`${PREREQ}/reference/advisor-coverage.json`, `${PREREQ}/references/advisor-coverage.json`],
-  [`${PREREQ}/reference/advisor-fact-mappings.json`, `${PREREQ}/references/advisor-fact-mappings.json`],
-  [`${PREREQ}/schemas/input.schema.json`, `${PREREQ}/references/input.schema.json`],
-  [`${PREREQ}/schemas/output.schema.json`, `${PREREQ}/references/output.schema.json`],
-  [`${PREREQ}/templates/prerequisite-plan.md`, `${PREREQ}/references/prerequisite-plan-template.md`],
-  ['docs/sql-server-to-azure-migration-prerequisite.md', `${PREREQ}/references/knowledge-base.md`],
-
-  [`${ADVISOR}/schemas/input.schema.json`, `${ADVISOR}/references/input.schema.json`],
-  [`${ADVISOR}/schemas/output.schema.json`, `${ADVISOR}/references/output.schema.json`],
-  ['reference/input-contract.md', `${ADVISOR}/references/input-contract.md`],
-  ['reference/output-contract.md', `${ADVISOR}/references/output-contract.md`],
-  ['reference/decision-rules.md', `${ADVISOR}/references/decision-rules.md`],
-  ['docs/sql-server-to-azure-migration.md', `${ADVISOR}/references/knowledge-base.md`],
-  ['examples/sample-recommendation.md', `${ADVISOR}/references/sample-recommendation.md`],
-  // role is defined by advisor-coverage.json and required by the advisor's own output schema, so
-  // the file belongs in both skills: they are meant to be independently runnable.
-  [`${PREREQ}/reference/advisor-coverage.json`, `${ADVISOR}/references/advisor-coverage.json`]
-];
-
-// Upstream layout on the left, fork layout on the right. Link text is rewritten alongside the
-// target, because a label naming a path that does not exist misleads a reader even when the link
-// itself works. The prefix depends on where the file lands: SKILL.md sits at the skill root and
-// reaches its policy through references/, while a file already inside references/ reaches its
-// siblings by name. Getting that wrong is how the knowledge-base link ended up pointing at the
-// skill root, where no such file exists.
-const rewritesFor = (prefix) => [
-  [/\[`(?:\.\.\/)*docs\/sql-server-to-azure-migration(?:-prerequisite)?\.md`\]\((?:\.\.\/)*docs\/sql-server-to-azure-migration(?:-prerequisite)?\.md\)/g, `[\`${prefix}knowledge-base.md\`](${prefix}knowledge-base.md)`],
-  [/\((?:\.\.\/)*docs\/sql-server-to-azure-migration(?:-prerequisite)?\.md\)/g, `(${prefix}knowledge-base.md)`],
-  [/`(?:\.\.\/)*docs\/sql-server-to-azure-migration(?:-prerequisite)?\.md`/g, `\`${prefix}knowledge-base.md\``],
-  [/\((?:\.\.\/)*templates\/prerequisite-plan\.md\)/g, `(${prefix}prerequisite-plan-template.md)`],
-  [/`(?:\.\.\/)*templates\/prerequisite-plan\.md`/g, `\`${prefix}prerequisite-plan-template.md\``],
-  // A sibling skill's folder, written relative to this one. The advisor reads advisor-coverage.json
-  // out of the prerequisite skill upstream, and the port gives each skill its own copy, so the fork
-  // reaches it by name. Without this the link points at a sibling folder the fork's flat layout
-  // does not have.
-  [/\[`\.\.\/generate-migration-prerequisite-plan\/reference\/([a-z0-9.-]+)`\]\(\.\.\/generate-migration-prerequisite-plan\/reference\/[a-z0-9.-]+\)/g, `[\`${prefix}$1\`](${prefix}$1)`],
-  [/\.\.\/generate-migration-prerequisite-plan\/reference\/([a-z0-9.-]+)/g, `${prefix}$1`],
-  // Repository-root paths written in code spans. These resolve upstream and nowhere here once the
-  // folders move, and they are invisible to a check that reads Markdown links only: that is how
-  // two of them reached a reviewer, and how two more survived the commit meant to fix them.
-  [/(skills\/[a-z-]+\/)templates\/prerequisite-plan\.md/g, '$1references/prerequisite-plan-template.md'],
-  [/(skills\/[a-z-]+\/)(?:reference|schemas)\//g, '$1references/'],
-  [/\((?:\.\.\/)*(?:reference|references|schemas)\/([a-z0-9.-]+)\)/g, `(${prefix}$1)`],
-  [/`(?:\.\.\/)*(?:reference|references|schemas)\/([a-z0-9.-]+)`/g, `\`${prefix}$1\``],
-  // Repository tooling is not part of a skill bundle and does not ship here. Left as a link it
-  // would point at a tools/ folder this repository has no reason to carry, so the reference names
-  // where the file lives instead of pretending it is next door.
-  [/\[`tools\/validate-plan\.mjs`\]\((?:\.\.\/)*tools\/validate-plan\.mjs\)/g, '`validate-plan.mjs` in the upstream repository'],
-  [/`tools\/validate-plan\.mjs`(?! in the upstream)/g, '`validate-plan.mjs` in the upstream repository']
-];
 
 const read = (p) => fs.readFileSync(p, 'utf8');
 const version = JSON.parse(read(path.join(SRC, 'version.json')));
@@ -100,10 +40,7 @@ for (const [from, to] of COPIES) {
   if (!fs.existsSync(source)) { console.error(`MISSING SOURCE ${from}`); process.exitCode = 1; continue; }
   fs.mkdirSync(path.dirname(target), { recursive: true });
   if (to.endsWith('.md')) {
-    const prefix = to.includes('/references/') ? '' : 'references/';
-    let text = read(source);
-    for (const [pattern, replacement] of rewritesFor(prefix)) text = text.replace(pattern, replacement);
-    fs.writeFileSync(target, text, 'utf8');
+    fs.writeFileSync(target, portText(to, read(source)), 'utf8');
   } else {
     fs.copyFileSync(source, target);
   }
@@ -116,61 +53,6 @@ for (const skill of ['recommend-migration-path', 'generate-migration-prerequisit
     const dir = path.join(DEST, 'skills', skill, old);
     if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true });
   }
-}
-
-// The advisor SKILL.md in the fork is derived from upstream, not maintained beside it.
-//
-// It used to be patched: version stamps, then the capability line and the JSON blocks as well. Both
-// times the reasoning was that a human had deliberately rewritten the fork and the script should
-// respect that. Both times the same thing happened instead. Content fixed upstream stayed upstream,
-// a reviewer spent a round reporting defects that had been fixed the day before, and the second
-// round was worse than the first because the patch covered the contract-shaped parts and left the
-// prose, which is where the instructions live. A file a model reads every run cannot be the one
-// nobody is comparing.
-//
-// So the whole document is taken from upstream, and the two sections that genuinely differ are
-// declared here by heading. Anything not on this list is upstream's, transformed. If the fork needs
-// to say something new, it gets a heading and a line in FORK_OWNED rather than a quiet edit.
-const FORK_OWNED = new Map([
-  ['## When to Use', 'Carries the repository convention section on what the source version and edition change, which upstream has no equivalent for.'],
-  ['## API Details', 'Upstream describes fetching the live knowledge base. Nothing is fetched here, and the update check points to the agent host\'s plugin manager and microsoft/microsoft-sql rather than the plugin command.']
-]);
-const sectionsOf = (text) => {
-  const parts = [];
-  for (const line of text.split('\n')) {
-    if (/^## /.test(line)) parts.push({ heading: line.trim(), lines: [line] });
-    else if (parts.length) parts[parts.length - 1].lines.push(line);
-    else (parts.preamble ??= []).push(line), parts.preamble;
-  }
-  return parts;
-};
-const advisorSkill = path.join(DEST, `${ADVISOR}/SKILL.md`);
-if (fs.existsSync(advisorSkill)) {
-  const upstream = read(path.join(SRC, `${ADVISOR}/SKILL.md`));
-  const current = read(advisorSkill);
-  const preambleOf = (text) => text.split('\n').slice(0, text.split('\n').findIndex((l) => /^## /.test(l))).join('\n');
-  const owned = new Map(sectionsOf(current).map((s) => [s.heading, s.lines.join('\n')]));
-
-  for (const heading of FORK_OWNED.keys()) {
-    if (!owned.has(heading)) {
-      console.error(`FORK_OWNED names ${heading}, which the fork's SKILL.md does not contain, so nothing would be preserved for it.`);
-      process.exitCode = 1;
-    }
-  }
-  const rebuilt = [preambleOf(upstream)];
-  for (const section of sectionsOf(upstream)) {
-    rebuilt.push(FORK_OWNED.has(section.heading) ? owned.get(section.heading) : section.lines.join('\n'));
-  }
-  let text = rebuilt.join('\n');
-
-  const keep = (line) => /^\|\s*v[0-9]/.test(line.trim()) || /\b(until|since|before|from)\s+v[0-9]/i.test(line);
-  for (const [pattern, replacement] of rewritesFor('references/')) text = text.replace(pattern, replacement);
-  text = text.split('\n')
-    // A two-part version may end a sentence ("knowledge base v3.15."), so the guard rejects only a
-    // following digit or ".digit"; a bare (?!\.) let the regex fall back to "v3.1" and wrote "v3.155".
-    .map((line) => (keep(line) ? line : line.replace(/v\d+\.\d+\.\d+/g, release).replace(/v\d+\.\d+(?!\.?\d)/g, kbLine)))
-    .join('\n');
-  fs.writeFileSync(advisorSkill, text, 'utf8');
 }
 
 // Each skill also has a skill-contract.yml that exists only in the fork. Its pull-request validation
