@@ -173,6 +173,22 @@ if (fs.existsSync(advisorSkill)) {
   fs.writeFileSync(advisorSkill, text, 'utf8');
 }
 
+// Each skill also has a skill-contract.yml that exists only in the fork. Its pull-request validation
+// replays it, and the mock outputs and expected answers name the knowledge-base line the skill
+// reports. Nothing ported it, so the first release that moved the line left the advisor's contract
+// expecting v3.14 from a skill bundling v3.15.
+const CONTRACT_LINES = [
+  [ADVISOR, kbLine],
+  [PREREQ, JSON.parse(read(path.join(SRC, `${PREREQ}/reference/path-catalog.json`))).knowledgeBaseVersion]
+];
+for (const [skill, line] of CONTRACT_LINES) {
+  const contract = path.join(DEST, `${skill}/skill-contract.yml`);
+  if (!fs.existsSync(contract)) continue;
+  const text = read(contract);
+  const stamped = text.replace(/v\d+\.\d+(?!\.?\d)/g, line);
+  if (stamped !== text) fs.writeFileSync(contract, stamped, 'utf8');
+}
+
 console.log(`Ported ${copied} file(s) at ${release} on knowledge-base line ${kbLine}.`);
 
 // Every reference in the ported skills must resolve to a file that exists, whether it is written

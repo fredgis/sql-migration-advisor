@@ -12,6 +12,7 @@
 //   contract   the JSON a model copies, and the tool capability, match upstream
 //   integrity  every rule ID cited resolves in the fork's own rule index
 //   layout     nothing points at a path the fork does not have
+//   contracts  each fork-only skill-contract.yml names the knowledge-base line its skill ships
 //
 // Run it any time:  node tools/check-fork-parity.mjs [path-to-fork]
 // It exits non-zero on the first category that fails, and says what is missing rather than that
@@ -208,6 +209,25 @@ walkLinks(path.join(DEST, 'skills'));
     if (!upstreamSections.has(heading) && !owned.has(heading)) failures.push(`the fork's SKILL.md carries ${heading}, which upstream does not and which is not declared fork-owned`);
   }
   notes.push(`${compared} SKILL.md section(s) derived from upstream and identical after the port's transformations; ${owned.size} declared fork-owned.`);
+}
+
+// 6. The skill contracts belong to the fork, and its pull-request validation replays them. A contract
+// naming a knowledge-base line its skill no longer ships fails there, after the release, so it is
+// read here.
+{
+  const contractLines = [
+    ['skills/recommend-migration-path', JSON.parse(read(path.join(SRC, 'version.json'))).knowledgeBase],
+    ['skills/generate-migration-prerequisite-plan', JSON.parse(read(path.join(SRC, 'skills/generate-migration-prerequisite-plan/reference/path-catalog.json'))).knowledgeBaseVersion]
+  ];
+  let contracts = 0;
+  for (const [skill, line] of contractLines) {
+    const contract = path.join(DEST, skill, 'skill-contract.yml');
+    if (!fs.existsSync(contract)) continue;
+    contracts++;
+    const stale = [...new Set((read(contract).match(/v\d+\.\d+(?!\.?\d)/g) || []).filter((v) => v !== line))];
+    if (stale.length) failures.push(`${skill}/skill-contract.yml names ${stale.join(', ')} while the skill ships knowledge-base line ${line}; run node tools/port-to-fork.mjs`);
+  }
+  if (contracts) notes.push(`${contracts} skill contract(s) name only the knowledge-base line their skill ships.`);
 }
 
 if (failures.length) {
