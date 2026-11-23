@@ -2,17 +2,17 @@
 
 Source: the weekly knowledge-base checks of 14 September to 23 November 2026 (issue #75). The 40
 findings open on 10 November were audited that day against the live Microsoft sources and the text now
-in HEAD (last knowledge-base commit: 13 September); the 16 November check added one finding, row 41.
-The file has three parts: **To do** (26 findings, including three guidance additions, plus one decision, 28b),
+in HEAD (last knowledge-base commit: 13 September). Scope: the recommendation and prerequisite skills,
+the two published by Microsoft. The file has three parts: **To do** (21 findings, including three guidance additions, plus one decision, 28b),
 **Implementation audit** (added 16 November: the knowledge-base lines to change for each one, a revised
-criticality and a size for the scope then known) and **Not doing** (22 others, with the reason). The 10 November audit is
+criticality and a size for the scope then known) and **Not doing** (19 others, with the reason). The 10 November audit is
 recorded in the comment of 10 November on issue #75
 (https://github.com/fredgis/sql-migration-advisor/issues/75#issuecomment-6774890874), and the corrections
 made after a review of the plan are in the follow-up comment
 (https://github.com/fredgis/sql-migration-advisor/issues/75#issuecomment-6775214583). Row numbers are
 the ones used since the findings were first recorded, so there are gaps. Nothing applied yet.
 
-**23 November review.** The [weekly report on #75](https://github.com/fredgis/sql-migration-advisor/issues/75#issuecomment-7106334090) proposed 9 Advisor, 4 prerequisite and 4 connectivity edits, not 17 distinct findings. Advisor proposals 1–9 map, in order, to 42/42, 43/43, 17/35, 44/44 and 19. Prerequisite proposals 1–4 belong to 17/35 (P08-006) and 17 (P08-007): the catalog holds path questions, not the individual prerequisite rows. Connectivity proposals 1–4 map to 20/20 and the reopened 30/30. Rows 46–48 come from [Azure Weekly 589](https://azureweekly.info/issue-589), not from the run's proposed edits.
+**23 November review.** The [weekly report on #75](https://github.com/fredgis/sql-migration-advisor/issues/75#issuecomment-7106334090) proposed 9 Advisor and 4 prerequisite edits, not 13 distinct findings. Advisor proposals 1–9 map, in order, to 42/42, 43/43, 17/35, 44/44 and 19. Prerequisite proposals 1–4 belong to 17/35 (P08-006) and 17 (P08-007): the catalog holds path questions, not the individual prerequisite rows. Rows 46–48 come from [Azure Weekly 589](https://azureweekly.info/issue-589), not from the run's proposed edits.
 
 The run reported 15 source-section hash changes (including standalone LRS source versions): review the actual passages before updating hashes, not 15 automatic rule changes. Four dead anchors map to 39 and 45. The separate link scan reported 558 successes out of 559 with no attributable failed URL; no additional dead link is established.
 
@@ -58,14 +58,13 @@ follows HEAD gets wrong; on 10 November it measured the distance between HEAD an
 **High** = a wrong decision or a wrong deadline, **Medium** = incomplete or over-conservative (the answer
 stays safe, but an option, a caveat or a prerequisite is missing), **Low** = wording, label, citation or
 watch-list. The old values are in the summary table of the implementation audit. "Where" lists only
-knowledge-base lines: the three knowledge bases and the files the skills read.
+knowledge-base lines: the two knowledge bases and the files the skills read.
 
 | # | Where | What we say | What the source says now | Fix | Criticality |
 |---|---|---|---|---|---|
 | 42 | `migration.md` 133; `decision-rules.md` 230, 235–239, 577; the preview question in the recommendation skill | Next-gen GP zone redundancy requires preview acceptance | [GA announcement](https://azure.microsoft.com/updates?id=578033) | Remove that condition for zone redundancy only. Check the target region's support for zone-redundant Next-gen GP; if unknown, ask. Do not remove preview checks for unrelated capabilities. | High |
 | 43 | `migration.md` 133; `decision-rules.md` §B2, 230–232 | Old log-rate ceiling; a qualitative high-throughput answer favours Business Critical | [MI sizing update](https://techcommunity.microsoft.com/blog/AzureSQLBlog/azure-sql-managed-instance-gets-a-boost-new-capabilities-in-next-gen-general-pur/4573761) | Compare measured log demand to the selected configuration: up to 6 MiB/s per vCore, capped at 220 MiB/s per instance, not 220 for every SKU. Check storage/vCore and latency, HA and read-scale needs before recommending BC. | Medium |
 | 44 | `migration.md` 278, 435 and §13; `decision-rules.md` 95, 171, 217, 455; P11-001 when assessing three-part names | Cross-database references disqualify SQL Database outright | [Hyperscale limited preview](https://techcommunity.microsoft.com/blog/AzureSQLBlog/azure-sql-hyperscale-cross-database-querying-now-in-limited-preview/4573935) | Evaluate native three-part reads only with approved preview access, online databases in the **same Hyperscale elastic pool on the same logical server**, and suitable permissions. Writes limited to one database; no savepoints or nested transactions. Keep linked servers and DTC separate. Otherwise retain refactor/MI/VM alternatives. | Medium |
-| 30 | `connectivity.md` §5.3, 517 onward; `connectivity-matrix.json` `trust_server_certificate.diagnostic_use` | Toggling trust is presented as a certificate diagnostic without a mode condition | [SqlClient certificate validation](https://learn.microsoft.com/en-us/sql/connect/ado-net/encryption-and-certificate-validation) | Reopened: with `Encrypt=Strict`, `TrustServerCertificate` is ignored, so toggling it provides no diagnostic signal. For other modes distinguish diagnosis from a production fix. Keep separate from row 41's hostname change. | Medium |
 | 45 | `prerequisite.md` 185, 186, 206 (P08-013, P08-014, P09-014) | Three removed anchors; old wording also overstates the ADR restriction | [MI Link preparation](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-preparation), [LRS preparation](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate) | Cite `#prepare-databases-that-use-accelerated-database-recovery-adr` for ADR: **if ADR is used**, verify PVS on `PRIMARY`; do not assert ADR must be enabled for every migration or cannot be enabled later without evidence. For Service Broker cite `#prepare-databases-with-service-broker-disabled`: enable at source if needed, otherwise enabling it after migration requires Support. Row 39 is the fourth anchor, not a new finding. | Medium |
 | 46 | `migration.md` §§4, 4.1; `decision-rules.md` §D2; P28 discovery guidance | Assessment guidance predates the Azure Migrate name change and joint application/database assessment | [Azure Catalyst](https://techcommunity.microsoft.com/blog/AzureSQLBlog/whats-new-in-databases-at-microsoft-ignite-2026-ai-ready-data-for-apps-and-agent/4570764), [Modernize CLI](https://techcommunity.microsoft.com/blog/MicrosoftDataMigration/modernize-applications-and-databases-together-with-the-modernize-cli/4574244) | Introduce **Azure Catalyst (formerly Azure Migrate)** without renaming historical references or identifiers. Offer Modernize CLI for joint application and SQL assessment: blockers, target, sizing and estimated cost. Neither the CLI assessment nor a roadmap for BACPAC/LRS is a new data movement method. | Medium |
 | 47 | `prerequisite.md` P11-003/P11-006, 236, 239 | Import rehearsal gives little help isolating a slow BACPAC import | [Microsoft support guidance](https://techcommunity.microsoft.com/blog/AzureDBSupport/why-your-bacpac-import-is-slow-finding-the-real-bottleneck/4574107) | Extend the existing rehearsal, not the list of blocking prerequisites: inspect SqlPackage logs, client CPU/RAM/disk, network and target utilisation. Compare from a same-region VM before increasing target compute. | Low |
@@ -77,33 +76,27 @@ knowledge-base lines: the three knowledge bases and the files the skills read.
 | 17 | `migration.md` 200, 369; `decision-rules.md` 186, 360, 557; `prerequisite.md` 173–181, especially P08-006/007/009; recommendation and prerequisite contracts, questions and fact mapping | One link per database; the 16 November plan used preview floors | [GA announcement](https://aka.ms/milink-multidb-ga-blogpost) and [Learn support table](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-extend-availability-group): SQL Server **2022 CU28+ or 2025 CU11+**, Enterprise/Developer, Windows or Linux, **SSMS 22.12.1+** for the wizard. An existing AG is optional. Only automatic multi-node wizard configuration remains preview. | Offer multi-database mode without preview consent. For SQL Server → MI the update policy must match the source version or be newer; creating the link from MI or reversing roles needs the matching version policy (including SQL Server 2022). Rehearse cutover and application switch for every link; require online failback evidence only when supported, otherwise a separate rollback plan. Carry the selected mode into P08; preserve single-database criteria. Pair with row 35: count databases against remaining target capacity, not links. | High |
 | 28b | `decision-rules.md` 115-119 (the `AVS-LICENSING` answer table); `migration.md` 530-548 (§15.1); recommend `input.schema.json`, `SKILL.md`, `input-contract.md` and `advisor-fact-mappings.json` if a licence-type fact is added | Relying on license-included, or an unknown licence, holds AVS at `unknown_requires_assessment`; a confirmed portable VCF licence makes it eligible | Same sources as row 28: new deployments have required portable VCF since 1 Nov 2025, pay-as-you-go had to transition by 31 Oct 2026, reserved instances end 30 Aug 2027 | **Decision needed.** Keep today's rule (dates fixed by row 28), or adopt the finer one: a valid existing license-included reservation is `eligible_with_remediation` until its term and 30 Aug 2027 at most; an unknown entitlement stays `unknown_requires_assessment`; a new deployment relying on license-included capacity is unsupported, for a commercial reason. The finer rule changes eligibility, so it needs a licence-type fact (portable VCF, existing reservation with its expiry, unknown) carried the same way by both skills. The prerequisite plan already has the fact (`avs_vcf_subscription_status`: schema 509, `questions.json` 74, catalog 937) and P27-003 already states the reservation boundary; the recommendation side has no licence field, so the two skills must be given the same qualification and the same unknowns | Medium |
 | 15 | `migration.md` 15, 138, 150 and new rows in §4.1 (after 167) and §5.3; `decision-rules.md` 309, 349-355 and a new §B3 row; recommend `SKILL.md` 640 | Arc migrates to SQL MI and SQL Server on Azure VM ("MI and VM targets both GA") | Azure Updates 571795 (29 Sep) and Learn: Arc also migrates to Azure SQL Database, Hyperscale included, in public preview, through DMS and a self-hosted integration runtime | Add the target, gated on preview acceptance. The preview concerns the Arc orchestration to Azure SQL Database, not Azure SQL Database itself: a refusal removes only that orchestration and keeps the GA routes to SQL Database. The hand-off has to keep `controlPlane=azure-arc`, but the prerequisite KB carries no row for the Arc orchestration (extension, identity, batch) on any path, and `decision-rules.md` 355 already refuses to hand off Arc with LRS for that reason. Decide between that precedent (document the route, recommend standalone DMS, name Arc as an optional orchestration: text only) and giving the prerequisite KB the Arc rows so that `controlPlane=azure-arc` can be carried (about 20 new lines there, plus `migration-methods.json` 15, where DMS gets `controlPlanes`) | Medium |
-| 41 | `connectivity.md` §5.3 (488-496: the driver-change table and "Driver upgrades changed the defaults, twice"); `connectivity-matrix.json` `tls.breaking_defaults` (890-923; the `tls-sqlclient-*` names exist only as `affected_rules` of the claim); `claims-registry.json` 336-345 (`conn-sqlclient-encryption-defaults`) and its line in `connectivity.md` 721; optional pointers from `migration.md` 470 and `decision-rules.md` 449 | The §5.3 table stops at SqlClient 5.0 and ODBC 18 and says driver upgrades changed the defaults "twice". `HostNameInCertificate` appears only as the client-side answer when the connection name differs from the certificate (`connectivity.md` 408 and 515). The matrix carries no servicing-release diagnostic | SQL Server Blog of 13 Nov 2026, "Microsoft.Data.SqlClient 7.1.2, 7.0.4, and 6.1.8 are now available": the servicing releases tighten certificate validation. A `HostNameInCertificate` value now replaces the server name for validation, so a value that is not in the certificate fails the connection **even when the server name matches** (before, a wrong value was ignored in that case). The error is a certificate name mismatch during the TLS handshake, before login. With a deliberately wrong value, 7.1.2 and 7.0.4 fail on .NET 10 (native and managed networking) and on .NET Framework 4.8.1; 6.1.8 fails only with managed networking (the default on Linux and macOS, opt-in on Windows); 7.1.1 opens everywhere. The Learn page (last updated 29 Sep) has not caught up and ends at 7.0.3. The run's wording "when the connection hostname differs" is inexact: the new check applies when the name matches too | Add the three releases to §5.3 and to the matrix as a certificate-validation change, with this diagnostic first for a new TLS failure after an upgrade: search the connection strings for `HostNameInCertificate`, confirm each value appears in the certificate's subject or subject alternative names, fix or remove it. State the 6.1.8 scope (managed networking only) and correct "twice". Say the source is the blog until Learn is updated. Register the behaviour under claim `conn-sqlclient-encryption-defaults` and update its line in the claims table. Optionally point the retained-server-name pattern at it: a client that sets `HostNameInCertificate` for the old name now fails on these releases even when the connection name matches. Edit the matrix first, then the prose. Then re-baseline the claim (row 21) | Medium |
 | 31 | `prerequisite.md` §14 P11-010 (243) | Instance-scoped objects are scripted separately only for SQL MI, SQL VM and Arc-enabled SQL MI | A BACPAC carries only user-database schema and data. P11 also covers SQL containers, and an AVS-hosted SQL Server is a full instance like a SQL VM. The cited sqlpackage page does not state the instance-object point | Extend the applicability to AVS-hosted and containerised SQL Server. Markdown only: `path-catalog.json` has no row-level data | Medium |
 | 32 | `prerequisite.md` §16 P13-011 (290) | The requirement says "in any role", the applicability says subscriber only | Learn: SQL Server 2017 CU18 and later support replication for instances of SQL Server on Linux, with no role distinction | Apply whenever any publisher, distributor or subscriber is Linux-hosted or containerised. Markdown only | Medium |
 | 33 | `prerequisite.md` §16 P13-013 (292) | The UNC snapshot folder applies only when the subscriber is a containerised SQL Server | Learn "Secure the snapshot folder": a remote distributor or pull subscriptions require a UNC share rather than a local path | Drop the container condition and apply to any pull subscription or remote distributor. Markdown only | Medium |
-| 29 | `connectivity.md` 102 (the Managed Instance endpoint table; line 83 is the Azure SQL Database policy and stays); `connectivity-matrix.json` 87 (`connection_type`) | The endpoint table and the matrix row say "redirect (default since October 2025) or proxy" without the alias detail. The rule itself is already there: §7.3 (626-634) and the matrix entry `mi-proxyoverride-default` (775-787) state that the effective value decides, and `get-connection-details/SKILL.md` 197 that the meaning depends on when the value was set | Learn "Connection types" (re-read 16 Nov): `proxyOverride=Default` is deprecated and now works as an alias of Redirect; since Oct 2025 a programmatic deployment or update with `Default` is interpreted as Redirect and the value is never preserved; instances set to Default before Oct 2025 "are converted to Proxy" | Add "alias, deprecated, never stored" to the cell in line 102 and to the matrix field in line 87, and point both at §7.3. Do with row 4 | Low |
-| 4 | Managed Instance lines only: `connectivity.md` 102, 120-142 (the redirect-ports block), 584-613 (§7.1), 715; `connectivity-matrix.json` 87-93, 757-773 (`get-connection-details/SKILL.md` 189 and 235 stay true). Not lines 74, 79, 452, 459, 678 and 717: they describe Azure SQL Database, where 11000-11999 is right | HEAD already records the redirect ports as disputed: test 1433 first, open 11000-11999 only if that fails and policy allows it | Learn "Connection types" (re-read 16 Nov): redirect needs port 1433 across the instance's subnet range plus DNS resolution of the instance zone; 11000-11999 appears nowhere on that page or on the two connectivity-architecture pages. The Bicep and ARM quickstarts (re-read 16 Nov) still create an inbound NSG rule for 11000-11999 from the virtual network, so the conflict is current and not a leftover of old templates | HEAD's guidance fits both readings, so the conflict stays open and is not resolved in favour of 1433 alone. Add the missing DNS requirement to §2.2 and to the matrix row 87-93, and date the evidence. Do with row 29. Do not touch the MI Link range 11000-11999 | Low |
 | 34 | `prerequisite.md` §24 P21-009 (413) | The private-sink self-hosted integration runtime names SQL VM, Arc-enabled SQL MI and containers, not AVS | The Data Factory SQL Server connector requires a self-hosted integration runtime for stores inside an on-premises network or a virtual network. AVS is not named, so this is an inference | Add an AVS-hosted SQL Server with no public endpoint. Markdown only | Low |
 | 35 | `migration.md` 200; `decision-rules.md` 230, 360; recommend `SKILL.md` 641, `input.schema.json` 267 and `output.schema.json` 329 | Link capacity derived straight from `database_count` (100 or 500 "links") | Learn MI link overview: in multiple-database mode every replicated database still counts toward the instance-wide limit (100 for General Purpose and Business Critical, 500 for next-gen); only the number of links changes | Reword "links" to "databases" in the capacity text, keep `database_count` at or below the limit in both modes and check the capacity left on the target (existing databases count against it). Do not relax the check. Do with row 17 | Low |
 | 5 | `migration.md` 319; `decision-rules.md` 428; recommend `SKILL.md` 299 and 639 | LRS cutover is minutes on General Purpose, hours on Business Critical | Learn LRS: a job is cancelled after 30 days; Business Critical seeding takes "up to several hours"; no figure for General Purpose. "Minutes" is our own estimate, stored in `decision-rules.data.json` (`businessCutoverDowntimeByTier.default`) | Label "minutes" as our own estimate instead of dropping it. The 30-day ceiling is already in HEAD (`migration.md` 201, `decision-rules.md` 340 and 559) and needs nothing | Low |
 | 6 | `reference/claims-registry.json` 223-233, claim `arc-sql-migration-minimum-source-versions` (225 and 226 by hand; 227 and 228 by the script) | The claim watches the "Prerequisites" section of the Arc migration overview | That section no longer exists on the overview. The floors now sit on the Arc to Managed Instance page (MI Link: SQL Server 2016 on Windows Server 2016; LRS: SQL Server 2012 on Windows Server 2012) and the overview gives 2014 for the whole experience. HEAD already splits these floors (`decision-rules.md` 349-353, `migration.md` 371) | Re-point `source_url` and `source_section` to the Arc to MI page, check the section exists, then re-baseline. No knowledge-base text to change. Without it the weekly check hashes the whole page | Low |
-| 20 | `connectivity.md` 333, 355, 723; `connectivity-matrix.json` 420 (`min_version`) and 429 (`extra_property`); `claims-registry.json` 376 (the claim's note; `jdbc-auth-keywords` and `jdbc-msi-client-id` are its `affected_rules` names, not matrix keys) | `ActiveDirectoryMSI` needs JDBC 8.3.1; a minimum-version dispute is recorded | The JDBC page contradicts itself: the keyword list says "since 8.3.1", the dedicated section says "supported starting with version 7.2", the dependency table starts at 7.2. `ActiveDirectoryManagedIdentity` needs 12.2, and its keyword entry says the Client ID of a user-assigned managed identity "can also now be set in the `user` property" (re-read on 16 Nov; the run proposed this row on 26 Oct and again on 16 Nov) | Record 7.2 (dedicated section and table) and keep 8.3.1 only as the `msiClientId` boundary. For `ActiveDirectoryManagedIdentity` (12.2 and later) add the `user` property as a way to pass a user-assigned Client ID, next to `msiClientId` for the legacy `ActiveDirectoryMSI`. Keep a note that the page is inconsistent rather than deleting the dispute | Low |
 | 39 | `prerequisite.md` 155 (P06-005; the only occurrence of the anchor) | The source link is `tutorial-migrate-vmware#run-a-test-migration` | The anchor is gone. The test-migration steps now sit under `#track-and-migrate-replicating-servers` | Re-point the link and update the checked date | Low |
 
-**16 November sizing only, not a total for the expanded 23 November scope:** about 118 existing lines in 21 files and about 109 new lines (about 150 if row 28b is
+**16 November sizing only, not a total for the expanded 23 November scope:** about 96 existing lines in 18 files and about 82 new lines (about 123 if row 28b is
 adopted), all in the knowledge bases and the files the skills read. The sizes by finding are in the
 implementation audit below; the new-line figures are estimates. The drifted claims are re-baselined by the
-script after the source and section are checked. Current High priorities: 1, 17, 28 and 42. Row 20 is contested inside the Microsoft page itself, rows 31 to 34
-and 41 are incomplete as written, and rows 4 and 29 are smaller than they looked, because HEAD already
-carries most of the fix. Do rows 1 and 16 together (they rewrite the same rule lines), rows 4, 20, 29
-and 41 in one connectivity version (the same lines and the same stamp), and rows 17 and 35 together.
+script after the source and section are checked. Current High priorities: 1, 17, 28 and 42. Rows 31 to 34 are incomplete as written. Do rows 1 and 16
+together (they rewrite the same rule lines), and rows 17 and 35 together.
 
 ## Implementation audit
 
 Written on 16 November 2026. Every retained row was re-read against HEAD (`df706e2`) and the live
 sources, and every line number below was read in that commit. It lists only knowledge-base lines: the
-three knowledge bases (`docs/sql-server-to-azure-migration.md` with `reference/decision-rules.md`, the
-prerequisite document with its catalog, the connectivity document with its matrix) and the files the
+two knowledge bases (`docs/sql-server-to-azure-migration.md` with `reference/decision-rules.md`, and the
+prerequisite document with its catalog) and the files the
 skills read (`SKILL.md`, contracts, schemas, `questions.json`, fact mappings), plus the claims watch list.
 Tests, the executable mirror and the presentation files (README, poster, rule graph, example) follow the
 text and are not counted. "Existing lines" counts the lines of HEAD that change (a block counts in full
@@ -120,22 +113,17 @@ when it is rewritten). "New lines" is an estimate, plus or minus a quarter. Noth
 | 17 | MI Link multiple-database mode | **High** as of 23 Nov | GA changes eligibility and the source build, policy and failback requirements in P08 | 3 | about 62 (prior estimate) | 11 |
 | 28b | AVS eligibility rule, only if adopted | Medium to **Medium** | A decision; nothing to do if today's rule is kept | 3 | about 41 | 6 |
 | 15 | Arc to Azure SQL Database (preview) | Medium to **Medium** | A missing preview route, and no way to hand it off today | 6 | about 10 | 3 |
-| 41 | SqlClient `HostNameInCertificate` | Medium to **Medium** | A new post-upgrade TLS failure with no diagnostic | 5 | about 20 | 3 |
 | 31 | P11-010, instance objects | Medium to **Medium** | A required prerequisite is absent for AVS and container targets | 1 | 0 | 1 |
 | 32 | P13-011, replication on Linux | Medium to **Medium** | Same, for a Linux publisher or distributor | 1 | 0 | 1 |
 | 33 | P13-013, UNC snapshot folder | Medium to **Medium** | Same, for any pull subscription or remote distributor | 1 | 0 | 1 |
-| 29 | MI `Default` alias | High to **Low** | HEAD already states the rule in §7.3, the matrix and `SKILL.md`; only the short form in line 102 lacks the alias | 2 | about 2 | 2 |
-| 4 | MI redirect ports | High to **Low** | HEAD already says "test 1433 first", and the quickstarts still create the 11000-11999 rule, so the conflict stays open; only DNS is missing | 4 | about 2 | 2 |
 | 34 | P21-009, AVS | Low to **Low** | An inference | 1 | 0 | 1 |
 | 35 | Capacity counts databases | Low to **Low** | Wording | 6 | 0 | 5 |
 | 5 | LRS "minutes" | Low to **Low** | The 30-day ceiling is already in HEAD, so only the label is left | 4 | 0 | 3 |
 | 6 | Claim re-point | Low to **Low** | Restores a blind spot of the weekly check | 2 | 0 | 1 |
-| 20 | JDBC minimum version | Low to **Low** | Contested inside the Microsoft page | 6 | about 2 | 3 |
 | 39 | Dead anchor | Low to **Low** | One link | 1 | 0 | 1 |
-| | Connectivity version stamp (rows 4, 20, 29, 41) | | One version line moves | 5 | about 1 | 3 |
 | | Prerequisite version stamp (rows 1, 16, 17, 28, 31 to 34, 39) | | One version line moves | 7 | 0 | 6 |
-| | **Total** | | | **118** | **about 109** | **21** |
-| | **Total with 28b adopted** | | | **121** | **about 150** | **21** |
+| | **Total** | | | **96** | **about 82** | **18** |
+| | **Total with 28b adopted** | | | **99** | **about 123** | **18** |
 
 By knowledge base:
 
@@ -143,21 +131,13 @@ By knowledge base:
 |---|---|---|---|
 | Advisor: `migration.md`, `decision-rules.md`, `migration-methods.json`, the advisor `input-contract.md`, recommend `SKILL.md` and schemas | 7 | 52 | about 51 |
 | Prerequisite: `prerequisite.md`, `path-catalog.json`, `advisor-coverage.json`, `questions.json`, `advisor-fact-mappings.json`, its `SKILL.md`, contracts and schemas | 10 | 41 | about 31 |
-| Connectivity: `connectivity.md`, `connectivity-matrix.json`, `get-connection-details/SKILL.md` | 3 | 19 | about 26 |
-| Claims watch list: `claims-registry.json` | 1 | 6 | about 1 |
-| **Total** | **21** | **118** | **about 109** |
+| Claims watch list: `claims-registry.json` | 1 | 3 | 0 |
+| **Total** | **18** | **96** | **about 82** |
 
 The advisor knowledge-base release (now v3.15 to v3.16, about 20 stamped files) is not counted: see Release.
 
 ### What the line audit changed in the rows above
 
-- **Rows 4 and 29 are small.** HEAD already carries most of the fix: §7.3 (626-634) and the matrix entry
-  `mi-proxyoverride-default` (775-787) state that the effective value decides,
-  `get-connection-details/SKILL.md` 197 says the meaning depends on when the value was set, and §2.2
-  already says to test 1433 first. The first "Where" cell of row 4 mixed in Azure
-  SQL Database lines (74, 79, 452, 459, 678, 717), where 11000-11999 is correct and must not change. The
-  Bicep and ARM quickstarts still create the 11000-11999 rule (re-read 16 November), so the first fix's
-  "older quickstarts" was wrong: the conflict is current and stays open.
 - **Row 5 loses half its fix.** The 30-day ceiling is already in HEAD (`migration.md` 201,
   `decision-rules.md` 340 and 559). Only the "minutes" label is left.
 - **Row 1 reaches more rule lines.** `decision-rules.md` 94 and 238-239 cite the Fabric Migration Assistant
@@ -171,12 +151,8 @@ The advisor knowledge-base release (now v3.15 to v3.16, about 20 stamped files) 
   reader.
 - **Row 35 is wording in six lines**, including `decision-rules.md` 230 ("MI Links") and recommend
   `SKILL.md` 641. Lines 50, 172 and 213 say "MI Link capacity" without a unit and stay.
-- **Rows 20 and 41: matrix keys.** `jdbc-auth-keywords`, `jdbc-msi-client-id` and `tls-sqlclient-*` are claim
-  `affected_rules` names, not matrix keys. The matrix lines are 420 and 429 (JDBC) and the
-  `tls.breaking_defaults` block, 890-923.
-- **16 November criticality.** Six High rows became two (1 and 28) before the 23 November announcements. Rows 4 and 29 fell to Low because HEAD already holds
-  most of the fix, and rows 16 and 19 fall to Medium because the effect is a missed option, not a wrong
-  decision.
+- **16 November criticality.** Four High rows became two (1 and 28) before the 23 November announcements: rows 16 and 19
+  fell to Medium because the effect is a missed option, not a wrong decision.
 
 ### Detail by finding
 
@@ -225,30 +201,6 @@ adds a target-OS fact: both input contracts (about 4 lines), both input schemas 
 
 Do not touch: `README.md` 561 and `migration.md` 688 (changelog rows v2.10), `path-catalog.json` 921 and 925
 (still right: the earlier of the reservation's expiry and 30 August 2027; ten months).
-
-#### Connectivity: rows 29, 4, 20 and 41, one version (22 existing lines, about 27 new, 4 files)
-
-| File | Lines at HEAD | Change | Row | Existing |
-|---|---|---|---|---|
-| `docs/sql-server-to-azure-migration-connectivity.md` | 102 | "alias, deprecated, never stored" in the Managed Instance endpoint table | 29 | 1 |
-| | after 634 | One sentence in §7.3 | 29 | (+2 new) |
-| | 125, 592 | Record the 16 November re-read of the connection-types page | 4 | 2 |
-| | after 145 | The DNS requirement for redirect | 4 | (+2 new) |
-| | 333, 723 | JDBC table cell, the claims-table line | 20 | 2 |
-| | 355 | The client-ID sentence gains the `user` property | 20 | 1 (+1 new) |
-| | 488-489, 721 | "changed the defaults, twice", the claims-table line | 41 | 3 |
-| | after 496 | Three table rows and the `HostNameInCertificate` diagnostic | 41 | (+9 new) |
-| `skills/get-connection-details/reference/connectivity-matrix.json` | 87 | `connection_type` | 29 | 1 |
-| | 89, 760 | `client_requirement` gets DNS; the evidence date | 4 | 2 |
-| | 420, 429 | `min_version`; `extra_property` next to the `user` property | 20 | 2 (+1 new) |
-| | after 922 | New entry in `tls.breaking_defaults` (890-923) | 41 | (+10 new) |
-| `reference/claims-registry.json` (watch list) | 376 | Claim note (dispute) | 20 | 1 |
-| | 344, 347 | A new `affected_rules` name for the `HostNameInCertificate` check; the claim note (servicing releases) | 41 | 2 (+1 new) |
-| Version stamp | `connectivity.md` 3; the matrix 3; `get-connection-details/SKILL.md` 17, 121, 151 | v0.10 becomes v0.11, plus a changelog row after `connectivity.md` 745 | all | 5 (+1 new) |
-
-Optional pointers for row 41, not counted: `connectivity.md` 408 and 515, `migration.md` 470,
-`decision-rules.md` 449, and one gotcha line in `get-connection-details/SKILL.md` 189-198. Edit the matrix
-first (it is canonical), then the prose, then the stamp.
 
 #### MI Link: rows 17 and 35
 
@@ -312,18 +264,17 @@ the contracts) and `controlPlanes` for DMS in `migration-methods.json` 15 (1 lin
 
 ### Order of work (16 November baseline)
 
-For the consolidated scope, prioritise 1/16, 17/35, 28 and 42/43; then 44, 15, 19, 31–33, 30/41 and 45. Include 46–48 in the relevant assessment, BACPAC and sync guidance. Bundle remaining low-priority edits by KB. Keep 28b out of implementation until decided.
+For the consolidated scope, prioritise 1/16, 17/35, 28 and 42/43; then 44, 15, 19, 31–33 and 45. Include 46–48 in the relevant assessment, BACPAC and sync guidance. Bundle remaining low-priority edits by KB. Keep 28b out of implementation until decided.
 
 1. Text only: rows 31 to 34, 39, 5 and 6 (11 lines; the script re-baselines row 6).
-2. Connectivity in one version: rows 4, 29, 20 and 41, the matrix first (22 lines with the stamp).
-3. Row 28 (12 lines).
-4. Fabric, rows 1 and 16 (47 lines): the rule text first, then the prerequisite KB (P11 and P16), then the
+2. Row 28 (12 lines).
+3. Fabric, rows 1 and 16 (47 lines): the rule text first, then the prerequisite KB (P11 and P16), then the
    catalog and the coverage map.
-5. Row 19, minimal option (4 lines).
-6. Rows 17 and 35 together (9 existing lines, about 62 new), then row 15 (6 existing, about 10 new; decide
+4. Row 19, minimal option (4 lines).
+5. Rows 17 and 35 together (9 existing lines, about 62 new), then row 15 (6 existing, about 10 new; decide
    first how the hand-off is handled).
-7. Row 28b only after the decision.
-8. One release for everything (see Release). The prerequisite document moves to v1.12 with rows 1, 16, 17,
+6. Row 28b only after the decision.
+7. One release for everything (see Release). The prerequisite document moves to v1.12 with rows 1, 16, 17,
    28, 31 to 34 and 39.
 
 ## Conditions for the two skills
@@ -353,11 +304,8 @@ purpose must be justified by the source, not rewritten to make the tests pass.
 
 ## Traps
 
-- **11000-11999 serves three unrelated things.** Azure SQL Database redirect (`connectivity.md` 74, 79,
-  452, 459, 678, 717): correct, leave it. Managed Instance redirect (row 4): disputed, and the Bicep and
-  ARM quickstarts still create the rule, so the dispute stays open. The MI Link distributed availability
-  group endpoint, paired with 5022 in `migration.md` and `decision-rules.md`, is documented on a page
-  nobody has re-read. Leave it alone.
+- **11000-11999 next to 5022.** The MI Link distributed availability group endpoint, paired with 5022 in
+  `migration.md` and `decision-rules.md`, is documented on a page nobody has re-read. Leave it alone.
 - **Changelog rows record what was true at the time.** Do not rewrite them, in any knowledge
   base.
 - **`SKILL.md` repeats rows 1, 5, 15, 17 and 35** in its factual-gates table (recommend `SKILL.md` 639, 640,
@@ -374,12 +322,6 @@ purpose must be justified by the source, not rewritten to make the tests pass.
   OS-pair condition in the rule.
 - **Row 35: the instance-wide database limit still applies in multiple-database mode.** Do not
   relax `database_count`.
-- **Connectivity rows 4, 20, 29 and 41 share one version stamp.** The connectivity KB,
-  `connectivity-matrix.json` and `get-connection-details/SKILL.md` (lines 17, 121, 151) must carry the same
-  version, and the changelog needs a row for it. A change to the document needs its version bump in the
-  same commit, so land the four rows together. The matrix is canonical: edit it first, then the prose. Keep
-  `3342`, `1433 to 65535` and `11000` (the SQL Database public-endpoint Redirect range) in both files: row 4
-  must not remove them.
 - **The prerequisite document needs a bump too.** `docs/sql-server-to-azure-migration-prerequisite.md`
   declares v1.11 on line 3, and an edit needs its version bump in the same commit. Rows 1, 16, 17, 28, 31 to
   34 and 39 all edit it. The stamp is quoted in 6 more lines (prerequisite `SKILL.md` 126 and 256, both
@@ -389,7 +331,7 @@ purpose must be justified by the source, not rewritten to make the tests pass.
 
 Rows 1, 5, 15, 16, 17, 19, 28 and 35 touch `reference/decision-rules.md`, which forces the full
 coordinated release across every surface the README lists. Ship all the rows above in one release, then
-align microsoft/microsoft-sql by pull request, issue first. Three version lines move:
+align microsoft/microsoft-sql by pull request, issue first. Two version lines move:
 
 - **Advisor KB, v3.15 to v3.16** (v3.15.0 shipped on 23 November with the official publication's content): about 20 stamped files, rewritten by
   `node tools/artifacts/check-artifacts.mjs --fix-prose`, plus the PDF, its preview image, the poster PNG
@@ -397,15 +339,13 @@ align microsoft/microsoft-sql by pull request, issue first. Three version lines 
   its 29 files carry the stamp; a patch release touches 6 files (`f9e57c8`).
 - **Prerequisite KB, v1.11 to v1.12:** 7 lines in 6 files (`prerequisite.md` 3, prerequisite `SKILL.md` 126
   and 256, both contracts line 4, `path-catalog.json` 3, `schemas/output.schema.json` 28).
-- **Connectivity KB, v0.10 to v0.11:** 5 lines in 3 files and a changelog row (counted in the
-  implementation audit).
 
 ## Not doing
 
-The 22 findings below are not retained. Row 30 moved back to To do on 23 November: the production warning is correct, but the diagnostic itself is wrong in Strict mode. Nothing is to be edited in the
+The 19 findings below are not retained. Nothing is to be edited in the
 knowledge base for them. They stay recorded so that the weekly check does not raise them again as new.
-The four re-baseline rows (13, 21, 25, 37) still need their claim re-baselined by the script, after
-revalidating the source and the section (see "Weekly check gaps").
+Row 13 still needs its claim re-baselined by the script, after revalidating the source and the
+section (see "Weekly check gaps").
 
 | # | Finding | Decision | Why |
 |---|---|---|---|
@@ -415,9 +355,6 @@ revalidating the source and the section (see "Weekly check gaps").
 | 8 | BACPAC and `BACKUP-BLOB-PATH` | Already fixed in the rules | `decision-rules.md` 40 and 556 scope it to "only when that workflow stages the file in Blob". For a Fabric import, P11-004 follows in row 16. |
 | 13 | Appliance sizes | Re-baseline only | P28-003 matches the page (VMware 32 GB, 8 vCPU, about 80 GB). |
 | 14 | One anchor and two 403/429 links (14 Sept) | Closed | The artifact expired. The 2 Nov and 9 Nov reports list no 403/429 link; the broken anchor is now row 39. |
-| 21 | SqlClient TLS defaults drift | Re-baseline after row 41 | The defaults in HEAD still match the page. The Learn table also has two rows HEAD lacks (5.1 certificate pinning, 7.0.3 pin validation fails closed), and the 13 Nov servicing releases (row 41) change §5.3. Re-baseline `conn-sqlclient-encryption-defaults` once row 41 lands, after revalidating the source and the section. |
-| 25 | Private endpoint redirect drift | Re-baseline only | HEAD still matches (1433-65535, FQDN, Redirect chosen explicitly, JDBC 9.4 or above). |
-| 37 | ODBC Entra values drift | Re-baseline only | HEAD still matches (no `ActiveDirectoryDefault`, `ActiveDirectoryPassword` deprecated). |
 | 26 | MI regional limits (blog of 24 Aug) | Declined | No row quotes a regional subnet or vCore limit. |
 | 36 | MI link with failover groups | Declined | Pre-announcement of a limited preview (21 Oct), nothing to advise. |
 | 40 | SQL Server on Linux flexible provisioning | Declined | HEAD never mentions the Marketplace images; P25-002 and P26-011 are unaffected. |
@@ -440,18 +377,17 @@ revalidating the source and the section (see "Weekly check gaps").
 - The claims registry watches a Prerequisites section that no longer exists on the Arc migration
   overview, and not its Migration targets section. Row 15 came in through Azure Updates, not through
   the drift check.
-- A finding the run stops proposing is not a fixed finding. Rows 15, 16 and 20 dropped out of the 12 Oct
+- A finding the run stops proposing is not a fixed finding. Rows 15 and 16 dropped out of the 12 Oct
   report and row 17 out of the 19 Oct one because their announcements left the 7-day news window. A
   finding that leaves the window stays open until it lands. The feeds also carry the date of the last
   update, not the publication date, so some posts of 24 Aug, 29 Sep and 21 Oct reached the run weeks late.
   Rows 31 to 34, proposed on 2 Nov, are absent from the 9 and 16 Nov reports and still open.
-- The 14 drifted claims have barely moved since 14 Sept (12 were already drifted then; the list was identical on 9 and 16 Nov): nobody
-  re-baselines a claim until its rule is edited, so the report keeps raising the same list. After the
-  10 Nov audit, six of them sit behind retained rows (1, 4 and 29, 5, 17, 20 and 41) and one behind row 6. Five were re-read and still
-  match their source, but revalidate the source and the section before each re-baseline (see the last bullet): the Azure Data Studio and Data Migration Assistant
-  retirement dates, the
-  private endpoint redirect, ODBC Entra and Azure Migrate appliance claims (the SqlClient claim waits for row 41). Two
-  (Azure Hybrid Benefit applicability, cross-cloud sources) were not re-read in full.
+- The drifted claims have barely moved since 14 Sept: nobody re-baselines a claim until its rule is
+  edited, so the report keeps raising the same list. For the two skills, three of them sit behind
+  retained rows (1, 5 and 17) and one behind row 6. Three were re-read and still match their source, but
+  revalidate the source and the section before each re-baseline (see the last bullet): the Azure Data
+  Studio and Data Migration Assistant retirement dates and the Azure Migrate appliance claim. Two (Azure
+  Hybrid Benefit applicability, cross-cloud sources) were not re-read in full.
 - The link checker says "exited non-zero (`0`)", which contradicts itself. On 9 Nov one link of 559 failed
   and the classifier could not attribute it; on 16 Nov two failed, it attributed one (a 502 on a Tech
   Community post cited at `migration.md` 470, which answers 200 on three retries, so transient) and
@@ -466,30 +402,26 @@ revalidating the source and the section (see "Weekly check gaps").
   generated even where the catalog has no row-level data (P11-010, P13-011, P13-013 and P21-009 exist
   only in the prerequisite markdown). The run takes dates from the knowledge base instead of from the
   source (row 28).
-- The run's corrections need reading against the source before they are applied: on 10 Nov three of
-  its proposals were wrong or incomplete (rows 20, 28 and 35), and on 16 Nov the one for row 41
-  misstates the trigger.
+- The run's corrections need reading against the source before they are applied: on 10 Nov two of
+  its proposals were wrong or incomplete (rows 28 and 35).
 
 ## Sources
 
 | Row | URL |
 |---|---|
 | 1 | https://learn.microsoft.com/en-us/fabric/database/sql/migration-assistant ; https://learn.microsoft.com/en-us/fabric/fundamentals/whats-new |
-| 4, 29 | https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/connection-types-overview |
 | 5 | https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/log-replay-service-migrate |
 | 6 | https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migrate-to-azure-sql-managed-instance ; https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migration-overview |
 | 15 | https://azure.microsoft.com/updates?id=571795 ; https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migration-overview |
 | 16 | https://learn.microsoft.com/en-us/fabric/database/sql/sqlpackage ; https://learn.microsoft.com/en-us/fabric/fundamentals/migration |
 | 17, 35 | https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-feature-overview ; https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-extend-availability-group ; https://techcommunity.microsoft.com/t5/azure-sql-blog/mi-link-support-for-multiple-databases-in-an-always-on/ba-p/4560546 |
 | 19 | https://learn.microsoft.com/en-us/sql/linux/sql-server-linux-use-log-shipping |
-| 20 | https://learn.microsoft.com/en-us/sql/connect/jdbc/connecting-using-azure-active-directory-authentication |
 | 28 | https://azure.microsoft.com/updates?id=569535 ; https://learn.microsoft.com/en-us/azure/azure-vmware/portable-vcf-licensing-reference |
 | 31 | https://learn.microsoft.com/en-us/sql/tools/sqlpackage/sqlpackage-export (does not state the instance-object point) |
 | 32 | https://learn.microsoft.com/en-us/sql/linux/replication/overview |
 | 33 | https://learn.microsoft.com/en-us/sql/relational-databases/replication/security/secure-the-snapshot-folder |
 | 34 | https://learn.microsoft.com/en-us/azure/data-factory/connector-sql-server |
 | 39 | https://learn.microsoft.com/en-us/azure/migrate/tutorial-migrate-vmware |
-| 41 | https://techcommunity.microsoft.com/t5/sql-server-blog/microsoft-data-sqlclient-7-1-2-7-0-4-and-6-1-8-are-now-available/ba-p/4573321 ; https://learn.microsoft.com/en-us/sql/connect/ado-net/encryption-and-certificate-validation |
 
 ## Out of scope
 
