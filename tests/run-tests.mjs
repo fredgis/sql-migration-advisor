@@ -542,8 +542,9 @@ try {
     // held by the rules and the prerequisite knowledge base.
     for (const [label, text] of [['reference\\decision-rules.md', rules], ['docs\\sql-server-to-azure-migration-prerequisite.md', prereq]]) {
       if (!/30 August 2027|2027-08-30/iu.test(text)) failures.push(`${label} does not state the AVS license-included end of service`);
-      if (!/15 October 2026|2026-10-15/iu.test(text)) failures.push(`${label} omits the AVS pay-as-you-go retirement date, which lands ten months before the one usually quoted`);
-      if (!/31 October 2026|2026-10-31/iu.test(text)) failures.push(`${label} omits the AVS end of new license-included sales`);
+      if (!/1 November 2025|2025-11-01/iu.test(text)) failures.push(`${label} omits the date from which new AVS deployments need a portable VCF subscription`);
+      if (!/31 October 2026|2026-10-31/iu.test(text)) failures.push(`${label} omits the date by which license-included pay-as-you-go had to transition`);
+      if (/15 October 2026|2026-10-15/iu.test(text)) failures.push(`${label} still dates a pay-as-you-go retirement to 15 October 2026, a date no source gives`);
     }
     for (const [label, text] of [['docs\\sql-server-to-azure-migration.md', kb], ['reference\\decision-rules.md', rules]]) {
       for (const line of text.split(/\r?\n/)) {

@@ -114,11 +114,11 @@ purchasing option: Microsoft stops bundling a VMware licence, and continued use 
 customer-provided **portable VMware Cloud Foundation subscription** bought from Broadcom and
 registered per private cloud.
 
-| Date | What ends |
+| Date | What changes |
 | --- | --- |
-| **15 October 2026** | License-included **pay-as-you-go** SKUs |
-| **31 October 2026** | **New sales** of license-included AVS |
-| **30 August 2027** | Service for the remaining reserved-instance SKUs |
+| **1 November 2025** | New deployments must use a **portable VCF** subscription |
+| **31 October 2026** | License-included **pay-as-you-go** must have transitioned to portable VCF |
+| **30 August 2027** | License-included **reserved instances** end; a reservation that expires earlier ends at its expiry |
 
 Quoting only the last date understates the problem by ten months, which is why all three are here.
 
@@ -130,8 +130,9 @@ Quoting only the last date understates the problem by ten months, which is why a
 
 **Never report AVS as retiring.** The target is not going away; a purchasing option is. Telling a
 customer otherwise steers them off a supported platform for the wrong reason. And never rank AVS
-without the licence question settled: Broadcom procurement runs in weeks, so a recommendation made
-on a pay-as-you-go assumption today expires before the project starts.
+without the licence question settled: license-included pay-as-you-go had to transition by 31 October
+2026 and Broadcom procurement runs in weeks, so a recommendation that assumes it rests on an option
+that has already ended.
 
 ### A2. Hard compatibility rules (Phase A only)
 These are filters, not preferences:

@@ -917,9 +917,9 @@
       "licensingBoundary": {
         "prerequisite": "P27-003",
         "rule": "VCF licence coverage must span the whole planned period. An existing license-included reservation covers the hosts only until the earlier of its own expiry and 2027-08-30; portable VCF licensing is required from that boundary onward.",
-        "licenseIncludedPayGoRetires": "2026-10-15",
-        "licenseIncludedNewSalesEnd": "2026-10-31",
-        "licenseIncludedServiceEnds": "2027-08-30",
+        "portableVcfRequiredForNewDeployments": "2025-11-01",
+        "licenseIncludedPayGoTransitionBy": "2026-10-31",
+        "licenseIncludedReservedInstancesEnd": "2027-08-30",
         "note": "AVS itself is not retiring, only the bundled-licence purchasing option. Never render this as the target going away. Quoting only the 2027 date understates the deadline by ten months, and Broadcom procurement runs in weeks.",
         "source": "https://azure.microsoft.com/updates?id=569535"
       },
