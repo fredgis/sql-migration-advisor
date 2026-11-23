@@ -583,7 +583,10 @@ P07.
 ## 31. P28 — SQL VM / AVS / SQL MI / SQL DB: Azure Migrate assessment
 
 Azure Migrate assessment produces the discovery inventory, readiness verdict and business case that
-precede a migration decision. It moves no data. The Azure Migrate **replication** method is a
+precede a migration decision. It moves no data. Azure Migrate is now named **Azure Catalyst (formerly
+Azure Migrate)**; the rows below keep the names the portal, appliance and documentation still use. For an
+application assessed together with its database, the Modernize CLI is an alternative assessment entry point;
+it does not change these prerequisites. The Azure Migrate **replication** method is a
 different route, covered by P06.
 
 | ID | Prerequisite | Type | Blocking | Owner | Applicability | Evidence required | Official source | Verified |

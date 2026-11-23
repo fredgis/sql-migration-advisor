@@ -532,7 +532,8 @@ Rules:
 | --- | --- |
 | DBA-first, Windows, single/few DBs | **SSMS 22 Migration Component** |
 | Arc-enabled source or assess-first/in-place | **SQL Server migration in Azure Arc** and Arc best-practices assessment |
-| Estate scale / business case / dependency map | **Azure Migrate** appliance or import (GA); Arc-based agentless discovery is **Preview**, so select it only when the customer accepts preview services |
+| Estate scale / business case / dependency map | **Azure Migrate** appliance or import (GA), now named **Azure Catalyst (formerly Azure Migrate)**; Arc-based agentless discovery is **Preview**, so select it only when the customer accepts preview services |
+| Application and database assessed together | **Modernize CLI** (GitHub Copilot modernization agent): SQL Server readiness, blockers, target, sizing and estimated cost alongside the application assessment. An assessment, never a migration method |
 | Readiness / strategy / ROI / landing-zone planning **on existing Azure Migrate data** | **Azure Copilot Migration Agent** *(Preview)* — **`COPILOT-AGENT`.** Select only when `preview_acceptable = PREVIEW_ACCEPTED` and an Azure Migrate assessment already exists: it reasons over collected data, it does not collect and it does not move data. Never treat it as a migration method, and never let it replace SQL assessment or method selection, which stay with Azure Migrate, Arc, SSMS and DMS. |
 | Orchestrate at scale / CI-CD | **modern Azure DMS** + **`Az.DataMigration`** |
 | Heterogeneous source modernization | **SSMA** for Oracle/Sybase/DB2/MySQL/Access; not for homogeneous SQL→SQL |

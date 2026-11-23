@@ -638,7 +638,7 @@ Field definitions:
 - **Ask in the user's language.** If the user writes in French, ask in French.
 - **Separate three layers**: target/runtime, control plane/assessment, and migration method.
 - **Do not overstate certainty.** Say “preliminary recommendation”, “recommended assessment path”, or “migration disposition”; do not promise the “best path” before assessment.
-- **No retired tools.** Do not recommend DMA, Azure Data Studio SQL Migration extension, DMS classic SQL scenarios, or SQL Data Sync. Use SSMS 22 Migration Component, SQL Server migration in Azure Arc, modern Azure DMS, Azure Migrate, and `Az.DataMigration` as appropriate.
+- **No retired tools.** Do not recommend DMA, Azure Data Studio SQL Migration extension, DMS classic SQL scenarios, or SQL Data Sync. Use SSMS 22 Migration Component, SQL Server migration in Azure Arc, modern Azure DMS, Azure Migrate (now Azure Catalyst), the Modernize CLI when the application is assessed with its database, and `Az.DataMigration` as appropriate.
 - **Do not emit a cost estimate unless explicitly sized/priced.** By default the skill emits **cost levers, not an estimate**. Sizing/pricing requires assessment data and Azure pricing assumptions.
 - **One recommendation per distinct profile.** For estates, group similar servers/databases, lead with discovery, then expand the non-obvious profiles.
 
