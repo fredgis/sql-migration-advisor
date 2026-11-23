@@ -42,7 +42,7 @@ Step by step:
 
 1. **Trigger.** The agent matches the user's intent against the `description` in
    [`skills/recommend-migration-path/SKILL.md`](../skills/recommend-migration-path/SKILL.md)
-   front matter (keywords like *migrate SQL Server*, *SQL to Azure*, *SQL in a Day*) and activates the skill.
+   front matter (keywords like *migrate SQL Server*, *SQL to Azure*) and activates the skill.
 2. **Load the source of truth.** It reads the bundled input contract, decision rules, output contract and
    knowledge base. The bundle is the default because the skill now lives below `skills/` and refers back to
    `../../reference/...`; installing only one `SKILL.md` would leave the vocabulary and rules behind. If the

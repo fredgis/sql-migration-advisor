@@ -16,6 +16,30 @@ the ones used since the findings were first recorded, so there are gaps. Nothing
 
 The run reported 15 source-section hash changes (including standalone LRS source versions): review the actual passages before updating hashes, not 15 automatic rule changes. Four dead anchors map to 39 and 45. The separate link scan reported 558 successes out of 559 with no attributable failed URL; no additional dead link is established.
 
+**v3.15.0 (23 November): this repository now carries the official Microsoft publication.** The line
+numbers below were read at v3.14. Convert them before editing:
+
+| File | v3.14 lines | v3.15 lines |
+|---|---|---|
+| `docs/sql-server-to-azure-migration.md` | 1-25 | unchanged |
+| | 27-484 | minus 1 (the §1 partner bullet is gone) |
+| | 485-567 | removed: the former §14 and §15, including the AVS licensing callout (old 530-548) |
+| | 568-650 | minus 84: Sources is now §14 at line 484, and old 622 is now 538 |
+| `reference/decision-rules.md` | 1-514 | unchanged |
+| | 516 onward | minus 1 (D3 lost its programs line) |
+| `skills/recommend-migration-path/SKILL.md` | 9-12 | plus 24 (startup section) |
+| | 14-267 | plus 26 |
+| | 269-661 | plus 28 |
+| | 662 onward | plus 35 |
+| `skills/generate-migration-prerequisite-plan/SKILL.md` | 9-213 | plus 3 |
+| | 214 onward | plus 10 |
+
+Two findings change in substance:
+- **Row 28** loses its knowledge-base part: Microsoft removed the callout. The wrong dates remain in
+  `decision-rules.md` 109-111 and 124, P27-003 and `path-catalog.json` 922-924. The AVS target row now
+  says only "Confirm current portable VCF licensing requirements before recommending it."
+- **Row 1**: the Sources entry for the assistant is now line 538.
+
 ## To do
 
 Criticality, revised on 16 November once the lines were read (it now measures what a customer who
@@ -112,7 +136,7 @@ By knowledge base:
 | Claims watch list: `claims-registry.json` | 1 | 6 | about 1 |
 | **Total** | **21** | **118** | **about 109** |
 
-The advisor knowledge-base release (v3.14 to v3.15, about 20 stamped files) is not counted: see Release.
+The advisor knowledge-base release (now v3.15 to v3.16, about 20 stamped files) is not counted: see Release.
 
 ### What the line audit changed in the rows above
 
@@ -356,7 +380,7 @@ Rows 1, 5, 15, 16, 17, 19, 28 and 35 touch `reference/decision-rules.md`, which 
 coordinated release across every surface the README lists. Ship all the rows above in one release, then
 align microsoft/microsoft-sql by pull request, issue first. Three version lines move:
 
-- **Advisor KB, v3.14 to v3.15:** about 20 stamped files, rewritten by
+- **Advisor KB, v3.15 to v3.16** (v3.15.0 shipped on 23 November with the official publication's content): about 20 stamped files, rewritten by
   `node tools/artifacts/check-artifacts.mjs --fix-prose`, plus the PDF, its preview image, the poster PNG
   and the six SVG mirrors, which are regenerated. The size reference is commit `47eb448`, where about 20 of
   its 29 files carry the stamp; a patch release touches 6 files (`f9e57c8`).

@@ -9,7 +9,7 @@
 //   The citation is then broken while every link checker calls it healthy, and a reader follows it
 //   to a page that does not say what was attributed to it.
 //
-//   An in-document reference such as [§16 Sources](#16-sources-microsoft-learn) breaks whenever a
+//   An in-document reference such as [§14 Sources](#14-sources-microsoft-learn) breaks whenever a
 //   heading is retitled. Nothing external is involved, so no network check would ever see it.
 //
 // Persistent 403 and 429 are reported as unverified rather than broken: a bot filter is not

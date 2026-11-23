@@ -117,7 +117,7 @@ Three checks matter more than the plain reachability:
   the section is gone. The citation is then broken while every link checker calls it healthy. For
   any link carrying a fragment, the page is downloaded and the fragment is matched against a real
   `id` or `name`.
-- **In-document references are proven.** `[§16 Sources](#16-sources-microsoft-learn)` breaks whenever
+- **In-document references are proven.** `[§14 Sources](#14-sources-microsoft-learn)` breaks whenever
   a heading is retitled, and nothing external is involved, so no network check would ever see it.
   Heading slugs are computed and matched.
 - **Addresses written bare are proven.** A policy document tells the model to fetch one literal URL,

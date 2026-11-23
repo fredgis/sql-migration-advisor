@@ -133,7 +133,7 @@ for (const skill of ['recommend-migration-path', 'generate-migration-prerequisit
 // to say something new, it gets a heading and a line in FORK_OWNED rather than a quiet edit.
 const FORK_OWNED = new Map([
   ['## When to Use', 'Carries the repository convention section on what the source version and edition change, which upstream has no equivalent for.'],
-  ['## API Details', 'Upstream describes fetching the live knowledge base. Nothing is fetched here, and the update check is `apm outdated` rather than the plugin command.']
+  ['## API Details', 'Upstream describes fetching the live knowledge base. Nothing is fetched here, and the update check points to the agent host\'s plugin manager and microsoft/microsoft-sql rather than the plugin command.']
 ]);
 const sectionsOf = (text) => {
   const parts = [];
@@ -166,7 +166,9 @@ if (fs.existsSync(advisorSkill)) {
   const keep = (line) => /^\|\s*v[0-9]/.test(line.trim()) || /\b(until|since|before|from)\s+v[0-9]/i.test(line);
   for (const [pattern, replacement] of rewritesFor('references/')) text = text.replace(pattern, replacement);
   text = text.split('\n')
-    .map((line) => (keep(line) ? line : line.replace(/v\d+\.\d+\.\d+/g, release).replace(/v\d+\.\d+(?!\.)/g, kbLine)))
+    // A two-part version may end a sentence ("knowledge base v3.15."), so the guard rejects only a
+    // following digit or ".digit"; a bare (?!\.) let the regex fall back to "v3.1" and wrote "v3.155".
+    .map((line) => (keep(line) ? line : line.replace(/v\d+\.\d+\.\d+/g, release).replace(/v\d+\.\d+(?!\.?\d)/g, kbLine)))
     .join('\n');
   fs.writeFileSync(advisorSkill, text, 'utf8');
 }

@@ -3215,7 +3215,8 @@ try {
   }
   if (shipped.length < 8) failures.push(`only ${shipped.length} bundled file(s) found, so this gate would pass by finding nothing`);
 
-  const listed = new Set([...skill.matchAll(/^\d+\.\s*\[`([^`]+)`\]/gm)].map((m) => m[1]));
+  // An item may open with the instruction, as the published skill does ("1. Open [`…`](…) before …").
+  const listed = new Set([...skill.matchAll(/^\d+\.\s*(?:[A-Z][a-z]+\s+)?\[`([^`]+)`\]/gm)].map((m) => m[1]));
   for (const file of shipped) {
     if (!listed.has(file)) failures.push(`${dir} ships ${file} and the mandatory load list never names it, so the skill is expected to apply a file it was never told to open`);
   }

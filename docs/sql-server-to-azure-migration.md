@@ -2,11 +2,11 @@
 
 > **Goal.** Exhaustively list every way and every tool to migrate a SQL Server database to an Azure service (all PaaS, including containers) or a VM (Azure VM / Azure VMware Solution).
 >
-> **Audience.** Partners, architects, and customer DBAs — usable in pre-sales and as the knowledge base behind the *SQL in a Day* AI Migration Agent ([§14](#14-fy27-sql-motion-context--ai-migration-agent)).
+> **Audience.** Architects and database administrators planning SQL Server migrations to Azure.
 >
-> **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of August 2026). Links are gathered in [§16 Sources](#16-sources-microsoft-learn).
+> **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of August 2026). Links are gathered in [§14 Sources](#14-sources-microsoft-learn).
 >
-> **Version.** v3.14 — 11 September 2026. Change history in [§17 Document version & changelog](#17-document-version--changelog).
+> **Version.** v3.15 — 25 September 2026. Change history in [§15 Document version & changelog](#15-document-version--changelog).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**
@@ -23,7 +23,6 @@
 - **AI runs on data.** Modern, managed databases are the foundation; SQL Server 2025 / Azure SQL add a native `vector` type + functions, **DiskANN** vector indexing (high-throughput ANN search), native `json`, and zero-ETL **Fabric Mirroring** (analytics on OneLake with no pipelines) — making the estate AI-ready and improving migration (enhanced distributed AG).
 - **End-of-support pressure.** Out-of-support SQL Server/Windows versions push modernization; the SQL Server Extended Security Updates programme now covers SQL Server 2014 and SQL Server 2016 only, and ESU is free on Azure VMs / AVS for SQL Server 2014. SQL Server 2016 is paid everywhere (including Azure VM) and non-Azure environments use Azure Arc for ESU subscription/billing — this changes the *stay vs migrate* math.
 - **Cost levers.** Azure Hybrid Benefit (AHB) applies to Azure SQL Database General Purpose / Business Critical in the vCore provisioned compute tier, Managed Instance and VM (not Fabric SQL DB, DTU or serverless). Hyperscale is a creation-date cohort: only single databases with provisioned compute created before 15 December 2023 can apply AHB, and only until December 2026; databases created on or after that date have no SQL software license fee to offset.
-- **Partner leverage.** Sharing a deal with a partner increases win rate and deal size; programs like Cloud Accelerate Factory and SQL in a Day industrialize delivery ([§14](#14-fy27-sql-motion-context--ai-migration-agent)). Commercial & funding levers are detailed in [§15](#15-commercial-levers--funding-programs-fy27).
 - **Concrete forcing function.** SQL Server 2016 left extended support on 15 July 2026 and is now in ESU Year 1 (15 Jul 2026–13 Jul 2027; Year 3 ends 17 Jul 2029). "Stay" means paid ESU, and SQL Server 2016 requires a paid ESU subscription even on Azure VM.
 
 | Version | Extended End of Support | Status (Jul 2026) |
@@ -129,7 +128,7 @@ flowchart TD
 | # | Target | Layer | When to choose it | Compatibility | Doc |
 | --- | --- | --- | --- | --- | --- |
 | 1 | SQL Server on Azure VM | IaaS | Faithful lift & shift: OS / file-system control, exact version, FileStream/FileTable, PolyBase, cross-instance DTC, third-party agents. | Full | [overview](https://learn.microsoft.com/en-us/data-migration/sql-server/virtual-machines/overview) |
-| 2 | Azure VMware Solution (AVS) | IaaS | Zero-refactor data-center exit for existing VMware estates; keeps FCI and Always On AG; migrate with VMware HCX / vMotion. **Licensing has a deadline: see §15.1.** | Full | [AVS](https://learn.microsoft.com/en-us/azure/azure-vmware/introduction) |
+| 2 | Azure VMware Solution (AVS) | IaaS | Zero-refactor data-center exit for existing VMware estates; keeps FCI and Always On AG; migrate with VMware HCX / vMotion. Confirm current portable VCF licensing requirements before recommending it. | Full | [AVS](https://learn.microsoft.com/en-us/azure/azure-vmware/introduction) |
 | 3 | Azure SQL Managed Instance | PaaS | Managed lift-and-shift: keep instance objects (logins, SQL Agent, server triggers, cross-DB, linked servers), native vNet. Tiers GP / BC / Next-gen GP *(GA since Nov 2025 — Elastic SAN backend: 500 DBs, 128 vCores, 32 TB, 80K IOPS, 192 MB/s log, 3–4 ms latency, configurable IOPS/memory; ~5x better price-per-DB by density)*. **Zone redundancy on Next-gen GP is public preview** — the tier is GA, that capability is not, so do not count it as available when preview services are unacceptable. Free offer: 1 instance / 12 months. ⚠️ No Hyperscale on MI. | ~Near-full (instance) | [overview](https://learn.microsoft.com/en-us/data-migration/sql-server/managed-instance/overview) |
 | 4 | Azure SQL Database | PaaS | Cloud-native app / microservice. Models: single DB / elastic pool; tiers GP / BC / Hyperscale; purchasing vCore / DTU / serverless. Hyperscale scales to 128 TB (large / HTAP); serverless for intermittent; elastic pools for consolidation. Free offer: 10 serverless DBs for the subscription lifetime. | Database surface (no instance-level) | [overview](https://learn.microsoft.com/en-us/data-migration/sql-server/database/overview) |
 | 5 | SQL database in Fabric | PaaS | Fabric-native OLTP unified with OneLake. The **target itself is GA**; only the Fabric Migration Assistant is Preview, with tool limits (DACPAC schema ≤ 20 MB, on-prem data gateway only, no Private Link). The target also accepts T-SQL, transactional replication, Fabric pipelines / Data Factory copy jobs, Dataflow Gen2, and other TDS-capable tools, so assistant limits alone must not eliminate it. Assess the database surface before committing an enterprise OLTP workload. | Subset of the SQL Server surface | [SQL database in Fabric](https://learn.microsoft.com/en-us/fabric/database/sql/overview) · [Migration Assistant *(Preview)*](https://learn.microsoft.com/en-us/fabric/database/sql/migration-assistant) |
@@ -146,7 +145,7 @@ flowchart TD
 | Tool / experience | Role | Status (2026) | Notes |
 | --- | --- | --- | --- |
 | [Azure Migrate](https://learn.microsoft.com/en-us/azure/migrate/how-to-create-azure-sql-assessment) | Discovery / assessment / sizing / business case at scale | GA (+ Arc-based agentless discovery, Preview) | Appliance (VMware/Hyper-V/Physical) or import-based or Arc-based. Right-sizes SQL DB / MI / VM. |
-| [Azure Copilot Migration Agent](https://learn.microsoft.com/en-us/azure/migrate/azure-copilot-migration-agent) | **Planning only**: analyses existing Azure Migrate data for readiness, strategy, ROI and landing-zone design | Preview | Not a data-movement method and not an assessment collector — it reasons over data Azure Migrate already gathered, so it presupposes an assessment rather than replacing one. Distinct from the SQL in a Day advisor skill in this repository, which interviews a person and reads no estate data. |
+| [Azure Copilot Migration Agent](https://learn.microsoft.com/en-us/azure/migrate/azure-copilot-migration-agent) | **Planning only**: analyses existing Azure Migrate data for readiness, strategy, ROI and landing-zone design | Preview | Not a data-movement method and not an assessment collector — it reasons over data Azure Migrate already gathered, so it presupposes an assessment rather than replacing one. Distinct from the interview-based recommendation skill in this repository, which reads no estate data. |
 | [SQL Server migration in Azure Arc](https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migration-overview) | Portal-driven assess + migrate for any Arc-enabled SQL Server | GA; **MI and VM targets both GA** | Copilot-assisted; targets **Azure SQL MI** (MI Link / LRS) and — **GA July 2026** — **SQL Server on Azure VM** ([lift-and-shift, native backup/restore](https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migrate-to-sql-server-on-azure-vms)); continuous assessment; Arc-enabled SQL Server 2014+ overall, with MI Link requiring SQL Server 2016+ and, on this Arc-driven path, **Windows Server only**. The Azure Arc portal MI wizard can select up to 10 databases per batch with Azure Extension for SQL Server ≥ 1.1.3348.364 (earlier versions: one database at a time); this is an Arc wizard batch limit, not MI Link capacity. |
 | [SSMS 22 Migration Component](https://learn.microsoft.com/en-us/ssms/migrate/migrate-sql-server-azure-sql) | DBA-first entry point: assess + launch a recommended migration path from SSMS | GA (Windows-only) | Replaces DMA-era workflows and complements the ADS migration extension. **Migrate SQL Server assesses SQL Server instances and migrates them to Azure SQL today.** Backup/restore, MI Link, DMS. Arc-enabled sources can reuse readiness assessments already collected through Azure Arc. |
 | [Azure DMS (modern)](https://learn.microsoft.com/en-us/azure/dms/dms-overview) | Managed migration orchestration (Azure resource · portal / PowerShell / CLI) | GA | Use the modern DMS — former DMS *classic* SQL scenarios are absorbed into the current portal experience. Offline-only to Azure SQL DB; online/minimal-downtime to MI / SQL VM (MI Link preferred for MI). |
@@ -482,90 +481,7 @@ Microsoft describes LRS as an online migration with expected downtime during cut
 
 ---
 
-## 14. FY27 SQL Motion context & AI Migration Agent
-
-This document is the knowledge base behind the **FY27 EMEA EPS — Data Motion "SQL in a Day"**. Two notes:
-
-- **Storyline correction.** The deck line *"Azure Migrate, DMA, DMS, SSMA, Cloud Accelerate Factory"* must drop DMA (retired) → use *"Azure Migrate, SSMS 22 + Arc-based assessment, DMS, SSMA, Cloud Accelerate Factory"*. A 4th target pillar — SQL Server enabled by Azure Arc — should appear alongside VM / MI / SQL DB.
-- **AI Migration Agent — I/O contract.** The afternoon agent scores a preliminary recommended assessment path for the customer estate; confirm outputs with tool-based assessment and an architect. Suggested flow so it's usable by both humans and automation:
-
-```mermaid
-%%{init: {'flowchart': {'nodeSpacing': 30, 'rankSpacing': 55}, 'themeVariables': {'fontSize': '12px'}}}%%
-flowchart LR
-    IN["📥 INPUT · estate inventory<br/>per server: version · edition · OS · cores · RAM<br/>dbCount · totalSizeGB<br/>features: FileStream / PolyBaseCloudFiles / PolyBaseExternalRDBMS / CrossDB / DTCSqlToSql / DTCThirdParty / SQLAgent / LinkedServers / TDE<br/>ioBaselineMs · peakCPU · networkMbps · downtimeToleranceMin<br/>compliance: Gov / EU / sovereign · sourceCloud: onprem / AWS / GCP"]
-    AGENT{{"🤖 AI Migration Agent<br/>scoring engine<br/>(this knowledge base +<br/>Microsoft migration corpus)"}}
-    OUT1["📤 OUTPUT · per database<br/>preliminaryRecommendedTarget: VM / AVS / MI / SQLDB / FabricSQLDB / ArcMI<br/>method: MILink / LRS / BackupRestore / DAG / …<br/>downtimeClass: near-zero / minimal / offline<br/>blockers · remediations<br/>estMonthlyCost · ahbEligible · esuPath"]
-    OUT2["🎯 programFit<br/>cloudAccelerateFactory · sqlInADay · azureAccelerate"]
-    IN --> AGENT
-    AGENT --> OUT1
-    AGENT --> OUT2
-    classDef in fill:#0F6CBD,stroke:#0A4C86,color:#fff;
-    classDef ag fill:#B14FD8,stroke:#7A2E97,color:#fff;
-    classDef out fill:#2E9E63,stroke:#1F6B43,color:#fff;
-    class IN in;
-    class AGENT ag;
-    class OUT1,OUT2 out;
-```
-
-**Microsoft programs to attach:** Cloud Accelerate Factory (zero-cost delivery), Azure Accelerate / FastTrack, AHB + ESU via Arc — detailed in [§15](#15-commercial-levers--funding-programs-fy27).
-
----
-
-## 15. Commercial levers & funding programs (FY27)
-
-> Two money levers to combine on every deal: **(A) Microsoft-funded engagement** money (assess / pilot / migrate) and (B) commercial / licensing levers that durably cut TCO.
-> ⚠️ **Amounts, ratios and program names are partner-confidential and drift each fiscal year (FY27 starts 1 Jul 2026) — re-validate live in Partner Center / the MCI guide before quoting.**
-
-### 15.1 Commercial / licensing levers (permanent TCO reducers)
-
-| Lever | What it saves | Mechanics |
-| --- | --- | --- |
-| Azure Hybrid Benefit (AHB) | 30%+ on eligible Azure SQL DB / MI; compute-only on VM | License + Software Assurance reallocated to Azure; 1 Enterprise core = 4 GP vCores; 180-day dual-use during migration; portal toggle. Applies to Azure SQL Database General Purpose / Business Critical in the vCore provisioned compute tier, not to the DTU model, serverless compute tier, or Fabric SQL DB. Hyperscale carries a creation-date cohort: AHB can only be applied to Hyperscale single databases with provisioned compute **created before 15 December 2023**, and only until December 2026, after which they too move to the simplified pricing. Hyperscale databases created on or after that date are **not** AHB-eligible because the simplified pricing already removed the software licence fee. |
-| ESU on Azure — version boundary | Removes ESU cost only for eligible older versions | The SQL Server ESU programme now covers **SQL Server 2014 and SQL Server 2016 only**: 2014 reached end of support on 10 July 2024 with ESUs until 13 July 2027, and 2016 reached end of support on 15 July 2026 with ESUs until 17 July 2029. Azure VMs / AVS: ESU free and automatic for SQL Server 2014; SQL Server 2016 requires a paid ESU subscription even on Azure VM. SQL Server 2012 and earlier have no ESU path left, so do not describe them as covered. Azure SQL PaaS has no ESU concept; on-prem / multicloud / hosted use Azure Arc for ESU subscription or PAYG billing; non-prod free when prod runs ESU via Arc. |
-| PAYG licensing via Arc | Turns the SQL license into OpEx | Billed only when SQL runs; CALs included; can sit inside a MACC. Requires active SA or PAYG enabled. |
-| Free Azure SQL offers | Zero-cost POC / pilots | MI free 12 months; SQL DB free for the subscription lifetime (serverless GP). |
-| Reservations / Savings Plans | 1- / 3-yr commitment discount | Stacks with AHB. ⚠️ Partner Earned Credit (15%) does not apply to reservations. |
-| Savings plan for databases | up to 35% on Azure SQL (DB / MI) | 1- or 3-year hourly compute commitment; auto-applies across participating database services up to the commitment; stacks with AHB. |
-
-> **⚠️ AVS licensing has a deadline, and it is not one date.** The Azure VMware Solution
-> **license-included** service is being retired: Microsoft will no longer bundle a VMware licence
-> with AVS, and continued use requires a customer-provided **portable VMware Cloud Foundation (VCF)
-> subscription bought from Broadcom**. Three dates matter, and quoting only the last one understates
-> the problem by ten months:
->
-> | Date | What happens |
-> | --- | --- |
-> | **15 October 2026** | License-included **pay-as-you-go** SKUs retire |
-> | **31 October 2026** | **No new sales** of license-included AVS |
-> | **30 August 2027** | End of service for the remaining reserved-instance SKUs |
->
-> **AVS itself is not retiring** — only the bundled-licence option. Do not tell a customer the target
-> is going away. But do not recommend AVS without confirming access to a portable VCF licence and its
-> cost either: a recommendation made today on a pay-as-you-go assumption fails in under two months,
-> and Broadcom procurement is measured in weeks. Registration is per private cloud, not per
-> subscription. Source:
-> [Azure update 569535](https://azure.microsoft.com/updates?id=569535) and the
-> [portable VCF licensing reference](https://learn.microsoft.com/en-us/azure/azure-vmware/portable-vcf-licensing-reference).
-
-### 15.2 Microsoft-funded engagement programs
-
-| Program | Funds | Access |
-| --- | --- | --- |
-| Azure Accelerate (FY26 umbrella = *Azure Migrate & Modernize* + *Azure Innovate* + *Cloud Accelerate Factory*) | Assessments, POC, pilots, deployments, Azure credits, skilling | Self-serve — Partner Center nomination → POE → paid ≤ 45 days |
-| Azure Accelerate for Databases | SQL / data-estate modernization | Same workflow (database scenario) |
-| Cloud Accelerate Factory | Zero-cost Microsoft expert deployment | Via Azure Accelerate in Partner Center |
-| FastTrack for Azure | Free Microsoft engineering guidance (not cash) | Account team / program alias |
-| ECIF (End-Customer Investment Funds) | Assessments, POCs, migrations, training | Field-led via PDM / AE — not self-serve |
-| Azure Frontier Offer (ECIF + ACO, dual-run offset) | Services + dual-run during migration; competitive Oracle / legacy displacement | Field-led via PDM; typically ≥ 50% ACR from Fabric / first-party Databases / AI |
-
-### 15.3 Partner mechanics
-- **Attribution first** (funding prerequisite): link the customer via PAL (Partner Admin Link) or DPOR → unlocks the 15% Partner Earned Credit on managed Azure consumption.
-- **Routes:** *Self-serve* (Partner Center) — Azure Accelerate, Databases, Cloud Accelerate Factory · *Field-led* (engage the PDM early) — ECIF, Azure Frontier Offer · *Customer self-serve* (Azure portal) — AHB, ESU, free offers, reservations.
-- **Typical sequence:** Azure Migrate discovery + TCO → nominate assess/pilot in Azure Accelerate (Databases) → if competitive or ≥ 50% data ACR, engage PDM for the Azure Frontier Offer → pilot on free SQL DB / MI → CAF for zero-cost deploy → POE → lock run-rate with reservations.
-
----
-
-## 16. Sources (Microsoft Learn)
+## 14. Sources (Microsoft Learn)
 
 **Overviews & taxonomy**
 - Database Migration hub — <https://learn.microsoft.com/en-us/data-migration/>
@@ -648,7 +564,6 @@ flowchart LR
 - SQL Server 2016 lifecycle — <https://learn.microsoft.com/en-us/lifecycle/products/sql-server-2016>
 - Azure SQL MI free offer — <https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/free-offer>
 - Azure SQL DB free offer — <https://learn.microsoft.com/en-us/azure/azure-sql/database/free-offer>
-- Azure Accelerate (partner programs) — <https://partner.microsoft.com/en-us/partnership/azure-offerings>
 - Tool consolidation / retirement (blog) — <https://www.microsoft.com/en-us/sql-server/blog/2024/09/12/modernize-your-database-with-the-consolidation-and-retirement-of-azure-database-migration-tools/>
 - Cloud Adoption Framework — migrate — <https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/migrate/>
 - Azure landing zones (CAF) — <https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/landing-zone/>
@@ -659,15 +574,16 @@ flowchart LR
 
 ---
 
-## 17. Document version & changelog
+## 15. Document version & changelog
 
-Current version: **v3.14** (2026-09-09).
+Current version: **v3.15** (2026-09-25).
 
 <details>
-<summary><b>Version history</b> (current: v3.14)</summary>
+<summary><b>Version history</b> (current: v3.15)</summary>
 
 | Version | Date | Changes |
 | --- | --- | --- |
+| v3.15 | 2026-09-25 | Removed commercial programs, funding mechanics, and event-specific material that was not intended for public distribution. Public product guidance and Microsoft Learn references remain. |
 | v3.14 | 2026-09-12 | **`DMS-MODE` decides something now.** The rule has named `recovery_model` and `log_chain_status` as its inputs since those became typed fields, and the engine read neither, so online DMS came back available on a source in SIMPLE recovery with a broken log chain: the one state the rule exists to refuse. `AVS-LICENSING` and `COPILOT-AGENT` were in the same position, naming `target_region` and `preview_acceptable` and reading nothing. All three read their inputs, and a check compares the rule index against the engine rather than against the schema. |
 | v3.13 | 2026-09-12 | **A family nobody evaluated no longer reports that it cannot work.** Five of the eight start at `unsupported` and the rules promote what applies, so a family no rule reached kept an initial value that reads as a technical refusal, with no rule id and no reason behind it. Invariant 11 refuses a family that disappears; one that stays visible carrying a verdict nobody pronounced is the same thing, harder to see because it looks argued. Families the profile's own preferences explain are `excluded_by_preference` with that reason, and no family may report `unsupported` without a recorded one. |
 | v3.12 | 2026-09-12 | **The refusal to recommend is a state now, not a sentence in the target field.** Section B1 has always said never invent a winner when no rule separates the candidates, and the only way to say so was `target: "provisional shortlist only"`, which validated because that field accepted any string. A reader got something shaped like a target and resolvable as nothing. `recommendationStatus` gains `shortlist`, `recommendation.target` becomes an enumeration of the eight families, and a shortlist names at least two of them with what would separate each. |
@@ -700,7 +616,7 @@ Current version: **v3.14** (2026-09-09).
 | v1.17 | 2026-08-10 | **A deep dead-code audit, and a third instance of the same defect.** A repository-wide reference count found two functions defined and referenced nowhere, `isSelfManagedSource` in the engine and `hasText` in the harness, plus an `inputs.tier` branch reading an input this document never declares and no scenario supplies. All three are removed. Two real defects surfaced while covering what remained. **Fabric:** `no private link required` contains `private link required` as a substring, so the unanchored test read the negation as its opposite. Three of the four Fabric scenarios were being handed a Private Link blocker they had explicitly ruled out, which also masked the DACPAC and preview gates below: those branches had never executed, and the scenario named *preview gates met* had been recorded as Azure SQL Database when its own inputs make Fabric eligible. **Downtime:** an unanswered cutover tolerance produced a stated class of "minutes" at medium confidence with no unknown recorded, the same failure as the dependency defect of v1.15 and the tier defect of v1.16. A downtime class is a promise made to the business, so an unknown tolerance now yields `unknown_requires_assessment`, and this document's list of decision-driving unknowns gains the cutover tolerance it had been missing while `SKILL.md` already carried it. Guards that `evaluate()` cannot reach by construction are exercised directly by a new sixteenth gate rather than deleted, because a net nobody has tested is a net nobody should rely on. Engine coverage moves from 92.25/87.96/95.74 to **100% of lines, 92.27% of branches and 100% of functions**, across 86 scenarios. |
 | v1.16 | 2026-08-10 | **Two knowledge-base corrections and one interview rebuild.** §12's summary matrix rated Fabric SQL database's minimum achievable downtime as hours, contradicting §5.2 of this same document, which records transactional replication as an **Online** path to a Fabric SQL database push subscriber. A summary that contradicts its own detail row is what a reader skims, and this one silently eliminated Fabric from every low-downtime shortlist; the cell now carries the replication path and its SQL Server 2022 RTM CU12+ and primary-key conditions. Separately, the decision rules offered Azure Migrate appliance, import and Arc discovery as interchangeable, while §6 of this document records **Arc-based agentless discovery as Preview**: the rules now mark it and select it only when the customer accepts preview services. Both corrections are locked by new forbidden-pattern gates, each verified against the exact wording it replaces. The interview drops multi-selects entirely, because every one it has ever shipped came back empty in real sessions while every single-select returned its value; list answers are captured as free text. Two engine defects found while testing that: the small-database signal `150 gb` was unanchored and matched the `150 GB – 4 TB` range, which is not small, and it was evaluated **before** the unknown branch, so a user who answered "not sure" on tier drivers was still given General Purpose. |
 | v1.15 | 2026-08-10 | No knowledge-base fact changed. Fixed a defect where an unanswered multi-select was indistinguishable from an explicit "none". Ticking nothing is the natural gesture both for *the workload uses none of these features* and for *I have not checked*, so the two collapsed into a single answer the interview could not tell apart. The two layers then disagreed about what that answer meant: `SKILL.md` read an empty list as **unknown**, while the engine's `dep()` helper returned `false` for every probe and read it as **no dependencies**, silently clearing the SQL MI and Azure SQL Database feature blockers. The engine's reading was the dangerous one, because it upgraded a recommendation on evidence nobody had given. Every multi-select is now gated behind a single-select that names the intent (`None, confirmed` / `Let me select them` / `Not checked yet`), so a blank answer can no longer carry meaning, and the engine resolves a blank `feature_dependencies` list to `unknown_requires_assessment` rather than to a pass. Question 13's conflated `none/unknown` option is split for the same reason: those are opposite answers and only one of them supports a tier choice. Golden scenario `empty-dependency-answer-is-not-none` locks the behaviour, and the example recommendation's stale `knowledgeBase.version` of `1.6` is corrected. |
-| v1.14 | 2026-08-10 | No knowledge-base fact changed. `SKILL.md` was restructured onto the ten-section template used by `microsoft/sql-migration-agent` (Description, When to Use, User Inputs, Authentication, API Details, Operations, Output Presentation, Guidelines, Error Handling, Examples), the skill renamed **assessment-advisor** to clear the collision with that repository's agent, `allowed-tools` declared and `license` dropped, and the internal `FY27` and `SQL in a Day` wording removed from the description including as an activation trigger. Four sections that did not exist were written: When to Use, Authentication with its permissions table, API Details, and a worked Example. The knowledge base and the decision rules keep their content unchanged; only the version stamp moved. |
+| v1.14 | 2026-08-10 | No knowledge-base fact changed. `SKILL.md` was restructured onto the ten-section template used by `microsoft/sql-migration-agent` (Description, When to Use, User Inputs, Authentication, API Details, Operations, Output Presentation, Guidelines, Error Handling, Examples), the skill renamed **assessment-advisor** to clear the collision with that repository's agent, `allowed-tools` declared and `license` dropped. Four sections that did not exist were written: When to Use, Authentication with its permissions table, API Details, and a worked Example. The knowledge base and the decision rules keep their content unchanged; only the version stamp moved. |
 | v1.13 | 2026-08-10 | Applied the weekly review's two sourced findings, both of which were **surviving occurrences of v1.12 corrections**. §5.2's MI Link method row still carried the Windows Server 2016+ floor, spelled **`Win Server 2016+`**: the abbreviation is why the v1.12 sweep missed it. Step A1's SQL Server on Azure VM row still described free ESU as covering "SQL Server 2014 and earlier", which tells a customer running 2012 or 2008 that they are covered when that programme ended in July 2023. Two new forbidden-pattern gates close both, matching every spelling of the OS floor rather than the one that happened to be searched for, and they immediately found **two further occurrences in the poster** that neither the weekly review nor the two-model audit had reported — the printed artefact handed to partners was quoting the stale ESU boundary. Changelog rows are now exempt from the forbidden-pattern check: a version history has to be able to quote the wording later versions forbid, and rewording history to satisfy a gate would falsify the record. |
 | v1.12 | 2026-08-05 | Applied an external two-model adversarial review of the decision rules, after verifying every finding against Microsoft Learn. **MI Link no longer excludes Linux**: Microsoft supports Linux hosts from SQL Server 2017 onwards and documents only SQL Server 2016 as Windows Server only, so v1.11 and earlier pushed a supported host to a planned-cutover method for no reason. The **Windows Server 2016+** floor is removed because no Microsoft page states it; the Arc-portal-driven path keeps its own documented Windows Server only constraint. **MI managed DTC port 135** now carries both directions, as Microsoft requires. **Azure Hybrid Benefit on Hyperscale** is qualified by the 15 December 2023 creation-date cohort, so newer databases are no longer flagged eligible. **Service Broker cross-instance** is a public preview capability gated on `previewAcceptable`, not a hard MI blocker. **ESU** scope narrowed to SQL Server 2014 and 2016 with their dates. Added the Hyperscale elastic-pool 100 TB per-database ceiling. `SKILL.md` still offered SQL MI as a destination for a single database over the Hyperscale ceiling, a fourth surviving occurrence of the v1.9 correction; three new forbidden-pattern gates now cover DTC directionality, the AHB cohort and that destination claim. |
 | v1.11 | 2026-08-05 | §5.5 no longer implies the §5.2 methods apply to Arc-enabled SQL MI: MI Link is scoped to Azure SQL Managed Instance, and exposing a SQL endpoint does not change that. New: the **retained server name / DNS redirect** pitfall — clients validating the TLS hostname or setting `HostNameInCertificate` can break at cutover because Microsoft is changing the MI instance certificate, so inventory and test them before the DNS change. A forbidden-pattern gate now fails whenever the Arc target is described as inheriting the MI methods. |
@@ -711,10 +627,10 @@ Current version: **v3.14** (2026-09-09).
 | v1.6 | 2026-07-27 | Corrected MI Link network ports (including mandatory 11000–11999), MI Link link/database limits versus the Arc wizard batch limit, Azure Arc migration source floors and Microsoft’s LRS-method inconsistency, and LRS downtime semantics / target availability; added the related Microsoft Learn sources. |
 | v1.5 | 2026-07-27 | Corrected SQL MI PolyBase/data-virtualization and DTC nuance; updated transactional-replication publisher versions and Fabric SQL database note; separated standalone LRS floors from Arc portal path floors; replaced the blanket cross-cloud claim with a source×method matrix; documented DEA retirement / Distributed Replay replacement guidance; removed three unsourced migration statistics. |
 | v1.4 | 2026-07-20 | Added GA announcement of SQL Migration to SQL Server on Azure VMs in Azure Arc. |
-| v1.3 | 2026-07-15 | **SQL migration to SQL Server on Azure VMs in Azure Arc is now GA** (public preview since April 2026). Updated the Arc control-plane row (Azure SQL MI + SQL VM targets both GA), the 2025–2026 tooling-reset note, the source→target matrix (added Arc-enabled → SQL VM), and §5.1 (Arc guided VM lift-and-shift). Added the GA announcement and the Learn how-to links (§16). |
+| v1.3 | 2026-07-15 | **SQL migration to SQL Server on Azure VMs in Azure Arc is now GA** (public preview since April 2026). Updated the Arc control-plane row (Azure SQL MI + SQL VM targets both GA), the 2025–2026 tooling-reset note, the source→target matrix (added Arc-enabled → SQL VM), and §5.1 (Arc guided VM lift-and-shift). Added the GA announcement and the Learn how-to links (§14). |
 | v1.2 | 2026-07-03 | Corrected two moved Microsoft Learn links: Smart Bulk Copy (now the Azure-Samples GitHub repo) and Migrate to Arc-enabled SQL MI (renamed to azure-arc/data/migrate-to-managed-instance). Added the weekly link + news freshness automation (GitHub Action). |
 | v1.1 | 2026-07-03 | Azure SQL MI **Next-gen General Purpose** re-classified **preview → GA** (GA since Nov 2025). Dates refreshed to July 2026 (verification note, lifecycle status column, sources footer). All ~45 Microsoft Learn links re-verified. Re-confirmed still-current: Fabric Migration Assistant remains Preview (DACPAC ≤ 20 MB, on-prem gateway only, no Private Link); SSMS 22 Azure SQL assessment still roadmap ~Q3 CY2026; SQL Server 2016 ESU requires paid subscription from 15 Jul 2026; MI Link GA with SQL Server 2025 support + reverse failback to 2022/2025. |
-| v1.0 | 2026-06 | Initial published knowledge base: 8 target families (SQL VM, AVS, SQL MI, SQL DB, Fabric SQL DB, containers AKS/ARO/ACI/ACA, Arc-enabled SQL MI, Arc in-place); targets/control-planes/methods taxonomy; per-target method tables (min source · downtime · constraints); 2025–2026 tooling reset (DMA, ADS, DMS classic, SQL Data Sync retirements); tooling-by-source matrix (incl. STRIIM online to Azure SQL DB); downtime strategy; summary & decision matrices; ancillary components; cross-cloud & reverse migration; third-party alternatives; field insights; commercial & funding levers (AHB / ESU / PAYG · Savings plan for databases · Azure Accelerate); FY27 SQL Motion context & AI Migration Agent I/O contract. |
+| v1.0 | 2026-06 | Initial published knowledge base: 8 target families (SQL VM, AVS, SQL MI, SQL DB, Fabric SQL DB, containers AKS/ARO/ACI/ACA, Arc-enabled SQL MI, Arc in-place); targets/control-planes/methods taxonomy; per-target method tables (min source · downtime · constraints); 2025–2026 tooling reset (DMA, ADS, DMS classic, SQL Data Sync retirements); tooling-by-source matrix (incl. STRIIM online to Azure SQL DB); downtime strategy; summary and decision matrices; ancillary components; cross-cloud and reverse migration; third-party alternatives; and field insights. |
 
 </details>
 

@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Knowledge base v3.14" src="https://img.shields.io/badge/knowledge%20base-v3.14-2b8a3e">
+  <img alt="Knowledge base v3.15" src="https://img.shields.io/badge/knowledge%20base-v3.15-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml/badge.svg"></a>
 </p>
@@ -42,7 +42,6 @@ preliminary recommendation for assessment and validation:
 - **Confidence** — status, assumptions, unknowns, and evidence required ([what the levels mean](#how-it-works))
 - **Downtime class** — near-zero · minimal · offline
 - **Cost levers** — Azure Hybrid Benefit · ESU; not a sizing or pricing estimate
-- **Microsoft program** — Cloud Accelerate Factory · SQL in a Day
 
 It never recommends retired tooling (DMA, the Azure Data Studio extension, DMS *classic*).
 
@@ -60,7 +59,7 @@ version loaded and where it came from, so the advice is traceable.
 
 ## Why it is trustworthy
 
-- **Verified knowledge** — the v3.14 knowledge base is source-backed and corrected against Microsoft Learn.
+- **Verified knowledge** — the v3.15 knowledge base is source-backed and corrected against Microsoft Learn.
 - **Rules under regression test** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers. An executable mirror in `tests/` replays 118 scenarios through those rules on every commit. The mirror is not what runs in your session: an agent reads the rules and applies them, so this is a tested policy rather than a byte-identical guarantee.
 - **Every decision is addressable** — the card cites a rule ID for each verdict, and [`reference/decision-rules.md`](reference/decision-rules.md) ends with an index of all 31. Look one up, read what it consumes and how it treats an unknown, and argue with it.
 - **You see what lost, not just what won** — the card lists every method the knowledge base supports for the chosen target, each with a status and a reason. A method that is never enumerated is never rejected either, so its absence cannot be argued with; that is how Azure DMS stayed out of the Managed Instance guidance while the matrix declared it supported. Any candidate marked `available` can be handed to the prerequisite companion instead of the recommended one.
@@ -77,20 +76,20 @@ The knowledge base is quoted by a skill, three manifests, a PDF, a poster, this 
 
 | Surface | Version | Up to date |
 | --- | --- | --- |
-| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v3.14` | ✅ |
-| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v3.14` | ✅ |
-| `SKILL.md` and its pinned fetch URL | `v3.14.8` | ✅ |
-| `version.json`, `plugin.json`, `marketplace.json` | `v3.14.8` | ✅ |
-| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v3.14` | ✅ |
-| Poster caption and PNG | `v3.14` | ✅ |
-| This README's badge and PDF sentence | `v3.14` | ✅ |
-| **This table** | `v3.14` | ✅ |
+| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v3.15` | ✅ |
+| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v3.15` | ✅ |
+| `SKILL.md` and its pinned fetch URL | `v3.15.0` | ✅ |
+| `version.json`, `plugin.json`, `marketplace.json` | `v3.15.0` | ✅ |
+| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v3.15` | ✅ |
+| Poster caption and PNG | `v3.15` | ✅ |
+| This README's badge and PDF sentence | `v3.15` | ✅ |
+| **This table** | `v3.15` | ✅ |
 | The six `blume/public/*.svg` mirrors | — | ✅ |
 | [`blume/docs/index.mdx`](blume/docs/index.mdx) — the docs site | — | ✅ |
-| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v3.14.8` | ✅ |
-| [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | `v3.14.8` | ✅ |
+| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v3.15.0` | ✅ |
+| [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | `v3.15.0` | ✅ |
 | `howto/*.html` | — | ✅ |
-| The developer pitch's sample failure block | `v3.14` | ✅ |
+| The developer pitch's sample failure block | `v3.15` | ✅ |
 
 <!-- surfaces:end -->
 
@@ -446,18 +445,17 @@ source-backed inventory of *every* way to migrate SQL Server to Azure:
 - The migration methods per target — MI Link · LRS · backup/restore · DAG · DMS · BACPAC · Fabric Migration Assistant.
 - The 2025–2026 tooling reset — DMA / Azure Data Studio / DMS-classic retirements and their replacements.
 - Downtime strategy, decision matrices, field pitfalls and third-party options.
-- Commercial & funding levers — AHB / ESU / PAYG · Azure Accelerate · Cloud Accelerate Factory · SQL in a Day.
 
 Everything is cross-checked against Microsoft Learn (current as of August 2026) with colored
-Mermaid decision diagrams. The `SKILL.md` mirrors its AI Migration Agent I/O contract (§14).
+Mermaid decision diagrams.
 
 ---
 
 ## The knowledge base as a PDF
 
 The same knowledge base ships as a polished, branded PDF —
-[`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (27 pages,
-v3.14, September 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
+[`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (24 pages,
+v3.15, September 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
 
@@ -499,7 +497,7 @@ knowledge base current **every Monday** (~07:00 Europe/Paris — 05:00 UTC), so 
 
 Every run writes a consistency, link, news, claims and AI-review summary to the Actions run, and
 you can trigger it on demand from the **Actions** tab (*Run workflow*). The document carries a
-visible version and a collapsible changelog (§17) so every substantive update is traceable.
+visible version and a collapsible changelog (§15) so every substantive update is traceable.
 
 > Enable *Settings → Actions → General → "Allow GitHub Actions to create and approve pull
 > requests"* so the weekly job can open its PR.
@@ -519,10 +517,11 @@ base and this README on the same version. Last verified: August 2026.
 
 <!-- CHANGELOG:START -->
 <details>
-<summary><b>📓 Changelog</b> — current: <b>v2.8</b> (August 2026)</summary>
+<summary><b>📓 Changelog</b> — current: <b>v3.15</b> (September 2026)</summary>
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| v3.15.0 | 2026-11-23 | **Aligned with the official Microsoft publication.** The knowledge base moves to v3.15, the version Microsoft published in `microsoft/microsoft-sql` on 25 September: it drops the commercial programs, funding mechanics and event-specific material that were not intended for public distribution (the former §14 and §15), so the sources and the changelog become §14 and §15. The decision rules change in one place, D3, which keeps the SLA reference and no longer lists programs; the AVS licensing rule and the cost levers stay in the rules. Both skills take the 17 November refresh: the advisor opens its seven policy files in a startup step before the first question, reads large files in ranges, and cites the bundled knowledge base instead of a GitHub URL; both gain a *Check it worked* section. |
 | v3.14.8 | 2026-09-13 | **One status, two reasons, and only one of them was written down.** A candidate held at `unknown_requires_assessment` can be waiting on a field the profile does not carry, or on a prerequisite path no question in this interview reaches. The first is a hard-gate unknown and belongs in both `unknowns` and `evidenceRequired`. The second is not, and the previous release put it in `evidenceRequired` alone without saying why, which is a third category the contract never defined. Recording it as an unknown was the alternative, and it was measured: 29 scenarios drop to `low`, including both `evidence-complete` scenarios, which state every field their name claims. A profile that answers everything would still read `low`, so the documented `medium` ceiling would become unreachable and the confidence scale would stop distinguishing anything. Invariant 5b names the two reasons instead: the field kind lowers confidence because the interview could have settled it, the path kind does not because no answer the user could give would change it, and it goes to `evidenceRequired` and `nextActions` as work for the prerequisite-plan skill. Writing that found the real hole: several rules hold a candidate and record their reason under the winning method name or under none, so a held candidate could carry its reason in its own text and nowhere a reader looks. A gate reads all 269 held candidates across the scenario set and fails on any whose reason appears in none of the three arrays. 74 gates to 75. |
 | v3.14.4 | 2026-09-13 | **Four findings on the third state introduced one release earlier.** A gate that could not check a fact returned the same string as a gate that refused one, so every caller read both as a refusal: DMS came back `unavailable` on a profile where nobody had collected the recovery model, a word that asserts the source was examined and failed, and it took the offline `P23` variant down with it and could force a switch to SQL VM. Refusals and unchecked gates are distinguished now, and an unchecked gate leaves the candidate and the fallback standing. Second, the unproven-prerequisite check keyed on the fields the crosswalk bridges, so a path whose questions are all unbridged had nothing to test: transactional replication was offered as `available` with none of `P13` established. A path the interview cannot reach at all is named as such. Third, those checks pushed an evidence line without the matching `unknowns` entry, so the always-loaded exemplar failed invariant 5, its own pre-render self-check. Both arrays carry it, and the two `evidence-complete` scenarios now state the method prerequisites their name claims. Fourth, two schema descriptions still said invariant 15 requires the selected candidate to be `available`, while the output contract permits a winner at `unknown_requires_assessment` with a matching gate, which is what both canonical examples now are: a conforming run read opposite definitions of the same rule. |
 | v3.14.3 | 2026-09-12 | **Four review findings, and the first was a bridge built four hours earlier that cleared eight blockers on one sentence.** `log_chain_status: CHAIN_INTACT` was mapped to `backup_chain_status: CONFIRMED`. That field feeds eight blocking prerequisites whose evidence columns ask for `RESTORE VERIFYONLY`, a gap check and a restore rehearsal, and the consumer is told never to re-ask an inherited fact, so a user saying the chain was unbroken settled all eight and moved a never-tested restore route off `blocked`. The mapping is asymmetric now, because the two directions are not equally conclusive: a reported break is proof of a problem and stays `MISSING`, an intact chain is an input to proof and converts to nothing. Second, the always-loaded exemplar left `fabric_sql_db` eligible for a profile with linked servers while the same trace refused Azure SQL Database for them, on a reason that argues ranking. SQL database in Fabric is database-scoped and narrower, so it now inherits any verdict SQL Database receives and cannot be the more permissive of the two; ten scenarios moved with it. Third, the error table still said the bundled copy is "always in context", which contradicts step 1 and lets a model skip the mandatory reads and rebuild the rules from memory, defeating the stop-on-read-failure rule. The row now points back at step 1, and step 1 names all seven files rather than three, including both schemas and `advisor-coverage.json`, which the candidate list cannot be built without. Fourth, that exemplar marked five methods `available` while its profile stated none of the facts their paths turn on. A candidate whose blocking prerequisites are unstated reads `unknown_requires_assessment` now, derived from the catalog, the questions and the crosswalk rather than written per method, and the missing fields reach `evidenceRequired` by name. |
@@ -594,7 +593,7 @@ base and this README on the same version. Last verified: August 2026.
 | v1.1 | 2026-07-03 | Azure SQL MI Next-gen General Purpose reclassified preview → GA; dates refreshed to July 2026; all ~45 Microsoft Learn links re-verified. |
 | v1.0 | 2026-06 | Initial knowledge base: 8 target families, methods per target, the 2025–2026 tooling reset, decision matrices, commercial & funding levers, and the AI Migration Agent I/O contract. |
 
-Full detail in [`docs/sql-server-to-azure-migration.md` §17](docs/sql-server-to-azure-migration.md#17-document-version--changelog). The weekly workflow keeps this table in sync.
+Full detail in [`docs/sql-server-to-azure-migration.md` §15](docs/sql-server-to-azure-migration.md#15-document-version--changelog). The weekly workflow keeps this table in sync.
 
 </details>
 <!-- CHANGELOG:END -->
