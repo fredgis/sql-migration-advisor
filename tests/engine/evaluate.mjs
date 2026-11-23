@@ -247,9 +247,8 @@ function chooseSqlDbTier(inputs, out) {
 }
 function applyFabric(inputs, eligibility, out) {
   const fabricDriven = has(inputs.driver, 'analytics/Fabric') || any(inputs, 'analytics-first', 'BI/analytics-first');
-  // The target is GA; only the Migration Assistant is Preview. So neither a non-analytics
-  // driver nor "preview not acceptable" may mark the target unsupported — the first is a
-  // ranking signal, the second only disqualifies the assistant as a method.
+  // The target and the Migration Assistant are GA. A non-analytics driver is a ranking signal,
+  // and an assistant limit disqualifies the assistant as a method, never the target.
   out.fabricIndicated = fabricDriven;
   if (!fabricDriven) {
     eligibility.fabric_sql_db = E.ELIGIBLE;
@@ -263,21 +262,20 @@ function applyFabric(inputs, eligibility, out) {
   // compliance context describe the assistant's gates.
   const assistantText = `${textOf(inputs.fabric_constraints)} ${textOf(inputs.compliance)}`.toLowerCase();
   const fabricText = `${assistantText} ${textOf(inputs.feature_dependencies)}`.toLowerCase();
-  const mentionsGate = /dacpac|preview|gateway|private link/.test(assistantText);
+  const mentionsGate = /dacpac|gateway/.test(assistantText);
   if (!mentionsGate) {
     eligibility.fabric_sql_db = E.UNKNOWN;
-    addUnique(out.unknowns, 'Fabric ingestion path, then Migration Assistant gates: DACPAC size, Private Link, gateway, preview acceptance');
-    addUnique(out.evidenceRequired, `Confirm an ingestion path; if it is the Migration Assistant, confirm DACPAC <= ${FABRIC_MIGRATION.maxDacpacMb} MB, no Private Link requirement, gateway acceptable, Preview acceptable`);
+    addUnique(out.unknowns, 'Fabric ingestion path, then Migration Assistant gates: DACPAC size, on-premises data gateway, no VNet data gateway');
+    addUnique(out.evidenceRequired, `Confirm an ingestion path; if it is the Migration Assistant, confirm DACPAC <= ${FABRIC_MIGRATION.maxDacpacMb} MB, an on-premises data gateway acceptable, no VNet data gateway requirement`);
     return;
   }
-  // "no private link required" contains "private link required" as a substring, so an
-  // unanchored test reads the negation as its opposite. That misfired on three of the
-  // four Fabric scenarios: they were handed a Private Link blocker they had explicitly
-  // ruled out, and it masked the DACPAC and preview gates below, which never ran.
-  const privateLinkRuledOut = /no private link|without private link|private link not required|private link: no/.test(fabricText);
-  if (!privateLinkRuledOut && /private link required|requires private link|private link: required|private link yes/.test(fabricText)) {
+  // "no vnet data gateway required" contains "vnet data gateway required" as a substring, so an
+  // unanchored test would read the negation as its opposite.
+  const vnetGateway = /vnet (data )?gateway/;
+  const vnetGatewayRuledOut = /no vnet (data )?gateway|without (a )?vnet (data )?gateway|vnet (data )?gateway not required|vnet (data )?gateway: no/.test(fabricText);
+  if (!vnetGatewayRuledOut && /vnet (data )?gateway required|requires (a )?vnet (data )?gateway|vnet (data )?gateway: required|vnet (data )?gateway yes/.test(fabricText)) {
     eligibility.fabric_sql_db = E.REMEDIATE;
-    out.exclusions.fabric_sql_db = 'The Fabric Migration Assistant has no Private Link/VNet gateway path; the GA target itself remains available through another ingestion path.';
+    out.exclusions.fabric_sql_db = 'The Fabric Migration Assistant takes an on-premises data gateway only, not a VNet data gateway; the GA target itself remains available through another ingestion path.';
     return;
   }
   // The "> 4 TB" alternative belonged to the database size, not to the DACPAC. Keeping it here
@@ -287,12 +285,15 @@ function applyFabric(inputs, eligibility, out) {
     out.exclusions.fabric_sql_db = `The Fabric Migration Assistant requires DACPAC <= ${FABRIC_MIGRATION.maxDacpacMb} MB; use another ingestion path for the GA target.`;
     return;
   }
-  if (/preview (not|no)|preview unacceptable|gateway (not|no)|cannot use on-prem data gateway/.test(fabricText)) {
+  // The VNet phrases are removed first: "vnet data gateway not required" is not a refusal of the
+  // on-premises data gateway.
+  const onPremText = fabricText.replace(new RegExp(`${vnetGateway.source}[^;,.]*`, 'g'), '');
+  if (/gateway (not|no)|cannot use (an |the )?on-prem(ises)? data gateway/.test(onPremText)) {
     eligibility.fabric_sql_db = E.REMEDIATE;
-    out.exclusions.fabric_sql_db = 'Preview acceptance and the on-prem data gateway are Migration Assistant gates, not target gates; select a non-assistant ingestion path.';
+    out.exclusions.fabric_sql_db = 'The on-premises data gateway is a Migration Assistant gate, not a target gate; select another ingestion path.';
     return;
   }
-  if (new RegExp(`dacpac\\s*(<=|≤|under|=)\\s*${FABRIC_MIGRATION.maxDacpacMb}|no private link|gateway acceptable|preview accepted`).test(fabricText)) eligibility.fabric_sql_db = E.ELIGIBLE;
+  if (new RegExp(`dacpac\\s*(<=|≤|under|=)\\s*${FABRIC_MIGRATION.maxDacpacMb}|gateway acceptable`).test(fabricText)) eligibility.fabric_sql_db = E.ELIGIBLE;
   else eligibility.fabric_sql_db = E.UNKNOWN;
 }
 function applyFeatureEligibility(inputs, eligibility, out) {
@@ -474,7 +475,7 @@ function chooseTarget(inputs, eligibility, out) {
   if (eligibility.arc_sql_mi === E.ELIGIBLE) return ['Arc-enabled SQL Managed Instance', any(inputs, 'sovereignty', 'air-gapped') ? 'Native backup/restore' : 'Native backup/restore after endpoint is available'];
   if (eligibility.container === E.ELIGIBLE && /kubernetes/i.test(String(inputs.management_model || ''))) return ['SQL Server in a container', 'Backup/restore via mounted volume'];
   if (eligibility.avs === E.ELIGIBLE && has(inputs.driver, 'data-center exit')) return ['Azure VMware Solution', 'VMware HCX / vMotion'];
-  if (out.fabricIndicated && eligibility.fabric_sql_db === E.UNKNOWN) return ['provisional shortlist only', 'Confirm a Fabric ingestion path first; Migration Assistant Preview gates apply only if that path is chosen'];
+  if (out.fabricIndicated && eligibility.fabric_sql_db === E.UNKNOWN) return ['provisional shortlist only', 'Confirm a Fabric ingestion path first; Migration Assistant gates apply only if that path is chosen'];
   if (out.fabricIndicated && eligibility.fabric_sql_db === E.ELIGIBLE) return ['SQL database in Fabric', 'Fabric Migration Assistant'];
   if (eligibility.sql_mi === E.UNKNOWN || eligibility.sql_db === E.UNKNOWN) return ['provisional shortlist only', 'Assessment and dependency discovery first'];
   if (eligibility.sql_mi === E.UNSUPPORTED && eligibility.sql_db === E.UNSUPPORTED) return ['SQL Server on Azure VM', chooseVmMethod(inputs)];

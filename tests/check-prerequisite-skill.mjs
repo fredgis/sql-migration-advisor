@@ -776,7 +776,7 @@ if (advertised) {
 const specialSupport = Object.fromEntries(catalog.paths.map(entry => [entry.id, entry.supportStatus]));
 check('data-box-support-label', specialSupport.P14 === 'composed_pattern', `P14 label is ${specialSupport.P14}`);
 check('striim-support-label', specialSupport.P15 === 'third_party', `P15 label is ${specialSupport.P15}`);
-check('fabric-support-label', specialSupport.P16 === 'preview_tool_ga_target', `P16 label is ${specialSupport.P16}`);
+check('fabric-support-label', specialSupport.P16 === 'supported', `P16 label is ${specialSupport.P16}; the Fabric Migration Assistant is GA`);
 check('smart-bulk-support-label', specialSupport.P22 === 'deprecated_archived_sample', `P22 label is ${specialSupport.P22}`);
 const smartBulkPath = catalog.paths.find(entry => entry.id === 'P22');
 check('smart-bulk-opt-in-required', smartBulkPath?.requiresExplicitOptIn === true,
@@ -796,8 +796,8 @@ check('data-box-caveat',
   /Data Box transports files; it does not restore a SQL Server backup/u.test(kb) && /a `\.bak` alone cannot be restored/u.test(kb),
   'P14 must not be presented as direct SQL backup restore to Azure SQL Database');
 check('fabric-caveat',
-  /target is GA/u.test(kb) && /Migration Assistant is Preview/u.test(kb),
-  'P16 must distinguish the GA target from the Preview tool');
+  /SQL database in Fabric target\*\* and the \*\*Migration Assistant\*\* are \*\*GA/u.test(kb) && /limits must not be generalized to every ingestion method/u.test(kb),
+  'P16 must state that the target and the assistant are GA and keep the assistant limits to the assistant');
 check('smart-bulk-caveat',
   /archived read-only/u.test(kb) &&
   /\*\*2023-07-12\*\*/u.test(kb) &&

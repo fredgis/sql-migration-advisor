@@ -69,7 +69,7 @@ about the output, and nothing was holding it to one.
 | Azure VMware Solution | excluded_by_preference | No VMware-continuity requirement was stated, so the platform was not selected. Technically compatible. `[AVS-LICENSING]` |
 | Azure SQL Managed Instance | eligible_with_remediation | SQL Agent, cross-database queries and linked servers fit the instance surface; TDE certificate, logins and SSIS packages need remediation first. `[MANAGEMENT-MODEL]` |
 | Azure SQL Database | unsupported | Linked servers, cross-database use and SQL Agent would all require refactoring the application. `[LINKED-SERVERS]` |
-| SQL database in Fabric | unsupported | The instance-feature dependency set is outside the Fabric SQL database target surface. The target itself is generally available; only the Fabric Migration Assistant is preview. `[FABRIC-TARGET]` |
+| SQL database in Fabric | unsupported | The instance-feature dependency set is outside the Fabric SQL database target surface. The target and the Fabric Migration Assistant are generally available. `[FABRIC-TARGET]` |
 | Arc-enabled SQL MI | excluded_by_preference | No Kubernetes, edge or multi-cloud operating model was selected. `[MANAGEMENT-MODEL]` |
 | SQL Server container | excluded_by_preference | Customer-operated patching, backups and HA conflict with the stated managed-PaaS preference. `[MANAGEMENT-MODEL]` |
 | Arc in-place | excluded_by_preference | Useful for ESU cover while the move is prepared, but the stated intent is to migrate now. `[ARC-IN-PLACE]` |
@@ -127,7 +127,7 @@ one over the recommendation.
 **🚫 Excluded or constrained targets (Phase A eligibility)**
 - **Azure SQL Database** — unsupported: linked servers, cross-database use and SQL Agent would all require refactoring the application. `[LINKED-SERVERS]`
 - **SQL MI Link method** — unsupported: source is SQL Server 2014 and required MI Link ports 5022 plus 11000–11999 are not approved in the required directions.
-- **SQL database in Fabric** — unsupported: the instance-feature dependency set is outside that target surface. The target is generally available; only the Fabric Migration Assistant is preview. `[FABRIC-TARGET]`
+- **SQL database in Fabric** — unsupported: the instance-feature dependency set is outside that target surface. The target and the Fabric Migration Assistant are generally available. `[FABRIC-TARGET]`
 - **Arc in-place** — excluded_by_preference: useful for ESU cover while the move is prepared, but the stated intent is to migrate now. `[ARC-IN-PLACE]`
 
 **🚧 Blockers & required evidence**
@@ -242,7 +242,7 @@ one over the recommendation.
       "target": "fabric_sql_db",
       "status": "unsupported",
       "ruleId": "FABRIC-TARGET",
-      "reason": "The instance-feature dependency set is outside the Fabric SQL database target surface. The target itself is generally available; only the Fabric Migration Assistant is preview."
+      "reason": "The instance-feature dependency set is outside the Fabric SQL database target surface. The target and the Fabric Migration Assistant are generally available."
     },
     {
       "target": "arc_sql_mi",

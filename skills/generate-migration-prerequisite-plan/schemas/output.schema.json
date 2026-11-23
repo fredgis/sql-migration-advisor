@@ -233,7 +233,7 @@
               "unknown",
               "not_applicable"
             ],
-            "description": "confirmed means a question in questions.json feeds this prerequisite and the typed answer satisfies it, or an acceptedEvidence record does. reported is a typed claim about a prerequisite no question feeds, which the skill has no way to check because it makes no network calls. missing is a typed answer establishing the requirement is unmet; unknown is not established; not_applicable means the applicability condition is demonstrably false. The discriminator between confirmed and reported is the question mapping, not the evidenceRequired column: that column is required on all 291 rows, and keying on it made confirmed unreachable. The condition therefore lives in a gate that can read questions.json rather than in a schema that cannot."
+            "description": "confirmed means a question in questions.json feeds this prerequisite and the typed answer satisfies it, or an acceptedEvidence record does. reported is a typed claim about a prerequisite no question feeds, which the skill has no way to check because it makes no network calls. missing is a typed answer establishing the requirement is unmet; unknown is not established; not_applicable means the applicability condition is demonstrably false. The discriminator between confirmed and reported is the question mapping, not the evidenceRequired column: that column is required on all 293 rows, and keying on it made confirmed unreachable. The condition therefore lives in a gate that can read questions.json rather than in a schema that cannot."
           },
           "blocking": {
             "type": "boolean"

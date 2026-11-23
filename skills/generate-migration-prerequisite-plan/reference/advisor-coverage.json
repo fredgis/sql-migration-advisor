@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "Disposition of every supported cell in the Advisor method x target matrix, which the bundled knowledge base sets out in its summary matrix section. 58 cells are listed: 51 are served by one or more prerequisite paths in this catalog and 7 are deliberately out of scope with a stated reason. Each supported cell must appear here exactly once, so a route the Advisor can recommend can never silently lack prerequisite coverage. This used to name an upstream document path and a test file, neither of which exists wherever the skill is installed, and a bad splice had left the count stranded inside a broken clause.",
+  "description": "Disposition of every supported cell in the Advisor method x target matrix, which the bundled knowledge base sets out in its summary matrix section. 58 cells are listed: 52 are served by one or more prerequisite paths in this catalog and 6 are deliberately out of scope with a stated reason. Each supported cell must appear here exactly once, so a route the Advisor can recommend can never silently lack prerequisite coverage. This used to name an upstream document path and a test file, neither of which exists wherever the skill is installed, and a bad splice had left the count stranded inside a broken clause.",
   "sourceMatrix": {
     "document": "reference/knowledge-base.md",
     "section": "Summary matrix — method / tool x target",
@@ -325,10 +325,12 @@
     {
       "method": "BACPAC / SqlPackage",
       "target": "Fabric SQL DB",
-      "status": "out-of-scope",
-      "advisorRole": "documentary",
-      "roleReason": "Section 8 supports this cell only as DACPAC. Microsoft documents a DACPAC schema import into Fabric SQL database and no BACPAC import, so the row's own artefact is not a route here and must not be planned as one.",
-      "reason": "The Fabric cell is qualified (DACPAC) in section 8. A BACPAC carries schema and data; a DACPAC carries schema only. Offering the BACPAC artefact for this target would promise a route the product does not have."
+      "status": "path",
+      "paths": [
+        "P11"
+      ],
+      "advisorRole": "secondary",
+      "roleReason": "Legitimate for smaller or schema-compatible workloads, imported into an empty database. Belongs in a shortlist rather than a default recommendation."
     },
     {
       "method": "BACPAC / SqlPackage",

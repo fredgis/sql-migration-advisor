@@ -152,7 +152,7 @@ Azure VM in offline and online mode, DMS offline to Azure SQL Database, transact
 Data Box seed, Striim, the Fabric Migration Assistant, two Arc routes, containers, bcp, Data Factory
 Copy, Smart Bulk Copy, an Azure VMware Solution platform overlay and Azure Migrate assessment.
 Behind them sits [`docs/sql-server-to-azure-migration-prerequisite.md`](docs/sql-server-to-azure-migration-prerequisite.md):
-12 common requirements and 291 rows in total, each with a stable ID, an owner, an applicability
+12 common requirements and 293 rows in total, each with a stable ID, an owner, an applicability
 condition, the evidence that would settle it, and a public Microsoft source with the date it was
 checked.
 
@@ -177,7 +177,7 @@ two paths share a name it asks rather than guesses.
 
 **Support status is part of the answer, not a footnote.** Data Box is a seed, not a migration
 service, and something else must carry the delta. Striim is a third-party runtime. The Fabric
-Migration Assistant is Preview against a GA target. Smart Bulk Copy is an archived Azure sample with
+Migration Assistant is GA and its limits are its own, not the target's. Smart Bulk Copy is an archived Azure sample with
 no product support or SLA. Each is labelled as such wherever it appears.
 
 **Why it is new.** It ships with its own contracts, schemas and a dedicated gate — `node

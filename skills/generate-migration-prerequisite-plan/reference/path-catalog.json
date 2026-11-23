@@ -351,13 +351,14 @@
       "id": "P11",
       "slug": "sql-db-bacpac-sqlpackage",
       "title": "Azure SQL Database — BACPAC / SqlPackage",
-      "target": "Azure SQL Database / SQL Server on Azure VM / Azure SQL Managed Instance / Azure Arc-enabled SQL Managed Instance / SQL Server in a container",
+      "target": "Azure SQL Database / SQL Server on Azure VM / Azure SQL Managed Instance / Azure Arc-enabled SQL Managed Instance / SQL Server in a container / SQL database in Fabric",
       "targetVariants": [
         "Azure SQL Database",
         "SQL Server on Azure VM",
         "Azure SQL Managed Instance",
         "Azure Arc-enabled SQL Managed Instance",
-        "SQL Server in a container"
+        "SQL Server in a container",
+        "SQL database in Fabric"
       ],
       "method": "BACPAC / SqlPackage",
       "advisorAliases": [
@@ -528,7 +529,7 @@
       "advisorAliases": [
         "Fabric Migration Assistant"
       ],
-      "supportStatus": "preview_tool_ga_target",
+      "supportStatus": "supported",
       "questionFields": [
         "source_location",
         "source_permissions",

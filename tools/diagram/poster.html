@@ -297,7 +297,7 @@
         <div class="ex">SQL Agent · cross-DB · linked servers · SQL CLR · Service Broker — and none of the VM-only features above</div></div>
       <div class="fcond" style="left:92px;top:784px;width:476px">
         <div class="q">Analytics-first / Fabric-native — small, simple schema?</div>
-        <div class="ex">driver = analytics / Fabric unification · assistant gates: DACPAC ≤ 20 MB · no Private Link need</div></div>
+        <div class="ex">driver = analytics / Fabric unification · assistant gates: DACPAC ≤ 20 MB · no VNet data gateway need</div></div>
 
       <!-- target cards -->
       <div class="fcard arc" style="left:700px;top:88px;width:808px;height:66px">
@@ -388,8 +388,8 @@
         </div></div>
       <div class="panel"><h3><img src="icons/fabric.svg" alt=""/>→ SQL database in Fabric</h3>
         <div class="rows">
-          <div class="r"><span class="pill p-off">offline</span><b>Fabric Migration Assistant</b> <span class="pill p-no">Preview — the target is GA</span></div>
-          <div class="r g">assistant limits: schema via DACPAC ≤ 20 MB · data via Fabric Data Factory copy + on-prem gateway (no VNet / Private Link) — T-SQL, transactional replication, pipelines, Dataflow Gen2 and TDS tools also ingest</div>
+          <div class="r"><span class="pill p-off">offline</span><b>Fabric Migration Assistant</b> <span class="pill p-ok">GA</span></div>
+          <div class="r g">assistant limits: schema via DACPAC ≤ 20 MB · data via Fabric Data Factory copy + on-prem gateway (no VNet data gateway) — BACPAC into an empty database, T-SQL, transactional replication, pipelines, Dataflow Gen2 and TDS tools also ingest</div>
         </div></div>
     </div>
     <div class="note-full"><img src="icons/data-box.svg" alt="Data Box"/>

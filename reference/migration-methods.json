@@ -21,7 +21,7 @@
     { "id": "hcx", "name": "HCX / vMotion", "kind": "migration", "inMatrix": true, "why": "Moves the virtual machine rather than the database, which is why it needs no platform overlay on AVS." },
     { "id": "transactional-replication", "name": "Transactional replication", "kind": "migration", "inMatrix": true, "why": "Online movement of a subset of articles. Legitimate but rarely the whole answer." },
     { "id": "bacpac", "name": "BACPAC / SqlPackage", "kind": "migration", "inMatrix": true, "why": "Export and import for smaller or schema-compatible workloads." },
-    { "id": "fabric-migration-assistant", "name": "Fabric Migration Assistant", "kind": "migration", "inMatrix": true, "why": "The Fabric-native migration vehicle. Preview." },
+    { "id": "fabric-migration-assistant", "name": "Fabric Migration Assistant", "kind": "migration", "inMatrix": true, "why": "The Fabric-native migration vehicle. GA since August 2026." },
     { "id": "bcp", "name": "bcp", "kind": "transport", "inMatrix": true, "why": "Bulk data movement. Carries no schema, no dependencies and no cutover." },
     { "id": "smart-bulk-copy", "name": "Smart Bulk Copy", "kind": "transport", "inMatrix": true, "why": "Archived community sample for bulk data movement, not a supported Azure service." },
     { "id": "data-factory-copy", "name": "Data Factory Copy", "kind": "transport", "inMatrix": true, "why": "Integration pipeline. Moves rows, does not migrate a database." },

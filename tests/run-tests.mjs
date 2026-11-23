@@ -558,7 +558,7 @@ try {
 
     // MI Next-gen General Purpose is GA. Its zone-redundancy option is public preview, and a GA tier
     // label must not quietly make a preview capability GA too -- the same confusion the repository
-    // already corrects for Fabric, where the target is GA and only the Migration Assistant is Preview.
+    // already corrected for Fabric while its Migration Assistant was in preview.
     for (const [label, text] of [['docs\\sql-server-to-azure-migration.md', kb], ['reference\\decision-rules.md', rules]]) {
       if (!/zone[- ]redundan\w*[^.]{0,120}(public )?preview|preview[^.]{0,120}zone[- ]redundan/iu.test(text)) {
         failures.push(`${label} does not record that zone redundancy on MI Next-gen General Purpose is public preview`);
@@ -659,7 +659,7 @@ try {
         tenant_count: ['tenants', 'tenant variability'],
         performance: ['tier drivers', 'iops', 'latency'],
         compliance: ['compliance sovereignty'],
-        fabric_constraints: ['fabric', 'private link', 'gateway'],
+        fabric_constraints: ['fabric', 'dacpac', 'gateway'],
         kubernetes_model: ['kubernetes engine model', 'managed engine', 'full diy container'],
         database_count: ['number of databases', 'database count', 'one link/database'],
         migration_batch_size: ['10 databases per batch', 'wizard selection limit'],
@@ -2237,16 +2237,13 @@ try {
     failures.length ? failures : [`${graphPath} plots the same ${indexed.length} rules as the decision-rules index, stamped ${manifest.latest}, and every count in the page is computed from its own data.`]);
 }
 
-// Weekly check 2026-08-31. Section 8 marks BACPAC / SqlPackage as `✅ (DACPAC)` for Fabric SQL
-// database, because Microsoft documents a DACPAC schema import there and not a BACPAC import. The
-// B3 guidance offered "BACPAC export and import" for that target anyway, and the coverage gate
-// accepted it: that gate matches the method *row*, so a qualifier living in one *cell* is invisible
-// to it. The two artefacts are not interchangeable — a BACPAC carries schema and data, a DACPAC
-// carries schema only — so the guidance was promising a route the product does not have.
+// A qualifier in one section 8 cell is invisible to the coverage gate, which matches the method
+// *row*. Section 8 marks BACPAC / SqlPackage as `✅ (empty database)` for Fabric SQL database: the
+// import only works into an empty database, so the B3 guidance for that target must name the method
+// and state the condition.
 //
-// Only artefact qualifiers are checked. `(online + offline)` names modes of the row's own method and
-// the guidance may word those freely; `(DACPAC)` names something else entirely, and for that cell
-// the row's own name must not be offered at all.
+// Mode qualifiers such as `(online + offline)` name modes of the row's own method and the guidance
+// may word those freely; any other qualifier is a condition the guidance must carry.
 {
   const failures = [];
   const notes = [];
@@ -2287,20 +2284,21 @@ try {
       const target = header[col - 1];
       const qualifier = cells[col].match(/^✅\s*\(([^)]+)\)$/);
       if (!qualifier || !SECTION_OF[target]) continue;
-      const artefacts = qualifier[1].split(/\s*\+\s*|\s+/).filter((w) => /^[A-Za-z]{4,}$/.test(w) && !MODE_WORDS.test(w));
-      if (!artefacts.length) continue;
+      const words = qualifier[1].split(/\s*\+\s*|\s+/).filter((w) => /^[A-Za-z]{4,}$/.test(w) && !MODE_WORDS.test(w));
+      if (!words.length) continue;
       checked++;
       const body = bodyFor(target);
       if (body === null) { failures.push(`section 8 qualifies ${method} for ${target}, but B3 has no sub-section for that target`); continue; }
-      for (const frag of [...body.matchAll(/\*\*([^*]+)\*\*/g)].map((m) => m[1])) {
-        if (!new RegExp(`\\b${head}\\b`, 'i').test(frag)) continue;
-        failures.push(`section 8 supports ${method} for ${target} only as "${qualifier[1]}", but B3 offers "${frag.trim()}" there — the matrix names one artefact and the guidance another`);
+      const offered = [...body.matchAll(/\*\*([^*]+)\*\*/g)].some((m) => new RegExp(`\\b${head}\\b`, 'i').test(m[1]));
+      if (!offered) failures.push(`section 8 supports ${method} for ${target} ("${qualifier[1]}"), but B3 never names ${head} for that target`);
+      for (const word of words) {
+        if (!new RegExp(`\\b${word}\\b`, 'i').test(body)) failures.push(`section 8 supports ${method} for ${target} only "${qualifier[1]}", but the B3 guidance for that target never states "${word}"`);
       }
     }
   }
 
-  if (!checked) failures.push('section 8 has no artefact-qualified cell, so this gate is checking nothing');
-  else notes.push(`${checked} artefact-qualified cell(s) in section 8: the guidance for those targets never offers the row's own artefact name.`);
+  if (!checked) failures.push('section 8 has no condition-qualified cell, so this gate is checking nothing');
+  else notes.push(`${checked} condition-qualified cell(s) in section 8: the guidance for those targets names the method and states the condition.`);
 
   add('matrix-cell-qualifiers-reach-the-guidance', failures.length === 0, failures.length ? failures : notes);
 }
@@ -3122,7 +3120,7 @@ try {
 
 // The card and the object are two renderings of one assessment, and a reader trusts whichever they
 // look at first. In the shipped example they disagreed three ways: Fabric was excluded as a
-// "preview fit" although only the Migration Assistant is preview, Arc in-place was called eligible
+// "preview fit" although only the Migration Assistant was preview, Arc in-place was called eligible
 // in the prose and excluded_by_preference in the object, and the rendered lines carried no rule ID
 // although the contract requires one on every eligibility line.
 //
@@ -3235,12 +3233,11 @@ try {
     [`${roles.primary} as \`primary\``, 'the primary count'],
     [`${roles.secondary} as \`secondary\``, 'the secondary count'],
     [`other ${roles.documentary} are \`documentary\``, 'the documentary count'],
-    [`seven are \`out-of-scope\``, 'the out-of-scope count']
+    [`${['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'][outOfScope] ?? outOfScope} are \`out-of-scope\``, 'the out-of-scope count']
   ];
   for (const [needle, label] of claims) {
     if (!text.includes(needle)) failures.push(`the prerequisite knowledge base does not state ${label} the coverage map holds (expected to find "${needle}")`);
   }
-  if (outOfScope !== 7) failures.push(`the coverage map now holds ${outOfScope} out-of-scope disposition(s), and the page still says seven`);
 
   add('coverage-counts-are-derived-not-remembered', failures.length === 0,
     failures.length ? failures : [`${recommendable} recommendable (${roles.primary} primary, ${roles.secondary} secondary), ${roles.documentary} documentary, ${outOfScope} out of scope, each number stated by the page that quotes it.`]);

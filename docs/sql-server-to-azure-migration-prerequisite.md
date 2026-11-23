@@ -15,7 +15,7 @@
 - [11. P08 - Azure SQL Managed Instance: Managed Instance Link](#11-p08--azure-sql-managed-instance-managed-instance-link)
 - [12. P09 - Azure SQL Managed Instance: Log Replay Service](#12-p09--azure-sql-managed-instance-log-replay-service)
 - [13. P10 - Azure SQL Managed Instance: Native Backup/Restore](#13-p10--azure-sql-managed-instance-native-backuprestore)
-- [14. P11 - SQL DB / SQL VM / SQL MI / Arc SQL MI / SQL container: BACPAC / SqlPackage](#14-p11--sql-db--sql-vm--sql-mi--arc-sql-mi--sql-container-bacpac--sqlpackage)
+- [14. P11 - SQL DB / SQL VM / SQL MI / Arc SQL MI / SQL container / Fabric SQL DB: BACPAC / SqlPackage](#14-p11--sql-db--sql-vm--sql-mi--arc-sql-mi--sql-container--fabric-sql-db-bacpac--sqlpackage)
 - [15. P12 - Azure SQL Database: Modern DMS Offline](#15-p12--azure-sql-database-modern-dms-offline)
 - [16. P13 - SQL MI / SQL DB / Fabric SQL DB / SQL VM / Arc SQL MI / SQL container: Transactional Replication](#16-p13--sql-mi--sql-db--fabric-sql-db--sql-vm--arc-sql-mi--sql-container-transactional-replication)
 - [17. P14 - Azure SQL Database: Data Box Seed then Delta Synchronization](#17-p14--azure-sql-database-data-box-seed-then-delta-synchronization)
@@ -87,12 +87,12 @@ unrecognized answers remain `unknown`.
 | 8 | P08 | Azure SQL Managed Instance | Managed Instance Link | Microsoft-supported |
 | 9 | P09 | Azure SQL Managed Instance | Log Replay Service | Microsoft-supported |
 | 10 | P10 | Azure SQL Managed Instance | Native Backup/Restore | Microsoft-supported |
-| 11 | P11 | SQL DB / SQL VM / SQL MI / Arc SQL MI / SQL container | BACPAC / SqlPackage | Microsoft-supported |
+| 11 | P11 | SQL DB / SQL VM / SQL MI / Arc SQL MI / SQL container / Fabric SQL DB | BACPAC / SqlPackage | Microsoft-supported |
 | 12 | P12 | Azure SQL Database | Modern DMS Offline | Microsoft-supported |
 | 13 | P13 | SQL MI / SQL DB / Fabric SQL DB / SQL VM / Arc SQL MI / SQL container | Transactional Replication | Microsoft-supported with target-specific limits |
 | 14 | P14 | Azure SQL Database | Data Box Seed then Delta Synchronization | Composed pattern, not one migration service |
 | 15 | P15 | Azure SQL Database | Striim Online CDC | Third-party migration runtime |
-| 16 | P16 | Fabric SQL DB | Fabric Migration Assistant | Preview tool; GA target |
+| 16 | P16 | Fabric SQL DB | Fabric Migration Assistant | Microsoft-supported |
 | 17 | P17 | Arc SQL MI | Native Backup/Restore Direct | Microsoft-supported |
 | 18 | P18 | Arc SQL MI | Native Backup/Restore after Endpoint Availability | Microsoft-supported |
 | 19 | P19 | SQL container | Backup/Restore through Mounted Volume | Microsoft-supported engine pattern |
@@ -258,14 +258,13 @@ Use when Azure VM replicas are added to or replace replicas in one WSFC availabi
 | P10-006 | Inventory and script every instance-level object before cutover, because restoring a user database carries none of them: logins with their SIDs, credentials, SQL Server Agent jobs, operators and alerts, server-level triggers, linked servers, and server-level permissions and roles. | required | Yes | DBA | P10 | Instance-object inventory plus the deployment and validation scripts covering each listed category | [T-SQL differences between SQL Server and SQL MI](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/transact-sql-tsql-differences-sql-server) | 2026-08-13 |
 | P10-007 | Define final-write stop, backup/upload/restore timing, validation, connection switch and source retention for rollback. | required | Yes | Migration lead | P10 | Timed rehearsal and rollback runbook | [SQL MI migration overview](https://learn.microsoft.com/en-us/data-migration/sql-server/managed-instance/overview) | 2026-08-13 |
 
-## 14. P11 — SQL DB / SQL VM / SQL MI / Arc SQL MI / SQL container: BACPAC / SqlPackage
+## 14. P11 — SQL DB / SQL VM / SQL MI / Arc SQL MI / SQL container / Fabric SQL DB: BACPAC / SqlPackage
 
 > [!NOTE]
-> **P11 does not cover SQL database in Fabric.** The Advisor summary matrix labels that cell
-> `✅ (DACPAC)`, and the decision rules, the path catalog and the coverage map all read it the same
-> way: the documented route there is a DACPAC schema publish, which carries no data. This page used
-> to argue the opposite from the SqlPackage reference, and that disagreement let a plan be built for
-> a route the rules refuse. Use the DACPAC publish route for Fabric and `P16` for its data path.
+> **P11 covers SQL database in Fabric only as an import into an empty database.** SqlPackage imports
+> a BACPAC into an empty SQL database in Fabric (`sqlpackage /action:import`); the source must fit the
+> Fabric T-SQL surface and the target accepts Microsoft Entra ID authentication only. `P16` remains
+> the path for the Fabric Migration Assistant, which publishes a DACPAC schema and copies the data.
 
 | ID | Prerequisite | Type | Blocking | Owner | Applicability | Evidence required | Official source | Verified |
 | --- | --- | --- | :---: | --- | --- | --- | --- | --- |
@@ -286,6 +285,8 @@ Use when Azure VM replicas are added to or replace replicas in one WSFC availabi
 | P11-020 | Choose a method other than the Import and Export Service when the BACPAC storage account sits behind a firewall, which that service does not support. | conditional | Yes | Network owner | BACPAC storage is firewalled | Storage network configuration and the selected import method | [BACPAC import limitations](https://learn.microsoft.com/en-us/azure/azure-sql/database/database-import?view=azuresql#limitations) | 2026-08-13 |
 | P11-021 | Create the pooled target database first and import into it with SqlPackage, because importing directly into an elastic pool is not supported from the portal, PowerShell or the Azure CLI. | conditional | Yes | Azure migration engineer | Target database belongs to an elastic pool | Empty pooled database and the SqlPackage import manifest | [BACPAC import limitations](https://learn.microsoft.com/en-us/azure/azure-sql/database/database-import?view=azuresql#limitations) | 2026-08-13 |
 | P11-022 | Choose a method other than the Import and Export Service when Microsoft Entra authentication requires multifactor authentication, which that service does not support. | conditional | Yes | Security owner | Target authentication requires multifactor authentication | Authentication policy and the selected import method | [BACPAC import limitations](https://learn.microsoft.com/en-us/azure/azure-sql/database/database-import?view=azuresql#limitations) | 2026-08-13 |
+| P11-023 | Import into an **empty** SQL database in Fabric with `sqlpackage /action:import`, connecting with Microsoft Entra ID, because SQL database in Fabric accepts no SQL authentication. | required | Yes | Database architect | Target is SQL database in Fabric | An empty target database and a successful Entra ID connection from the SqlPackage host | [SqlPackage for SQL database in Fabric](https://learn.microsoft.com/en-us/fabric/database/sql/sqlpackage) | 2026-11-23 |
+| P11-024 | Confirm the source schema fits the SQL database in Fabric T-SQL surface, and alter it where it does not, before exporting the BACPAC. | required | Yes | Database developer | Target is SQL database in Fabric | Schema compatibility report against SQL database in Fabric and the resolved changes | [SqlPackage for SQL database in Fabric](https://learn.microsoft.com/en-us/fabric/database/sql/sqlpackage) | 2026-11-23 |
 
 ## 15. P12 — Azure SQL Database: Modern DMS Offline
 
@@ -362,14 +363,14 @@ documentation defines the Striim runtime, SQL reader/writer and licensing requir
 
 ## 19. P16 — SQL Database in Fabric: Fabric Migration Assistant
 
-The **SQL database in Fabric target is GA**. The **Migration Assistant is Preview** and its preview
+The **SQL database in Fabric target** and the **Migration Assistant** are **GA**. The assistant's
 limits must not be generalized to every ingestion method supported by the target.
 
 | ID | Prerequisite | Type | Blocking | Owner | Applicability | Evidence required | Official source | Verified |
 | --- | --- | --- | :---: | --- | --- | --- | --- | --- |
 | P16-001 | Confirm Fabric capacity, tenant/region availability and a workspace that supports creation of SQL database in Fabric. | required | Yes | Fabric capacity owner | P16 | Capacity/workspace configuration | [SQL database in Fabric overview](https://learn.microsoft.com/en-us/fabric/database/sql/overview) | 2026-08-13 |
 | P16-002 | Grant Contributor or higher on the Fabric workspace to the account starting the migration, and grant `SELECT` or `db_datareader` on the source database to the account reading it. | required | Yes | Fabric administrator | P16 | Sanitized workspace and database role export naming the Fabric workspace role and the source database role | [Fabric Migration Assistant — Security](https://learn.microsoft.com/en-us/fabric/database/sql/migration-assistant#security) | 2026-08-13 |
-| P16-003 | Deploy an on-premises data gateway for the assistant's on-prem source flow; VNet gateway and Private Link are not supported by this assistant path. | required | Yes | Network and Fabric owners | On-premises source through Migration Assistant | Gateway health and source connection test | [Fabric Migration Assistant](https://learn.microsoft.com/en-us/fabric/database/sql/migration-assistant) | 2026-08-13 |
+| P16-003 | Deploy an on-premises data gateway for the assistant's on-prem source flow; a VNet data gateway is not supported by this assistant path. | required | Yes | Network and Fabric owners | On-premises source through Migration Assistant | Gateway health and source connection test | [Fabric Migration Assistant](https://learn.microsoft.com/en-us/fabric/database/sql/migration-assistant) | 2026-11-23 |
 | P16-004 | Generate a compatible DACPAC no larger than the assistant's documented 20 MB upload limit and resolve AI-assisted/manual schema issues before data copy. | required | Yes | Database developer | P16 | DACPAC size, deployment report and resolved issue list | [Migrate using a DACPAC](https://learn.microsoft.com/en-us/fabric/database/sql/migrate-with-migration-assistant-using-dacpac) | 2026-08-13 |
 | P16-005 | Use Microsoft Entra authentication for the Fabric SQL target and update application identities/connection strings accordingly. | required | Yes | Identity and application owners | P16 | Entra login test and application connection rehearsal | [Connect to SQL database in Fabric](https://learn.microsoft.com/en-us/fabric/database/sql/connect) | 2026-08-13 |
 | P16-006 | Rehearse schema deployment, copy-job throughput, reconciliation and application acceptance; define manual cleanup/rollback because the assistant has no documented automated rollback. | required | Yes | Migration lead | P16 | Rehearsal report and cleanup/rollback runbook | [Fabric Migration Assistant](https://learn.microsoft.com/en-us/fabric/database/sql/migration-assistant) | 2026-08-13 |
@@ -617,17 +618,17 @@ non-path disposition carries no reason.
 
 | Disposition | Combinations | Meaning |
 | --- | ---: | --- |
-| Covered by a path | 51 | A prerequisite set exists for this combination. Where the target is an AVS-hosted SQL Server, the method path is applied together with the §30 platform overlay. |
-| Out of scope | 7 | Six SSMA cells convert non-SQL-Server sources such as Oracle, Sybase, DB2, MySQL and Access, which a knowledge base scoped to SQL Server sources can never reach. The seventh is BACPAC into Fabric SQL database: section 8 supports that cell only as **DACPAC**, and a BACPAC carries data a DACPAC does not, so planning the row's own artefact there would promise a route the product does not document. |
+| Covered by a path | 52 | A prerequisite set exists for this combination. Where the target is an AVS-hosted SQL Server, the method path is applied together with the §30 platform overlay. |
+| Out of scope | 6 | Six SSMA cells convert non-SQL-Server sources such as Oracle, Sybase, DB2, MySQL and Access, which a knowledge base scoped to SQL Server sources can never reach. |
 
 **A supported combination is not the same as a recommendable one, and reading the two as one number
 overstates what the Advisor offers.** Each cell also carries an `advisorRole`. `primary` may be the
 single recommended method; `secondary` is a legitimate alternative that belongs in a shortlist;
 `documentary` is supported and prepared here but is never a recommendation on its own, because the
 method moves data without carrying schema, dependencies or a cutover — `bcp`, Smart Bulk Copy, Data
-Factory Copy and Azure Migrate assessment are the cases. The Advisor therefore proposes 29 of the 58
-cells, 16 as `primary` and 13 as `secondary`. The other 29 are `documentary`, and most of them stay
-reachable through a standalone plan in this skill; seven are `out-of-scope` dispositions, which no
+Factory Copy and Azure Migrate assessment are the cases. The Advisor therefore proposes 30 of the 58
+cells, 16 as `primary` and 14 as `secondary`. The other 28 are `documentary`, and most of them stay
+reachable through a standalone plan in this skill; six are `out-of-scope` dispositions, which no
 plan reaches by any route. That split is deliberate: counting all 58 as recommendable would promote
 a bulk-copy utility to a migration method. The numbers above are derived from
 `advisor-coverage.json` by a gate rather than counted by hand, because they were wrong here for
@@ -651,8 +652,8 @@ reason, and a path that any disposition names must not declare it.
 Three findings came out of closing these combinations, and each is recorded where it applies rather
 than silently absorbed:
 
-- the Fabric BACPAC combination reads `✅ (DACPAC)` in the matrix and the same way here: a DACPAC
-  publish carries schema only, so `P11` does not serve that target (§14);
+- the Fabric BACPAC combination reads `✅ (empty database)` in the matrix and the same way here:
+  `P11` serves that target only as an import into an empty database (§14);
 - merge replication and queued updating subscriptions are unsupported on Arc-enabled SQL Managed
   Instance, while snapshot and transactional replication carry no such exclusion (§16);
 - Smart Bulk Copy documents no behaviour for the Arc-enabled SQL Managed Instance or containerised

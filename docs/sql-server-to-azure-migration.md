@@ -118,7 +118,7 @@ flowchart TD
     subgraph PAAS["PaaS"]
         MI[[Azure SQL Managed Instance]]
         DB[[Azure SQL Database<br/>single · pool · Hyperscale · serverless]]
-        FAB[[SQL database in Fabric<br/>GA · assistant in Preview]]
+        FAB[[SQL database in Fabric<br/>GA · assistant GA]]
     end
     subgraph CON["Containers · Kubernetes"]
         K8S[[SQL Server on AKS / ARO / ACI / ACA]]
@@ -146,7 +146,7 @@ flowchart TD
 | 2 | Azure VMware Solution (AVS) | IaaS | Zero-refactor data-center exit for existing VMware estates; keeps FCI and Always On AG; migrate with VMware HCX / vMotion. Confirm current portable VCF licensing requirements before recommending it. | Full | [AVS](https://learn.microsoft.com/en-us/azure/azure-vmware/introduction) |
 | 3 | Azure SQL Managed Instance | PaaS | Managed lift-and-shift: keep instance objects (logins, SQL Agent, server triggers, cross-DB, linked servers), native vNet. Tiers GP / BC / Next-gen GP *(GA since Nov 2025 — Elastic SAN backend: 500 DBs, 128 vCores, 32 TB, 80K IOPS, 192 MB/s log, 3–4 ms latency, configurable IOPS/memory; ~5x better price-per-DB by density)*. **Zone redundancy on Next-gen GP is public preview** — the tier is GA, that capability is not, so do not count it as available when preview services are unacceptable. Free offer: 1 instance / 12 months. ⚠️ No Hyperscale on MI. | ~Near-full (instance) | [overview](https://learn.microsoft.com/en-us/data-migration/sql-server/managed-instance/overview) |
 | 4 | Azure SQL Database | PaaS | Cloud-native app / microservice. Models: single DB / elastic pool; tiers GP / BC / Hyperscale; purchasing vCore / DTU / serverless. Hyperscale scales to 128 TB (large / HTAP); serverless for intermittent; elastic pools for consolidation. Free offer: 10 serverless DBs for the subscription lifetime. | Database surface (no instance-level) | [overview](https://learn.microsoft.com/en-us/data-migration/sql-server/database/overview) |
-| 5 | SQL database in Fabric | PaaS | Fabric-native OLTP unified with OneLake. The **target itself is GA**; only the Fabric Migration Assistant is Preview, with tool limits (DACPAC schema ≤ 20 MB, on-prem data gateway only, no Private Link). The target also accepts T-SQL, transactional replication, Fabric pipelines / Data Factory copy jobs, Dataflow Gen2, and other TDS-capable tools, so assistant limits alone must not eliminate it. Assess the database surface before committing an enterprise OLTP workload. | Subset of the SQL Server surface | [SQL database in Fabric](https://learn.microsoft.com/en-us/fabric/database/sql/overview) · [Migration Assistant *(Preview)*](https://learn.microsoft.com/en-us/fabric/database/sql/migration-assistant) |
+| 5 | SQL database in Fabric | PaaS | Fabric-native OLTP unified with OneLake. The **target is GA**, and so is the Fabric Migration Assistant since August 2026, with tool limits (DACPAC schema ≤ 20 MB, on-premises data gateway only, no VNet data gateway). The target also accepts T-SQL, transactional replication, a SqlPackage BACPAC import into an empty database, Fabric pipelines / Data Factory copy jobs, Dataflow Gen2, and other TDS-capable tools, so assistant limits alone must not eliminate it. Assess the database surface before committing an enterprise OLTP workload. | Subset of the SQL Server surface | [SQL database in Fabric](https://learn.microsoft.com/en-us/fabric/database/sql/overview) · [Migration Assistant](https://learn.microsoft.com/en-us/fabric/database/sql/migration-assistant) |
 | 6 | SQL Server in containers — AKS / ARO / ACI / ACA | Container | Full control of the engine in a container (dev/test, edge, custom). Pod + PersistentVolume; HA via the Kubernetes scheduler. | High — SQL on Linux (no FILESTREAM/FileTable, SSRS/SSAS/SSIS, ML Services; SQL Agent off by default) | [SQL on Kubernetes](https://learn.microsoft.com/en-us/sql/linux/quickstart-sql-server-containers-kubernetes) |
 | 7 | Azure Arc-enabled SQL Managed Instance | Container (PaaS) | Managed SQL MI engine on any Kubernetes (AKS, ARO, EKS, GKE, OpenShift) via `kubectl`+CRD. Sovereignty / edge / multi-cloud. | ~Same as SQL MI | [create Arc SQL MI](https://learn.microsoft.com/en-us/azure/azure-arc/data/create-sql-managed-instance) |
 | 8 | SQL Server enabled by Azure Arc | Hybrid (control plane) | Not a runtime target — the bootstrap pillar: connect on-prem SQL *without touching it* → weekly continuous assessment, blocker detection, ESU, PAYG (OpEx) licensing, governance, and a portal Copilot-assisted Database migration — to **Azure SQL MI** (MI Link / LRS) and, **GA since July 2026**, to **SQL Server on Azure VM** (native backup/restore). Arc-enabled SQL Server 2014+ overall; path-specific floors apply (MI Link: SQL Server 2016+, Windows Server only on this Arc path; use the conservative 2014+ Arc floor for LRS because Microsoft Learn is inconsistent — see §9). | n/a | [Arc migration](https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migration-overview) |
@@ -241,15 +241,16 @@ Standardized columns (Microsoft Learn style): **Method · Min source · Target/m
 >
 > 📦 **DACPAC vs BACPAC.** A DACPAC packages the schema only; a BACPAC packages schema + data. Both are produced/consumed by `SqlPackage` and the VS Code MSSQL extension — a simple way to migrate (BACPAC) or version (DACPAC) offline.
 
-### 5.4 To SQL database in Fabric *(GA target; Migration Assistant in Preview)*
+### 5.4 To SQL database in Fabric *(GA target and GA Migration Assistant)*
 
 | Method | Downtime | Key constraints / notes |
 | --- | --- | --- |
-| [Fabric Migration Assistant — DACPAC](https://learn.microsoft.com/en-us/fabric/database/sql/migrate-with-migration-assistant-using-dacpac) | Offline | Preview tool limits: schema via DACPAC ≤ 20 MB; AI-assisted compatibility fixes; data via Fabric Data Factory copy job + on-prem data gateway only (no VNet gateway / Private Link for the assistant). These are Migration Assistant limits, not target-wide Fabric SQL database limits. |
+| [Fabric Migration Assistant — DACPAC](https://learn.microsoft.com/en-us/fabric/database/sql/migrate-with-migration-assistant-using-dacpac) | Offline | GA since August 2026. Tool limits: schema via DACPAC ≤ 20 MB; AI-assisted compatibility fixes; data via Fabric Data Factory copy job + on-premises data gateway only (no VNet data gateway for the assistant). These are Migration Assistant limits, not target-wide Fabric SQL database limits. |
+| [SqlPackage — BACPAC import](https://learn.microsoft.com/en-us/fabric/database/sql/sqlpackage) | Offline | `sqlpackage /action:import` loads a .bacpac into an **empty** SQL database in Fabric. The source must fit the Fabric T-SQL surface (the schema may need altering first) and the volume must suit an offline load; Microsoft Entra ID authentication only. Not an automatic fallback when the assistant does not fit. |
 | [Transactional replication](https://learn.microsoft.com/en-us/azure/azure-sql/database/replication-to-sql-database) | Online | Fabric SQL database can be a push subscriber only. Publishing to Fabric SQL database requires SQL Server 2022 RTM CU12 or greater; snapshot and one-way transactional replication are supported, peer-to-peer and merge are not, and replicated tables require primary keys. |
 | [bcp](https://learn.microsoft.com/en-us/fabric/database/sql/connect#connect-with-bcp-utility) | Offline | Documented against Fabric SQL database "just like any other SQL Database Engine product", and *SQL database in Microsoft Fabric* appears in the [bcp utility](https://learn.microsoft.com/en-us/sql/tools/bcp/bcp-utility) **Applies to** banner. Fabric SQL database accepts no SQL authentication: connect with Microsoft Entra ID using `-G`, against `<server>.database.fabric.microsoft.com,1433`. Data-only — pair with a schema method. |
 | [Fabric Data Factory — Copy activity / Copy job / Dataflow Gen2](https://learn.microsoft.com/en-us/fabric/data-factory/connector-sql-database-overview) | Offline / batch | Source **and** destination, Beta. Organizational-account authentication; None / on-premises / virtual-network gateway. ⚠️ **Azure** Data Factory has no Fabric SQL database connector — it ships Fabric Lakehouse and Fabric Warehouse only, so an Azure Data Factory pipeline cannot target this database. |
-| T-SQL / other TDS-capable tools | Offline / batch | Alternative ingestion paths into Fabric SQL database; do not eliminate the target solely because Migration Assistant Preview limits do not fit. |
+| T-SQL / other TDS-capable tools | Offline / batch | Alternative ingestion paths into Fabric SQL database; do not eliminate the target solely because Migration Assistant limits do not fit. |
 | [Fabric Mirroring for SQL Server](https://learn.microsoft.com/en-us/fabric/mirroring/sql-server) | n/a (continuous) | NOT a one-shot migration — near-real-time CDC replication to OneLake for analytics. GA (Nov 2025), optimized for SQL Server 2025. Complementary "analytical modernization" path. |
 
 ### 5.5 To Containers / Arc-enabled SQL MI
@@ -354,7 +355,7 @@ Microsoft describes LRS as an online migration with expected downtime during cut
 | Log shipping | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | HCX / vMotion | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Transactional replication | ✅ | ✅ | ✅ | ✅¹ | ✅² | ✅ | ✅ |
-| BACPAC / SqlPackage | ✅ | ✅ | ✅ | ✅ | ✅ (DACPAC) | ✅ | ✅ |
+| BACPAC / SqlPackage | ✅ | ✅ | ✅ | ✅ | ✅ (empty database) | ✅ | ✅ |
 | bcp | ✅ | ✅ | ✅ | ✅ | ✅⁴ | ✅ | ✅ |
 | Smart Bulk Copy | ✅ | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ |
 | Data Factory Copy | ✅ | ✅ | ✅ | ✅ | ✅⁵ | ✅ | ✅ |
@@ -388,8 +389,8 @@ Microsoft describes LRS as an online migration with expected downtime during cut
 | Transactional replication → SQL DB / Fabric SQL DB | SQL Server 2016+ publisher for Azure SQL DB; Fabric SQL database publishing requires SQL Server 2022 RTM CU12+ |
 | Backup-to-URL minimum source | SQL Server 2012 SP1 CU2 (page blob + storage-account credential); block blob + SAS from SQL Server 2016 |
 | Backup-to-URL size | 12.8 TB (2016+, striped block blobs) / 1 TB (2012 SP1 CU2–2014, single page blob) |
-| Fabric SQL database (target) | GA. Only the Fabric Migration Assistant is Preview. |
-| Fabric Migration Assistant | Preview tool; DACPAC ≤ 20 MB, on-prem gateway only, no Private Link. These are assistant limits; Fabric SQL database also supports T-SQL, transactional replication, Fabric pipelines / Data Factory copy jobs, Dataflow Gen2, and TDS-capable tools. |
+| Fabric SQL database (target) | GA, like the Fabric Migration Assistant. |
+| Fabric Migration Assistant | GA since August 2026; DACPAC ≤ 20 MB, on-premises data gateway only, no VNet data gateway. These are assistant limits; Fabric SQL database also supports T-SQL, transactional replication, a SqlPackage BACPAC import into an empty database, Fabric pipelines / Data Factory copy jobs, Dataflow Gen2, and TDS-capable tools. |
 | Always On AG → SQL VM | SQL Server 2012+ (availability groups start with SQL Server 2012) |
 | Distributed AG → SQL VM | SQL Server 2016+ (distributed availability groups start with SQL Server 2016) |
 | SQL Server 2025 (source) | GA 18 Nov 2025 — native vector/JSON, improved DAG, Entra managed identity when Arc-connected (see below) |
@@ -485,7 +486,7 @@ Microsoft describes LRS as an online migration with expected downtime during cut
 - **Transactional replication → SQL DB / Fabric SQL DB / MI**: Azure SQL Database subscribers require SQL Server 2016+ publishers; Fabric SQL database subscribers require SQL Server 2022 RTM CU12+ publishers and do not support Private Link for replication; Azure SQL MI subscribers require SQL Server 2016+ publishers, with exact combinations dependent on MI update policy. Snapshot and one-way transactional replication are supported for SQL DB/Fabric; peer-to-peer and merge are not; replicated tables require primary keys; distribution DB and agents cannot live in Azure SQL Database.
 - **Heavy write I/O at or below 4 TB is not automatically Hyperscale.** Business Critical is explicitly intended for high-transaction-rate applications requiring low I/O latency, so compare the two on transaction rate, log throughput, latency, scale-out and HA requirements rather than sending every write-heavy workload to Hyperscale. Treating write intensity alone as decisive also contradicts the tier rules in §13.
 - **Hyperscale**: the only viable SQL DB choice **above 4 TB** — and it stops at **128 TB** for a single database (inside a Hyperscale elastic pool the per-database maximum is **100 TB**). A single database beyond that cannot be rehosted as one database: Azure SQL MI tops out far below that ceiling, so it is **not** an as-is destination. Shard across databases or instances, or use SQL Server on Azure VM subject to its own storage design and limits.
-- **Fabric SQL DB**: the *target* is GA; only the Migration Assistant is Preview, with a 20 MB DACPAC cap, on-prem gateway only and no Private Link. Those tool limits are not target-wide limits, because T-SQL, transactional replication, Fabric pipelines / Data Factory copy jobs, Dataflow Gen2 and TDS-capable tools can also ingest data — so don't eliminate the target because the assistant does not fit. Do assess the database surface: it is a subset of the SQL Server surface.
+- **Fabric SQL DB**: the target and the Migration Assistant are GA; the assistant has a 20 MB DACPAC cap and takes an on-premises data gateway only (no VNet data gateway). Those tool limits are not target-wide limits, because T-SQL, transactional replication, a SqlPackage BACPAC import into an empty database, Fabric pipelines / Data Factory copy jobs, Dataflow Gen2 and TDS-capable tools can also ingest data — so don't eliminate the target because the assistant does not fit. Do assess the database surface: it is a subset of the SQL Server surface.
 - **Mirroring ≠ migration**: it's continuous analytics replication; treating it as a one-shot migration is a dangerous shortcut.
 - **Dependency mapping**: undocumented linked servers and SQL Agent jobs are among the most commonly late-discovered blockers — run a dependency map (Azure Migrate or third-party) before committing a target.
 - **SLAs differ**: MI BC 99.99% · SQL DB BC 99.995% (zone-redundant) · SQL DB Hyperscale 99.99% · SQL VM depends on the AG. Align to the app, not a slogan.
@@ -550,9 +551,10 @@ Microsoft describes LRS as an online migration with expected downtime during cut
 - Migrate to Arc-enabled SQL MI — <https://learn.microsoft.com/en-us/azure/azure-arc/data/migrate-to-managed-instance>
 - SQL Server on Kubernetes / AKS — <https://learn.microsoft.com/en-us/sql/linux/quickstart-sql-server-containers-kubernetes>
 - SQL Server in a Docker container — <https://learn.microsoft.com/en-us/sql/linux/quickstart-install-connect-docker>
-- Fabric Migration Assistant for SQL database (Preview) — <https://learn.microsoft.com/en-us/fabric/database/sql/migration-assistant>
+- Fabric Migration Assistant for SQL database — <https://learn.microsoft.com/en-us/fabric/database/sql/migration-assistant>
 - Ingest data into Fabric SQL database — <https://learn.microsoft.com/en-us/fabric/database/sql/tutorial-ingest-data>
 - Migrate to Fabric SQL DB via DACPAC — <https://learn.microsoft.com/en-us/fabric/database/sql/migrate-with-migration-assistant-using-dacpac>
+- SqlPackage for SQL database in Fabric — <https://learn.microsoft.com/en-us/fabric/database/sql/sqlpackage>
 - Fabric Mirroring for SQL Server — <https://learn.microsoft.com/en-us/fabric/mirroring/sql-server>
 - Limitations for SQL database in Fabric — <https://learn.microsoft.com/en-us/fabric/database/sql/limitations>
 - Fabric — choose a data store (decision guide) — <https://learn.microsoft.com/en-us/fabric/fundamentals/decision-guide-data-store>

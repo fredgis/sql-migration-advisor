@@ -129,7 +129,7 @@
         "sql_db": "eligible"
       },
       "primary_target": "provisional shortlist only",
-      "method": "Confirm a Fabric ingestion path first; Migration Assistant Preview gates apply only if that path is chosen",
+      "method": "Confirm a Fabric ingestion path first; Migration Assistant gates apply only if that path is chosen",
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
       "recommendationStatus": "shortlist",
@@ -1835,9 +1835,9 @@
     "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },
   {
-    "id": "fabric-private-link-unsupported",
-    "title": "Fabric SQL DB unsupported with Private Link",
-    "why": "Fabric constraints must be evaluated.",
+    "id": "fabric-vnet-data-gateway-needs-another-path",
+    "title": "A VNet data gateway requirement rules out the Fabric Migration Assistant",
+    "why": "The Fabric Migration Assistant supports on-premises data gateways only. A VNet data gateway requirement disqualifies the assistant as a method; the GA target stays available through another ingestion path.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -1848,8 +1848,7 @@
       ],
       "downtime": "offline",
       "driver": "analytics/Fabric",
-      "compliance": "Private Link required",
-      "fabric_constraints": "DACPAC <= 20 MB; preview accepted; on-prem data gateway acceptable; Private Link required",
+      "fabric_constraints": "DACPAC <= 20 MB; on-premises data gateway acceptable; VNet data gateway required",
       "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
@@ -1863,11 +1862,12 @@
       "businessCutoverDowntime": "total-migration-time",
       "recommendationStatus": "provisional",
       "confidence": "medium",
-      "mustNotRecommend": []
+      "mustNotRecommend": [],
+      "exclusions.fabric_sql_db": "The Fabric Migration Assistant takes an on-premises data gateway only, not a VNet data gateway; the GA target itself remains available through another ingestion path."
     },
     "assertRulePresent": [
-      "requires Private Link",
-      "No VNet gateway/Private Link"
+      "a VNet data gateway requirement",
+      "No VNet data gateway for the assistant"
     ],
     "auditRef": "P1-38"
   },
@@ -1886,7 +1886,7 @@
       "downtime": "offline",
       "driver": "analytics/Fabric",
       "size": "> 4 TB",
-      "fabric_constraints": "DACPAC > 20 MB; preview accepted; on-prem data gateway acceptable; no Private Link required",
+      "fabric_constraints": "DACPAC > 20 MB; on-prem data gateway acceptable; no VNet data gateway required",
       "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
@@ -1923,7 +1923,7 @@
       ],
       "downtime": "offline",
       "size": "> 4 TB",
-      "fabric_constraints": "DACPAC <= 20 MB; preview accepted; gateway acceptable; no private link",
+      "fabric_constraints": "DACPAC <= 20 MB; gateway acceptable; no VNet data gateway required",
       "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
@@ -1961,7 +1961,7 @@
       ],
       "downtime": "offline",
       "size": "< 150 GB",
-      "fabric_constraints": "DACPAC > 20 MB; preview accepted; gateway acceptable; no private link",
+      "fabric_constraints": "DACPAC > 20 MB; gateway acceptable; no VNet data gateway required",
       "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
@@ -2021,9 +2021,9 @@
     "auditRef": "P1-40"
   },
   {
-    "id": "fabric-driver-preview-gates-met-validated",
-    "title": "Fabric driver with all Preview gates and validation evidence",
-    "why": "Covers the positive Fabric path only when mandatory Preview gates and validation evidence are supplied. Expectations corrected in v1.17: the engine read \"no Private Link required\" as \"Private Link required\", so this scenario had been recorded as Azure SQL Database with a Private Link remediation it never asked for. From v1.18 the four evidence booleans no longer promote the recommendation: this skill reads no artefact, so it records the claim and leaves the status provisional.",
+    "id": "fabric-driver-assistant-gates-met-validated",
+    "title": "Fabric driver with all Migration Assistant gates and validation evidence",
+    "why": "Covers the positive Fabric path when the Migration Assistant gates and validation evidence are supplied. The assistant is GA, so refusing preview services does not disqualify it. The four evidence booleans do not promote the recommendation: this skill reads no artefact, so it records the claim and leaves the status provisional.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -2036,7 +2036,7 @@
       "downtime": "offline",
       "driver": "analytics/Fabric",
       "size": "< 150 GB",
-      "fabric_constraints": "DACPAC <= 20 MB; preview accepted; on-prem data gateway acceptable; no Private Link required",
+      "fabric_constraints": "DACPAC <= 20 MB; preview not acceptable; on-prem data gateway acceptable; no VNet data gateway required",
       "performance": "Perfmon/DMV baseline artifact attached; sizing data artifact attached",
       "compliance": "target-region feature availability artifact attached; architecture approval artifact attached",
       "evidence": {
@@ -2072,14 +2072,15 @@
     "assertRulePresent": [
       "Fabric analytics branch before generic SQL DB",
       "DACPAC ≤ 20 MB",
-      "No VNet gateway/Private Link"
+      "No VNet data gateway for the assistant",
+      "preview acceptance does not apply"
     ],
     "auditRef": "P0/P1-fabric-validated"
   },
   {
-    "id": "fabric-preview-refused-keeps-the-ga-target-through-another-path",
-    "title": "Refusing Preview disqualifies the Migration Assistant, not the Fabric target",
-    "why": "The preview and gateway gate had never executed: the Private Link negation defect returned before reaching it, so every Fabric scenario stopped one branch earlier. Refusing Preview must exclude the assistant as a method while the GA target stays reachable by another ingestion path.",
+    "id": "fabric-gateway-refused-keeps-the-ga-target-through-another-path",
+    "title": "Refusing the on-premises data gateway disqualifies the Migration Assistant, not the Fabric target",
+    "why": "The on-premises data gateway is a Migration Assistant gate, not a target gate. Refusing it must exclude the assistant as a method while the GA target stays reachable by another ingestion path.",
     "inputs": {
       "intent": "migrate now",
       "source_location": "on-prem / Azure VM",
@@ -2091,7 +2092,7 @@
       ],
       "downtime": "offline",
       "size": "< 150 GB",
-      "fabric_constraints": "DACPAC <= 20 MB; preview not acceptable; on-prem data gateway acceptable; no Private Link required",
+      "fabric_constraints": "DACPAC <= 20 MB; on-premises data gateway not acceptable",
       "blob_https_reachability": "BLOB_HTTPS_CONFIRMED"
     },
     "expect": {
@@ -2105,7 +2106,7 @@
       "businessCutoverDowntime": "full-load-time",
       "recommendationStatus": "provisional",
       "confidence": "medium",
-      "exclusions.fabric_sql_db": "Preview acceptance and the on-prem data gateway are Migration Assistant gates, not target gates; select a non-assistant ingestion path.",
+      "exclusions.fabric_sql_db": "The on-premises data gateway is a Migration Assistant gate, not a target gate; select another ingestion path.",
       "mustNotRecommend": [
         "SQL database in Fabric",
         "Fabric Migration Assistant"
@@ -2139,7 +2140,7 @@
         "fabric_sql_db": "unknown_requires_assessment"
       },
       "primary_target": "provisional shortlist only",
-      "method": "Confirm a Fabric ingestion path first; Migration Assistant Preview gates apply only if that path is chosen",
+      "method": "Confirm a Fabric ingestion path first; Migration Assistant gates apply only if that path is chosen",
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
       "recommendationStatus": "shortlist",
@@ -3948,7 +3949,7 @@
     },
     "expect": {
       "primary_target": "provisional shortlist only",
-      "method": "Confirm a Fabric ingestion path first; Migration Assistant Preview gates apply only if that path is chosen",
+      "method": "Confirm a Fabric ingestion path first; Migration Assistant gates apply only if that path is chosen",
       "targetAvailabilityDuringSync": "unknown_requires_assessment",
       "businessCutoverDowntime": "unknown_requires_assessment",
       "confidence": "low",

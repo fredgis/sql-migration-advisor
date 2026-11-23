@@ -98,11 +98,11 @@
   },
   {
     "claim_id": "fabric-sql-db-migration-preview-limits",
-    "claim": "What preview limits apply to Fabric SQL database migration, including DACPAC size, gateway, and Private Link?",
+    "claim": "What limits apply to the Fabric Migration Assistant for SQL database, including DACPAC size and gateway type?",
     "source_url": "https://learn.microsoft.com/en-us/fabric/database/sql/migration-assistant",
     "source_section": "Limitations",
-    "last_verified": "2026-08-12",
-    "verification_hash": "cd123551d6ab669cf636f6e9a4da4f2ed34c38cf618498d94ad55aa32af814de",
+    "last_verified": "2026-11-23",
+    "verification_hash": "212d9e9ce3a75b37509ef9e208d295254dc0be6ddd0ea0a3df4bb757702b2878",
     "affected_rules": [
       "fabric-sql-db-preview-limits",
       "fabric-migration-assistant"
