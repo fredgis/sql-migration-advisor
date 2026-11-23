@@ -221,15 +221,25 @@
   },
   {
     "claim_id": "arc-sql-migration-minimum-source-versions",
-    "claim": "What minimum SQL Server and Windows Server source versions apply to SQL Server migration in Azure Arc overall, the LRS method, and the MI Link method?",
+    "claim": "What minimum SQL Server and Windows Server source versions apply to the LRS and MI Link methods of SQL Server migration in Azure Arc?",
     "source_url": "https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migrate-to-azure-sql-managed-instance",
     "source_section": "Integrated migration methods",
     "last_verified": "2026-11-23",
     "verification_hash": "d66b315a8e8ba4ba23ce0b8af7f1d6e6b8ced69257533ed39228c8e98e1e27e8",
     "affected_rules": [
-      "arc-overall-minimum-source-version",
       "arc-lrs-minimum-source-version",
       "arc-mi-link-minimum-source-version"
+    ]
+  },
+  {
+    "claim_id": "arc-sql-migration-overall-minimum-source-version",
+    "claim": "From which SQL Server version is database migration in Azure Arc available overall?",
+    "source_url": "https://learn.microsoft.com/en-us/sql/sql-server/azure-arc/migrate-to-azure-sql-managed-instance",
+    "source_section": "Overview",
+    "last_verified": "2026-11-23",
+    "verification_hash": "17aa14da549a48e0f8c05796fda1741aae3d54c54e759db5fa2fe1a3371f2d11",
+    "affected_rules": [
+      "arc-overall-minimum-source-version"
     ]
   },
   {

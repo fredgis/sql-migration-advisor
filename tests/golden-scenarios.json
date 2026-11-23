@@ -441,7 +441,7 @@
       ]
     },
     "assertRulePresent": [
-      "Every recommendation must carry the KB version, engine version",
+      "Every recommendation must carry its evaluation timestamp",
       "Replaying the same inputs through the rules mirror in `tests/` gives the same result"
     ],
     "auditRef": "P0-8"

@@ -34,6 +34,7 @@ const UNPROVEN = 'UNPROVEN::';
 const isUnprovenGate = (reason) => typeof reason === 'string' && reason.startsWith(UNPROVEN);
 const gateText = (reason) => (isUnprovenGate(reason) ? reason.slice(UNPROVEN.length) : reason);
 
+const PREREQ_APPLICABILITY = new Map();
 const PREREQ_BLOCKING = (() => {
   const rows = new Map();
   const text = fs.readFileSync(new URL('../../docs/sql-server-to-azure-migration-prerequisite.md', import.meta.url), 'utf8');
@@ -41,7 +42,10 @@ const PREREQ_BLOCKING = (() => {
     const cells = line.split('|').map(cell => cell.trim());
     if (cells.length < 6) continue;
     if (!/^(COM|P[0-9]{2})-[0-9]{3}$/.test(cells[1])) continue;
-    if (/^yes$/i.test(cells[4])) rows.set(cells[1], cells[2]);
+    if (/^yes$/i.test(cells[4])) {
+      rows.set(cells[1], cells[2]);
+      PREREQ_APPLICABILITY.set(cells[1], cells[6] || '');
+    }
   }
   return rows;
 })();
@@ -73,9 +77,13 @@ function unprovenGateFacts(inputs, cell) {
   // meant such a path had no field to test and came back available with nothing established, which
   // is how transactional replication was offered with none of P13 in evidence.
   const unreachable = [...paths].filter(id => !FIELD_TO_ROWS.provable.has(id));
+  // A row whose applicability says "never <target>" settles nothing for that target: SQL database in
+  // Fabric only takes a local BACPAC, so the Blob-staging row of P11 cannot hold it open (A0).
+  const targetLabel = COVERAGE_TARGET_LABELS[cell.target];
+  const appliesTo = (row) => !(targetLabel && new RegExp(`\\bnever ${targetLabel}\\b`, 'i').test(PREREQ_APPLICABILITY.get(row) || ''));
   const fields = [];
   for (const [field, rows] of FIELD_TO_ROWS.map) {
-    if (![...rows].some(row => paths.has(row.slice(0, 3)))) continue;
+    if (![...rows].some(row => paths.has(row.slice(0, 3)) && appliesTo(row))) continue;
     const value = inputs[field];
     const stated = value !== undefined && value !== null && String(value).trim() !== ''
       && !/^unknown$/i.test(String(value)) && !/not sure|unknown/i.test(textOf(value));
@@ -207,7 +215,9 @@ function chooseMiTier(inputs, out) {
   if (/business critical|low-latency|low latency|high iops|read-scale|read scale|highest ha|heavy tempdb|in-memory/.test(p)) return 'MI Business Critical';
   // A described log rate does not select Business Critical: Next-gen General Purpose sustains a
   // per-vCore rate up to an instance cap, so only the measured rate against that ceiling decides.
-  if (/log throughput|log rate/.test(p)) {
+  // "no high log throughput" is a General Purpose signal, not a log-rate requirement.
+  const logRateText = p.replace(/\bno (?:high )?(?:transaction )?log (?:throughput|rate)\b/g, '');
+  if (/log throughput|log rate/.test(logRateText)) {
     addUnique(out.unknowns, 'Measured log generation rate against the MI configuration being sized');
     addUnique(out.evidenceRequired, `Measured log generation rate compared with Next-gen General Purpose: ${MI_NEXT_GEN.logRatePerVcoreMiBps} MiB/s per vCore, at most ${MI_NEXT_GEN.logRateInstanceMaxMiBps} MiB/s per instance`);
     return E.UNKNOWN;
@@ -522,9 +532,9 @@ function chooseVmMethod(inputs) {
   // Selecting a method the source cannot run, then rejecting it at the gate, produces a
   // provisional shortlist where a working answer existed. The floor belongs here too.
   if (has(inputs.downtime, 'near-zero') && (!v || v >= agFloor) && !linuxSource) return 'Distributed AG or Always On AG';
-  // Log shipping is documented Windows to Windows and Linux to Linux, and nothing collects the target
-  // OS, so a Linux source leaves it to confirm. Availability groups need the version floor. When the
-  // source meets neither, DMS is the documented online path to a SQL VM rather than a longer outage.
+  // Log shipping pairs the same OS family at both ends. A Windows source pairs with a Windows VM; a
+  // Linux source needs a Linux VM confirmed first, so it is not selected here. Availability groups need
+  // the version floor. When the source meets neither, DMS is the documented online path to a SQL VM.
   if (has(inputs.downtime, 'minimal') || has(inputs.downtime, 'near-zero')) {
     if (linuxSource || (v && v < agFloor)) return 'Azure DMS (online)';
     return 'Log shipping';

@@ -123,7 +123,7 @@ status line. See [§ The prerequisite companion](#the-prerequisite-companion) an
 | [`examples/sample-recommendation.md`](examples/sample-recommendation.md) | A worked end-to-end example (SQL 2014 → Azure SQL MI via LRS). |
 | [`docs/sql-server-to-azure-migration.md`](docs/sql-server-to-azure-migration.md) | The knowledge base — every target family, method, tool, and commercial lever, with Microsoft Learn links. |
 | [`docs/sql-server-to-azure-migration-connectivity.md`](docs/sql-server-to-azure-migration-connectivity.md) | **Draft.** The connectivity knowledge base: endpoints, ports, authentication, driver syntax, TLS, DNS and error diagnosis, with a source register and an open-questions section. |
-| [`reference/claims-registry.json`](reference/claims-registry.json) | Hashes and source pointers for high-risk claims, used by weekly drift detection. 40 claims: 20 for the migration knowledge base, 10 for prerequisites, 10 for connectivity. |
+| [`reference/claims-registry.json`](reference/claims-registry.json) | Hashes and source pointers for high-risk claims, used by weekly drift detection. 41 claims: 21 for the migration knowledge base, 10 for prerequisites, 10 for connectivity. |
 | [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) | The same knowledge base as a branded, partner-ready PDF. |
 | [`lab/`](lab/) | A self-contained, hands-on lab: take a legacy SQL Server 2016 workload to a SQL Server on Azure VM, driven by the advisor and the HVE Squad (VM-to-VM migration). |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Deep dive: what the plugin is, how a session runs end to end, what the 76 gates defend, and where it can still be wrong. |
@@ -152,7 +152,7 @@ Azure VM in offline and online mode, DMS offline to Azure SQL Database, transact
 Data Box seed, Striim, the Fabric Migration Assistant, two Arc routes, containers, bcp, Data Factory
 Copy, Smart Bulk Copy, an Azure VMware Solution platform overlay and Azure Migrate assessment.
 Behind them sits [`docs/sql-server-to-azure-migration-prerequisite.md`](docs/sql-server-to-azure-migration-prerequisite.md):
-12 common requirements and 297 rows in total, each with a stable ID, an owner, an applicability
+12 common requirements and 298 rows in total, each with a stable ID, an owner, an applicability
 condition, the evidence that would settle it, and a public Microsoft source with the date it was
 checked.
 
