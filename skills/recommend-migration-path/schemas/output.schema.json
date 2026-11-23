@@ -382,7 +382,7 @@
             "UNKNOWN",
             null
           ],
-          "description": "Whether the customer accepts a service or capability still in preview. Two indexed rules read it, MI-TIER for zone redundancy and COPILOT-AGENT for the control-plane branch, and the profile could not carry it: additionalProperties is false, so a decision those rules made could not be reproduced from a schema-valid input. UNKNOWN holds the preview option rather than granting it."
+          "description": "Whether the customer accepts a service or capability still in preview. COPILOT-AGENT reads it for the control-plane branch, and it gates the Arc to Azure SQL Database orchestration. UNKNOWN holds the preview option rather than granting it."
         },
         "recovery_model": {
           "enum": [

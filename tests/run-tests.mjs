@@ -556,16 +556,18 @@ try {
       }
     }
 
-    // MI Next-gen General Purpose is GA. Its zone-redundancy option is public preview, and a GA tier
-    // label must not quietly make a preview capability GA too -- the same confusion the repository
-    // already corrected for Fabric while its Migration Assistant was in preview.
+    // Zone redundancy on MI Next-gen General Purpose became GA in November 2026. A stale preview
+    // label would withhold a GA capability from projects that accept generally available services only.
     for (const [label, text] of [['docs\\sql-server-to-azure-migration.md', kb], ['reference\\decision-rules.md', rules]]) {
-      if (!/zone[- ]redundan\w*[^.]{0,120}(public )?preview|preview[^.]{0,120}zone[- ]redundan/iu.test(text)) {
-        failures.push(`${label} does not record that zone redundancy on MI Next-gen General Purpose is public preview`);
+      if (/zone[- ]redundan\w*[^.]{0,120}public preview|public preview[^.]{0,120}zone[- ]redundan/iu.test(text)) {
+        failures.push(`${label} still calls zone redundancy on MI Next-gen General Purpose public preview`);
+      }
+      if (!/zone[- ]redundan\w*[^.]{0,80}\bGA\b|\bGA\b[^.]{0,80}zone[- ]redundan/iu.test(text)) {
+        failures.push(`${label} does not record that zone redundancy on MI Next-gen General Purpose is GA`);
       }
     }
   }
-  add('forbidden-patterns', failures.length === 0, failures.length ? failures : ['No forbidden anti-regression patterns found; the MI Link Windows Server floor, the three AVS licensing dates and the Next-gen GP zone-redundancy preview status are all stated.']);
+  add('forbidden-patterns', failures.length === 0, failures.length ? failures : ['No forbidden anti-regression patterns found; the MI Link Windows Server floor, the three AVS licensing dates and the Next-gen GP zone-redundancy GA status are all stated.']);
 }
 
 {

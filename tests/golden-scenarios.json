@@ -862,7 +862,7 @@
     },
     "assertRulePresent": [
       "Low-latency storage required[\\s\\S]*?\\*\\*MI Business Critical\\*\\*",
-      "high IOPS/log throughput"
+      "a measured log rate above what the selected Next-gen General Purpose configuration sustains"
     ],
     "auditRef": "shilpi-2026-09-13 unproven-candidates"
   },

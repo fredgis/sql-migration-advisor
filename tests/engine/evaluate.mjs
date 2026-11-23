@@ -107,6 +107,7 @@ const E = {
   UNKNOWN: 'unknown_requires_assessment'
 };
 const MI_LINK = RULES.miLink;
+const MI_NEXT_GEN = RULES.miNextGenGeneralPurpose;
 const ARC_FLOORS = RULES.azureArcFloors;
 const SOURCE_FLOORS = RULES.sourceVersionFloors;
 const ARC_WIZARD = RULES.arcPortalWizard;
@@ -203,7 +204,14 @@ function chooseMiTier(inputs, out) {
   const p = String(inputs.performance || '').toLowerCase();
   const explicitTier = String(inputs.size || '').toLowerCase();
   if (/next-gen|next gen/.test(explicitTier) || /next-gen|next gen/.test(p)) return 'MI Next-gen General Purpose';
-  if (/business critical|low-latency|low latency|high iops|log throughput|read-scale|read scale|highest ha|heavy tempdb|in-memory/.test(p)) return 'MI Business Critical';
+  if (/business critical|low-latency|low latency|high iops|read-scale|read scale|highest ha|heavy tempdb|in-memory/.test(p)) return 'MI Business Critical';
+  // A described log rate does not select Business Critical: Next-gen General Purpose sustains a
+  // per-vCore rate up to an instance cap, so only the measured rate against that ceiling decides.
+  if (/log throughput|log rate/.test(p)) {
+    addUnique(out.unknowns, 'Measured log generation rate against the MI configuration being sized');
+    addUnique(out.evidenceRequired, `Measured log generation rate compared with Next-gen General Purpose: ${MI_NEXT_GEN.logRatePerVcoreMiBps} MiB/s per vCore, at most ${MI_NEXT_GEN.logRateInstanceMaxMiBps} MiB/s per instance`);
+    return E.UNKNOWN;
+  }
   if (/general purpose|moderate|cost-sensitive|cost sensitive|general enterprise/.test(p)) return 'MI General Purpose';
   if (/none\/unknown|not sure|unknown/.test(p)) {
     addUnique(out.unknowns, 'MI tier-driving performance inputs');

@@ -77,6 +77,10 @@
       "nextGenGeneralPurpose": 500
     }
   },
+  "miNextGenGeneralPurpose": {
+    "logRatePerVcoreMiBps": 6,
+    "logRateInstanceMaxMiBps": 220
+  },
   "arcPortalWizard": {
     "extensionMinVersionForBatchLimit": "1.1.3348.364",
     "batchLimitAtOrAboveExtension": 10,
@@ -241,7 +245,8 @@
     "azureSqlManagedInstance": {
       "businessCriticalSignals": [
         "low-latency storage",
-        "high IOPS/log throughput",
+        "high IOPS",
+        "a measured log rate above what the selected Next-gen General Purpose configuration sustains",
         "heavy tempdb",
         "in-memory OLTP",
         "read-scale secondary",

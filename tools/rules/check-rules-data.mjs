@@ -65,6 +65,10 @@ assertRegex('azureArcFloors.miLinkToManagedInstance', new RegExp(`Arc → Azure 
 assertRegex('azureArcFloors.lrsToManagedInstanceConservative', new RegExp(`method-table floor of SQL Server \\*\\*${arc.lrsToManagedInstanceConservative.documentedMethodSqlServerMin}\\+\\*[\\s\\S]*?require Arc experience floor \\*\\*${arc.lrsToManagedInstanceConservative.sqlServerMin}\\+\\*\\*`, 'u'), `expected Arc LRS documented ${arc.lrsToManagedInstanceConservative.documentedMethodSqlServerMin}+ and conservative ${arc.lrsToManagedInstanceConservative.sqlServerMin}+ floors`);
 assertRegex('azureArcFloors.sqlServerOnAzureVm.sqlServerMin', new RegExp(`Arc → SQL Server on Azure VM:[\\s\\S]*?SQL Server \\*\\*${arc.sqlServerOnAzureVm.sqlServerMin}\\+\\*\\*`, 'u'), `expected Arc SQL VM floor ${arc.sqlServerOnAzureVm.sqlServerMin}+`);
 
+const nextGen = data.miNextGenGeneralPurpose;
+assertRegex('miNextGenGeneralPurpose.logRatePerVcoreMiBps', new RegExp(`\\*\\*${nextGen.logRatePerVcoreMiBps} MiB/s of log per vCore\\*\\*`, 'u'), `expected Next-gen GP log rate ${nextGen.logRatePerVcoreMiBps} MiB/s per vCore`);
+assertRegex('miNextGenGeneralPurpose.logRateInstanceMaxMiBps', new RegExp(`\\*\\*${nextGen.logRateInstanceMaxMiBps} MiB/s per instance\\*\\*`, 'u'), `expected Next-gen GP instance log cap ${nextGen.logRateInstanceMaxMiBps} MiB/s`);
+
 const ports = data.miLink.ports;
 assertRegex('miLink.ports.sqlServerEndpoint', new RegExp(`Required ports are:[\\s\\S]*?\\*\\*${ports.sqlServerEndpoint}\\*\\*`, 'u'), `expected MI Link endpoint port ${ports.sqlServerEndpoint}`);
 assertRegex('miLink.ports.managedInstanceHadrRange', new RegExp(`Required ports are:[\\s\\S]*?\\*\\*${ports.managedInstanceHadrRange.start}[–-]${ports.managedInstanceHadrRange.end}\\*\\*`, 'u'), `expected MI Link HADR range ${ports.managedInstanceHadrRange.start}-${ports.managedInstanceHadrRange.end}`);

@@ -237,17 +237,22 @@ If a tier-driving input is missing, emit `unknown_requires_assessment` for tier 
 
 | Inputs | Tier result |
 | --- | --- |
-| Low-latency storage required, high IOPS/log throughput, heavy tempdb, in-memory OLTP, read-scale secondary, highest HA/resilience, or SLA/latency target cannot tolerate remote storage | **MI Business Critical** |
-| 101–500 databases on a single instance, up to 128 vCores, up to 32 TB, or configurable IOPS/memory required — and Business Critical-only features and its latency floor are not required | **MI Next-gen General Purpose** *(GA — but its **zone-redundancy option is public preview**, so count it only when `preview_acceptable = PREVIEW_ACCEPTED`)* |
+| Low-latency storage required, high IOPS, a measured log rate above what the selected Next-gen General Purpose configuration sustains, heavy tempdb, in-memory OLTP, read-scale secondary, highest HA/resilience, or SLA/latency target cannot tolerate remote storage | **MI Business Critical** |
+| 101–500 databases on a single instance, up to 128 vCores, up to 32 TB, or configurable IOPS/memory required — and Business Critical-only features and its latency floor are not required | **MI Next-gen General Purpose** *(GA, zone redundancy included where the target region supports it)* |
 | Moderate latency/IO, general enterprise workload, cost-sensitive, no read-scale secondary, no high log throughput requirement | **MI General Purpose** |
-| More than 500 databases or links on one instance | Next-gen General Purpose is still capped at 500 — plan **multiple instances** |
+| More than 500 databases on one instance | Next-gen General Purpose is still capped at 500 — plan **multiple instances** |
 | `performance.latency`, `performance.iops`, `performance.log_throughput`, and `resilience.read_scale/SLA` unknown | `unknown_requires_assessment` — require Perfmon/DMV baseline, wait stats, log generation rate, HA/read-scale requirement |
 
-**Zone redundancy on Next-gen General Purpose is public preview.** The tier is GA; that capability is
-not, and a GA tier label must not quietly make its preview options GA too. When resilience is what
-selects the tier, treat zone redundancy as available only if `preview_acceptable = PREVIEW_ACCEPTED`. Otherwise
-say the option exists in preview and rank on the GA feature set — the same treatment already applied
-to cross-instance Service Broker.
+**Zone redundancy on Next-gen General Purpose is GA.** It is offered in the zone-redundant regions where
+Azure Elastic SAN supports it, so when resilience is what selects the tier, check the target region before
+counting it, and ask when the region or its support is not known. Preview acceptance does not apply to it;
+it still applies to unrelated preview capabilities such as cross-instance Service Broker.
+
+**Log rate is measured, not described.** Next-gen General Purpose sustains up to **6 MiB/s of log per vCore**,
+capped at **220 MiB/s per instance**, so its ceiling depends on the vCore count. Compare the measured log
+generation rate with the configuration being sized before choosing Business Critical, and weigh storage per
+vCore, latency, HA and read-scale needs: a qualitative "high log throughput" answer does not select Business
+Critical on its own.
 
 #### Azure SQL Database service tier/model
 **`SQLDB-TIER`**; the size ceilings below are **`HYPERSCALE-CEILING`.**
@@ -588,7 +593,7 @@ The normative wording stays in the sections above. This index is the address boo
 | `FABRIC-ASSISTANT` | hard method gate | `fabric_constraints` | Assistant `unknown_requires_assessment`; the GA target survives | A3, B3 |
 | `HYPERSCALE-CEILING` | hard target gate | `size` | Tier `unknown_requires_assessment`. Past the 128 TB single-database ceiling, both PaaS families are **refused** and the workload must be sharded or moved to a VM | B2 |
 | `SOURCE-PERMISSIONS` | hard method gate | `source_permissions` | Method `unknown_requires_assessment`; limited rights **refuse** the method | A0, B3 |
-| `MI-TIER` | tier rule | `performance`, `size`, `database_count` | Tier `unknown_requires_assessment`, never General Purpose by default; Next-gen GP zone redundancy counts only when preview is accepted | B2 |
+| `MI-TIER` | tier rule | `performance`, `size`, `database_count` | Tier `unknown_requires_assessment`, never General Purpose by default; Next-gen GP zone redundancy counts only where the target region supports it | B2 |
 | `SQLDB-TIER` | tier rule | `performance`, `size`, `tenant_count` | Tier `unknown_requires_assessment` | B2 |
 | `DOWNTIME-CLASS` | consistency rule | `downtime` | `businessCutoverDowntime` `unknown_requires_assessment` | C1, C4 |
 | `RANK-ORDER` | ranking | all surviving candidates | Provisional shortlist at step 10 | B1 |

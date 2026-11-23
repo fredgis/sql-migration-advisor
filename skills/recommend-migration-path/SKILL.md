@@ -148,7 +148,7 @@ Ask one at a time. Show the human label, record the **stable ID**. The rules mat
 
 11b. **Preview services** (`preview_acceptable`) — ask when a preview capability would change the answer: “Can this project take on a service still in preview, or generally available only?”
     - **`PREVIEW_ACCEPTED`** `Preview is acceptable` · **`PREVIEW_REFUSED`** `Generally available only` · `Not sure`
-    - `MI-TIER` reads it for zone redundancy and `COPILOT-AGENT` for the control-plane branch. Both rules consumed it while the profile had no field to carry it, so a decision they made could not be reproduced from a valid input. Unanswered leaves preview options unavailable rather than granting them.
+    - `COPILOT-AGENT` reads it for the control-plane branch, and it gates the Arc → Azure SQL Database orchestration. Zone redundancy on Next-gen General Purpose is GA and does not read it. Unanswered leaves preview options unavailable rather than granting them.
 
 11c. **Recovery model and log chain** (`recovery_model`, `log_chain_status`) — ask when a minimal-downtime method is still in play: “What recovery model do these databases run in, and is the log backup chain unbroken?”
     - `recovery_model`: **`FULL`** `Full` · **`BULK_LOGGED`** `Bulk-logged` · **`SIMPLE`** `Simple` · `Not sure`
@@ -167,7 +167,7 @@ Ask one at a time. Show the human label, record the **stable ID**. The rules mat
     - Only `LIST_TIER_DRIVERS` opens **13a**.
     - `Not sure` holds the tier at `unknown_requires_assessment`; it must never fall back to General Purpose.
 
-13a. **Which tier drivers** (free text) — “List them, separated by commas: low-latency writes, high IOPS/log throughput, strict SLA / zone redundancy, read-scale replicas, intermittent usage, many tenants / variable demand.”
+13a. **Which tier drivers** (free text) — “List them, separated by commas: low-latency writes, high IOPS, high log rate (give the measured MiB/s), strict SLA / zone redundancy, read-scale replicas, intermittent usage, many tenants / variable demand.”
     - Consumed by GP vs Business Critical vs Hyperscale vs Serverless vs Elastic Pool.
 
 ### Tier 2 — Confirmation (only when decision-driving)
@@ -296,8 +296,8 @@ Follow every phase in order. Do not jump from interview answers to a recommendat
 2. **Phase B — Ranking**: apply the ten ordered steps in `../../reference/decision-rules.md` §B1. The order is normative. Do not re-weigh the criteria yourself: an unordered comparison was how two readers reached two different answers from the same estate. When the steps do not separate the finalists, return them as a shortlist and say what evidence would break the tie. Never invent a winner.
 3. **Tier selection**:
    - SQL MI **General Purpose**: default managed lift-and-shift when latency/IOPS are moderate and no BC-only HA/latency/read-scale requirement is known.
-   - SQL MI **Business Critical**: low-latency storage, high IOPS/log throughput, strict HA/SLA posture, readable secondary needs, or memory/IO-sensitive OLTP.
-   - SQL MI **Next-gen General Purpose** *(GA)*: 101–500 databases on one instance, up to 128 vCores, up to 32 TB, or configurable IOPS/memory — when BC-only features and its latency floor are not required. Beyond 500 databases, plan multiple instances.
+   - SQL MI **Business Critical**: low-latency storage, high IOPS, a measured log rate above what Next-gen General Purpose sustains (6 MiB/s per vCore, 220 MiB/s per instance), strict HA/SLA posture, readable secondary needs, or memory/IO-sensitive OLTP.
+   - SQL MI **Next-gen General Purpose** *(GA)*: 101–500 databases on one instance, up to 128 vCores, up to 32 TB, or configurable IOPS/memory — when BC-only features and its latency floor are not required. Zone redundancy is GA where the target region supports it. Beyond 500 databases, plan multiple instances.
    - SQL DB **Hyperscale**: >4 TB up to its **128 TB** maximum for a single database (100 TB per database inside a Hyperscale elastic pool), high scale-out/read needs, or heavy write/HTAP pattern. A single database above 128 TB must be partitioned/sharded, or moved to SQL Server on Azure VM subject to its storage design: SQL MI is **not** an as-is destination at that size because its storage ceiling is far below 128 TB.
    - SQL DB **Serverless**: intermittent/dev/workload with acceptable cold-start/auto-pause behavior.
    - SQL DB **Elastic Pool**: many tenants/databases with variable aggregate demand.
