@@ -3,9 +3,9 @@
 Source: the weekly knowledge-base checks of 14 September to 23 November 2026 (issue #75). The 40
 findings open on 10 November were audited that day against the live Microsoft sources and the text now
 in HEAD (last knowledge-base commit: 13 September). Scope: the recommendation and prerequisite skills,
-the two published by Microsoft. The file has three parts: **To do** (22 findings, including three guidance additions, plus one decision, 28b),
+the two published by Microsoft. The file has three parts: **To do** (22 findings, including three guidance additions),
 **Implementation audit** (added 16 November: the knowledge-base lines to change for each one, a revised
-criticality and a size for the scope then known) and **Not doing** (19 others, with the reason). The 10 November audit is
+criticality and a size for the scope then known) and **Not doing** (20 others, with the reason). The 10 November audit is
 recorded in the comment of 10 November on issue #75
 (https://github.com/fredgis/sql-migration-advisor/issues/75#issuecomment-6774890874), and the corrections
 made after a review of the plan are in the follow-up comment
@@ -71,11 +71,10 @@ knowledge-base lines: the two knowledge bases and the files the skills read.
 | 47 | `prerequisite.md` P11-003/P11-006, 236, 239 | Import rehearsal gives little help isolating a slow BACPAC import | [Microsoft support guidance](https://techcommunity.microsoft.com/blog/AzureDBSupport/why-your-bacpac-import-is-slow-finding-the-real-bottleneck/4574107) | Extend the existing rehearsal, not the list of blocking prerequisites: inspect SqlPackage logs, client CPU/RAM/disk, network and target utilisation. Compare from a same-region VM before increasing target compute. | Low |
 | 48 | `migration.md` 367; `decision-rules.md` 529 | Retirement is correct but the replacement list does not distinguish sync semantics | [SQL Data Sync replacement guide](https://techcommunity.microsoft.com/blog/AzureDBSupport/sql-data-sync-is-retiring-how-to-choose-the-right-replacement/4574101) | Keep 30 September 2027. Ask direction, writable destinations, conflict handling and tolerated lag before recommending a replacement. ADF copy, one-way replication and Fabric mirroring do not replace writable bidirectional sync as-is. | Low |
 | 1 | `migration.md` 107, 135, 230, 234, 238, 377, 378, 474, 622; `decision-rules.md` 49, 94, 96, 165, 238-239, 378, 380; both `SKILL.md` (recommend 645, prerequisite 181); `prerequisite.md` 57, 327-328, 334; `migration-methods.json` 24; `claims-registry.json` 101; `path-catalog.json` 533 | The Fabric Migration Assistant is Preview, with "no Private Link", and a preview-acceptance gate applies to it | GA since August 2026. DACPAC up to 20 MB, on-premises data gateway only; the limitations page excludes VNet gateways, not Private Link by name | Remove the assistant's Preview label and gate. Keep its documented constraints separate from target eligibility. At rules 94 and 238-239 remove the assistant as a preview example; zone redundancy is no longer a preview example either (42). Do with 16. | High |
-| 28 | `migration.md` 538-540, 544; `decision-rules.md` §A1 `AVS-LICENSING` 109-111, 124; `prerequisite.md` P27-003 (531); `path-catalog.json` 922-924 | Pay-as-you-go retires 15 Oct 2026, new sales end 31 Oct 2026, reserved instances end 30 Aug 2027; "a recommendation made today on a pay-as-you-go assumption fails in under two months" | Azure Updates 569535 and the Learn portable VCF licensing reference: from 1 Nov 2025 new deployments must use portable VCF; license-included pay-as-you-go must transition by **31 Oct 2026**; reserved instances end 30 Aug 2027, and a reservation expiring earlier ends its benefit at expiry. The 15 Oct date appears only as 15 Oct 2025 (vDefend cores). The run proposed HEAD's own dates | Dates and wording only: re-date the table from the sources, rewrite the "under two months" wording in the past tense, keep "AVS is not retiring". P27-003 (`prerequisite.md` 531) repeats both wrong dates in its applicability cell and changes with them. Leave the changelog row v2.10 in `README.md` as it is (row 49 removes the knowledge base's own changelog). The eligibility rule is a separate decision, row 28b | High |
+| 28 | `migration.md` 538-540, 544; `decision-rules.md` §A1 `AVS-LICENSING` 109-111, 124; `prerequisite.md` P27-003 (531); `path-catalog.json` 922-924 | Pay-as-you-go retires 15 Oct 2026, new sales end 31 Oct 2026, reserved instances end 30 Aug 2027; "a recommendation made today on a pay-as-you-go assumption fails in under two months" | Azure Updates 569535 and the Learn portable VCF licensing reference: from 1 Nov 2025 new deployments must use portable VCF; license-included pay-as-you-go must transition by **31 Oct 2026**; reserved instances end 30 Aug 2027, and a reservation expiring earlier ends its benefit at expiry. The 15 Oct date appears only as 15 Oct 2025 (vDefend cores). The run proposed HEAD's own dates | Dates and wording only: re-date the table from the sources, rewrite the "under two months" wording in the past tense, keep "AVS is not retiring". P27-003 (`prerequisite.md` 531) repeats both wrong dates in its applicability cell and changes with them. Leave the changelog row v2.10 in `README.md` as it is (row 49 removes the knowledge base's own changelog). The eligibility rule stays as it is (row 28b, declined on 23 November) | High |
 | 16 | `migration.md` 343 (§8 cell) and a new §5.4 row; `decision-rules.md` 381-382; `prerequisite.md` 223-230 (the P11 heading and its note that P11 does not cover Fabric), 237 (P11-004), 582-583 (coverage counts), 616-617; `advisor-coverage.json` 3 and 325-332; `path-catalog.json` 356-363 (P11 target variants) | Fabric takes a DACPAC only, and the rules forbid offering a BACPAC import ("do not substitute a BACPAC import") | Fabric "SqlPackage for SQL database in Fabric": a .bacpac can be imported into an empty SQL database with `sqlpackage /action:import`. The Fabric migration overview lists "SqlPackage and Copy job" | Lift the prohibition, but do not turn a refused assistant into a BACPAC recommendation automatically: the import needs an empty target database, a source that fits the Fabric T-SQL surface (the page says it may need altering) and a volume to qualify. Keep DACPAC as the assistant's schema path. Give BACPAC to Fabric a prerequisite path (P11 has no Fabric variant today) and separate the SqlPackage constraints from the assistant's (P16). P11-004 (Blob access) must apply only when the BACPAC is staged in Blob, so that a local SqlPackage import does not leave a required prerequisite unresolved. Do with row 1 | Medium |
 | 19 | `decision-rules.md` 304, 323; `migration-methods.json` 20; `migration.md` 192 | Log shipping needs a Windows source ("Windows-only"). `migration.md` 192 already says Windows and Linux, so HEAD contradicts itself | Learn "Get started with log shipping on Linux": SQL Server Agent on both servers plus a CIFS/Samba share, Linux to Linux. Windows to Linux is not documented | Replace the Windows-only gate with an OS-pair condition instead of removing it: Windows to Windows as today; Linux to Linux documented (and P03-006 already assumes it); Windows to Linux and Linux to Windows neither documented nor excluded, so ask or leave to confirm; destination OS unknown, ask and do not promote log shipping. No contract collects the target OS (P03 asks `source_os` only), so either add a target-OS fact (contract, both schemas, `advisor-fact-mappings.json`, question) or keep the cross-OS case as "to confirm". The line audit recommends the second: 4 lines changed and 2 added in 3 files, against about 39 new lines in 9 more files for a new fact. `migration.md` 192 and P03-006 (`prerequisite.md` 121) say "source or target" without the pairing: reword 192 to "Windows to Windows and Linux to Linux; a mixed pair is not documented" and leave P03-006, which only asks for the Samba share when either end is Linux. Keep the version and log-chain checks | Medium |
 | 17 | `migration.md` 200, 369; `decision-rules.md` 186, 360, 557; `prerequisite.md` 173–181, especially P08-006/007/009; recommendation and prerequisite contracts, questions and fact mapping | One link per database; the 16 November plan used preview floors | [GA announcement](https://aka.ms/milink-multidb-ga-blogpost) and [Learn support table](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-extend-availability-group): SQL Server **2022 CU28+ or 2025 CU11+**, Enterprise/Developer, Windows or Linux, **SSMS 22.12.1+** for the wizard. An existing AG is optional. Only automatic multi-node wizard configuration remains preview. | Offer multi-database mode without preview consent. For SQL Server → MI the update policy must match the source version or be newer; creating the link from MI or reversing roles needs the matching version policy (including SQL Server 2022). Rehearse cutover and application switch for every link; require online failback evidence only when supported, otherwise a separate rollback plan. Carry the selected mode into P08; preserve single-database criteria. Pair with row 35: count databases against remaining target capacity, not links. | High |
-| 28b | `decision-rules.md` 115-119 (the `AVS-LICENSING` answer table); `migration.md` 530-548 (§15.1); recommend `input.schema.json`, `SKILL.md`, `input-contract.md` and `advisor-fact-mappings.json` if a licence-type fact is added | Relying on license-included, or an unknown licence, holds AVS at `unknown_requires_assessment`; a confirmed portable VCF licence makes it eligible | Same sources as row 28: new deployments have required portable VCF since 1 Nov 2025, pay-as-you-go had to transition by 31 Oct 2026, reserved instances end 30 Aug 2027 | **Decision needed.** Keep today's rule (dates fixed by row 28), or adopt the finer one: a valid existing license-included reservation is `eligible_with_remediation` until its term and 30 Aug 2027 at most; an unknown entitlement stays `unknown_requires_assessment`; a new deployment relying on license-included capacity is unsupported, for a commercial reason. The finer rule changes eligibility, so it needs a licence-type fact (portable VCF, existing reservation with its expiry, unknown) carried the same way by both skills. The prerequisite plan already has the fact (`avs_vcf_subscription_status`: schema 509, `questions.json` 74, catalog 937) and P27-003 already states the reservation boundary; the recommendation side has no licence field, so the two skills must be given the same qualification and the same unknowns | Medium |
 | 15 | `migration.md` 15, 138, 150 and new rows in §4.1 (after 167) and §5.3; `decision-rules.md` 309, 349-355 and a new §B3 row; recommend `SKILL.md` 640 | Arc migrates to SQL MI and SQL Server on Azure VM ("MI and VM targets both GA") | Azure Updates 571795 (29 Sep) and Learn: Arc also migrates to Azure SQL Database, Hyperscale included, in public preview, through DMS and a self-hosted integration runtime | Add the target, gated on preview acceptance. The preview concerns the Arc orchestration to Azure SQL Database, not Azure SQL Database itself: a refusal removes only that orchestration and keeps the GA routes to SQL Database. The hand-off has to keep `controlPlane=azure-arc`, but the prerequisite KB carries no row for the Arc orchestration (extension, identity, batch) on any path, and `decision-rules.md` 355 already refuses to hand off Arc with LRS for that reason. Decide between that precedent (document the route, recommend standalone DMS, name Arc as an optional orchestration: text only) and giving the prerequisite KB the Arc rows so that `controlPlane=azure-arc` can be carried (about 20 new lines there, plus `migration-methods.json` 15, where DMS gets `controlPlanes`) | Medium |
 | 31 | `prerequisite.md` §14 P11-010 (243) | Instance-scoped objects are scripted separately only for SQL MI, SQL VM and Arc-enabled SQL MI | A BACPAC carries only user-database schema and data. P11 also covers SQL containers, and an AVS-hosted SQL Server is a full instance like a SQL VM. The cited sqlpackage page does not state the instance-object point | Extend the applicability to AVS-hosted and containerised SQL Server. Markdown only: `path-catalog.json` has no row-level data | Medium |
 | 32 | `prerequisite.md` §16 P13-011 (290) | The requirement says "in any role", the applicability says subscriber only | Learn: SQL Server 2017 CU18 and later support replication for instances of SQL Server on Linux, with no role distinction | Apply whenever any publisher, distributor or subscriber is Linux-hosted or containerised. Markdown only | Medium |
@@ -86,8 +85,7 @@ knowledge-base lines: the two knowledge bases and the files the skills read.
 | 6 | `reference/claims-registry.json` 223-233, claim `arc-sql-migration-minimum-source-versions` (225 and 226 by hand; 227 and 228 by the script) | The claim watches the "Prerequisites" section of the Arc migration overview | That section no longer exists on the overview. The floors now sit on the Arc to Managed Instance page (MI Link: SQL Server 2016 on Windows Server 2016; LRS: SQL Server 2012 on Windows Server 2012) and the overview gives 2014 for the whole experience. HEAD already splits these floors (`decision-rules.md` 349-353, `migration.md` 371) | Re-point `source_url` and `source_section` to the Arc to MI page, check the section exists, then re-baseline. No knowledge-base text to change. Without it the weekly check hashes the whole page | Low |
 | 39 | `prerequisite.md` 155 (P06-005; the only occurrence of the anchor) | The source link is `tutorial-migrate-vmware#run-a-test-migration` | The anchor is gone. The test-migration steps now sit under `#track-and-migrate-replicating-servers` | Re-point the link and update the checked date | Low |
 
-**Row 49 (23 November)** changes about 190 existing lines in 17 files, most of them deleted (§15 alone is 61), plus Microsoft's validator; it adds none. **16 November sizing only, not a total for the expanded 23 November scope:** about 96 existing lines in 18 files and about 82 new lines (about 123 if row 28b is
-adopted), all in the knowledge bases and the files the skills read. The sizes by finding are in the
+**Row 49 (23 November)** changes about 190 existing lines in 17 files, most of them deleted (§15 alone is 61), plus Microsoft's validator; it adds none. **16 November sizing only, not a total for the expanded 23 November scope:** about 96 existing lines in 18 files and about 82 new lines, all in the knowledge bases and the files the skills read. The sizes by finding are in the
 implementation audit below; the new-line figures are estimates. The drifted claims are re-baselined by the
 script after the source and section are checked. Current High priorities: 1, 17, 28 and 42. Rows 31 to 34 are incomplete as written. Do rows 1 and 16
 together (they rewrite the same rule lines), and rows 17 and 35 together.
@@ -112,7 +110,6 @@ when it is rewritten). "New lines" is an estimate, plus or minus a quarter. Noth
 | 16 | BACPAC import into Fabric | High to **Medium** | A missed option: the other fallbacks after a refusal still stand | 21 | about 7 | 5 |
 | 19 | Log shipping, Linux to Linux (minimal option) | High to **Medium** | The rules say Windows-only while `migration.md` 192 says Windows and Linux; the loss is a missed option, not a wrong answer | 4 | about 2 | 3 |
 | 17 | MI Link multiple-database mode | **High** as of 23 Nov | GA changes eligibility and the source build, policy and failback requirements in P08 | 3 | about 62 (prior estimate) | 11 |
-| 28b | AVS eligibility rule, only if adopted | Medium to **Medium** | A decision; nothing to do if today's rule is kept | 3 | about 41 | 6 |
 | 15 | Arc to Azure SQL Database (preview) | Medium to **Medium** | A missing preview route, and no way to hand it off today | 6 | about 10 | 3 |
 | 31 | P11-010, instance objects | Medium to **Medium** | A required prerequisite is absent for AVS and container targets | 1 | 0 | 1 |
 | 32 | P13-011, replication on Linux | Medium to **Medium** | Same, for a Linux publisher or distributor | 1 | 0 | 1 |
@@ -124,7 +121,6 @@ when it is rewritten). "New lines" is an estimate, plus or minus a quarter. Noth
 | 39 | Dead anchor | Low to **Low** | One link | 1 | 0 | 1 |
 | | Prerequisite version stamp (rows 1, 16, 17, 28, 31 to 34, 39) | | One version line moves | 7 | 0 | 6 |
 | | **Total** | | | **96** | **about 82** | **18** |
-| | **Total with 28b adopted** | | | **99** | **about 123** | **18** |
 
 By knowledge base:
 
@@ -260,17 +256,6 @@ Row 17, multiple-database mode (3 existing lines, about 62 new, 11 files):
 | both skills' `schemas/input.schema.json`; `advisor-fact-mappings.json`; `questions.json`; `path-catalog.json` P08 | new properties | The field in both schemas, its mapping, its question and the P08 question fields | (+27) |
 | recommend `SKILL.md` | 148 (+ a new question and a gates row after 641) | Edition row ("Enterprise, Standard or Developer" holds for the single-database mode only); the new question | 1 (+5) |
 
-#### Row 28b, only if adopted (3 existing lines, about 41 new, 6 files)
-
-| File | Lines at HEAD | Change | Existing |
-|---|---|---|---|
-| `reference/decision-rules.md` | 117-119 (+ new rows) | The three answer rows by licence type | 3 (+4) |
-| `docs/sql-server-to-azure-migration.md` | 530-548 | §15.1 text for the finer rule | (+4) |
-| recommend `schemas/input.schema.json`, recommend `SKILL.md`, `reference/input-contract.md` | new | A licence-type field (portable VCF, existing reservation with its expiry, unknown) | (+25) |
-| `advisor-fact-mappings.json` | new | Map it to `avs_vcf_subscription_status` | (+8) |
-
-If today's rule is kept, there is nothing to do here.
-
 #### Row 15, Arc to Azure SQL Database (6 existing lines, about 10 new, 3 files)
 
 | File | Lines at HEAD | Change | Existing |
@@ -298,7 +283,7 @@ the contracts) and `controlPlanes` for DMS in `migration-methods.json` 15 (1 lin
 
 ### Order of work (16 November baseline)
 
-For the consolidated scope, start with 49 (it removes every version bump), then prioritise 1/16, 17/35, 28 and 42/43; then 44, 15, 19, 31–33 and 45. Include 46–48 in the relevant assessment, BACPAC and sync guidance. Bundle remaining low-priority edits by KB. Keep 28b out of implementation until decided.
+For the consolidated scope, start with 49 (it removes every version bump), then prioritise 1/16, 17/35, 28 and 42/43; then 44, 15, 19, 31–33 and 45. Include 46–48 in the relevant assessment, BACPAC and sync guidance. Bundle remaining low-priority edits by KB.
 
 1. Row 49: remove the version lines and the alignment rules first, so that no other row needs a bump.
 2. Text only: rows 31 to 34, 39, 5 and 6 (11 lines; the script re-baselines row 6).
@@ -308,8 +293,7 @@ For the consolidated scope, start with 49 (it removes every version bump), then 
 5. Row 19, minimal option (4 lines).
 6. Rows 17 and 35 together (9 existing lines, about 62 new), then row 15 (6 existing, about 10 new; decide
    first how the hand-off is handled).
-7. Row 28b only after the decision.
-8. One delivery for everything (see Release).
+7. One delivery for everything (see Release).
 
 ## Conditions for the two skills
 
@@ -346,7 +330,7 @@ purpose must be justified by the source, not rewritten to make the tests pass.
   641 and 645). Fix both copies, or remove that table first, which also cuts the skill's token count.
 - **Row 28: check a date against its source, not against this knowledge base.** The run proposed
   the dates already in HEAD. The sources say 31 Oct 2026 for pay-as-you-go and 1 Nov 2025 for new
-  deployments. The 16 Nov run now proposes row 28b's finer eligibility rule, still with HEAD's dates.
+  deployments. The 16 Nov run proposed row 28b's finer eligibility rule, still with HEAD's dates; it was declined on 23 Nov.
 - **Rows 1 and 16 rewrite the same rule lines** (`decision-rules.md` 96, 165, 380-382). Decide what a
   refused assistant falls back to (Azure SQL Database today) before touching them. Row 16 also starts with
   the §8 cell: `migration.md` 343 reads `✅ (DACPAC)`; decide whether it becomes a plain ✅ or a qualified
@@ -371,7 +355,7 @@ After the merge, `node tools/check-official-parity.mjs` must find the twenty fil
 
 ## Not doing
 
-The 19 findings below are not retained. Nothing is to be edited in the
+The 20 findings below are not retained. Nothing is to be edited in the
 knowledge base for them. They stay recorded so that the weekly check does not raise them again as new.
 Row 13 still needs its claim re-baselined by the script, after revalidating the source and the
 section (see "Weekly check gaps").
@@ -384,6 +368,7 @@ section (see "Weekly check gaps").
 | 8 | BACPAC and `BACKUP-BLOB-PATH` | Already fixed in the rules | `decision-rules.md` 40 and 556 scope it to "only when that workflow stages the file in Blob". For a Fabric import, P11-004 follows in row 16. |
 | 13 | Appliance sizes | Re-baseline only | P28-003 matches the page (VMware 32 GB, 8 vCPU, about 80 GB). |
 | 14 | One anchor and two 403/429 links (14 Sept) | Closed | The artifact expired. The 2 Nov and 9 Nov reports list no 403/429 link; the broken anchor is now row 39. |
+| 28b | AVS eligibility by licence type | Declined (23 Nov) | Today's rule stays: a license-included or unknown licence keeps AVS at `unknown_requires_assessment`, a confirmed portable VCF licence makes it eligible. Row 28 fixes the dates. |
 | 26 | MI regional limits (blog of 24 Aug) | Declined | No row quotes a regional subnet or vCore limit. |
 | 36 | MI link with failover groups | Declined | Pre-announcement of a limited preview (21 Oct), nothing to advise. |
 | 40 | SQL Server on Linux flexible provisioning | Declined | HEAD never mentions the Marketplace images; P25-002 and P26-011 are unaffected. |
