@@ -116,6 +116,8 @@ function extractMiLinkCapacity(text) {
     for (const m of plain.matchAll(/maximum links?:[^\n|.]*(\d+)\s+on\s+(?:GP|General Purpose|Business Critical|BC|Next-gen)/ig)) limits.add(m[1]);
     for (const m of plain.matchAll(/(?:GP|General Purpose|Business Critical|BC|Next-gen)[^\n|.;]*?\b(\d+)\s+links?\b/ig)) limits.add(m[1]);
     for (const m of plain.matchAll(/up to\s+(\d+)\s+links?\s+on\s+(?:GP|General Purpose|Business Critical|BC|Next-gen)/ig)) limits.add(m[1]);
+    // Capacity counts databases in either link mode, so the documents state it in databases.
+    for (const m of plain.matchAll(/(\d+)\s+databases?\s+on\s+(?:MI\s+)?(?:GP\/BC|GP|BC|Next-gen|General Purpose|Business Critical)/ig)) limits.add(m[1]);
   }
   return limits.size ? [...limits].sort((a, b) => Number(a) - Number(b)).join(', ') : null;
 }
