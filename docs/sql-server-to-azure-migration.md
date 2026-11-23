@@ -330,7 +330,7 @@ Separate **target availability during sync** from **business cutover downtime**;
 | Method | `targetAvailabilityDuringSync` | `businessCutoverDowntime` |
 | --- | --- | --- |
 | **MI Link** | read-only (secondary queryable) | < 1 minute |
-| **LRS** | unavailable (RESTORING/NORECOVERY) | minutes (GP, small final backup) → **hours** (Business Critical, replica seeding) |
+| **LRS** | unavailable (RESTORING/NORECOVERY) | minutes (GP, small final backup; our estimate, Microsoft gives no figure) → **hours** (Business Critical, replica seeding) |
 | **Native backup/restore** | not present | full restore time |
 | **Transactional replication** | read-write (subscriber accessible) | near-zero |
 | **DMS offline** | not present | total migration execution time |

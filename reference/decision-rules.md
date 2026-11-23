@@ -435,7 +435,7 @@ The source-of-truth downtime model is the pair `targetAvailabilityDuringSync` + 
 | Method | `targetAvailabilityDuringSync` | `businessCutoverDowntime` | Derived `downtimeClass` |
 | --- | --- | --- | --- |
 | **MI Link** | `read-only` (secondary queryable) | `< 1 minute` | `minimal` |
-| **LRS** | `unavailable` (RESTORING / NORECOVERY; no read or write) | `minutes` on General Purpose when the final backup is small; `hours` on Business Critical because the database seeds to secondary replicas before availability | `planned-cutover` |
+| **LRS** | `unavailable` (RESTORING / NORECOVERY; no read or write) | `minutes` on General Purpose when the final backup is small (our estimate: Microsoft gives no figure for General Purpose); `hours` on Business Critical because the database seeds to secondary replicas before availability | `planned-cutover` |
 | **Native backup/restore** | `not-present` | `full restore time` | `extended` |
 | **Transactional replication** | `read-write` (subscriber accessible) | `near-zero` | `minimal` |
 | **DMS offline** | `not-present` | `total migration execution time` | `extended` |
