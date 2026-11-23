@@ -148,7 +148,7 @@ Ask one at a time. Show the human label, record the **stable ID**. The rules mat
 
 11b. **Preview services** (`preview_acceptable`) — ask when a preview capability would change the answer: “Can this project take on a service still in preview, or generally available only?”
     - **`PREVIEW_ACCEPTED`** `Preview is acceptable` · **`PREVIEW_REFUSED`** `Generally available only` · `Not sure`
-    - `COPILOT-AGENT` reads it for the control-plane branch, and it gates the Arc → Azure SQL Database orchestration. Zone redundancy on Next-gen General Purpose is GA and does not read it. Unanswered leaves preview options unavailable rather than granting them.
+    - `COPILOT-AGENT` reads it for the control-plane branch, and it gates the Arc → Azure SQL Database orchestration and the Hyperscale cross-database limited preview. Zone redundancy on Next-gen General Purpose is GA and does not read it. Unanswered leaves preview options unavailable rather than granting them.
 
 11c. **Recovery model and log chain** (`recovery_model`, `log_chain_status`) — ask when a minimal-downtime method is still in play: “What recovery model do these databases run in, and is the log backup chain unbroken?”
     - `recovery_model`: **`FULL`** `Full` · **`BULK_LOGGED`** `Bulk-logged` · **`SIMPLE`** `Simple` · `Not sure`
