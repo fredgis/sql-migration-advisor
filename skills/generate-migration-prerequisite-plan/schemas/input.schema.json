@@ -4,15 +4,11 @@
   "title": "Migration prerequisite plan input",
   "type": "object",
   "required": [
-    "schemaVersion",
     "mode",
     "requestedOutput"
   ],
   "additionalProperties": false,
   "properties": {
-    "schemaVersion": {
-      "const": "1.0"
-    },
     "mode": {
       "enum": [
         "advisor_handoff",
@@ -703,21 +699,11 @@
         "metadata": {
           "type": "object",
           "required": [
-            "knowledgeBaseVersion",
-            "decisionRulesVersion",
             "evaluatedAt",
             "recommendationStatus",
             "confidence"
           ],
           "properties": {
-            "knowledgeBaseVersion": {
-              "type": "string",
-              "minLength": 1
-            },
-            "decisionRulesVersion": {
-              "type": "string",
-              "minLength": 1
-            },
             "sourceCommit": {
               "type": "string",
               "minLength": 1
@@ -930,8 +916,6 @@
         "recommendationStatus",
         "confidence",
         "controlPlane",
-        "knowledgeBaseVersion",
-        "decisionRulesVersion",
         "evaluatedAt"
       ],
       "description": "The flattened shape emitted by the Advisor's regression mirror and used by its golden scenarios. It carries the same decisions under different key names, so a plan can be built from a replayed scenario as well as from a live session.",
@@ -994,16 +978,6 @@
             "$ref": "#/$defs/advisorMethodCandidate"
           },
           "description": "The methods the Advisor weighed, mirrored from the producer. When the user prefers a candidate marked available over the recommended one, its prerequisitePaths are what the plan resolves, so a handoff without this list cannot honour that choice. Both accepted shapes carry it because both stand in for the same run."
-        },
-        "knowledgeBaseVersion": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Which knowledge base line produced the recommendation. The mirror stands in for the Advisor, so a plan built from it carries the same provenance a plan built from the canonical shape carries."
-        },
-        "decisionRulesVersion": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Which decision-rules line produced it. Same reason as knowledgeBaseVersion: provenance the plan is obliged to echo cannot be optional on the shape that supplies it."
         },
         "evaluatedAt": {
           "type": "string",

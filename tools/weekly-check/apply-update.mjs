@@ -101,7 +101,9 @@ if (HOUSEKEEPING) {
   }
   for (const target of changed) {
     const before = new Set(pending.keys());
-    const version = target.bump(io, { bump: BUMP, changelog, iso: ISO });
+    // A knowledge base with no version has nothing to bump: its content change is the record.
+    if (!target.bump) target.stamp(io, ISO);
+    const version = target.bump ? target.bump(io, { bump: BUMP, changelog, iso: ISO }) : null;
     const touched = [...pending.keys()].filter(k => !before.has(k));
     results.push({ id: target.id, version, touched });
   }

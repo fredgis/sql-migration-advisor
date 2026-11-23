@@ -76,8 +76,9 @@ export const TARGETS = [
       + 'version floors, downtime characteristics, retirement dates and licensing rules that drive '
       + 'that choice. reference/decision-rules.md is an offline mirror of this document and must '
       + 'agree with it.',
-    readVersion: io => (io.read('docs/sql-server-to-azure-migration.md') || '')
-      .match(/\*\*Version\.\*\*\s*(v\d+\.\d+)/)?.[1] || null,
+    // The published skills carry no version: the package is released by Microsoft and this
+    // repository by tag, so there is nothing to read or bump, only freshness to stamp.
+    readVersion: () => null,
 
     stamp(io, iso) {
       const monthYear = monthYearOf(iso);
@@ -88,55 +89,10 @@ export const TARGETS = [
         // the verification that actually happened.
         .replace(/(Links last verified:\s*)(?:\d{1,2}\s+)?[A-Za-z]+\s+\d{4}/gi, `$1${dayMonthYearOf(iso)}`));
       io.edit('reference/decision-rules.md', t =>
-        t.replace(/(\(sql-migration-advisor\),\s*\*\*v\d+\.\d+\*\*,\s*verified\s*)(?:\d{1,2}\s+)?[A-Za-z]+\s+\d{4}/,
+        t.replace(/(\(sql-migration-advisor\),\s*verified\s*)(?:\d{1,2}\s+)?[A-Za-z]+\s+\d{4}/,
           `$1${monthYear}`));
     },
 
-    bump(io, { bump, changelog, iso }) {
-      const doc = 'docs/sql-server-to-azure-migration.md';
-      const current = this.readVersion(io);
-      const next = bumpVersion(current, bump);
-      if (!next) throw new Error(`could not read a version from ${doc}`);
-      const monthYear = monthYearOf(iso);
-      const row = cell(changelog);
-
-      io.edit(doc, md => {
-        let out = md
-          .replace(/(\*\*Version\.\*\*\s*)v\d+\.\d+(\s*[—-]\s*)(?:\d{1,2}\s+)?[A-Za-z]+\s+\d{4}/, `$1${next}$2${monthYear}`)
-          .replace(/current as of (?:\d{1,2}\s+)?[A-Za-z]+\s+\d{4}/gi, `current as of ${monthYear}`)
-          .replace(/(Current version:\s*\*\*)v\d+\.\d+(\*\*\s*\()\d{4}-\d{2}-\d{2}(\))/, `$1${next}$2${iso}$3`)
-          .replace(/current:\s*v\d+\.\d+/g, `current: ${next}`);
-        const header = /(\|\s*Version\s*\|\s*Date\s*\|\s*Changes\s*\|\r?\n\|[-\s|]+\|\r?\n)/;
-        if (!header.test(out)) throw new Error(`could not find the changelog table header in ${doc}`);
-        out = out.replace(header, `$1| ${next} | ${iso} | ${row} |\n`);
-        return out.replace(/(Links last verified:\s*)(?:\d{1,2}\s+)?[A-Za-z]+\s+\d{4}/gi, `$1${dayMonthYearOf(iso)}`);
-      });
-
-      // The README badge, the skill and version.json all republish this line. A bump that moves the
-      // document alone leaves installed copies believing they are current.
-      io.edit('README.md', rd => {
-        let out = rd
-          .replace(/(alt="Knowledge base )v\d+\.\d+(")/g, `$1${next}$2`)
-          .replace(/(knowledge%20base-)v\d+\.\d+(-)/g, `$1${next}$2`)
-          .replace(/v\d+\.\d+, (?:\d{1,2}\s+)?[A-Za-z]+ \d{4}/g, `${next}, ${monthYear}`)
-          .replace(/(current:\s*<b>)v\d+\.\d+(<\/b>\s*\()(?:\d{1,2}\s+)?[A-Za-z]+ \d{4}(\))/, `$1${next}$2${monthYear}$3`);
-        const clRe = /(<!-- CHANGELOG:START -->[\s\S]*?\|\s*Version\s*\|\s*Date\s*\|\s*Summary\s*\|\r?\n\|[-\s|]+\|\r?\n)/;
-        if (clRe.test(out)) out = out.replace(clRe, `$1| ${next} | ${iso} | ${row} |\n`);
-        return out;
-      });
-      io.edit('reference/decision-rules.md', t => t
-        .replace(/(\(sql-migration-advisor\),\s*\*\*)v\d+\.\d+(\*\*,\s*verified\s*)(?:\d{1,2}\s+)?[A-Za-z]+\s+\d{4}/,
-          `$1${next}$2${monthYear}`));
-      io.edit('skills/recommend-migration-path/SKILL.md', t =>
-        t.replace(/(knowledge-base line:\s*\*\*)v\d+\.\d+(\*\*)/, `$1${next}$2`));
-      io.editJson('version.json', manifest => {
-        manifest.knowledgeBase = next;
-        manifest.latest = `${next}.0`;
-        manifest.released = iso;
-        return manifest;
-      });
-      return next;
-    }
   },
 
   {
@@ -159,35 +115,13 @@ export const TARGETS = [
       + 'floors, networking, identity and permission requirements, tooling, capacity and licensing '
       + 'preconditions for each of the 28 catalogued paths. It selects nothing; it converts an '
       + 'already-made choice into a sourced readiness plan.',
-    readVersion: io => (io.read('docs/sql-server-to-azure-migration-prerequisite.md') || '')
-      .match(/\*\*Version:\*\*\s*(v\d+\.\d+)/)?.[1] || null,
+    readVersion: () => null,
 
     stamp(io, iso) {
       io.edit('docs/sql-server-to-azure-migration-prerequisite.md', t =>
         t.replace(/(\*\*Last verified:\*\*\s*)\d{4}-\d{2}-\d{2}/, `$1${iso}`));
     },
 
-    bump(io, { bump, iso }) {
-      const doc = 'docs/sql-server-to-azure-migration-prerequisite.md';
-      const next = bumpVersion(this.readVersion(io), bump);
-      if (!next) throw new Error(`could not read a version from ${doc}`);
-      io.edit(doc, t => t
-        .replace(/(\*\*Version:\*\*\s*)v\d+\.\d+/, `$1${next}`)
-        .replace(/(\*\*Last verified:\*\*\s*)\d{4}-\d{2}-\d{2}/, `$1${iso}`));
-      // Five files in the companion skill restate this line, and the consistency gate fails the run
-      // if any of them disagrees. They move together or not at all.
-      const dir = 'skills/generate-migration-prerequisite-plan';
-      io.editJson(`${dir}/reference/path-catalog.json`, c => ({ ...c, knowledgeBaseVersion: next }));
-      io.edit(`${dir}/schemas/output.schema.json`, t =>
-        t.replace(/("prerequisiteKnowledgeBaseVersion":\s*\{\s*"const":\s*")v\d+\.\d+(")/, `$1${next}$2`));
-      for (const rel of ['reference/input-contract.md', 'reference/output-contract.md']) {
-        io.edit(`${dir}/${rel}`, t =>
-          t.replace(/(Prerequisite knowledge-base line:\*\*\s*`)v\d+\.\d+(`)/, `$1${next}$2`));
-      }
-      io.edit(`${dir}/SKILL.md`, t =>
-        t.replace(/(schema\/KB line `[\d.]+`\/`)v\d+\.\d+(`)/, `$1${next}$2`));
-      return next;
-    }
   },
 
   {

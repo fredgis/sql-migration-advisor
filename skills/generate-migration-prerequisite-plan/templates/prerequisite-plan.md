@@ -1,6 +1,6 @@
 > **Migration prerequisite plan — `<path title>`**
 > **`<overallStatus>`** · `<blockingMissing>` blocker(s) missing · `<blockingUnknown>` blocker(s) unknown · `<blockingReported>` blocker(s) reported
-> Prerequisite KB **`<version>`** · path **`<pathId>`** · target **`<targetVariant>`** · evaluated **`<timestamp>`**
+> Path **`<pathId>`** · target **`<targetVariant>`** · evaluated **`<timestamp>`**
 
 `<one sentence explaining the readiness verdict without selecting or changing the migration path>`
 

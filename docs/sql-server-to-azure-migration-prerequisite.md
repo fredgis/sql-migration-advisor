@@ -38,7 +38,7 @@
 - [34. Maintenance policy](#34-maintenance-policy)
 
 
-> **Version:** v1.11 | **Last verified:** 2026-09-12 | **Companion skill:** `generate-migration-prerequisite-plan`
+> **Last verified:** 2026-09-12 | **Companion skill:** `generate-migration-prerequisite-plan`
 > **Scope:** prerequisite planning for the 28 migration paths defined below
 
 This knowledge base begins after a migration target and method have been selected. It converts that

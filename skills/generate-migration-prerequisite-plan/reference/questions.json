@@ -1,5 +1,4 @@
 {
-  "schemaVersion": "1.0",
   "absenceMarkers": ["CONFIRMED", "MISSING", "UNKNOWN", "NOT_APPLICABLE"],
   "questions": [
     { "id": "source_version", "answerType": "version_or_single_select", "consumedBy": ["COM-001"], "effects": { "supported": "confirmed", "unsupported": "missing", "unknown": "unknown" } },

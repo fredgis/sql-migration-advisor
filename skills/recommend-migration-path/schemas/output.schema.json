@@ -618,11 +618,6 @@
     }
   },
   "$defs": {
-    "version": {
-      "type": "string",
-      "pattern": "^v[0-9]+\\.[0-9]+(\\.[0-9]+)?$",
-      "description": "The coordinated version line, for example v2.8. A recommendation that cannot say which facts produced it cannot be reproduced or challenged."
-    },
     "recommendationStatus": {
       "enum": [
         "provisional",
@@ -739,20 +734,12 @@
     "metadata": {
       "type": "object",
       "required": [
-        "knowledgeBaseVersion",
-        "decisionRulesVersion",
         "evaluatedAt",
         "recommendationStatus",
         "confidence"
       ],
       "additionalProperties": false,
       "properties": {
-        "knowledgeBaseVersion": {
-          "$ref": "#/$defs/version"
-        },
-        "decisionRulesVersion": {
-          "$ref": "#/$defs/version"
-        },
         "sourceCommit": {
           "type": "string",
           "minLength": 1,

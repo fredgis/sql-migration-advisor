@@ -15,8 +15,6 @@ The single source of truth for what the interview collects, what each field mean
 
 `SKILL.md` shows human labels and records **IDs**. The decision rules match on IDs. A label can be translated or reworded without touching a rule; an ID cannot drift.
 
-**Version:** coordinated with the knowledge base line stated in `SKILL.md`.
-
 ---
 
 ## 1. Contract principles
@@ -65,7 +63,7 @@ Show the label. Record the ID.
 | GCP Compute Engine | `GCP_COMPUTE` |
 | GCP Cloud SQL | `GCP_CLOUD_SQL` |
 
-`AZURE_VM` was added in v2.12. It had been folded into `ON_PREM` through the shared
+`AZURE_VM` was added later. It had been folded into `ON_PREM` through the shared
 "on-prem / Azure VM" label, even though several rules turn on whether the source is already in
 Azure — the network path to a Managed Instance, the Blob upload route, and whether a data-center
 exit driver applies at all. `ON_PREM` keeps its old meaning, so an existing answer stays valid;
@@ -120,7 +118,7 @@ a source already running in Azure should now say so.
 
 ### Largest database size — `size`
 
-**The classes do not overlap.** Until v2.1 the question offered both `> 4 TB` and `> 128 TB`, so a 200 TB database matched two answers and the reader chose which one meant it.
+**The classes do not overlap.** Earlier, the question offered both `> 4 TB` and `> 128 TB`, so a 200 TB database matched two answers and the reader chose which one meant it.
 
 | Label | ID |
 |---|---|

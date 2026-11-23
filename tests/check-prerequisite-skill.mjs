@@ -422,18 +422,14 @@ for (const question of questions.questions) {
     ['schemas', 'input.schema.json'],
     ['schemas', 'output.schema.json']
   ];
-  const schemaLine = outputSchema.properties.metadata.properties.schemaVersion.const;
-  const kbLine = outputSchema.properties.metadata.properties.prerequisiteKnowledgeBaseVersion.const;
+  // The package is released by Microsoft and this repository by tag, so no bundle file declares a
+  // version of its own: a version nothing keeps in step is one a reader cannot trust.
   for (const parts of bundleFiles) {
     const file = parts.join('/');
-    const declared = parse(...skillDir, ...parts).version;
-    check(`bundle-version-key-is-unambiguous-${file}`,
-      declared === undefined || declared === schemaLine || declared === kbLine,
-      `${file} declares \`version: ${declared}\`, which is neither the schema line ${schemaLine} nor the knowledge base line ${kbLine}; the startup rule reads a bare version as a claim about those two and stops, so this file halts a run for being healthy. Version it under its own key.`);
+    const declared = Object.keys(parse(...skillDir, ...parts)).filter((key) => /^(?:version|[a-z]+Version)$/u.test(key));
+    check(`bundle-declares-no-version-${file}`, declared.length === 0,
+      `${file} declares ${declared.join(', ')}; the skills carry no version`);
   }
-  const crosswalk = parse(...skillDir, 'reference', 'advisor-fact-mappings.json');
-  check('crosswalk-versions-itself-under-its-own-key', Boolean(crosswalk.mappingsVersion),
-    'advisor-fact-mappings.json carries its own release history and must publish it as mappingsVersion, so a reader can tell a crosswalk revision from a policy line');
 
   // The contract's fenced examples are meant to be copied. When the mirror shape gained three
   // required provenance fields, the canonical `advisor_handoff` example kept validating against

@@ -226,7 +226,7 @@ flowchart LR
 
 A version bump is refused unless a substantive content diff exists, so stamps cannot advance on formatting. `reference/claims-registry.json` stores content hashes for high-risk claims, so a source page changing under a citation is detectable rather than invisible.
 
-**Merging is not delivery.** The bundled copy is what answers, so a corrected fact reaches users only when a release is cut and they update. That is why `version.json` exists, and why a release must move it, both plugin manifests, the knowledge base, the rules data, the coordinated line in `SKILL.md` and the README badge. A bump that missed the plugin manifests once made `plugin update` install new files and still report the old version.
+**Merging is not delivery.** The bundled copy is what answers, so a corrected fact reaches users only when a release is cut and they update. That is why `version.json` exists, and why a release must move it, both plugin manifests and the README badge. The skills and their knowledge bases carry no version: Microsoft releases the package they ship in, and this repository releases by tag. A bump that missed the plugin manifests once made `plugin update` install new files and still report the old version.
 
 `extractGate` in `tools/weekly-check/check-consistency.mjs` filters **line by line** for a single line containing every search term. This is why the rule tables stay as one-line rows: an atomic block format would spread the terms across several lines, the gate would find nothing, and the weekly job would report a missing gate every week until nobody read it. That constraint is the reason `decision-rules.md` gained a rule *index* rather than a rewrite.
 

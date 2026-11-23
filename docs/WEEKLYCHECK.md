@@ -27,7 +27,8 @@ No automated signal — not a model verdict, not a drifted content hash, not a d
 to change a sentence of any knowledge base. Those signals are reasons to ask a person. A version
 number moves only when a real content diff already exists, and even then the workflow writes only
 metadata: version lines, changelog rows, freshness stamps and the satellite files that republish
-them.
+them. The advisor and prerequisite knowledge bases carry no version, because Microsoft releases the
+package they ship in, so for them it writes freshness stamps only.
 
 The reason is narrow and practical. These documents drive migration decisions worth months of
 someone's project. A wrong fact that arrives with a version bump and a changelog row reads as
@@ -92,9 +93,9 @@ flowchart TD
 
 Runs on every trigger, including pull requests. Two scripts, both offline.
 
-[`check-consistency.mjs`](../tools/weekly-check/check-consistency.mjs) verifies, per knowledge base,
-that the version line, the companion file, the README badge, the skill and the changelog all state
-the same thing; that the freshness stamps exist and are not stale; that load-bearing values have not
+[`check-consistency.mjs`](../tools/weekly-check/check-consistency.mjs) verifies that the connectivity knowledge base's
+version line, companion file, skill and changelog all state the same thing (the advisor and
+prerequisite knowledge bases carry no version); that the freshness stamps exist and are not stale; that load-bearing values have not
 silently disappeared; and that each document's claims carry a baseline hash. It also checks the
 weekly check's own coverage: every declared knowledge base must appear in the workflow's trigger
 paths, in the link sweep and in the review loop.
@@ -312,8 +313,8 @@ node tools/weekly-check/apply-update.mjs --housekeeping --dry
 ```
 
 **Add a fourth knowledge base.** Declare it in `tools/weekly-check/kb-targets.mjs` — document,
-companion, claim prefix, news topics, scope, and how its version line and freshness stamp are
-written. Then run `node tools/weekly-check/check-consistency.mjs`, which will name every place still
+companion, claim prefix, news topics, scope, and how its freshness stamp (and version line, if it
+has one) is written. Then run `node tools/weekly-check/check-consistency.mjs`, which will name every place still
 missing it.
 
 ---

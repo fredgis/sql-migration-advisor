@@ -28,20 +28,6 @@ function pushIf(label, values) {
 function first(re, text) { const m = text.match(re); return m ? m[1] : null; }
 function all(re, text) { return [...text.matchAll(re)].map(m => m[1]); }
 
-const kbVersions = [
-  first(/\*\*Version\.\*\*\s*(v\d+\.\d+)/, kb),
-  first(/Current version:\s*\*\*(v\d+\.\d+)\*\*/, kb),
-  first(/current:\s*(v\d+\.\d+)/, kb)
-];
-const kbVersion = pushIf('KB version declarations', kbVersions);
-const rulesVersion = first(/\(sql-migration-advisor\),\s*\*\*(v\d+\.\d+)\*\*,\s*verified/i, rules) || first(/\*\*(v\d+\.\d+)\*\*/i, rules);
-const readmeBadgeVersion = first(/knowledge%20base-(v\d+\.\d+)-/i, readme) || first(/Knowledge base (v\d+\.\d+)/i, readme);
-pushIf('KB, decision-rules, and README badge versions', [kbVersion, rulesVersion, readmeBadgeVersion]);
-
-const rowVersion = first(/\|\s*(v\d+\.\d+)\s*\|\s*\d{4}-\d{2}-\d{2}\s*\|/, kb);
-if (!rowVersion) errors.push('Could not find a changelog row in the KB.');
-else if (kbVersion && rowVersion !== kbVersion) errors.push(`Latest KB changelog row ${rowVersion} does not match declared current version ${kbVersion}.`);
-
 const kbMonth = first(/current as of\s+(?:\d{1,2}\s+)?([A-Za-z]+\s+\d{4})/i, kb);
 const rulesMonth = first(/verified\s+([A-Za-z]+\s+\d{4})/i, rules);
 const monthIndex = m => {
@@ -361,31 +347,6 @@ compareAcrossDocs('Azure Arc portal MI wizard database batch limit', consistency
     catch { errors.push('prerequisite path catalog is not valid JSON'); }
 
     if (catalog) {
-      const docVersion = first(/\*\*Version:\*\*\s*(v\d+\.\d+)/, preDoc);
-      if (!docVersion) {
-        errors.push('prerequisite KB carries no version stamp');
-      } else if (docVersion !== catalog.knowledgeBaseVersion) {
-        errors.push(`prerequisite KB is ${docVersion} while its path catalog declares ${catalog.knowledgeBaseVersion}; the skill reads both, so they cannot ship apart`);
-      }
-
-      // Every surface that declares the line must agree, or the skill's own load-and-verify step
-      // passes against one file and answers from another.
-      const declarations = [
-        ['schemas/output.schema.json', /"prerequisiteKnowledgeBaseVersion":\s*\{\s*"const":\s*"(v\d+\.\d+)"/],
-        ['reference/input-contract.md', /Prerequisite knowledge-base line:\*\*\s*`(v\d+\.\d+)`/],
-        ['reference/output-contract.md', /Prerequisite knowledge-base line:\*\*\s*`(v\d+\.\d+)`/],
-        ['SKILL.md', /schema\/KB line `[\d.]+`\/`(v\d+\.\d+)`/]
-      ];
-      for (const [rel, re] of declarations) {
-        const file = path.join(PRE_DIR, rel);
-        if (!fs.existsSync(file)) { errors.push(`prerequisite skill is missing ${rel}`); continue; }
-        const declared = first(re, read(file));
-        if (!declared) errors.push(`${rel} no longer declares a prerequisite KB version`);
-        else if (docVersion && declared !== docVersion) {
-          errors.push(`${rel} declares ${declared} while the prerequisite KB is ${docVersion}`);
-        }
-      }
-
       // The freshness stamp is the only thing telling a reader when the sources were last read.
       const verified = first(/\*\*Last verified:\*\*\s*(\d{4}-\d{2}-\d{2})/, preDoc);
       if (!verified) errors.push('prerequisite KB carries no "Last verified" date');
@@ -424,7 +385,7 @@ compareAcrossDocs('Azure Arc portal MI wizard database batch limit', consistency
         }
       }
 
-      if (!errors.length) console.log(`Prerequisite KB checked: ${docVersion}, ${catalog.paths.length} paths.`);
+      if (!errors.length) console.log(`Prerequisite KB checked: ${catalog.paths.length} paths.`);
     }
   }
 }
@@ -493,7 +454,7 @@ if (errors.length) {
   for (const e of errors) console.error(`- ${e}`);
   process.exit(1);
 }
-console.log(`KB consistency check passed: ${kbVersion}; freshness ${kbMonth}; ${warnings.length} warning(s).`);
+console.log(`KB consistency check passed: freshness ${kbMonth}; ${warnings.length} warning(s).`);
 
 
 

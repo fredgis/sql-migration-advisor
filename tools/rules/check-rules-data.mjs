@@ -48,7 +48,6 @@ function warnIfMissingAny(name, values) {
   if (!values.some(value => normalizedMarkdown.includes(normalize(value)))) warnings.push(`${name}: could not locate any of ${JSON.stringify(values)} in reference\\decision-rules.md`);
 }
 
-assertRegex('version', new RegExp(`\\*\\*${esc(data.version)}\\*\\*`), `expected markdown source version ${data.version}`);
 
 const floors = data.sourceVersionFloors;
 assertRegex('sourceVersionFloors.miLink.sqlServerMin', new RegExp(`MI Link[\\s\\S]*?SQL Server \\*\\*${floors.miLink.sqlServerMin}\\+\\*\\*`, 'u'), `expected MI Link SQL Server ${floors.miLink.sqlServerMin}+`);
@@ -167,4 +166,4 @@ if (failures.length || (strict && warnings.length)) {
   console.error(`Rules data check failed: ${failures.length} failure(s), ${warnings.length} warning(s), ${checked} constants checked${strict ? ' (strict)' : ''}.`);
   process.exit(1);
 }
-console.log(`Rules data check passed: ${data.version}; ${checked} constants checked; ${warnings.length} warning(s)${strict ? '; strict mode.' : '.'}`);
+console.log(`Rules data check passed: ${checked} constants checked; ${warnings.length} warning(s)${strict ? '; strict mode.' : '.'}`);

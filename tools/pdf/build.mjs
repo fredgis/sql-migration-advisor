@@ -72,9 +72,11 @@ function mmdcCli() {
 
 // ---------- read source + version ----------
 let raw = fs.readFileSync(SRC, 'utf8');
-const verMatch = raw.match(/\*\*Version\.\*\*\s*v([0-9.]+)\s*[—-]\s*((?:\d{1,2}\s+)?[A-Za-z]+ \d{4})/);
-const VERSION = verMatch ? `v${verMatch[1]}` : 'v1.0';
-const COVER_DATE = verMatch ? verMatch[2] : new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' });
+// The knowledge base carries no version: the cover names this repository's release and the month
+// the facts were last checked.
+const VERSION = JSON.parse(fs.readFileSync(path.join(ROOT, 'version.json'), 'utf8')).latest;
+const asOf = raw.match(/current as of\s+(?:\d{1,2}\s+)?([A-Za-z]+ \d{4})/i);
+const COVER_DATE = asOf ? asOf[1] : new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' });
 console.log(`source version: ${VERSION} (${COVER_DATE}); browser: ${CHROME}`);
 
 // ---------- markdown -> body (tables & callouts pre-processed) ----------

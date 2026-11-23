@@ -12,24 +12,12 @@
     "metadata": {
       "type": "object",
       "required": [
-        "schemaVersion",
-        "prerequisiteKnowledgeBaseVersion",
-        "pathCatalogVersion",
         "evaluatedAt",
         "mode",
         "language"
       ],
       "additionalProperties": false,
       "properties": {
-        "schemaVersion": {
-          "const": "1.0"
-        },
-        "prerequisiteKnowledgeBaseVersion": {
-          "const": "v1.11"
-        },
-        "pathCatalogVersion": {
-          "const": "1.0"
-        },
         "evaluatedAt": {
           "type": "string",
           "format": "date-time"
@@ -49,14 +37,6 @@
           "additionalProperties": false,
           "description": "Where the recommendation came from, present only in advisor_handoff mode. Typed against the producer's own vocabularies rather than as free strings, because provenance that cannot be checked is provenance that is merely carried. It used to accept states and control planes the Advisor cannot emit, and to reject sourceCommit, which is the one field that lets a recommendation be reproduced against an exact tree.",
           "properties": {
-            "knowledgeBaseVersion": {
-              "type": "string",
-              "minLength": 1
-            },
-            "decisionRulesVersion": {
-              "type": "string",
-              "minLength": 1
-            },
             "recommendationStatus": {
               "enum": [
                 "provisional",
@@ -775,8 +755,6 @@
             "properties": {
               "sourceAdvisor": {
                 "required": [
-                  "knowledgeBaseVersion",
-                  "decisionRulesVersion",
                   "recommendationStatus",
                   "confidence",
                   "evaluatedAt"

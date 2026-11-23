@@ -50,7 +50,7 @@ changes which source-version matrix governs the method.
 | `fabric` | the Fabric Migration Assistant |
 | `vmware-hcx` | VMware HCX |
 
-The schema has declared these seven since v3.1 and this page named none of them, so a producer had
+The schema declared these seven while this page named none of them, so a producer had
 to read the schema to learn a vocabulary the contract was supposed to publish.
 
 ---
@@ -59,8 +59,6 @@ to read the schema to learn a vocabulary the contract was supposed to publish.
 
 ```text
 metadata
-  knowledgeBaseVersion
-  decisionRulesVersion
   sourceCommit            (when known)
   evaluatedAt
   recommendationStatus    = provisional
@@ -124,7 +122,7 @@ In the user's language.
 ```markdown
 > **Preliminary recommendation — <profile>**
 > **<PRIMARY TARGET>** via **<METHOD>** · status **provisional** · confidence **<medium|low>**
-> KB **<version>** · rules **<version>** · commit **<sha or n/a>** · evaluated **<timestamp>**
+> Commit **<sha or n/a>** · evaluated **<timestamp>**
 
 One sentence on why this is the recommended assessment path.
 

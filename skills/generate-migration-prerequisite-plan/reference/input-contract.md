@@ -12,9 +12,6 @@
 - [8. Out of scope](#8-out-of-scope)
 
 
-> **Schema version:** `1.0`
-> **Prerequisite knowledge-base line:** `v1.11`
-
 This contract accepts either the structured result of `recommend-migration-path` or a standalone
 target-and-method selection. Both modes normalize into a **method path** from
 [`path-catalog.json`](path-catalog.json) plus any **overlays** the route also requires, then collect
@@ -41,8 +38,7 @@ than one path, ask only the catalog's disambiguation question. Never choose a pa
 The canonical shape is the one `skills/recommend-migration-path/schemas/output.schema.json`
 validates, and it is the only shape the Advisor emits:
 
-- `metadata.knowledgeBaseVersion`, `metadata.decisionRulesVersion`, `metadata.recommendationStatus`,
-  `metadata.confidence`;
+- `metadata.recommendationStatus`, `metadata.confidence`;
 - `normalizedProfile`, `eligibilityTrace[]`;
 - `recommendation.target`, `.tier`, `.method`, `.targetAvailabilityDuringSync`,
   `.businessCutoverDowntime`, `.controlPlane`;
@@ -52,8 +48,8 @@ validates, and it is the only shape the Advisor emits:
 A second shape is still accepted for the regression mirror, which reports flat fields:
 `primary_target`, `tier`, `method`, `targetAvailabilityDuringSync`,
 `businessCutoverDowntime`, `controlPlane`, `methodGateStatus`, `recommendationStatus`,
-`confidence`, `eligibility`, `methodCandidates`, `shortlist`, `knowledgeBaseVersion`,
-`decisionRulesVersion`, `evaluatedAt` and `sourceCommit`.
+`confidence`, `eligibility`, `methodCandidates`, `shortlist`, `evaluatedAt` and
+`sourceCommit`.
 
 **`primary_target` and `recommendation.target` name the same eight families, and both are
 enumerated.** They were free strings, which is what let the phrase `provisional shortlist only` sit
@@ -68,11 +64,9 @@ mirror fields, and a value the public branch would have refused arrived through 
 declared.
 
 **Both shapes carry the provenance the plan is obliged to echo.** The plan's
-`metadata.sourceAdvisor` requires the knowledge base line, the decision-rules line and the
-evaluation date. The mirror declared none of the three, so a handoff that validated on the way in
-produced a plan that could not validate on the way out unless someone invented the provenance. A
-consumer requirement that no accepted producer shape can satisfy is not a requirement, it is a
-trap, and the fix is on the producing side because those facts exist.
+`metadata.sourceAdvisor` requires the recommendation status, the confidence and the evaluation
+date, and both shapes declare all three. A consumer requirement that no accepted producer shape can
+satisfy is not a requirement, it is a trap.
 
 **This list is derived from the mirror schema, not written beside it.** It used to name `unknowns`,
 `hardBlockers` and `evidenceRequired`, which the mirror declares nowhere and never emits, so a
@@ -139,7 +133,6 @@ reference or hash. A self-declared Advisor evidence flag remains a claim until t
 
 ```json
 {
-  "schemaVersion": "1.0",
   "mode": "advisor_handoff",
   "requestedOutput": "both",
   "language": "en",
@@ -153,8 +146,6 @@ reference or hash. A self-declared Advisor evidence flag remains a claim until t
     "methodGateStatus": "passed",
     "recommendationStatus": "provisional",
     "confidence": "medium",
-    "knowledgeBaseVersion": "v3.13",
-    "decisionRulesVersion": "v3.13",
     "evaluatedAt": "2026-09-12T09:00:00Z"
   },
   "standaloneSelection": null,

@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Knowledge base v3.15" src="https://img.shields.io/badge/knowledge%20base-v3.15-2b8a3e">
+  <img alt="Release v3.15.0" src="https://img.shields.io/badge/release-v3.15.0-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml/badge.svg"></a>
 </p>
@@ -58,7 +58,7 @@ opens by stating which knowledge-base version loaded, so the advice is traceable
 
 ## Why it is trustworthy
 
-- **Verified knowledge** — the v3.15 knowledge base is source-backed and corrected against Microsoft Learn.
+- **Verified knowledge** — the knowledge base is source-backed and corrected against Microsoft Learn.
 - **Rules under regression test** — Phase A filters hard eligibility, then Phase B ranks viable options and tiers. An executable mirror in `tests/` replays 118 scenarios through those rules on every commit. The mirror is not what runs in your session: an agent reads the rules and applies them, so this is a tested policy rather than a byte-identical guarantee.
 - **Every decision is addressable** — the card cites a rule ID for each verdict, and [`reference/decision-rules.md`](reference/decision-rules.md) ends with an index of all 31. Look one up, read what it consumes and how it treats an unknown, and argue with it.
 - **You see what lost, not just what won** — the card lists every method the knowledge base supports for the chosen target, each with a status and a reason. A method that is never enumerated is never rejected either, so its absence cannot be argued with; that is how Azure DMS stayed out of the Managed Instance guidance while the matrix declared it supported. Any candidate marked `available` can be handed to the prerequisite companion instead of the recommended one.
@@ -69,27 +69,24 @@ opens by stating which knowledge-base version loaded, so the advice is traceable
 
 ## One version, every surface
 
-The knowledge base is quoted by a skill, three manifests, a PDF, a poster, this README, a docs site, a published rule graph, the official Microsoft package and a fork in the Microsoft organisation. `check-artifacts` compares every version below against the knowledge base and the release manifest, fails when one drifts, and rewrites them under `--fix-prose`.
+The release tag is quoted by three manifests, a PDF, a poster, this README and a published rule graph. The skills Microsoft publishes, and their knowledge bases, carry no version: Microsoft releases the package, and this repository releases by tag. `check-artifacts` compares every version below against the release manifest, fails when one drifts, and rewrites them under `--fix-prose`.
 
 <!-- surfaces:start -->
 
 | Surface | Version | Up to date |
 | --- | --- | --- |
-| [Knowledge base](docs/sql-server-to-azure-migration.md) | `v3.15` | ✅ |
-| [`reference/decision-rules.md`](reference/decision-rules.md) + `.data.json` | `v3.15` | ✅ |
-| `SKILL.md` and its coordinated knowledge-base line | `v3.15` | ✅ |
 | `version.json`, `plugin.json`, `marketplace.json` | `v3.15.0` | ✅ |
-| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v3.15` | ✅ |
-| Poster caption and PNG | `v3.15` | ✅ |
-| This README's badge and PDF sentence | `v3.15` | ✅ |
-| **This table** | `v3.15` | ✅ |
+| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v3.15.0` | ✅ |
+| Poster caption and PNG | `v3.15.0` | ✅ |
+| This README's badge and PDF sentence | `v3.15.0` | ✅ |
+| **This table** | `v3.15.0` | ✅ |
+| [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | `v3.15.0` | ✅ |
+| Both published skills, their knowledge bases, rules, contracts and schemas | no version | ✅ |
+| [Official package](https://github.com/microsoft/microsoft-sql/tree/main/plugins/microsoft-sql-migration): both skills, byte for byte | — | ✅ |
+| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | — | ✅ |
 | The six `blume/public/*.svg` mirrors | — | ✅ |
 | [`blume/docs/index.mdx`](blume/docs/index.mdx) — the docs site | — | ✅ |
-| [Official package](https://github.com/microsoft/microsoft-sql/tree/main/plugins/microsoft-sql-migration): both skills, byte for byte | `v3.15` | ✅ |
-| [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | `v3.15.0` | ✅ |
-| [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | `v3.15.0` | ✅ |
 | `howto/*.html` | — | ✅ |
-| The developer pitch's sample failure block | `v3.15` | ✅ |
 
 <!-- surfaces:end -->
 
@@ -458,8 +455,8 @@ Mermaid decision diagrams.
 ## The knowledge base as a PDF
 
 The same knowledge base ships as a polished, branded PDF —
-[`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (24 pages,
-v3.15, September 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
+[`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (22 pages,
+v3.15.0, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
 
@@ -521,7 +518,7 @@ base and this README on the same version. Last verified: August 2026.
 
 <!-- CHANGELOG:START -->
 <details>
-<summary><b>📓 Changelog</b> — current: <b>v3.15</b> (September 2026)</summary>
+<summary><b>📓 Changelog</b> — current: <b>v3.15.0</b> (November 2026)</summary>
 
 | Version | Date | Summary |
 | --- | --- | --- |

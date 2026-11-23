@@ -88,18 +88,19 @@ function pdfPageCount(relPath) {
   } catch { return null; }
 }
 
-function currentKbVersion() {
-  const m = fs.readFileSync(path.join(ROOT, 'docs', 'sql-server-to-azure-migration.md'), 'utf8')
-    .match(/\*\*Version\.\*\*\s*(v\d+\.\d+)/);
-  return m ? m[1] : null;
+// The release tag is the only version left. The skills and their knowledge bases carry none: the
+// published package is released by Microsoft and this repository by tag.
+function currentRelease() {
+  return JSON.parse(fs.readFileSync(path.join(ROOT, 'version.json'), 'utf8')).latest || null;
 }
 
-// The month a document quotes alongside the version drifts independently of the version itself.
-// A v1.9 released in August was still described as "v1.9, July 2026" until this was checked.
+// The month a document quotes drifts independently of the release. A release cut in August was
+// still described as "July 2026" until this was checked. It is the month the facts were last
+// checked, which the knowledge base states as "current as of".
 function currentKbMonth() {
   const m = fs.readFileSync(path.join(ROOT, 'docs', 'sql-server-to-azure-migration.md'), 'utf8')
-    .match(/\*\*Version\.\*\*\s*v\d+\.\d+\s*[—-]\s*\d{1,2}\s+(\w+)\s+(\d{4})/);
-  return m ? `${m[1]} ${m[2]}` : null;
+    .match(/current as of\s+(?:\d{1,2}\s+)?([A-Za-z]+ \d{4})/i);
+  return m ? m[1] : null;
 }
 
 const problems = [];
@@ -136,12 +137,12 @@ for (const { artifact, sources, rebuild } of DERIVED) {
 {
   const readmePath = path.join(ROOT, 'README.md');
   let readme = fs.readFileSync(readmePath, 'utf8');
-  const version = currentKbVersion();
+  const version = currentRelease();
   const pdfRel = 'docs/sql-server-to-azure-migration.pdf';
   const actual = pdfPageCount(pdfRel);
 
   // e.g. "(22 pages,\nv1.7, July 2026)"
-  const shape = /(sql-server-to-azure-migration\.pdf\)\s*\()~?(\d+)(\s*pages,\s*)(v\d+\.\d+)(,\s*)(\w+ \d{4})/;
+  const shape = /(sql-server-to-azure-migration\.pdf\)\s*\()~?(\d+)(\s*pages,\s*)(v\d+\.\d+(?:\.\d+)?)(,\s*)(\w+ \d{4})/;
   const claim = readme.match(shape);
   const month = currentKbMonth();
   if (!claim) {
@@ -185,9 +186,9 @@ for (const { artifact, sources, rebuild } of DERIVED) {
 // track the knowledge base too, or a rebuilt PNG silently advertises an old version.
 {
   const posterPath = path.join(ROOT, 'tools', 'diagram', 'poster.html');
-  const version = currentKbVersion();
+  const version = currentRelease();
   let poster = fs.readFileSync(posterPath, 'utf8');
-  const shape = /(sql-server-to-azure-migration\.md \()(v\d+\.\d+)/;
+  const shape = /(sql-server-to-azure-migration\.md \()(v\d+\.\d+(?:\.\d+)?)/;
   const claim = poster.match(shape);
   if (!claim) {
     notes.push('poster.html does not quote the knowledge-base version in the expected shape; skipped');
@@ -219,32 +220,50 @@ for (const { artifact, sources, rebuild } of DERIVED) {
 {
   const readmePath = path.join(ROOT, 'README.md');
   const readme = fs.readFileSync(readmePath, 'utf8');
-  const kb = currentKbVersion();
-  const release = JSON.parse(fs.readFileSync(path.join(ROOT, 'version.json'), 'utf8')).latest;
+  const release = currentRelease();
   const block = readme.match(/<!-- surfaces:start -->[\s\S]*?<!-- surfaces:end -->/u);
   if (!block) {
     notes.push('README carries no surfaces table between its markers; skipped');
-  } else if (!kb || !release) {
-    notes.push('could not read the knowledge-base or release version; skipped the surfaces table');
+  } else if (!release) {
+    notes.push('could not read the release version; skipped the surfaces table');
   } else {
-    // Release versions are three-part and knowledge-base versions two-part, so the three-part
-    // form is rewritten first and its result excluded from the two-part pass.
-    const retagged = block[0]
-      .replace(/\bv\d+\.\d+\.\d+\b/gu, release)
-      .replace(/\bv\d+\.\d+\b(?!\.\d)/gu, kb);
+    // Every version in the table is the release tag: nothing else carries one.
+    const retagged = block[0].replace(/\bv\d+\.\d+(?:\.\d+)?\b/gu, release);
     if (retagged !== block[0]) {
       if (fixProse) {
         fs.writeFileSync(readmePath, readme.replace(block[0], retagged));
-        notes.push(`README surfaces table rewritten to knowledge base ${kb} and release ${release}`);
+        notes.push(`README surfaces table rewritten to release ${release}`);
       } else {
         const stale = [...new Set([...block[0].matchAll(/\bv\d+\.\d+(?:\.\d+)?\b/gu)].map(m => m[0]))]
-          .filter(v => v !== kb && v !== release);
+          .filter(v => v !== release);
         problems.push({
           kind: 'prose-version-mismatch', artifact: 'README.md', source: 'docs/sql-server-to-azure-migration.md',
           fix: 'node tools/artifacts/check-artifacts.mjs --fix-prose',
-          detail: `the surfaces table quotes ${stale.join(', ')}; knowledge base is ${kb} and release ${release}`,
+          detail: `the surfaces table quotes ${stale.join(', ')}; the release is ${release}`,
         });
       }
+    }
+  }
+}
+
+// The README badge names the release as well.
+{
+  const readmePath = path.join(ROOT, 'README.md');
+  const readme = fs.readFileSync(readmePath, 'utf8');
+  const release = currentRelease();
+  const shape = /(<img alt="Release )(v\d+\.\d+\.\d+)(" src="https:\/\/img\.shields\.io\/badge\/release-)(v\d+\.\d+\.\d+)(-)/u;
+  const claim = readme.match(shape);
+  if (!claim) notes.push('README carries no release badge in the expected shape; skipped');
+  else if (release && (claim[2] !== release || claim[4] !== release)) {
+    if (fixProse) {
+      fs.writeFileSync(readmePath, readme.replace(shape, `$1${release}$3${release}$5`));
+      notes.push(`README release badge rewritten to ${release}`);
+    } else {
+      problems.push({
+        kind: 'prose-version-mismatch', artifact: 'README.md', source: 'version.json',
+        fix: 'node tools/artifacts/check-artifacts.mjs --fix-prose',
+        detail: `the README badge says ${claim[2]}; the release is ${release}`,
+      });
     }
   }
 }

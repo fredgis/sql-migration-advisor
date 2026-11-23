@@ -550,15 +550,14 @@ It compares:
 #### Example failure
 
 ```text
-KB version:              v2.8
-decision-rules version:  v2.8
-README badge:            v1.6
+version.json:            v3.15.0
+README badge:            v3.14.8
 ```
 
 Result:
 
 ```text
-FAIL — KB, decision-rules and README badge versions disagree.
+FAIL — the README badge says v3.14.8; the release is v3.15.0.
 ```
 
 Another example:

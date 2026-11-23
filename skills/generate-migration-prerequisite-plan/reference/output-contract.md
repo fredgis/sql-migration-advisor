@@ -11,9 +11,6 @@
 - [7. Data minimization](#7-data-minimization)
 
 
-> **Schema version:** `1.0`
-> **Prerequisite knowledge-base line:** `v1.11`
-
 The skill produces one normalized prerequisite-plan object. Markdown is the default rendering; JSON
 is available on request. Both formats must represent exactly the same state.
 
@@ -53,9 +50,6 @@ Recommended items never block readiness.
 
 ```text
 metadata
-  schemaVersion
-  prerequisiteKnowledgeBaseVersion
-  pathCatalogVersion
   evaluatedAt
   mode
   language

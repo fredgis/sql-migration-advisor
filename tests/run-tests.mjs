@@ -6,6 +6,7 @@ import { evaluate, __guards as guards } from './engine/evaluate.mjs';
 import { validateGoldenScenarios, validateObjectAgainstSchema } from './validate-scenarios.mjs';
 import { TARGETS, claimsFor } from '../tools/weekly-check/kb-targets.mjs';
 import { normalize as normalizeSubstantive } from '../tools/weekly-check/substantive-diff.mjs';
+import { COPIES as FORK_COPIES } from '../tools/fork-layout.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const rel = (...p) => path.join(root, ...p);
@@ -537,7 +538,9 @@ try {
     // procurement runs in weeks, so a recommendation made on that assumption expires before the
     // project starts. The second is the overcorrection -- saying AVS itself retires, which steers a
     // customer off a supported platform for a reason that is not true. Only the bundled licence ends.
-    for (const [label, text] of [['docs\\sql-server-to-azure-migration.md', kb], ['reference\\decision-rules.md', rules], ['docs\\sql-server-to-azure-migration-prerequisite.md', prereq]]) {
+    // The published knowledge base dropped its AVS licensing callout in v3.15, so the dates are
+    // held by the rules and the prerequisite knowledge base.
+    for (const [label, text] of [['reference\\decision-rules.md', rules], ['docs\\sql-server-to-azure-migration-prerequisite.md', prereq]]) {
       if (!/30 August 2027|2027-08-30/iu.test(text)) failures.push(`${label} does not state the AVS license-included end of service`);
       if (!/15 October 2026|2026-10-15/iu.test(text)) failures.push(`${label} omits the AVS pay-as-you-go retirement date, which lands ten months before the one usually quoted`);
       if (!/31 October 2026|2026-10-31/iu.test(text)) failures.push(`${label} omits the AVS end of new license-included sales`);
@@ -974,17 +977,13 @@ try {
   catch { failures.push('version.json is missing or is not valid JSON'); }
 
   if (manifest) {
-    // The coordinated line lives in SKILL.md, e.g. "knowledge-base line: **v2.1**".
-    const line = skill.match(/knowledge-base line:\s*\*\*(v[0-9]+\.[0-9]+)\*\*/u);
-    if (!line) failures.push('SKILL.md no longer states the coordinated knowledge-base line');
-    else if (manifest.knowledgeBase !== line[1]) {
-      failures.push(`version.json says knowledgeBase ${manifest.knowledgeBase}, SKILL.md says ${line[1]}`);
-    }
-    // `latest` must be the release built from this KB line, so v2.1 pairs with v2.1.x.
+    // The release tag is the only version this repository keeps. The skills and their knowledge
+    // bases carry none: the published package is released by Microsoft, this repository by tag.
     if (!/^v[0-9]+\.[0-9]+\.[0-9]+$/u.test(manifest.latest || '')) {
       failures.push(`version.json latest '${manifest.latest}' is not a vMAJOR.MINOR.PATCH release tag`);
-    } else if (manifest.knowledgeBase && !manifest.latest.startsWith(`${manifest.knowledgeBase}.`)) {
-      failures.push(`version.json latest ${manifest.latest} does not belong to knowledge-base line ${manifest.knowledgeBase}`);
+    }
+    if ('knowledgeBase' in manifest) {
+      failures.push('version.json still declares a knowledge-base line, which the skills no longer carry');
     }
     // The skill reads nothing over the network, as the published skill states: the knowledge base
     // ships beside it and freshness comes from plugin updates. It must still say where to look for
@@ -995,19 +994,6 @@ try {
     if (!/Check for updates to/u.test(skill)) {
       failures.push('SKILL.md does not tell the user how to check for a newer version');
     }
-    // The weekly check bumps the knowledge base. If it does not also stamp the manifest and the
-    // skill's coordinated line, the next automated bump leaves every installed copy believing it
-    // is current, which is the one failure mode a version check must not have.
-    //
-    // Read the whole apply path rather than one file. The per-document stamping rules live in
-    // kb-targets.mjs so that three knowledge bases can each own their own metadata shape, and a
-    // gate that watched only apply-update.mjs would have gone quiet the moment they moved.
-    const applyUpdate = ['apply-update.mjs', 'kb-targets.mjs']
-      .map(f => readText(path.join('tools', 'weekly-check', f)))
-      .join('\n');
-    if (!/version\.json/u.test(applyUpdate)) failures.push('the apply path does not stamp version.json, so an automated bump would leave installed copies believing they are current');
-    if (!/knowledge-base line/u.test(applyUpdate)) failures.push('the apply path does not stamp the coordinated line in SKILL.md');
-
     // The plugin manifests carry the version Copilot CLI displays. They were left at 2.0.0 while
     // everything else moved to v2.1, so `plugin update` installed the new files and still reported
     // the old version -- the update looked broken when it had in fact worked.
@@ -1025,7 +1011,7 @@ try {
   }
 
   add('version-manifest-current', failures.length === 0,
-    failures.length ? failures : [`version.json advertises ${manifest.latest} on knowledge-base line ${manifest.knowledgeBase}, matching SKILL.md; the skill fetches nothing and tells the user where to check for updates.`]);
+    failures.length ? failures : [`version.json advertises ${manifest.latest}, the plugin manifests agree, and the skill fetches nothing and tells the user where to check for updates.`]);
 }
 
 {
@@ -1432,7 +1418,8 @@ try {
   for (const target of TARGETS) {
     const io = { read: r => { try { return fs.readFileSync(rel(r), 'utf8'); } catch { return null; } } };
     if (io.read(target.doc) === null) { failures.push(`${target.id} declares ${target.doc}, which does not exist`); continue; }
-    if (!target.readVersion(io)) failures.push(`${target.id}: no version could be read from ${target.doc}, so it can never be stamped or bumped`);
+    // The two published skills carry no version; only a knowledge base that is bumped needs one.
+    if (target.bump && !target.readVersion(io)) failures.push(`${target.id}: no version could be read from ${target.doc}, so it can never be bumped`);
     for (const companion of [...target.companions, ...target.context]) {
       if (io.read(companion) === null) failures.push(`${target.id} declares companion ${companion}, which does not exist`);
     }
@@ -1510,7 +1497,7 @@ try {
 
   add('weekly-check-covers-every-knowledge-base', failures.length === 0,
     failures.length ? failures
-      : [`${TARGETS.length} knowledge bases each carry a readable version, own a disjoint set of the ${claims.length} registered claims (${notes.join('; ')}), are sent for review in a prompt scoped to themselves, and are judged changed by one shared implementation.`]);
+      : [`${TARGETS.length} knowledge bases (the versioned ones with a readable version) own a disjoint set of the ${claims.length} registered claims (${notes.join('; ')}), are sent for review in a prompt scoped to themselves, and are judged changed by one shared implementation.`]);
 }
 
 // A policy document that names a raw-host address must name a release tag, because a tag pin goes
@@ -1543,7 +1530,7 @@ try {
         if (!/^v\d+\.\d+\.\d+$/.test(ref)) {
           failures.push(`${file}: the live knowledge base must be pinned to a release tag, found "${ref}" — a mutable ref lets the facts change under the reader with no version to cite`);
         } else if (ref !== manifest.latest) {
-          failures.push(`${file}: pinned to ${ref} but the latest release is ${manifest.latest} — the skill would announce ${manifest.knowledgeBase} and serve the document from ${ref}`);
+          failures.push(`${file}: pinned to ${ref} but the latest release is ${manifest.latest} — the skill would serve the document from ${ref}`);
         } else {
           notes.push(`${file}: live knowledge base pinned to ${ref}, the current release`);
         }
@@ -2351,43 +2338,24 @@ try {
   add('vocabulary-counts-match-their-tables', failures.length === 0, failures.length ? failures : notes);
 }
 
-// Review of microsoft/sql-migration-agent#27: the vendored skill announced knowledge base v3.2 in
-// five places and v3.1 in a sixth, because a bump rewrote the stamps it recognised and missed one
-// inside an example. A skill that states two different versions of its own facts cannot be trusted
-// about either, so every version string in a skill document must agree with the release manifest.
+// The skills Microsoft publishes carry no version: the package is released by Microsoft and this
+// repository by tag. A version written into one of their files would be a line nothing keeps in step,
+// which is how microsoft/sql-migration-agent#27 found a skill announcing two versions of its own
+// facts. Every file the two skills ship is read, through the same mapping the port uses.
 {
   const failures = [];
-  const manifest = JSON.parse(readText('version.json'));
-  const kb = manifest.knowledgeBase;              // e.g. v3.2
-  const release = manifest.latest;                // e.g. v3.2.0
-  let checked = 0;
-
-  // Only the advisor is stamped with the coordinated line. The prerequisite and connectivity skills
-  // carry their own knowledge bases with their own versions, which is why this is scoped by name
-  // rather than applied to every skill folder.
-  const file = path.join('skills', 'recommend-migration-path', 'SKILL.md');
-  if (!fs.existsSync(path.join(root, file))) failures.push(`${file} is missing`);
-  else {
-    readText(file).split('\n').forEach((line, i) => {
-      // Changelog-style rows record what was true then.
-      if (/^\|\s*v[0-9]/.test(line.trim())) return;
-      // Two other shapes name a version legitimately without claiming to be the current one: prose
-      // recalling when a rule changed ("Until v2.4 the question offered..."), and the worked example
-      // of the update notice, whose whole point is to show an older version beside a newer one.
-      if (/\b(until|since|before|from)\s+v[0-9]/i.test(line)) return;
-      if (/A newer version is available/i.test(line)) return;
-      for (const m of line.matchAll(/\bv([0-9]+\.[0-9]+(?:\.[0-9]+)?)\b/g)) {
-        const found = `v${m[1]}`;
-        checked++;
-        const ok = m[1].split('.').length === 3 ? found === release : found === kb;
-        if (!ok) failures.push(`${file}:${i + 1}: states ${found}, but the release is ${release} on knowledge-base line ${kb} — ${line.trim().slice(0, 90)}`);
-      }
+  let read = 0;
+  const VERSION = /\bv\d+\.\d+(?:\.\d+)?\b|"(?:knowledgeBaseVersion|decisionRulesVersion|prerequisiteKnowledgeBaseVersion|pathCatalogVersion|schemaVersion|mappingsVersion|version)"\s*:|knowledge-base line|schema\/KB line/u;
+  for (const [from] of FORK_COPIES) {
+    if (!fs.existsSync(path.join(root, from))) { failures.push(`${from} is missing`); continue; }
+    read++;
+    readText(from).split('\n').forEach((line, i) => {
+      if (VERSION.test(line)) failures.push(`${from}:${i + 1} declares a version: ${line.trim().slice(0, 90)}`);
     });
   }
-
-  if (!checked) failures.push('no version string was found in any SKILL.md, so this gate is checking nothing');
-  add('skill-versions-agree-with-the-manifest', failures.length === 0,
-    failures.length ? failures : [`${checked} version string(s) across the skills all state ${kb} or ${release}.`]);
+  if (!read) failures.push('no skill file could be read, so this gate is checking nothing');
+  add('skills-declare-no-version', failures.length === 0,
+    failures.length ? failures.slice(0, 12) : [`${read} files shipped by the two published skills declare no version.`]);
 }
 // Six catalog paths cover several target families under one slash-separated target string, and
 // their prerequisite rows are already conditioned per family. Nothing carried the selected family
@@ -3408,11 +3376,9 @@ try {
   const failures = [];
   const notes = [];
   const git = (...args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' }).stdout.trim();
-  // Both knowledge bases that carry their own version, rather than the coordinated line the
-  // advisor KB shares with the release. The connectivity one has not drifted; it is here so it
-  // cannot start.
+  // The knowledge bases that still carry their own version. The two published skills carry none:
+  // the package is released by Microsoft and this repository by tag.
   const BASES = [
-    { file: path.join('docs', 'sql-server-to-azure-migration-prerequisite.md'), pattern: /\*\*Version:\*\*\s*(v\d+\.\d+)/ },
     { file: path.join('docs', 'sql-server-to-azure-migration-connectivity.md'), pattern: /\*\*Version\.\*\*\s*(v\d+\.\d+)/ }
   ];
   let checked = 0;
@@ -3714,9 +3680,6 @@ try {
   if (!fs.existsSync(forkSkill)) {
     notes.push(`No fork checkout at ${forkPath}, so nothing was compared. Set SQL_ADVISOR_FORK to point at one; this check is the only thing that notices a fork left behind.`);
   } else {
-    const kbLine = JSON.parse(readText('version.json')).knowledgeBase;
-    const forkText = fs.readFileSync(forkSkill, 'utf8');
-    if (!forkText.includes(kbLine)) failures.push(`the fork's advisor SKILL.md does not carry knowledge-base line ${kbLine}, so it is behind this repository; run node tools/port-to-fork.mjs`);
     // Parity is the real staleness test: the derived sections are upstream's, so a fix made here
     // and never ported shows up as a section that differs. That is the exact failure this gate
     // exists for, and it was invisible because only the port itself ever ran this checker.
@@ -3724,7 +3687,7 @@ try {
     if (parity.status !== 0) {
       for (const line of String(parity.stderr || parity.stdout).split(/\r?\n/).filter(Boolean).slice(0, 6)) failures.push(line.trim());
     } else {
-      notes.push(`The fork at ${forkPath} carries knowledge-base line ${kbLine}, and its derived sections match this repository.`);
+      notes.push(`The fork at ${forkPath} carries this repository's text with the port's path rewrites.`);
     }
   }
   add('the-fork-carries-what-this-repository-ships', failures.length === 0, failures.length ? failures : notes);
