@@ -540,10 +540,12 @@ Newest first, in the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) st
 - Log shipping: Windows to Windows or Linux to Linux.
 - AVS licensing dates: 1 Nov 2025, 31 Oct 2026, 30 Aug 2027.
 - SQL Data Sync replacement chosen from direction, writes, conflicts and lag.
+- LRS General Purpose cutover in minutes is labelled as an estimate.
 - `P11-004` keeps authentication; Blob access moves to the conditional `P11-025`.
 
 **Fixed**
 - ADR and Service Broker rows (`P08-013`, `P08-014`, `P09-014`, `P09-015`) cite the current anchors.
+- Applicability of `P11-010`, `P13-011`, `P13-013` and `P21-009`; dead anchor in `P06-005`.
 - Slow BACPAC imports are diagnosed in the `P11-006` rehearsal.
 
 **Removed**
