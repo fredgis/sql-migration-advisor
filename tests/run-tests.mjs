@@ -41,6 +41,11 @@ const TARGET_TO_KEY = new Map([
 ]);
 
 function readText(relativePath) { return fs.readFileSync(rel(relativePath), 'utf8'); }
+// The README changelog records what was true at each release, so gates that read prose skip it.
+// It is blanked between its markers rather than cut, which keeps every line number intact.
+function withoutChangelog(text) {
+  return text.replace(/<!-- CHANGELOG:START -->[\s\S]*?<!-- CHANGELOG:END -->/u, (block) => block.replace(/[^\n]/gu, ''));
+}
 function norm(s) { return String(s).toLowerCase().replace(/[`*_]/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' '); }
 function lineOf(text, index) { return text.slice(0, Math.max(index, 0)).split(/\r?\n/).length; }
 function add(name, ok, details = [], meta = {}) { results.push({ name, ok, details, ...meta }); }
@@ -498,7 +503,7 @@ try {
     { id: 'Azure Migrate Arc discovery offered without its Preview status', re: /Azure Migrate\**\s*appliance[/ ]?(?:or )?import\/?Arc(?:-based)? (?:agentless )?discovery/iu, allow: /Preview/iu }
   ];
   for (const file of files) {
-    const text = fs.readFileSync(file, 'utf8');
+    const text = withoutChangelog(fs.readFileSync(file, 'utf8'));
     const lines = text.split(/\r?\n/);
     lines.forEach((line, i) => {
       // A changelog row states what a past version claimed, so it has to be allowed to quote the
@@ -933,7 +938,7 @@ try {
   // exactly how "18 gates" and "9 invariants" survived past the releases that changed them.
   const invariantCount = (readText(path.join('reference', 'output-contract.md')).match(/^\| \d+ \| /gmu) || []).length;
   for (const doc of ['README.md', path.join('howto', 'how-the-skill-works.md'), path.join('blume', 'docs', 'index.mdx'), path.join('docs', 'sql-migration-advisor-developer-pitch.md')]) {
-    const text = readText(doc);
+    const text = withoutChangelog(readText(doc));
     for (const m of text.matchAll(/(\d+|nine|ten) (?:pre-render self-check |self-check )?invariants/giu)) {
       // Changelog rows record what was true at the time and must not be rewritten.
       const line = text.slice(text.lastIndexOf('\n', m.index) + 1, text.indexOf('\n', m.index));
@@ -951,7 +956,7 @@ try {
   const ruleCount = (rules.match(/^\| `[A-Z][A-Z0-9-]+` \|/gmu) || []).length;
   const QUOTED = ['README.md', 'CONTRIBUTING.md', path.join('howto', 'how-the-skill-works.md'), path.join('blume', 'docs', 'index.mdx'), path.join('docs', 'sql-migration-advisor-developer-pitch.md'), path.join('tests', 'README.md'), path.join('docs', 'ARCHITECTURE.md')];
   for (const doc of QUOTED) {
-    const text = readText(doc);
+    const text = withoutChangelog(readText(doc));
     const check = (re, actual, what) => {
       for (const m of text.matchAll(re)) {
         const line = text.slice(text.lastIndexOf('\n', m.index) + 1, text.indexOf('\n', m.index));
@@ -1386,7 +1391,7 @@ try {
   const WORD = { one: 1, two: 2, three: 3, four: 4, five: 5 };
   for (const doc of ['README.md', path.join('docs', 'sql-migration-advisor-developer-pitch.md')]) {
     let text = '';
-    try { text = readText(doc); } catch { failures.push(`${doc} is missing`); continue; }
+    try { text = withoutChangelog(readText(doc)); } catch { failures.push(`${doc} is missing`); continue; }
 
     for (const m of text.matchAll(/\b(one|two|three|four|five|\d+) skills\b/giu)) {
       const line = text.slice(text.lastIndexOf('\n', m.index) + 1, text.indexOf('\n', m.index));
