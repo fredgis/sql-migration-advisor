@@ -21,7 +21,7 @@
 >
 > **Audience.** Architects and database administrators planning SQL Server migrations to Azure.
 >
-> **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of August 2026). Links are gathered in [§14 Sources](#14-sources-microsoft-learn).
+> **Verification.** Tool retirements, version requirements and target families were cross-checked against Microsoft Learn and product announcements (current as of November 2026). Links are gathered in [§14 Sources](#14-sources-microsoft-learn).
 
 > [!IMPORTANT]
 > **2025–2026 tooling reset — read this first.**

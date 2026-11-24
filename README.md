@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="GitHub Copilot CLI skill" src="https://img.shields.io/badge/GitHub%20Copilot%20CLI-skill-8957e5">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="Release v3.15.0" src="https://img.shields.io/badge/release-v3.15.0-2b8a3e">
+  <img alt="Release v4.0.0" src="https://img.shields.io/badge/release-v4.0.0-2b8a3e">
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml"><img alt="Weekly KB check" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/weekly-kb-check.yml/badge.svg"></a>
   <a href="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/fredgis/sql-migration-advisor/actions/workflows/tests.yml/badge.svg"></a>
 </p>
@@ -75,12 +75,12 @@ The release tag is quoted by three manifests, a PDF, a poster, this README and a
 
 | Surface | Version | Up to date |
 | --- | --- | --- |
-| `version.json`, `plugin.json`, `marketplace.json` | `v3.15.0` | ✅ |
-| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v3.15.0` | ✅ |
-| Poster caption and PNG | `v3.15.0` | ✅ |
-| This README's badge and PDF sentence | `v3.15.0` | ✅ |
-| **This table** | `v3.15.0` | ✅ |
-| [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | `v3.15.0` | ✅ |
+| `version.json`, `plugin.json`, `marketplace.json` | `v4.0.0` | ✅ |
+| [PDF](docs/sql-server-to-azure-migration.pdf) and its preview image | `v4.0.0` | ✅ |
+| Poster caption and PNG | `v4.0.0` | ✅ |
+| This README's badge and PDF sentence | `v4.0.0` | ✅ |
+| **This table** | `v4.0.0` | ✅ |
+| [Published rule graph](https://fredgis.github.io/sql-migration-advisor/rule-graph.html) | `v4.0.0` | ✅ |
 | Both published skills, their knowledge bases, rules, contracts and schemas | no version | ✅ |
 | [Official package](https://github.com/microsoft/microsoft-sql/tree/main/plugins/microsoft-sql-migration): both skills, byte for byte | — | ✅ |
 | [Microsoft fork](https://github.com/microsoft/sql-migration-agent) | — | ✅ |
@@ -456,7 +456,7 @@ Mermaid decision diagrams.
 
 The same knowledge base ships as a polished, branded PDF —
 [`docs/sql-server-to-azure-migration.pdf`](docs/sql-server-to-azure-migration.pdf) (25 pages,
-v3.15.0, August 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
+v4.0.0, November 2026) — ready to hand to a partner or attach to a deal. It's generated reproducibly
 from the Markdown (pandoc + xelatex, Mermaid rendered inline) in the shared *fabric-foundry-kb*
 house style.
 
@@ -518,10 +518,11 @@ base and this README on the same version. Last verified: August 2026.
 
 <!-- CHANGELOG:START -->
 <details>
-<summary><b>📓 Changelog</b> — current: <b>v3.15.0</b> (November 2026)</summary>
+<summary><b>📓 Changelog</b> — current: <b>v4.0.0</b> (November 2026)</summary>
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| v4.0.0 | 2026-11-24 | **The 23 November corrections, and the published skills stop carrying a version.** A major release because both skills' schemas lose their version fields (`knowledgeBaseVersion`, `decisionRulesVersion`, `schemaVersion` and the rest) and the rule that two documents must agree on a number is gone: Microsoft releases the package, this repository releases by tag. The facts come from the audit filed as microsoft/microsoft-sql#92. The Fabric Migration Assistant is GA (DACPAC ≤ 20 MB, on-premises data gateway only), and SqlPackage imports a BACPAC into an empty Fabric database, so P11 now serves Fabric (P11-023, P11-024) and its Blob access becomes the conditional row P11-025. MI Link multiple-database mode is GA (P08-016 to P08-019, new `mi_link_mode` question) and capacity counts databases in either mode. Next-gen General Purpose zone redundancy is GA, and its log rate is 6 MiB/s per vCore up to 220 MiB/s per instance. Arc migrates to Azure SQL Database in preview, documented but not handed off. Hyperscale cross-database queries are a limited preview. Log shipping pairs the same OS family. The AVS licensing dates, the ADR and Service Broker anchors, Azure Catalyst and the Modernize CLI, the SQL Data Sync replacement and the slow-import rehearsal are corrected too. 298 prerequisite rows, 41 watched claims. |
 | v3.15.0 | 2026-11-23 | **Aligned with the official Microsoft publication.** The knowledge base moves to v3.15, the version Microsoft published in `microsoft/microsoft-sql` on 25 September: it drops the commercial programs, funding mechanics and event-specific material that were not intended for public distribution (the former §14 and §15), so the sources and the changelog become §14 and §15. The decision rules change in one place, D3, which keeps the SLA reference and no longer lists programs; the AVS licensing rule and the cost levers stay in the rules. Both skills take the 17 November refresh: the advisor opens its seven policy files in a startup step before the first question, reads large files in ranges, and cites the bundled knowledge base instead of a GitHub URL; both gain a *Check it worked* section. |
 | v3.14.8 | 2026-09-13 | **One status, two reasons, and only one of them was written down.** A candidate held at `unknown_requires_assessment` can be waiting on a field the profile does not carry, or on a prerequisite path no question in this interview reaches. The first is a hard-gate unknown and belongs in both `unknowns` and `evidenceRequired`. The second is not, and the previous release put it in `evidenceRequired` alone without saying why, which is a third category the contract never defined. Recording it as an unknown was the alternative, and it was measured: 29 scenarios drop to `low`, including both `evidence-complete` scenarios, which state every field their name claims. A profile that answers everything would still read `low`, so the documented `medium` ceiling would become unreachable and the confidence scale would stop distinguishing anything. Invariant 5b names the two reasons instead: the field kind lowers confidence because the interview could have settled it, the path kind does not because no answer the user could give would change it, and it goes to `evidenceRequired` and `nextActions` as work for the prerequisite-plan skill. Writing that found the real hole: several rules hold a candidate and record their reason under the winning method name or under none, so a held candidate could carry its reason in its own text and nowhere a reader looks. A gate reads all 269 held candidates across the scenario set and fails on any whose reason appears in none of the three arrays. 74 gates to 75. |
 | v3.14.4 | 2026-09-13 | **Four findings on the third state introduced one release earlier.** A gate that could not check a fact returned the same string as a gate that refused one, so every caller read both as a refusal: DMS came back `unavailable` on a profile where nobody had collected the recovery model, a word that asserts the source was examined and failed, and it took the offline `P23` variant down with it and could force a switch to SQL VM. Refusals and unchecked gates are distinguished now, and an unchecked gate leaves the candidate and the fallback standing. Second, the unproven-prerequisite check keyed on the fields the crosswalk bridges, so a path whose questions are all unbridged had nothing to test: transactional replication was offered as `available` with none of `P13` established. A path the interview cannot reach at all is named as such. Third, those checks pushed an evidence line without the matching `unknowns` entry, so the always-loaded exemplar failed invariant 5, its own pre-render self-check. Both arrays carry it, and the two `evidence-complete` scenarios now state the method prerequisites their name claims. Fourth, two schema descriptions still said invariant 15 requires the selected candidate to be `available`, while the output contract permits a winner at `unknown_requires_assessment` with a matching gate, which is what both canonical examples now are: a conforming run read opposite definitions of the same rule. |
